@@ -2,3 +2,8 @@
 .claude/
 .omc/
 .omx/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
