@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"gh repo create AoDaiNhaUyen --private --source=. --remote=origin --push\",\"description\":\"Create private GitHub repo and push code\"}",
-  "error": "Exit code 1\nhttps://github.com/duynguyen020304/AoDaiNhaUyen\nX Unable to add remote \"origin\"",
-  "timestamp": "2026-04-15T17:06:38.873Z",
-  "retry_count": 1
-}
