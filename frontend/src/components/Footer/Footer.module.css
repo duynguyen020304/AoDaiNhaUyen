@@ -1,0 +1,159 @@
+.siteFooter {
+  min-height: 427px;
+  position: relative;
+  padding: 28px 16px 0;
+  color: #ffffff;
+  background: #710b0f;
+}
+
+.siteFooterTitle {
+  margin: 0;
+  font-family: "Italianno", cursive;
+  font-size: 104px;
+  line-height: 100px;
+  font-weight: 400;
+  text-align: center;
+}
+
+.footerGrid {
+  max-width: 1705px;
+  margin: 10px auto 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 210px;
+}
+
+.footerGrid section {
+  min-width: 0;
+}
+
+.footerLogo {
+  width: 84px;
+  height: 74px;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
+
+.footerGrid h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+}
+
+.footerGrid p,
+.footerGrid a {
+  display: block;
+  margin: 0 0 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.footerGrid section:first-child p {
+  line-height: 22px;
+}
+
+.newsletterForm {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.newsletterForm input {
+  width: 192px;
+  height: 40px;
+  padding: 8px 16px;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.newsletterForm input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.newsletterForm button {
+  width: 73px;
+  height: 40px;
+  cursor: pointer;
+  color: #ffffff;
+  border-radius: 4px;
+  background: var(--deep-red);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.footerBottom {
+  max-width: 1885px;
+  height: 73px;
+  margin: 48px auto 0;
+  padding-top: 18px;
+  border-top: 1px solid #364153;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footerBottom p {
+  margin: 0;
+  color: #99a1af;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.socials {
+  display: flex;
+  gap: 16px;
+}
+
+.socials a {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 1400px) {
+  .footerGrid {
+    gap: 100px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .footerGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 42px;
+  }
+}
+
+@media (max-width: 680px) {
+  .siteFooterTitle {
+    font-size: 72px;
+    line-height: 64px;
+  }
+
+  .footerGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .newsletterForm {
+    flex-direction: column;
+  }
+
+  .newsletterForm input,
+  .newsletterForm button {
+    width: 100%;
+  }
+
+  .footerBottom {
+    height: auto;
+    padding-bottom: 24px;
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+}

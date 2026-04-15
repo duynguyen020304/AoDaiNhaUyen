@@ -1,0 +1,107 @@
+.siteHeader {
+  height: 79px;
+  background: var(--burgundy);
+  position: relative;
+  z-index: 20;
+}
+
+.brandMark {
+  position: absolute;
+  left: 47px;
+  top: 14px;
+  width: 42px;
+  height: 50px;
+  overflow: hidden;
+}
+
+.brandMark img {
+  width: 76px;
+  max-width: none;
+  transform: translate(-17px, -8px);
+  filter: brightness(0) invert(1);
+}
+
+.mainNav {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  width: 887px;
+  height: 48px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 0 20px;
+  border-radius: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mainNav a {
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 24px;
+  white-space: nowrap;
+}
+
+.isActive {
+  color: var(--deep-red) !important;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 3px 16px;
+}
+
+.loginLink {
+  border: 1px solid #ffffff;
+  border-radius: 999px;
+  padding: 4px 14px;
+}
+
+.cartLink {
+  min-width: 50px;
+  height: 31px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #934242;
+  background: #ffffff;
+  border-radius: 23px;
+}
+
+@media (max-width: 1400px) {
+  .mainNav {
+    width: 820px;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .siteHeader {
+    min-height: 126px;
+    height: auto;
+    padding-bottom: 18px;
+  }
+
+  .brandMark {
+    left: 24px;
+  }
+
+  .mainNav {
+    position: relative;
+    top: 78px;
+    width: calc(100% - 32px);
+    height: auto;
+    min-height: 48px;
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 680px) {
+  .mainNav {
+    justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+}

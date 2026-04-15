@@ -1,0 +1,149 @@
+.storeSection {
+  position: relative;
+  min-height: 1212px;
+  overflow: hidden;
+  color: #121212;
+  background:
+    radial-gradient(circle at 72% 57%, rgba(240, 64, 60, 0.9) 0%, rgba(204, 48, 45, 0.8) 28%, rgba(168, 33, 30, 0.86) 55%, #721311 98%),
+    #811512;
+}
+
+.storeCard {
+  position: absolute;
+  z-index: 3;
+  left: 224px;
+  top: 64px;
+  width: 410px;
+  height: 548px;
+  padding: 8px 20px;
+  border-radius: 16px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.storeCard h2 {
+  width: 337px;
+  margin: 0;
+  text-align: center;
+  color: transparent;
+  background: linear-gradient(0deg, #721311 22%, #e3302c 178%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  font-size: 40px;
+  line-height: 48px;
+  font-weight: 700;
+}
+
+.storeCard p {
+  margin: 0;
+  padding: 8px 10px;
+  min-height: 34px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  font-family: "Alexandria", "Inter", sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.storeMap {
+  position: absolute;
+  z-index: 2;
+  left: 696px;
+  top: 64px;
+  width: 988px;
+  height: 548px;
+  overflow: hidden;
+  background: #d9d9d9;
+}
+
+.storeMap img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.storeMap img + img {
+  mix-blend-mode: multiply;
+  opacity: 0.78;
+}
+
+.storeHeading {
+  position: absolute;
+  left: 50%;
+  bottom: 52px;
+  width: 703px;
+  transform: translateX(-50%);
+  margin: 0;
+  color: transparent;
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-align: center;
+  font-size: 60px;
+  line-height: 70px;
+  font-weight: 700;
+}
+
+@media (max-width: 1400px) {
+  .storeCard {
+    left: 80px;
+  }
+
+  .storeMap {
+    left: 560px;
+    width: 760px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .storeSection {
+    min-height: auto;
+    padding: 80px 24px;
+  }
+
+  .storeCard,
+  .storeMap,
+  .storeHeading {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    transform: none;
+  }
+
+  .storeHeading {
+    width: auto;
+  }
+
+  .storeCard {
+    height: auto;
+    width: min(640px, 100%);
+    margin: 0 auto;
+  }
+
+  .storeMap {
+    margin-top: 32px;
+    height: 420px;
+    width: min(640px, 100%);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .storeHeading {
+    margin: 48px auto 0;
+  }
+}
+
+@media (max-width: 680px) {
+  .storeCard h2,
+  .storeHeading {
+    width: auto;
+    font-size: 42px;
+    line-height: 50px;
+  }
+}

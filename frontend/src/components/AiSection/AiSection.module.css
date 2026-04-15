@@ -1,0 +1,293 @@
+.aiSection {
+  min-height: 900px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(155deg, #f9fafb 0%, #ffffff 50%, #f9fafb 100%);
+}
+
+.aiCopy {
+  position: absolute;
+  z-index: 5;
+  left: 154px;
+  top: 154px;
+  width: 715px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--burgundy);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.aiCopy h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 52px;
+  line-height: 48px;
+  font-weight: 500;
+}
+
+.aiCopy h1 span {
+  display: block;
+  color: var(--deep-red);
+}
+
+.aiIntro {
+  width: 610px;
+  margin: 24px 0 36px;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 29px;
+}
+
+.aiBenefits {
+  list-style: none;
+  margin: 0 0 54px;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.aiBenefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.benefitDot {
+  width: 51px;
+  height: 51px;
+  flex: 0 0 51px;
+  border-radius: 999px;
+  background: rgba(115, 7, 7, 0.1);
+}
+
+.aiBenefits strong {
+  display: block;
+  margin-top: -1px;
+  color: var(--ink);
+  font-size: 26px;
+  line-height: 27px;
+  font-weight: 600;
+}
+
+.aiBenefits p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 20px;
+}
+
+.primaryCta {
+  width: 303px;
+  height: 60px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #ffffff;
+  background: linear-gradient(90deg, #730707 0%, #8b0808 100%);
+  border-radius: 8px;
+  box-shadow:
+    0 10px 15px rgba(0, 0, 0, 0.1),
+    0 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.ctaNote {
+  width: 303px;
+  margin: 12px 0 0;
+  color: #6a7282;
+  text-align: center;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+/* Visual */
+.aiVisual {
+  position: absolute;
+  left: 890px;
+  top: -52px;
+  width: 1060px;
+  height: 845px;
+  transform: rotate(3.3deg);
+  transform-origin: center;
+}
+
+.aiPhotoStage {
+  position: relative;
+  width: 1017px;
+  height: 788px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #375d8e 0%, #093b87 48%, #073481 100%);
+  box-shadow: 18px 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.aiModel {
+  position: absolute;
+  right: 110px;
+  bottom: -8px;
+  width: 720px;
+  height: auto;
+  filter: drop-shadow(28px 18px 10px rgba(0, 0, 0, 0.2));
+}
+
+.aiCard {
+  position: absolute;
+  border: 4px solid var(--gold);
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.cardYellow {
+  left: 90px;
+  top: 84px;
+  width: 192px;
+  height: 247px;
+  transform: rotate(12.15deg);
+}
+
+.cardBlue {
+  left: 95px;
+  top: 360px;
+  width: 140px;
+  height: 177px;
+  transform: rotate(-13.09deg);
+}
+
+.aiWave {
+  position: absolute;
+  z-index: 4;
+  left: -75px;
+  bottom: -18px;
+  width: 1947px;
+  max-width: none;
+  height: 552px;
+  object-fit: fill;
+}
+
+@media (max-width: 1400px) {
+  .aiCopy {
+    left: 80px;
+  }
+
+  .aiVisual {
+    left: 700px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .aiSection {
+    min-height: 1100px;
+  }
+
+  .aiCopy {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: min(715px, calc(100% - 40px));
+    padding-top: 80px;
+    margin: 0 auto;
+  }
+
+  .aiCopy h1 {
+    font-size: 42px;
+    line-height: 44px;
+  }
+
+  .aiIntro {
+    width: auto;
+  }
+
+  .aiVisual {
+    left: 50%;
+    top: 590px;
+    width: 720px;
+    height: 420px;
+    transform: translateX(-50%) rotate(3.3deg);
+  }
+
+  .aiPhotoStage {
+    width: 720px;
+    height: 420px;
+  }
+
+  .aiModel {
+    right: 70px;
+    width: 420px;
+  }
+
+  .cardYellow {
+    width: 115px;
+    height: 150px;
+  }
+
+  .cardBlue {
+    top: 242px;
+    width: 90px;
+    height: 118px;
+  }
+
+  .aiWave {
+    left: -300px;
+    bottom: -82px;
+  }
+}
+
+@media (max-width: 680px) {
+  .aiSection {
+    min-height: 1000px;
+  }
+
+  .aiCopy h1 {
+    font-size: 34px;
+    line-height: 38px;
+  }
+
+  .aiBenefits strong {
+    font-size: 20px;
+  }
+
+  .aiBenefits p {
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  .primaryCta,
+  .ctaNote {
+    width: 100%;
+  }
+
+  .aiVisual {
+    top: 660px;
+    width: 480px;
+  }
+
+  .aiPhotoStage {
+    width: 480px;
+    height: 300px;
+  }
+
+  .aiModel {
+    right: 36px;
+    width: 300px;
+  }
+
+  .cardYellow {
+    left: 38px;
+    top: 46px;
+    width: 86px;
+    height: 110px;
+  }
+
+  .cardBlue {
+    left: 50px;
+    top: 175px;
+    width: 68px;
+    height: 88px;
+  }
+}

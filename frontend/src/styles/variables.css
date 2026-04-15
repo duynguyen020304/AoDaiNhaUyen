@@ -1,0 +1,20 @@
+:root {
+  --burgundy: #721311;
+  --deep-red: #730707;
+  --panel-red: #870e0b;
+  --wine: #4f0d0c;
+  --bright-red: #e3302c;
+  --gold: #ffd400;
+  --cream: #f0f0f0;
+  --ink: #101828;
+  --muted: #4a5565;
+  --gold-gradient: linear-gradient(
+    96deg,
+    #ffe562 2%,
+    #e2d48e 30%,
+    #f6d948 57%,
+    #c2b887 79%,
+    #e4c322 108%
+  );
+  font-family: "Inter", Arial, sans-serif;
+}

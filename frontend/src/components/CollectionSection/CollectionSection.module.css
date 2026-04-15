@@ -1,0 +1,129 @@
+.collectionSection {
+  min-height: 1080px;
+  padding-top: 78px;
+}
+
+.goldStar {
+  position: absolute;
+  left: 1168px;
+  top: 27px;
+  width: 72px;
+  height: 72px;
+  transform: rotate(27deg);
+  background: var(--gold-gradient);
+  clip-path: polygon(50% 0, 61% 38%, 100% 38%, 68% 60%, 79% 100%, 50% 76%, 21% 100%, 32% 60%, 0 38%, 39% 38%);
+}
+
+.categoryPills {
+  position: relative;
+  z-index: 3;
+  width: min(1133px, calc(100% - 48px));
+  min-height: 69px;
+  margin: 112px auto 0;
+  padding: 10px 45px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-radius: 52px;
+  background: #ffffff;
+}
+
+.categoryPills button {
+  cursor: pointer;
+  color: var(--deep-red);
+  background: transparent;
+  border-radius: 40px;
+  padding: 10px 18px;
+  font-size: 24px;
+  font-weight: 300;
+}
+
+.selected {
+  color: #ffffff !important;
+  background: linear-gradient(96deg, #721311 0%, #e3302c 130%) !important;
+}
+
+.dressShowcase {
+  position: relative;
+  z-index: 2;
+  width: min(1620px, calc(100% - 72px));
+  margin: 92px auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(260px, 1fr));
+  gap: 92px;
+  align-items: end;
+}
+
+.dressArticle {
+  position: relative;
+  min-height: 640px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.dressArticle img {
+  width: min(452px, 100%);
+  max-height: 608px;
+  object-fit: contain;
+  filter: drop-shadow(10px 18px 22px rgba(0, 0, 0, 0.24));
+}
+
+.featured img {
+  transform: translateY(-30px);
+}
+
+.dressArticle h3 {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  width: 86%;
+  margin: 0;
+  color: #ffffff;
+  text-align: center;
+  font-size: 40px;
+  line-height: 1.1;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 1400px) {
+  .dressShowcase {
+    gap: 40px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .collectionSection {
+    min-height: auto;
+    padding: 80px 24px;
+  }
+
+  .categoryPills {
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 60px;
+  }
+
+  .dressShowcase {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .categoryPills {
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .categoryPills button {
+    width: 100%;
+    font-size: 18px;
+  }
+
+  .dressArticle {
+    min-height: 520px;
+  }
+}

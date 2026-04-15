@@ -1,0 +1,18 @@
+.red-texture {
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+  background:
+    linear-gradient(180deg, rgba(114, 19, 17, 0.86) 0%, rgba(206, 4, 0, 0.86) 100%),
+    url("/assets/red-floral.png") center / cover no-repeat;
+}
+
+.red-texture::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 82% 52%, rgba(240, 64, 60, 0.26), transparent 24%),
+    radial-gradient(circle at 10% 76%, rgba(0, 0, 0, 0.24), transparent 28%);
+  pointer-events: none;
+}

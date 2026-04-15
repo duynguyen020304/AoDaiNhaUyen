@@ -1,0 +1,18 @@
+.heroBlank {
+  height: 905px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 42%),
+    linear-gradient(124deg, #3d6291 0%, #0d408c 45%, #003485 100%);
+}
+
+@media (max-width: 1100px) {
+  .heroBlank {
+    height: 520px;
+  }
+}
+
+@media (max-width: 680px) {
+  .heroBlank {
+    height: 360px;
+  }
+}
