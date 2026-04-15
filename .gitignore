@@ -1,3 +1,9 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
 # Claude Code Configuration
 .claude/
 .omc/
@@ -7,3 +13,6 @@
 .env
 .env.local
 .env.*.local
+
+# Backup files
+*.old.*
