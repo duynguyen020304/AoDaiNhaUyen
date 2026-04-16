@@ -1,18 +1,202 @@
 .heroBlank {
+  position: relative;
   height: 905px;
+  overflow: hidden;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 42%),
     linear-gradient(124deg, #3d6291 0%, #0d408c 45%, #003485 100%);
+}
+
+.heroImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(0.95) contrast(1.02);
+}
+
+.heroShade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(42, 6, 5, 0.76) 0%, rgba(92, 13, 12, 0.46) 42%, rgba(0, 0, 0, 0.12) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.16) 0%, rgba(0, 0, 0, 0.08) 48%, rgba(0, 0, 0, 0.38) 100%);
+}
+
+.heroCopy {
+  position: absolute;
+  left: 120px;
+  top: 210px;
+  z-index: 2;
+  width: 560px;
+  color: #ffffff;
+}
+
+.heroCopy p {
+  margin: 0 0 14px;
+  color: var(--gold);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 500;
+}
+
+.heroCopy h1 {
+  margin: 0;
+  font-size: 64px;
+  line-height: 70px;
+  font-weight: 700;
+}
+
+.heroCopy span {
+  display: block;
+  width: 470px;
+  margin-top: 22px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 20px;
+  line-height: 30px;
+}
+
+.heroCta {
+  width: 236px;
+  height: 52px;
+  margin-top: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--deep-red);
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+  will-change: transform;
+}
+
+.sliderControls {
+  position: absolute;
+  z-index: 3;
+  left: 120px;
+  bottom: 92px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sliderControls button {
+  cursor: pointer;
+}
+
+.sliderControls > button {
+  width: 42px;
+  height: 42px;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 32px;
+  line-height: 34px;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.slideDots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slideDots button {
+  position: relative;
+  width: 28px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.42);
+  transition:
+    width 220ms ease,
+    background-color 220ms ease;
+}
+
+.slideDots .isActive {
+  width: 44px;
+  background: var(--gold);
+}
+
+.dotProgress {
+  position: absolute;
+  inset: 0;
+  display: block;
+  transform-origin: left center;
+  background: rgba(255, 255, 255, 0.74);
 }
 
 @media (max-width: 1100px) {
   .heroBlank {
     height: 520px;
   }
+
+  .heroCopy {
+    left: 48px;
+    top: 110px;
+    width: min(560px, calc(100% - 96px));
+  }
+
+  .heroCopy h1 {
+    font-size: 46px;
+    line-height: 52px;
+  }
+
+  .heroCopy span {
+    width: min(470px, 100%);
+    font-size: 18px;
+    line-height: 28px;
+  }
+
+  .sliderControls {
+    left: 48px;
+    bottom: 44px;
+  }
 }
 
 @media (max-width: 680px) {
   .heroBlank {
-    height: 360px;
+    height: 540px;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  .heroCopy {
+    left: 24px;
+    top: 92px;
+    width: min(300px, calc(100vw - 48px));
+  }
+
+  .heroCopy h1 {
+    max-width: 100%;
+    font-size: 26px;
+    line-height: 32px;
+    overflow-wrap: break-word;
+  }
+
+  .heroCopy p,
+  .heroCopy span {
+    width: 100%;
+    font-size: 15px;
+    line-height: 23px;
+    overflow-wrap: break-word;
+  }
+
+  .heroCta {
+    width: 100%;
+  }
+
+  .sliderControls {
+    left: 24px;
+    right: 24px;
+    bottom: 28px;
+    justify-content: space-between;
   }
 }

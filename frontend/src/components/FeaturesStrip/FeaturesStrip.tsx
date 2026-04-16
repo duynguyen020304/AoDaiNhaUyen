@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion';
 import styles from './FeaturesStrip.module.css';
+import { cardHover, fadeUp, sectionReveal, viewportOnce } from '../../utils/motion';
 
 const features = [
   { icon: '\u25B1', title: 'MIỄN PHÍ VẬN CHUYỂN', desc: 'Đơn hàng trên 1 triệu' },
@@ -8,16 +10,35 @@ const features = [
 
 export default function FeaturesStrip() {
   return (
-    <section className={styles.featuresStrip} aria-label="Dịch vụ">
+    <motion.section
+      className={styles.featuresStrip}
+      aria-label="Dịch vụ"
+      variants={sectionReveal}
+      initial="hidden"
+      whileInView="show"
+      viewport={viewportOnce}
+    >
       {features.map((f) => (
-        <article key={f.title} className={styles.article}>
-          <span className={`${styles.icon} hover-lift`} aria-hidden="true">{f.icon}</span>
+        <motion.article
+          key={f.title}
+          className={styles.article}
+          variants={fadeUp}
+          whileHover={cardHover.hover}
+          transition={{ duration: 0.24, ease: 'easeOut' }}
+        >
+          <motion.span
+            className={styles.icon}
+            aria-hidden="true"
+            whileHover={{ rotate: 8, scale: 1.08 }}
+          >
+            {f.icon}
+          </motion.span>
           <div>
             <h2 className={styles.title}>{f.title}</h2>
             <p className={styles.desc}>{f.desc}</p>
           </div>
-        </article>
+        </motion.article>
       ))}
-    </section>
+    </motion.section>
   );
 }

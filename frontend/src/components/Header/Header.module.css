@@ -38,6 +38,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.navLink,
 .mainNav a {
   color: #ffffff;
   font-size: 16px;
@@ -45,11 +46,33 @@
   white-space: nowrap;
 }
 
+.navLink {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 31px;
+  padding: 3px 16px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.activePill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.navLabel {
+  position: relative;
+  z-index: 1;
+}
+
 .isActive {
   color: var(--deep-red) !important;
-  background: #ffffff;
-  border-radius: 999px;
-  padding: 3px 16px;
 }
 
 .loginLink {
