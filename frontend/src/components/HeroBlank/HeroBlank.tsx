@@ -96,7 +96,7 @@ export default function HeroBlank() {
           <motion.span variants={carouselCopyItem}>{slide.desc}</motion.span>
           <motion.a
             className={styles.heroCta}
-            href="#collection"
+            href="/collection"
             variants={carouselCopyItem}
             whileHover={prefersReducedMotion ? undefined : { y: -2, scale: 1.02 }}
             whileTap={{ scale: 0.97 }}

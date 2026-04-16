@@ -24,7 +24,7 @@ export default function Footer() {
         </motion.section>
         <motion.section variants={fadeUp} whileHover={cardHover.hover} transition={{ duration: 0.24, ease: 'easeOut' }}>
           <h3>Liên Kết</h3>
-          <a href="#collection">Về MaryMy</a>
+          <a href="/collection">Về MaryMy</a>
           <a href="#collection">Chính sách đổi trả</a>
           <a href="#collection">Hướng dẫn chọn size</a>
           <a href="#collection">Blog thời trang</a>
@@ -44,8 +44,8 @@ export default function Footer() {
       <motion.div className={styles.footerBottom} variants={fadeUp}>
         <p>&copy; 2024 MaryMy. All rights reserved.</p>
         <div className={styles.socials} aria-label="Mạng xã hội">
-          <a className="hover-lift" href="#top" aria-label="Facebook">f</a>
-          <a className="hover-lift" href="#top" aria-label="Instagram">◎</a>
+          <a className="hover-lift" href="/" aria-label="Facebook">f</a>
+          <a className="hover-lift" href="/" aria-label="Instagram">◎</a>
         </div>
       </motion.div>
     </motion.footer>

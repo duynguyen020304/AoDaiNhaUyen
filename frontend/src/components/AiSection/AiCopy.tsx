@@ -42,7 +42,7 @@ export default function AiCopy() {
         ))}
       </motion.ul>
 
-      <motion.a className={`${styles.primaryCta} hover-lift`} href="#collection" variants={fadeUp}>
+      <motion.a className={`${styles.primaryCta} hover-lift`} href="/collection" variants={fadeUp}>
         Thử đồ AI Ngay <span aria-hidden="true">&rarr;</span>
       </motion.a>
       <motion.p className={styles.ctaNote} variants={fadeUp}>Dùng thử hoàn toàn miễn phí</motion.p>

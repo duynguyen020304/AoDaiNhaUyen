@@ -1,6 +1,6 @@
 .storeSection {
   position: relative;
-  min-height: 1212px;
+  min-height: 780px;
   overflow: hidden;
   color: #121212;
   background:
@@ -76,7 +76,7 @@
 .storeHeading {
   position: absolute;
   left: 50%;
-  bottom: 52px;
+  bottom: 100px;
   width: 703px;
   transform: translateX(-50%);
   margin: 0;

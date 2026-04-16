@@ -27,7 +27,7 @@ export default function GallerySection() {
         className={styles.collections}
         variants={listStagger}
       >
-        {COLLECTIONS.map((col, i) => (
+        {COLLECTIONS.map((col) => (
           <motion.div
             key={col.number}
             className={styles.collectionCard}

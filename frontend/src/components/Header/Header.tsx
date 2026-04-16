@@ -1,29 +1,30 @@
-import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import styles from './Header.module.css';
 import { fadeUp, staggerContainer } from '../../utils/motion';
-import type { Page } from '../../App';
 
-const navLinks = [
-  { label: 'TRANG CHỦ', href: '#top', page: 'home' as Page },
-  { label: 'BỘ SƯU TẬP', href: '#collection', page: 'collection' as Page },
-  { label: '\u2728 THỬ ĐỒ AI', href: '#ai', page: undefined },
-  { label: 'Áo dài', href: '#product', page: undefined },
-  { label: 'Phụ kiện', href: '#accessories', page: undefined },
-];
-
-interface HeaderProps {
-  currentPage: Page;
-  onNavigate: (page: Page) => void;
+interface NavLinkConfig {
+  label: string;
+  to: string;
+  matchPath: string;
 }
 
-export default function Header({ currentPage, onNavigate }: HeaderProps) {
-  const [activeHref, setActiveHref] = useState(navLinks[0].href);
+const navLinks: NavLinkConfig[] = [
+  { label: 'TRANG CHỦ', to: '/', matchPath: '/' },
+  { label: 'BỘ SƯU TẬP', to: '/collection', matchPath: '/collection' },
+  { label: '\u2728 THỬ ĐỒ AI', to: '/ai-tryon', matchPath: '/ai-tryon' },
+  { label: 'Áo dài', to: '/products', matchPath: '/products' },
+  { label: 'Phụ kiện', to: '/accessories', matchPath: '/accessories' },
+];
 
-  const handleClick = (link: typeof navLinks[number]) => {
-    setActiveHref(link.href);
-    if (link.page) {
-      onNavigate(link.page);
+export default function Header() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleClick = (link: NavLinkConfig, e: React.MouseEvent) => {
+    if (location.pathname !== link.to) {
+      e.preventDefault();
+      navigate(link.to);
     }
   };
 
@@ -36,9 +37,9 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
     >
       <motion.a
         className={styles.brandMark}
-        href="#top"
+        href="/"
         aria-label="Áo dài Nhã Uyên"
-        onClick={(e) => { e.preventDefault(); onNavigate('home'); }}
+        onClick={(e) => { e.preventDefault(); navigate('/'); }}
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.96 }}
       >
@@ -52,29 +53,25 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
         initial="hidden"
         animate="show"
       >
-        {navLinks.map((link) => (
-          <motion.a
-            key={link.href}
-            className={`${styles.navLink} ${(currentPage === 'collection' && link.page === 'collection') || (currentPage === 'home' && activeHref === link.href) ? styles.isActive : ''}`}
-            href={link.href}
-            onClick={(e) => {
-              if (link.page) {
-                e.preventDefault();
-                handleClick(link);
-              } else {
-                handleClick(link);
-              }
-            }}
-            variants={fadeUp}
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            {(currentPage === 'collection' && link.page === 'collection') || (currentPage === 'home' && activeHref === link.href) ? (
-              <motion.span className={styles.activePill} layoutId="header-active-pill" />
-            ) : null}
-            <span className={styles.navLabel}>{link.label}</span>
-          </motion.a>
-        ))}
+        {navLinks.map((link) => {
+          const isActive = location.pathname === link.matchPath;
+          return (
+            <motion.a
+              key={link.to}
+              className={`${styles.navLink} ${isActive ? styles.isActive : ''}`}
+              href={link.to}
+              onClick={(e) => handleClick(link, e)}
+              variants={fadeUp}
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              {isActive ? (
+                <motion.span className={styles.activePill} layoutId="header-active-pill" />
+              ) : null}
+              <span className={styles.navLabel}>{link.label}</span>
+            </motion.a>
+          );
+        })}
         <motion.a
           className={styles.loginLink}
           href="#footer"
