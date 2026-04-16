@@ -13,8 +13,6 @@
 .noiseWash,
 .patternTextureTop,
 .patternTextureBottom,
-.sideVectorLeft,
-.sideVectorRight,
 .goldFlower,
 .bottomFloral {
   position: absolute;
@@ -76,22 +74,6 @@
   top: auto;
   bottom: 0;
   transform: translate(var(--home-drum-offset-x), var(--home-drum-offset-y));
-}
-
-.sideVectorLeft {
-  right: 1.35%;
-  bottom: 26.36%;
-  width: 26px;
-  z-index: 3;
-  opacity: 0.92;
-}
-
-.sideVectorRight {
-  right: 26.72%;
-  bottom: 26.36%;
-  width: 26px;
-  z-index: 3;
-  opacity: 0.92;
 }
 
 .goldFlower {

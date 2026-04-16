@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import styles from './MaterialSection.module.css';
 import { easeOutQuart, sectionReveal, viewportOnce } from '../../utils/motion';
@@ -90,7 +90,10 @@ export default function MaterialSection() {
             </motion.div>
           </AnimatePresence>
 
-          <div className={styles.swatchRail}>
+          <div
+            className={styles.swatchRail}
+            style={{ ['--active-index' as string]: active } as CSSProperties}
+          >
             <div className={styles.swatches} aria-label="Mẫu chất liệu" role="tablist">
               {materials.map((material, index) => (
                 <button
@@ -107,12 +110,7 @@ export default function MaterialSection() {
               ))}
             </div>
 
-            <motion.span
-              className={styles.selectionBar}
-              aria-hidden="true"
-              animate={{ x: `${active * 100}%` }}
-              transition={{ type: 'spring', stiffness: 360, damping: 32 }}
-            />
+            <span className={styles.selectionBar} aria-hidden="true" />
           </div>
         </div>
 

@@ -12,8 +12,6 @@ import {
   viewportOnce,
 } from '../../utils/motion';
 
-const sideVectorLeft = 'https://www.figma.com/api/mcp/asset/404d03ab-6199-453a-a42e-8b5232bce46d';
-const sideVectorRight = 'https://www.figma.com/api/mcp/asset/a5c37451-6ea0-42fa-861c-d4afb6113909';
 const topFlourish = 'https://www.figma.com/api/mcp/asset/8d79bb1a-cfa6-4c4c-a6ee-908007b4940b';
 const sparkle = 'https://www.figma.com/api/mcp/asset/2c2487c7-ff4f-497d-9727-212161e80de3';
 const goldFlower = 'https://www.figma.com/api/mcp/asset/e4594296-f9bd-4bdf-ace5-f312b69254c5';
@@ -113,8 +111,6 @@ export default function ProductSection() {
       <div className={styles.noiseWash} aria-hidden="true" />
       <img className={styles.patternTextureTop} src="/assets/drum-pattern.png" alt="" aria-hidden="true" />
       <img className={styles.patternTextureBottom} src="/assets/drum-pattern.png" alt="" aria-hidden="true" />
-      <img className={styles.sideVectorLeft} src={sideVectorLeft} alt="" aria-hidden="true" />
-      <img className={styles.sideVectorRight} src={sideVectorRight} alt="" aria-hidden="true" />
       <img className={styles.goldFlower} src={goldFlower} alt="" aria-hidden="true" />
       <img className={styles.bottomFloral} src="/assets/red-floral.png" alt="" aria-hidden="true" />
 
