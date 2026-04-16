@@ -3,12 +3,13 @@
   min-height: 1080px;
   overflow: hidden;
   isolation: isolate;
-  background: linear-gradient(180deg, #ad0909 0%, #8b0909 52%, #6f0a0a 100%);
+  background: linear-gradient(180deg, #c40c0a 0%, #970707 48%, #6a0909 100%);
 }
 
 .backgroundBase,
-.backgroundSweep,
+.backgroundBackdrop,
 .floralTexture,
+.dotTexture,
 .leftGlow,
 .rightGlow,
 .sheen,
@@ -21,52 +22,58 @@
   inset: 0;
   z-index: 0;
   background:
-    radial-gradient(circle at 18% 12%, rgba(255, 193, 193, 0.12), transparent 22%),
-    radial-gradient(circle at 82% 28%, rgba(255, 206, 153, 0.1), transparent 22%),
-    linear-gradient(180deg, rgba(151, 7, 7, 0.18), rgba(84, 6, 6, 0.28));
+    radial-gradient(circle at 17% 18%, rgba(255, 201, 183, 0.2), transparent 16%),
+    radial-gradient(circle at 88% 24%, rgba(255, 211, 201, 0.24), transparent 18%),
+    radial-gradient(circle at 10% 82%, rgba(255, 195, 178, 0.16), transparent 14%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(72, 6, 6, 0.18));
 }
 
-.backgroundSweep {
-  left: -12%;
-  right: -4%;
-  bottom: -40%;
-  height: 62%;
+.backgroundBackdrop {
+  inset: 0;
   z-index: 1;
-  border-radius: 50%;
-  background: radial-gradient(circle at 48% 0%, rgba(51, 8, 8, 0.1), rgba(70, 10, 10, 0.92) 60%, rgba(89, 12, 12, 0.98) 100%);
+  background: url("/assets/material-section-backdrop.svg") center bottom / cover no-repeat;
+  opacity: 0.96;
 }
 
 .floralTexture {
   inset: 0;
-  z-index: 1;
-  opacity: 0.3;
+  z-index: 2;
+  opacity: 0.58;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
     url("/assets/red-floral.png") center / cover no-repeat;
-  filter: saturate(0.92) blur(0.35px);
+  filter: saturate(0.88) blur(0.25px);
+}
+
+.dotTexture {
+  inset: 0;
+  z-index: 2;
+  opacity: 0.14;
+  background-image: radial-gradient(circle, rgba(255, 219, 171, 0.88) 0 2px, transparent 2.5px);
+  background-size: 160px 160px;
 }
 
 .leftGlow {
-  left: -9%;
-  top: -8%;
-  width: 44%;
-  height: 60%;
+  left: -11%;
+  top: 4%;
+  width: 34%;
+  height: 52%;
   z-index: 0;
-  background: radial-gradient(circle, rgba(255, 214, 214, 0.12), rgba(255, 255, 255, 0) 72%);
+  background: radial-gradient(circle, rgba(255, 228, 218, 0.18), rgba(255, 255, 255, 0) 72%);
 }
 
 .rightGlow {
-  right: -14%;
-  top: 8%;
-  width: 46%;
-  height: 64%;
+  right: -10%;
+  top: 6%;
+  width: 36%;
+  height: 54%;
   z-index: 0;
-  background: radial-gradient(circle, rgba(255, 210, 155, 0.16), rgba(255, 255, 255, 0) 70%);
+  background: radial-gradient(circle, rgba(255, 224, 208, 0.22), rgba(255, 255, 255, 0) 70%);
 }
 
 .sheen {
   inset: 0;
-  z-index: 2;
+  z-index: 3;
   mix-blend-mode: screen;
   background: linear-gradient(103deg, transparent 24%, rgba(255, 255, 255, 0.14) 42%, transparent 62%);
 }
@@ -74,13 +81,13 @@
 .heading,
 .contentGrid {
   position: relative;
-  z-index: 3;
+  z-index: 4;
 }
 
 .heading {
   width: min(758px, calc(100% - 32px));
   margin: 0 auto;
-  padding-top: 130px;
+  padding-top: 118px;
   text-align: center;
 }
 
@@ -96,41 +103,41 @@
 
 .contentGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(340px, 600px);
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 620px);
   align-items: center;
-  gap: 40px;
-  padding: 18px 108px 0 173px;
+  gap: 54px;
+  padding: 8px 86px 0 146px;
 }
 
 .copyColumn {
-  max-width: 548px;
+  max-width: 520px;
   color: var(--cream);
   text-align: center;
 }
 
 .materialCopy {
-  min-height: 250px;
+  min-height: 286px;
 }
 
 .materialCopy h3 {
-  margin: 0 0 48px;
+  margin: 0 0 58px;
   font-family: "Italianno", cursive;
-  font-size: clamp(72px, 5vw, 100px);
+  font-size: clamp(76px, 5.2vw, 106px);
   line-height: 0.48;
   font-weight: 400;
 }
 
 .materialCopy p {
-  max-width: 450px;
+  max-width: 420px;
   margin: 0 auto;
-  font-size: clamp(22px, 2vw, 30px);
-  line-height: 1.5;
+  font-size: clamp(22px, 1.9vw, 29px);
+  line-height: 1.44;
 }
 
 .swatchRail {
   position: relative;
   width: 452px;
-  margin-top: 54px;
+  margin-top: 28px;
 }
 
 .swatches {
@@ -185,9 +192,10 @@
 .previewFrame {
   position: relative;
   justify-self: end;
-  width: min(600px, 100%);
+  width: min(530px, 100%);
   aspect-ratio: 1;
-  margin-right: 60px;
+  margin-right: 8px;
+  margin-top: 30px;
 }
 
 .previewHalo {
@@ -214,23 +222,23 @@
 }
 
 .drumPattern {
-  right: -290px;
-  bottom: -502px;
-  z-index: 2;
+  right: -268px;
+  bottom: -516px;
+  z-index: 3;
   width: 940px;
-  opacity: 0.14;
+  opacity: 0.18;
   mix-blend-mode: screen;
 }
 
 @media (max-width: 1280px) {
   .contentGrid {
-    padding: 18px 56px 0 72px;
-    gap: 24px;
+    padding: 18px 44px 0 56px;
+    gap: 28px;
   }
 
   .previewFrame {
     margin-right: 0;
-    width: min(520px, 100%);
+    width: min(500px, 100%);
   }
 }
 
@@ -267,6 +275,7 @@
 
   .previewFrame {
     justify-self: center;
+    margin-top: 0;
     width: min(460px, calc(100vw - 88px));
   }
 
