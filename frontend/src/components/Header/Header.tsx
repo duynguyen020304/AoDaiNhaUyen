@@ -55,7 +55,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
         {navLinks.map((link) => (
           <motion.a
             key={link.href}
-            className={`${styles.navLink} ${(currentPage === 'collection' && link.page === 'collection') || (currentPage === 'home' && activeHref === link.href && !link.page) ? styles.isActive : ''}`}
+            className={`${styles.navLink} ${(currentPage === 'collection' && link.page === 'collection') || (currentPage === 'home' && activeHref === link.href) ? styles.isActive : ''}`}
             href={link.href}
             onClick={(e) => {
               if (link.page) {

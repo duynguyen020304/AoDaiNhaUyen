@@ -12,9 +12,9 @@ import {
   viewportOnce,
 } from '../../utils/motion';
 
-const topFlourish = 'https://www.figma.com/api/mcp/asset/8d79bb1a-cfa6-4c4c-a6ee-908007b4940b';
-const sparkle = 'https://www.figma.com/api/mcp/asset/2c2487c7-ff4f-497d-9727-212161e80de3';
-const goldFlower = 'https://www.figma.com/api/mcp/asset/e4594296-f9bd-4bdf-ace5-f312b69254c5';
+const topFlourish = '/assets/top-flourish.png';
+const sparkle = '/assets/sparkle.png';
+const goldFlower = '/assets/gold-flower.png';
 
 const looks = [
   {
