@@ -2,6 +2,7 @@
   position: relative;
   min-height: 1119px;
   overflow: hidden;
+  isolation: isolate;
   color: #ffffff;
   background:
     radial-gradient(circle at 72% 57%, rgba(240, 64, 60, 0.92) 0%, rgba(204, 48, 45, 0.82) 25%, rgba(168, 33, 30, 0.9) 55%, #721311 98%),
@@ -11,15 +12,22 @@
 .accessorySection::before {
   content: "";
   position: absolute;
-  inset: 0;
-  background: url("/assets/drum-pattern.png") right -410px top -720px / 1249px 1330px no-repeat;
-  opacity: 0.16;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  width: var(--home-drum-size);
+  aspect-ratio: 1;
+  background: url("/assets/drum-pattern.png") center / contain no-repeat;
+  opacity: var(--home-drum-opacity);
+  mix-blend-mode: screen;
+  transform: translate(var(--home-drum-offset-x), var(--home-drum-offset-y-negative));
 }
 
 .accessoryHero {
   position: absolute;
   left: 20px;
   top: 105px;
+  z-index: 2;
   width: 1460px;
   height: 821px;
   object-fit: cover;
@@ -31,6 +39,7 @@
   position: absolute;
   left: 66px;
   top: 480px;
+  z-index: 2;
   width: 444px;
   min-height: 460px;
   padding: 86px 40px 40px;
@@ -74,6 +83,7 @@
   position: absolute;
   right: 86px;
   top: 402px;
+  z-index: 2;
   width: 284px;
   margin: 0;
   color: transparent;

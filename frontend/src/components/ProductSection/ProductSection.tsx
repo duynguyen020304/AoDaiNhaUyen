@@ -111,7 +111,8 @@ export default function ProductSection() {
       <div className={styles.middleBackground} aria-hidden="true" />
       <div className={styles.rightBackground} aria-hidden="true" />
       <div className={styles.noiseWash} aria-hidden="true" />
-      <img className={styles.patternTexture} src="/assets/drum-pattern.png" alt="" aria-hidden="true" />
+      <img className={styles.patternTextureTop} src="/assets/drum-pattern.png" alt="" aria-hidden="true" />
+      <img className={styles.patternTextureBottom} src="/assets/drum-pattern.png" alt="" aria-hidden="true" />
       <img className={styles.sideVectorLeft} src={sideVectorLeft} alt="" aria-hidden="true" />
       <img className={styles.sideVectorRight} src={sideVectorRight} alt="" aria-hidden="true" />
       <img className={styles.goldFlower} src={goldFlower} alt="" aria-hidden="true" />

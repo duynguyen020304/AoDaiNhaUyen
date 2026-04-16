@@ -2,6 +2,7 @@
   position: relative;
   min-height: min(100svh, 1080px);
   overflow: hidden;
+  isolation: isolate;
   background: linear-gradient(180deg, rgba(217, 13, 13, 0) 0%, #730707 100%);
   color: var(--cream);
 }
@@ -10,7 +11,8 @@
 .middleBackground,
 .rightBackground,
 .noiseWash,
-.patternTexture,
+.patternTextureTop,
+.patternTextureBottom,
 .sideVectorLeft,
 .sideVectorRight,
 .goldFlower,
@@ -22,23 +24,27 @@
 .leftBackground {
   inset: 0 auto 0 0;
   width: 33%;
+  z-index: 0;
   background: linear-gradient(100deg, #721311 5%, #631311 85%);
 }
 
 .middleBackground {
   inset: 0 auto 0 33%;
   width: 36.6%;
+  z-index: 0;
   background: linear-gradient(180deg, #4f0d0c 0%, #a11414 100%);
 }
 
 .rightBackground {
   inset: -3px 0 0 auto;
   width: 30.4%;
+  z-index: 0;
   background: linear-gradient(323deg, #721311 54%, #e3302c 130%);
 }
 
 .noiseWash {
   inset: 0;
+  z-index: 0;
   background:
     radial-gradient(circle at 20% 78%, rgba(255, 212, 0, 0.18), transparent 18%),
     radial-gradient(circle at 83% 12%, rgba(255, 212, 0, 0.08), transparent 12%),
@@ -47,19 +53,36 @@
   opacity: 0.8;
 }
 
-.patternTexture {
-  top: -749px;
-  right: -492px;
-  width: 1249px;
-  height: 1330px;
-  object-fit: cover;
-  opacity: 0.13;
+.patternTextureTop,
+.patternTextureBottom {
+  right: 0;
+  z-index: 1;
+  width: var(--home-drum-size);
+  aspect-ratio: 1;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  transform-origin: center;
+  opacity: var(--home-drum-opacity);
+  mix-blend-mode: screen;
+}
+
+.patternTextureTop {
+  top: 0;
+  transform: translate(var(--home-drum-offset-x), var(--home-drum-offset-y-negative));
+}
+
+.patternTextureBottom {
+  top: auto;
+  bottom: 0;
+  transform: translate(var(--home-drum-offset-x), var(--home-drum-offset-y));
 }
 
 .sideVectorLeft {
   right: 1.35%;
   bottom: 26.36%;
   width: 26px;
+  z-index: 3;
   opacity: 0.92;
 }
 
@@ -67,6 +90,7 @@
   right: 26.72%;
   bottom: 26.36%;
   width: 26px;
+  z-index: 3;
   opacity: 0.92;
 }
 
@@ -81,13 +105,14 @@
   left: -28px;
   bottom: -24px;
   width: 240px;
+  z-index: 3;
   opacity: 0.95;
   filter: blur(0.4px);
 }
 
 .contentGrid {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: grid;
   grid-template-columns: 537px minmax(520px, 1fr) 430px;
   gap: 42px;

@@ -16,5 +16,10 @@
     #c2b887 79%,
     #e4c322 108%
   );
+  --home-drum-size: clamp(520px, 82vw, 1080px);
+  --home-drum-offset-x: 34%;
+  --home-drum-offset-y: 50%;
+  --home-drum-offset-y-negative: -50%;
+  --home-drum-opacity: 0.16;
   font-family: "Inter", Arial, sans-serif;
 }

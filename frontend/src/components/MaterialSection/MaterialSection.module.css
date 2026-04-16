@@ -222,12 +222,15 @@
 }
 
 .drumPattern {
-  right: -268px;
-  bottom: -516px;
+  right: 0;
+  bottom: 0;
   z-index: 3;
-  width: 940px;
-  opacity: 0.18;
+  width: var(--home-drum-size);
+  aspect-ratio: 1;
+  height: auto;
+  opacity: var(--home-drum-opacity);
   mix-blend-mode: screen;
+  transform: translate(var(--home-drum-offset-x), var(--home-drum-offset-y));
 }
 
 @media (max-width: 1280px) {
@@ -279,11 +282,6 @@
     width: min(460px, calc(100vw - 88px));
   }
 
-  .drumPattern {
-    right: -240px;
-    bottom: -400px;
-    width: 760px;
-  }
 }
 
 @media (max-width: 640px) {
@@ -333,10 +331,4 @@
     width: min(330px, calc(100vw - 36px));
   }
 
-  .drumPattern {
-    right: -180px;
-    bottom: -245px;
-    width: 520px;
-    opacity: 0.11;
-  }
 }
