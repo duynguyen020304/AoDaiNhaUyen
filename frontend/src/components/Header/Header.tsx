@@ -2,17 +2,30 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import styles from './Header.module.css';
 import { fadeUp, staggerContainer } from '../../utils/motion';
+import type { Page } from '../../App';
 
 const navLinks = [
-  { label: 'TRANG CHỦ', href: '#top' },
-  { label: 'BỘ SƯU TẬP', href: '#collection' },
-  { label: '\u2728 THỬ ĐỒ AI', href: '#ai' },
-  { label: 'Áo dài', href: '#product' },
-  { label: 'Phụ kiện', href: '#accessories' },
+  { label: 'TRANG CHỦ', href: '#top', page: 'home' as Page },
+  { label: 'BỘ SƯU TẬP', href: '#collection', page: 'collection' as Page },
+  { label: '\u2728 THỬ ĐỒ AI', href: '#ai', page: undefined },
+  { label: 'Áo dài', href: '#product', page: undefined },
+  { label: 'Phụ kiện', href: '#accessories', page: undefined },
 ];
 
-export default function Header() {
+interface HeaderProps {
+  currentPage: Page;
+  onNavigate: (page: Page) => void;
+}
+
+export default function Header({ currentPage, onNavigate }: HeaderProps) {
   const [activeHref, setActiveHref] = useState(navLinks[0].href);
+
+  const handleClick = (link: typeof navLinks[number]) => {
+    setActiveHref(link.href);
+    if (link.page) {
+      onNavigate(link.page);
+    }
+  };
 
   return (
     <motion.header
@@ -25,6 +38,7 @@ export default function Header() {
         className={styles.brandMark}
         href="#top"
         aria-label="Áo dài Nhã Uyên"
+        onClick={(e) => { e.preventDefault(); onNavigate('home'); }}
         whileHover={{ scale: 1.04 }}
         whileTap={{ scale: 0.96 }}
       >
@@ -41,14 +55,21 @@ export default function Header() {
         {navLinks.map((link) => (
           <motion.a
             key={link.href}
-            className={`${styles.navLink} ${activeHref === link.href ? styles.isActive : ''}`}
+            className={`${styles.navLink} ${(currentPage === 'collection' && link.page === 'collection') || (currentPage === 'home' && activeHref === link.href && !link.page) ? styles.isActive : ''}`}
             href={link.href}
-            onClick={() => setActiveHref(link.href)}
+            onClick={(e) => {
+              if (link.page) {
+                e.preventDefault();
+                handleClick(link);
+              } else {
+                handleClick(link);
+              }
+            }}
             variants={fadeUp}
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.97 }}
           >
-            {activeHref === link.href ? (
+            {(currentPage === 'collection' && link.page === 'collection') || (currentPage === 'home' && activeHref === link.href) ? (
               <motion.span className={styles.activePill} layoutId="header-active-pill" />
             ) : null}
             <span className={styles.navLabel}>{link.label}</span>

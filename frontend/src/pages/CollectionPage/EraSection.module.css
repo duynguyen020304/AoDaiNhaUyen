@@ -1,0 +1,218 @@
+.era {
+  position: relative;
+  width: 100%;
+  min-height: 820px;
+  padding: 100px 0;
+  overflow: hidden;
+  background: #160303;
+}
+
+/* ── Background texture ─────────────────────────── */
+.textureBg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.textureImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.2;
+  filter: blur(50px);
+}
+
+/* ── Decorative vector ──────────────────────────── */
+.vectorDecor {
+  position: absolute;
+  width: 400px;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.era:nth-child(odd) .vectorDecor {
+  right: -100px;
+  top: 10%;
+  transform: rotate(6.22deg);
+}
+
+.era:nth-child(even) .vectorDecor {
+  left: -100px;
+  bottom: 10%;
+  transform: rotate(-3.55deg);
+}
+
+/* ── Content grid ───────────────────────────────── */
+.content {
+  position: relative;
+  z-index: 2;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 80px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.contentRight {
+  direction: rtl;
+}
+
+.contentRight > * {
+  direction: ltr;
+}
+
+.contentLeft {
+  direction: ltr;
+}
+
+/* ── Text column ────────────────────────────────── */
+.textCol {
+  max-width: 700px;
+}
+
+.eraBadge {
+  font-family: "Inter", sans-serif;
+  font-size: 24px;
+  line-height: 1.4;
+  color: #ffffff;
+  margin: 0 0 20px;
+}
+
+.eraTitle {
+  font-family: "Italianno", cursive;
+  font-size: 104px;
+  line-height: 1;
+  font-weight: 400;
+  text-align: center;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 3px 4px 4px rgba(0, 0, 0, 0.25);
+  margin: 0 0 24px;
+}
+
+.eraSubtitle {
+  font-family: "Inter", sans-serif;
+  font-size: 24px;
+  line-height: 1.4;
+  color: #ffffff;
+  margin: 0 0 20px;
+  text-align: center;
+}
+
+.eraDesc {
+  font-family: "Inter", sans-serif;
+  font-size: 24px;
+  line-height: 1.5;
+  color: #ffffff;
+  margin: 0;
+  text-align: center;
+}
+
+/* ── Image column ───────────────────────────────── */
+.imageCol {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 600px;
+}
+
+.productWrap {
+  position: relative;
+  width: 100%;
+  max-width: 735px;
+}
+
+.productImg {
+  width: 100%;
+  height: auto;
+  max-height: 1176px;
+  object-fit: contain;
+  transform: scaleY(-1) rotate(180deg);
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3));
+}
+
+.cachTanWrap {
+  position: absolute;
+  right: -80px;
+  top: -60px;
+  width: 600px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.cachTanImg {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 60px;
+  filter: blur(3px);
+}
+
+/* ── Bottom blur ────────────────────────────────── */
+.blurBottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 258px;
+  background: linear-gradient(to top, #160303, transparent);
+  filter: blur(50px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ── Responsive ─────────────────────────────────── */
+@media (max-width: 1400px) {
+  .eraTitle {
+    font-size: 80px;
+  }
+  .content {
+    padding: 0 40px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .content,
+  .contentRight,
+  .contentLeft {
+    direction: ltr;
+    grid-template-columns: 1fr;
+    padding: 0 24px;
+  }
+  .era {
+    min-height: auto;
+    padding: 60px 0;
+  }
+  .eraTitle {
+    font-size: 64px;
+  }
+  .eraBadge,
+  .eraSubtitle,
+  .eraDesc {
+    font-size: 20px;
+  }
+  .imageCol {
+    min-height: 400px;
+  }
+  .cachTanWrap {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .eraTitle {
+    font-size: 48px;
+  }
+  .eraBadge,
+  .eraSubtitle,
+  .eraDesc {
+    font-size: 16px;
+  }
+  .productImg {
+    max-height: 600px;
+  }
+}

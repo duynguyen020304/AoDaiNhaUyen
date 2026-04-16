@@ -1,200 +1,574 @@
 .productSection {
   position: relative;
-  min-height: 1080px;
+  min-height: min(100svh, 1080px);
   overflow: hidden;
-  background:
-    linear-gradient(90deg, #721311 0 33%, #4f0d0c 33% 69%, #9b1616 69% 100%);
-  color: #ffffff;
+  background: linear-gradient(180deg, rgba(217, 13, 13, 0) 0%, #730707 100%);
+  color: var(--cream);
 }
 
-.productSection::after {
-  content: "";
+.leftBackground,
+.middleBackground,
+.rightBackground,
+.noiseWash,
+.patternTexture,
+.sideVectorLeft,
+.sideVectorRight,
+.goldFlower,
+.bottomFloral {
   position: absolute;
-  inset: 0;
-  background: url("/assets/drum-pattern.png") 92% -760px / 1249px 1330px no-repeat;
-  opacity: 0.13;
   pointer-events: none;
 }
 
-.productCopy {
-  position: absolute;
-  z-index: 2;
-  left: 48px;
-  top: 54px;
-  width: 537px;
+.leftBackground {
+  inset: 0 auto 0 0;
+  width: 33%;
+  background: linear-gradient(100deg, #721311 5%, #631311 85%);
 }
 
-.productCopy h2 {
-  margin: 36px 0 28px;
+.middleBackground {
+  inset: 0 auto 0 33%;
+  width: 36.6%;
+  background: linear-gradient(180deg, #4f0d0c 0%, #a11414 100%);
+}
+
+.rightBackground {
+  inset: -3px 0 0 auto;
+  width: 30.4%;
+  background: linear-gradient(323deg, #721311 54%, #e3302c 130%);
+}
+
+.noiseWash {
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 78%, rgba(255, 212, 0, 0.18), transparent 18%),
+    radial-gradient(circle at 83% 12%, rgba(255, 212, 0, 0.08), transparent 12%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  mix-blend-mode: screen;
+  opacity: 0.8;
+}
+
+.patternTexture {
+  top: -749px;
+  right: -492px;
+  width: 1249px;
+  height: 1330px;
+  object-fit: cover;
+  opacity: 0.13;
+}
+
+.sideVectorLeft {
+  right: 1.35%;
+  bottom: 26.36%;
+  width: 26px;
+  opacity: 0.92;
+}
+
+.sideVectorRight {
+  right: 26.72%;
+  bottom: 26.36%;
+  width: 26px;
+  opacity: 0.92;
+}
+
+.goldFlower {
+  top: -14px;
+  right: 2px;
+  width: 210px;
+  z-index: 3;
+}
+
+.bottomFloral {
+  left: -28px;
+  bottom: -24px;
+  width: 240px;
+  opacity: 0.95;
+  filter: blur(0.4px);
+}
+
+.contentGrid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 537px minmax(520px, 1fr) 430px;
+  gap: 42px;
+  align-items: start;
+  max-width: 1837px;
+  margin: 0 auto;
+  padding: clamp(24px, 3vh, 48px) 48px 18px;
+}
+
+.copyColumn {
+  position: relative;
+  padding-top: 4px;
+}
+
+.copyLine {
+  width: 202px;
+  height: 16px;
+  object-fit: contain;
+  opacity: 0.82;
+}
+
+.eyebrow {
+  margin: 4px 0 0;
+  font-family: "Italianno", cursive;
+  font-size: 36px;
+  line-height: 48px;
   color: transparent;
   background: var(--gold-gradient);
   -webkit-background-clip: text;
   background-clip: text;
+}
+
+.copyColumn h2 {
+  margin: 4px 0 18px;
   font-size: 60px;
-  line-height: 70px;
+  line-height: 0.95;
+  font-weight: 700;
+  color: transparent;
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.detailPanel {
+  min-height: 0;
+  padding: 22px 34px 24px;
+  border: 4px solid var(--gold);
+  border-radius: 8px;
+  background: rgba(135, 14, 11, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(255, 212, 0, 0.45);
+}
+
+.detailPanel p {
+  margin: 0 0 18px;
+  font-size: 16px;
+  line-height: 1.8;
   font-weight: 700;
 }
 
-.productDetail {
-  min-height: 615px;
-  padding: 22px 28px;
-  border: 8px solid var(--gold);
-  border-radius: 8px;
-  background: var(--panel-red);
+.detailPanel p:last-child {
+  margin-bottom: 0;
 }
 
-.productDetail p,
-.productDetail li {
-  font-size: 16px;
-  line-height: 24px;
+.heroColumn {
+  position: relative;
+  min-height: 920px;
+  padding-top: 0;
 }
 
-.productDetail p {
-  margin: 0 0 6px;
-}
-
-.productDetail ul {
-  margin: 0 0 16px;
-  padding-left: 24px;
-}
-
-.productFigure {
+.heroDragon {
   position: absolute;
-  z-index: 3;
-  left: 690px;
-  top: 0;
-  width: 640px;
-  height: 1038px;
-}
-
-.archedPanel {
-  position: absolute;
-  left: 140px;
-  top: 0;
-  width: 328px;
-  height: 922px;
-  overflow: hidden;
-  border: 1px solid var(--gold);
-  border-radius: 0 0 208px 208px;
-  background: #8d1714;
-}
-
-.archedPanel img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  will-change: transform;
-}
-
-.productModelLarge {
-  position: absolute;
-  z-index: 2;
-  left: -148px;
-  top: 28px;
-  width: 865px;
-  height: 867px;
+  left: -100px;
+  top: 30px;
+  width: 620px;
   max-width: none;
-  object-fit: cover;
-  will-change: transform;
-}
-
-.dragonSoft {
-  position: absolute;
-  left: -40px;
-  top: 40px;
-  width: 704px;
   opacity: 0.12;
   transform: rotate(17.52deg);
 }
 
-.sideGallery {
-  position: absolute;
-  z-index: 2;
-  right: 86px;
-  top: 95px;
-  width: 400px;
-  display: grid;
-  gap: 26px;
-}
-
-.sideGallery img {
-  width: 349px;
-  height: 180px;
-  object-fit: cover;
+.archFrame {
+  position: relative;
+  width: 328px;
+  height: 792px;
+  margin: 0 auto;
+  overflow: hidden;
   border: 1px solid var(--gold);
-  box-shadow: 8px 7px 4px rgba(0, 0, 0, 0.25);
-  will-change: transform;
+  border-radius: 0 0 208px 208px;
+  background: #7c1411;
 }
 
-.sideGallery img:first-child {
-  height: 556px;
+.archBackdrop,
+.heroImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.archBackdrop {
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.92;
+}
+
+.heroImage {
+  object-fit: cover;
+  object-position: center top;
+}
+
+.arrowLeft,
+.arrowRight {
+  position: absolute;
+  top: 38%;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 0;
+  background: transparent;
+  color: #f4efe5;
+  font-size: 66px;
+  line-height: 1;
+  cursor: pointer;
+  text-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.arrowLeft {
+  left: 18px;
+}
+
+.arrowRight {
+  right: 18px;
+}
+
+.heroDots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.heroDot {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.86);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.heroDotActive {
+  background: linear-gradient(180deg, #fefdf6 0%, #d3d0c5 100%);
+}
+
+.titlePill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(605px, 100%);
+  min-height: 118px;
+  margin: 18px auto 0;
+  padding: 18px 24px 20px;
+  border: 8px solid var(--gold);
+  border-radius: 60px 60px 8px 8px;
+  background: #870e0b;
+  overflow: visible;
+}
+
+.titlePill span {
+  font-size: 48px;
+  line-height: 1.12;
+  font-weight: 700;
+  color: transparent;
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  white-space: nowrap;
+}
+
+.previewColumn {
+  position: relative;
+  padding-top: 0;
+}
+
+.previewFlourish {
+  display: block;
+  width: 100%;
+  max-width: 392px;
+  margin-left: auto;
+  opacity: 0.92;
+}
+
+.previewStack {
+  position: relative;
+  width: 349px;
+  margin: 12px auto 0;
+}
+
+.previewShadowFrame,
+.previewFrame {
+  border: 1px solid var(--gold);
+  background: rgba(135, 14, 11, 0.28);
+  box-shadow: 8px 7px 4px rgba(0, 0, 0, 0.25);
+}
+
+.previewShadowFrame {
+  position: absolute;
+  inset: 19px -29px -19px 29px;
+  opacity: 0.3;
+}
+
+.previewFrame {
+  position: relative;
+  height: 525px;
+  overflow: hidden;
+}
+
+.previewImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.previewSparkle {
+  position: absolute;
+  left: 132px;
+  bottom: 10px;
+  width: 29px;
+  height: 33px;
+  object-fit: contain;
+}
+
+.previewIndicatorRail {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.previewIndicator {
+  width: 30px;
+  height: 13px;
+  border: 3px solid rgba(255, 255, 255, 0.65);
+  border-radius: 8.5px;
+  background: linear-gradient(93deg, #ffd400 18%, #e2d48e 45%, #f6d948 57%, #e4c322 69%, #d7cc97 76%, #bea631 87%);
+  opacity: 0.4;
+}
+
+.previewIndicatorActive {
+  opacity: 1;
+}
+
+.previewControls {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.thumbnailRail {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.previewArrowLeft,
+.previewArrowRight {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 112px;
+  border: 0;
+  background: transparent;
+  color: #f4efe5;
+  font-size: 68px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.thumbnailButton {
+  width: 52px;
+  height: 83px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 212, 0, 0.55);
+  background: #721311;
+  box-shadow: 8px 7px 4px rgba(0, 0, 0, 0.25);
+  opacity: 0.4;
+  cursor: pointer;
+}
+
+.thumbnailButton img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumbnailActive {
+  width: 70px;
+  height: 112px;
+  opacity: 1;
+}
+
+.coinRow {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.coinButton {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.coin {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  background: radial-gradient(circle at 35% 35%, #fbe792 0%, #e7ca3d 45%, #9c780f 100%);
+  opacity: 0.72;
+}
+
+.coin:nth-child(2),
+.coin:nth-child(4) {
+  width: 26px;
+  height: 26px;
+}
+
+.coin:nth-child(3) {
+  width: 34px;
+  height: 34px;
+}
+
+.coinActive .coin {
+  opacity: 1;
+  box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.35);
+}
+
+.bottomPill {
+  width: 100%;
+  max-width: 484px;
+  height: 45px;
+  margin: 12px auto 0;
+  border: 12px solid var(--gold);
+  border-radius: 999px;
+  background: #580f0e;
+  box-shadow: inset 35px 35px 4px 24px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 1440px) {
+  .contentGrid {
+    grid-template-columns: minmax(360px, 500px) minmax(420px, 1fr) minmax(320px, 380px);
+    gap: 24px;
+    padding-inline: 28px;
+  }
+
+  .copyColumn h2 {
+    font-size: 52px;
+  }
+
+  .titlePill span {
+    font-size: 40px;
+    line-height: 1.08;
+  }
+
+  .goldFlower {
+    width: 168px;
+  }
 }
 
 @media (max-width: 1100px) {
   .productSection {
+    height: auto;
     min-height: auto;
-    padding: 80px 24px;
   }
 
-  .productCopy,
-  .productFigure,
-  .sideGallery {
-    position: relative;
-    left: auto;
-    right: auto;
-    top: auto;
-    bottom: auto;
-    transform: none;
-  }
-
-  .productCopy,
-  .productFigure,
-  .sideGallery {
-    width: min(640px, 100%);
-    margin: 0 auto;
-  }
-
-  .productFigure {
-    height: 760px;
-    margin-top: 40px;
-  }
-
-  .archedPanel {
-    left: 50%;
-    transform: translateX(-50%);
-    width: 300px;
-    height: 720px;
-  }
-
-  .productModelLarge {
-    left: 50%;
-    top: 28px;
-    width: 620px;
-    height: 620px;
-    transform: translateX(-50%);
-  }
-
-  .sideGallery {
-    margin-top: 40px;
-    grid-template-columns: repeat(3, 1fr);
-    width: min(760px, 100%);
-  }
-
-  .sideGallery img,
-  .sideGallery img:first-child {
+  .leftBackground,
+  .middleBackground,
+  .rightBackground {
     width: 100%;
-    height: 180px;
+    inset: 0;
+  }
+
+  .contentGrid {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    padding: 72px 20px 64px;
+  }
+
+  .copyColumn,
+  .heroColumn,
+  .previewColumn {
+    width: min(100%, 640px);
+  }
+
+  .detailPanel {
+    min-height: auto;
+  }
+
+  .heroColumn {
+    min-height: 0;
+  }
+
+  .arrowLeft {
+    left: 0;
+  }
+
+  .arrowRight {
+    right: 0;
+  }
+
+  .previewControls {
+    grid-template-columns: 28px 1fr 28px;
   }
 }
 
 @media (max-width: 680px) {
-  .productCopy h2 {
-    font-size: 42px;
-    line-height: 50px;
+  .contentGrid {
+    gap: 40px;
   }
 
-  .sideGallery {
-    grid-template-columns: 1fr;
+  .copyColumn h2 {
+    font-size: 40px;
+  }
+
+  .eyebrow {
+    font-size: 28px;
+  }
+
+  .detailPanel {
+    padding: 20px;
+  }
+
+  .archFrame {
+    width: 280px;
+    height: 720px;
+    border-radius: 0 0 160px 160px;
+  }
+
+  .titlePill span {
+    font-size: 30px;
+    white-space: normal;
+  }
+
+  .previewStack {
+    width: min(100%, 320px);
+  }
+
+  .previewFrame {
+    height: 420px;
+  }
+
+  .previewControls {
+    grid-template-columns: 24px 1fr 24px;
+    gap: 6px;
+  }
+
+  .thumbnailRail {
+    flex-wrap: wrap;
+  }
+
+  .bottomPill {
+    max-width: 320px;
+  }
+
+  .goldFlower {
+    width: 120px;
+    top: 24px;
+  }
+
+  .bottomFloral {
+    width: 150px;
   }
 }

@@ -1,0 +1,104 @@
+.brand {
+  position: relative;
+  width: 100%;
+  padding: 120px 0 100px;
+  overflow: hidden;
+  background: #160303;
+}
+
+/* ── Background texture ─────────────────────────── */
+.textureOverlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.textureOverlay img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.2;
+}
+
+/* ── Title ───────────────────────────────────────── */
+.title {
+  position: relative;
+  z-index: 2;
+  font-family: "Italianno", cursive;
+  font-size: 152px;
+  line-height: 92px;
+  font-weight: 400;
+  text-align: center;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 3px 4px 4px rgba(0, 0, 0, 0.25);
+  margin: 0 auto 60px;
+}
+
+/* ── Two-column layout ──────────────────────────── */
+.columns {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 120px;
+}
+
+.paragraph {
+  font-family: "Inter", sans-serif;
+  font-size: 24px;
+  line-height: 1.5;
+  color: #ffffff;
+  margin: 0;
+}
+
+.paragraphRight {
+  text-align: right;
+}
+
+/* ── Responsive ─────────────────────────────────── */
+@media (max-width: 1400px) {
+  .title {
+    font-size: 120px;
+    line-height: 80px;
+  }
+  .columns {
+    padding: 0 60px;
+    gap: 40px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .brand {
+    padding: 80px 0;
+  }
+  .title {
+    font-size: 80px;
+    line-height: 60px;
+  }
+  .columns {
+    grid-template-columns: 1fr;
+    padding: 0 24px;
+    gap: 32px;
+  }
+  .paragraphRight {
+    text-align: left;
+  }
+  .paragraph {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 680px) {
+  .title {
+    font-size: 56px;
+    line-height: 44px;
+  }
+  .paragraph {
+    font-size: 16px;
+  }
+}

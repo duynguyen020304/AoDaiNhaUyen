@@ -1,0 +1,238 @@
+.gallery {
+  position: relative;
+  width: 100%;
+  min-height: 5100px;
+  padding: 80px 0 120px;
+  overflow: hidden;
+  background: #160303;
+}
+
+/* ── Top blur ───────────────────────────────────── */
+.topBlur {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 225px;
+  pointer-events: none;
+  filter: blur(31.25px);
+}
+
+.topBlur img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.2;
+}
+
+/* ── Rotated background pattern ─────────────────── */
+.bgPattern {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5700px;
+  height: 4500px;
+  transform: translate(-50%, -50%) rotate(-21.33deg);
+  pointer-events: none;
+  opacity: 0.26;
+}
+
+.bgPattern img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0.51;
+}
+
+/* ── Collections grid ───────────────────────────── */
+.collections {
+  position: relative;
+  z-index: 2;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+/* ── Individual collection card ─────────────────── */
+.collectionCard {
+  position: relative;
+  width: 100%;
+  min-height: 1100px;
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collectionCard:nth-child(odd) {
+  flex-direction: row;
+}
+
+.collectionCard:nth-child(even) {
+  flex-direction: row-reverse;
+}
+
+/* ── Product images ─────────────────────────────── */
+.images {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  flex: 1;
+}
+
+.imageFrame {
+  position: relative;
+  overflow: hidden;
+}
+
+.imageMain {
+  width: 875px;
+  height: auto;
+  max-height: 1314px;
+}
+
+.imageMain img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleY(-1) rotate(180deg);
+}
+
+.imageSide {
+  width: 927px;
+  height: auto;
+  max-height: 1393px;
+  margin-left: -200px;
+}
+
+.imageSide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Label overlay ──────────────────────────────── */
+.labelOverlay {
+  position: absolute;
+  z-index: 5;
+  text-align: center;
+  pointer-events: none;
+}
+
+.collectionCard:nth-child(odd) .labelOverlay {
+  right: 8%;
+}
+
+.collectionCard:nth-child(even) .labelOverlay {
+  left: 8%;
+}
+
+.collectionNumber {
+  font-family: "Italianno", cursive;
+  font-size: 104px;
+  line-height: 1;
+  color: #ffffff;
+  margin: 0 0 8px;
+}
+
+.collectionLabel {
+  font-family: "Inter", sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 20px;
+}
+
+.collectionTitle {
+  display: flex;
+  flex-direction: column;
+  font-family: "Italianno", cursive;
+  font-size: 104px;
+  line-height: 1.1;
+  font-weight: 400;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 3px 4px 4px rgba(0, 0, 0, 0.25);
+  margin: 0 0 16px;
+}
+
+.collectionQuote {
+  font-family: "Inter", sans-serif;
+  font-size: 24px;
+  color: #f0f0f0;
+  margin: 0;
+  font-style: italic;
+}
+
+/* ── Responsive ─────────────────────────────────── */
+@media (max-width: 1400px) {
+  .collectionTitle {
+    font-size: 80px;
+  }
+  .collectionNumber {
+    font-size: 80px;
+  }
+  .collectionLabel {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .gallery {
+    min-height: auto;
+    padding: 40px 0 60px;
+  }
+  .collectionCard,
+  .collectionCard:nth-child(odd),
+  .collectionCard:nth-child(even) {
+    flex-direction: column;
+    min-height: auto;
+    padding: 40px 24px;
+  }
+  .images {
+    width: 100%;
+    justify-content: center;
+  }
+  .imageMain {
+    width: 100%;
+    max-width: 500px;
+    max-height: 600px;
+  }
+  .imageSide {
+    width: 100%;
+    max-width: 500px;
+    max-height: 600px;
+    margin-left: 0;
+  }
+  .labelOverlay {
+    position: relative;
+    right: auto !important;
+    left: auto !important;
+    padding: 20px 0;
+  }
+  .collectionTitle {
+    font-size: 56px;
+  }
+  .collectionNumber {
+    font-size: 56px;
+  }
+  .bgPattern {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .collectionTitle {
+    font-size: 40px;
+  }
+  .collectionNumber {
+    font-size: 40px;
+  }
+  .collectionLabel {
+    font-size: 24px;
+  }
+  .collectionQuote {
+    font-size: 16px;
+  }
+}
