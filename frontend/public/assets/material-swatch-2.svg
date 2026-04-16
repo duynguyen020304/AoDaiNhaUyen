@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="145" height="145" viewBox="0 0 145 145">
+  <defs>
+    <radialGradient id="shine" cx="36%" cy="32%" r="34%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.72)"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+    <linearGradient id="fabric" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd9de"/>
+      <stop offset="100%" stop-color="#c06571"/>
+    </linearGradient>
+  </defs>
+  <circle cx="72.5" cy="72.5" r="72.5" fill="url(#fabric)"/>
+  <circle cx="72.5" cy="72.5" r="72.5" fill="url(#shine)"/>
+</svg>
