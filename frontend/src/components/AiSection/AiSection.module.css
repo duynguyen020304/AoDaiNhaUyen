@@ -136,6 +136,7 @@
   height: auto;
   z-index: 2;
   filter: drop-shadow(26px 10px 16px rgba(0, 0, 0, 0.28));
+  will-change: transform;
 }
 
 .aiCard {
@@ -145,6 +146,43 @@
   border-radius: 16px;
   object-fit: cover;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  will-change: transform;
+}
+
+.scanBeam {
+  position: absolute;
+  z-index: 3;
+  left: 580px;
+  top: 190px;
+  width: 118px;
+  height: 560px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(244, 194, 107, 0.26), transparent);
+  filter: blur(8px);
+  transform: rotate(6deg);
+}
+
+.transferDot {
+  position: absolute;
+  z-index: 4;
+  left: 472px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 24px rgba(244, 194, 107, 0.72);
+  pointer-events: none;
+}
+
+.transferDotOne {
+  top: 190px;
+}
+
+.transferDotTwo {
+  top: 420px;
+  width: 9px;
+  height: 9px;
+  background: #ffffff;
 }
 
 .cardYellow {
@@ -232,6 +270,17 @@
     width: 386px;
   }
 
+  .scanBeam {
+    left: 320px;
+    top: 110px;
+    width: 76px;
+    height: 300px;
+  }
+
+  .transferDot {
+    left: 250px;
+  }
+
   .cardYellow {
     left: 182px;
     top: 42px;
@@ -293,6 +342,19 @@
     right: 52px;
     bottom: 12px;
     width: 260px;
+  }
+
+  .scanBeam {
+    left: 212px;
+    top: 78px;
+    width: 54px;
+    height: 210px;
+  }
+
+  .transferDot {
+    left: 168px;
+    width: 8px;
+    height: 8px;
   }
 
   .cardYellow {

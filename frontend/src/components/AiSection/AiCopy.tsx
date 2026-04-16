@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion';
 import styles from './AiSection.module.css';
+import { fadeUp, staggerContainer } from '../../utils/motion';
 
 const benefits = [
   {
@@ -17,33 +19,33 @@ const benefits = [
 
 export default function AiCopy() {
   return (
-    <div className={styles.aiCopy}>
-      <p className={styles.eyebrow}>Áo Dài Nhã Uyên</p>
-      <h1 id="ai-title">
+    <motion.div className={styles.aiCopy} variants={staggerContainer}>
+      <motion.p className={styles.eyebrow} variants={fadeUp}>Áo Dài Nhã Uyên</motion.p>
+      <motion.h1 id="ai-title" variants={fadeUp}>
         Trải Nghiệm Áo Dài
         <span>Với Công Nghệ AI</span>
-      </h1>
-      <p className={styles.aiIntro}>
+      </motion.h1>
+      <motion.p className={styles.aiIntro} variants={fadeUp}>
         Khám phá vẻ đẹp của bạn trong tà áo dài MaryMy mà không cần thử trực tiếp. Công nghệ AI
         giúp bạn xem trước cách mỗi thiết kế tôn lên nét đẹp riêng chỉ trong vài giây.
-      </p>
+      </motion.p>
 
-      <ul className={styles.aiBenefits} aria-label="Lợi ích thử đồ AI">
+      <motion.ul className={styles.aiBenefits} aria-label="Lợi ích thử đồ AI" variants={staggerContainer}>
         {benefits.map((b) => (
-          <li key={b.title}>
+          <motion.li key={b.title} variants={fadeUp}>
             <span className={styles.benefitDot} />
             <div>
               <strong>{b.title}</strong>
               <p>{b.desc}</p>
             </div>
-          </li>
+          </motion.li>
         ))}
-      </ul>
+      </motion.ul>
 
-      <a className={`${styles.primaryCta} hover-lift`} href="#collection">
+      <motion.a className={`${styles.primaryCta} hover-lift`} href="#collection" variants={fadeUp}>
         Thử đồ AI Ngay <span aria-hidden="true">&rarr;</span>
-      </a>
-      <p className={styles.ctaNote}>Dùng thử hoàn toàn miễn phí</p>
-    </div>
+      </motion.a>
+      <motion.p className={styles.ctaNote} variants={fadeUp}>Dùng thử hoàn toàn miễn phí</motion.p>
+    </motion.div>
   );
 }

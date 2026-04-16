@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion';
 import styles from './CollectionSection.module.css';
+import { cardHover, cardReveal, imageParallaxHover, staggerContainer } from '../../utils/motion';
 
 const dresses = [
   { src: '/assets/dress-white.png', alt: 'Áo dài màu trắng kem', name: 'Trắng kem', featured: false },
@@ -8,13 +10,25 @@ const dresses = [
 
 export default function DressShowcase() {
   return (
-    <div className={styles.dressShowcase}>
+    <motion.div className={styles.dressShowcase} variants={staggerContainer}>
       {dresses.map((dress) => (
-        <article key={dress.name} className={`${styles.dressArticle} ${dress.featured ? styles.featured : ''}`}>
-          <img src={dress.src} alt={dress.alt} />
+        <motion.article
+          key={dress.name}
+          className={`${styles.dressArticle} ${dress.featured ? styles.featured : ''}`}
+          variants={cardReveal}
+          whileHover="hover"
+          transition={{ duration: 0.32, ease: 'easeOut' }}
+        >
+          <motion.img
+            src={dress.src}
+            alt={dress.alt}
+            variants={imageParallaxHover}
+            transition={{ duration: 0.36, ease: 'easeOut' }}
+          />
+          <motion.div className={styles.dressGlow} variants={cardHover} aria-hidden="true" />
           <h3>{dress.name}</h3>
-        </article>
+        </motion.article>
       ))}
-    </div>
+    </motion.div>
   );
 }

@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import styles from './CollectionSection.module.css';
+import { fadeUp, staggerContainer } from '../../utils/motion';
 
 const categories = [
   'Áo dài thêu hoa',
@@ -12,17 +14,21 @@ export default function CategoryPills() {
   const [selected, setSelected] = useState(0);
 
   return (
-    <div className={styles.categoryPills} aria-label="Danh mục áo dài">
+    <motion.div className={styles.categoryPills} aria-label="Danh mục áo dài" variants={staggerContainer}>
       {categories.map((cat, i) => (
-        <button
+        <motion.button
           key={cat}
-          className={`${i === selected ? styles.selected : ''} hover-lift`}
+          className={`${styles.categoryButton} ${i === selected ? styles.selected : ''}`}
           type="button"
           onClick={() => setSelected(i)}
+          variants={fadeUp}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.97 }}
         >
-          {cat}
-        </button>
+          {i === selected ? <motion.span className={styles.selectedPill} layoutId="category-selected-pill" /> : null}
+          <span>{cat}</span>
+        </motion.button>
       ))}
-    </div>
+    </motion.div>
   );
 }

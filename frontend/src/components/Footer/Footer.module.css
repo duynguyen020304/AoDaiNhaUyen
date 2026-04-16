@@ -25,6 +25,7 @@
 
 .footerGrid section {
   min-width: 0;
+  will-change: transform;
 }
 
 .footerLogo {
@@ -83,6 +84,13 @@
   background: var(--deep-red);
   font-size: 16px;
   font-weight: 500;
+  transition:
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.newsletterForm button:hover {
+  background: #9b1616;
 }
 
 .footerBottom {
