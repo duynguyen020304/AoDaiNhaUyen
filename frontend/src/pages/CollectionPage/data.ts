@@ -40,7 +40,7 @@ export const IMG = {
   galTH1: '/assets/collection/gal-theu-hoa-1.png',
   galTH2: '/assets/collection/gal-theu-hoa-2.png',
   galCT: '/assets/collection/gal-cach-tan.png',
-  galExtra: '/assets/collection/gal-extra.jpg',
+  galExtra: '/assets/collection/gal-extra.png',
 
   footerBg: '/assets/collection/footer-bg.jpg',
 };
