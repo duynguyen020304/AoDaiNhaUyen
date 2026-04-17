@@ -6,6 +6,7 @@ import CollectionPage from './pages/CollectionPage/CollectionPage';
 import AiTryonPage from './pages/AiTryonPage/AiTryonPage';
 import ProductsPage from './pages/ProductsPage/ProductsPage';
 import AccessoriesPage from './pages/AccessoriesPage/AccessoriesPage';
+import CartPage from './pages/CartPage/CartPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/ai-tryon" element={<AiTryonPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/accessories" element={<AccessoriesPage />} />
+        <Route path="/cart" element={<CartPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <Footer />
