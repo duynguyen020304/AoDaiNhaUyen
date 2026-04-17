@@ -1,0 +1,684 @@
+name: Deploy to Dev (SSH / Cloudflare Tunnel)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+
+jobs:
+  # ==========================================
+  # Build Frontend for HK1
+  # ==========================================
+  build-frontend-hk1:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install & Build Frontend
+        run: |
+          cd frontend
+          bun install
+          PUBLIC_BACKEND_DOMAIN=${{ secrets.HK1_PUBLIC_BACKEND_DOMAIN }} \
+          PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.HK1_PUBLIC_GOOGLE_CLIENT_ID }} \
+          bun run build
+
+      - name: Upload Frontend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-hk1
+          path: frontend/dist
+          retention-days: 1
+
+  # ==========================================
+  # Build Frontend for US1
+  # ==========================================
+  build-frontend-us1:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install & Build Frontend
+        run: |
+          cd frontend
+          bun install
+          PUBLIC_BACKEND_DOMAIN=${{ secrets.US1_PUBLIC_BACKEND_DOMAIN }} \
+          PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.US1_PUBLIC_GOOGLE_CLIENT_ID }} \
+          bun run build
+
+      - name: Upload Frontend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-us1
+          path: frontend/dist
+          retention-days: 1
+
+  # ==========================================
+  # Build Backend (shared)
+  # ==========================================
+  build-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build Backend
+        run: |
+          cd backend
+          dotnet restore
+          dotnet publish AoDaiNhaUyen.Api -c Release -o publish --no-restore
+
+      - name: Upload Backend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-publish
+          path: backend/publish
+          retention-days: 1
+
+  # ==========================================
+  # Deploy to HK1 Server
+  # ==========================================
+  deploy-hk1:
+    needs: [build-frontend-hk1, build-backend]
+    runs-on: ubuntu-latest
+    environment: HK1
+
+    env:
+      SERVER_NAME: "HK1"
+      SSH_ALIAS: "aodai-hk1"
+      ENABLE_CLOUDFLARE_TUNNEL: ${{ secrets.HK1_ENABLE_CLOUDFLARE_TUNNEL || '' }}
+      RAW_CLOUDFLARE_TUNNEL_HOST: ${{ secrets.HK1_CLOUDFLARE_TUNNEL_HOST || '' }}
+      DEPLOY_HOST: ${{ secrets.HK1_PRODUCTION_SERVER_HOST }}
+      DEPLOY_PORT: ${{ secrets.HK1_PRODUCTION_SERVER_PORT }}
+      DEPLOY_USER: ${{ secrets.HK1_PRODUCTION_SERVER_USER }}
+      CF_ACCESS_CLIENT_ID: ${{ secrets.HK1_CF_ACCESS_CLIENT_ID }}
+      CF_ACCESS_CLIENT_SECRET: ${{ secrets.HK1_CF_ACCESS_CLIENT_SECRET }}
+
+    steps:
+      # ------------------------------------------
+      # Download Artifacts
+      # ------------------------------------------
+      - name: Download Frontend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-hk1
+          path: frontend/dist
+
+      - name: Download Backend Publish
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-publish
+          path: backend/publish
+
+      # ------------------------------------------
+      # Resolve SSH transport & prepare client tools
+      # ------------------------------------------
+      - name: Resolve SSH transport
+        id: ssh_target
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          enable_tunnel="$(printf '%s' "${ENABLE_CLOUDFLARE_TUNNEL}" | tr '[:upper:]' '[:lower:]')"
+          native_port="${DEPLOY_PORT:-22}"
+
+          use_tunnel="false"
+          if [ "$enable_tunnel" = "true" ] || [ "$enable_tunnel" = "1" ] || [ "$enable_tunnel" = "yes" ]; then
+            use_tunnel="true"
+          fi
+
+          normalize_cloudflare_hostname() {
+            local raw_value="$1"
+            local normalized
+
+            normalized="$(printf '%s' "$raw_value" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')"
+            normalized="${normalized#*://}"
+            normalized="${normalized%%/*}"
+            normalized="${normalized##*@}"
+
+            if [[ "$normalized" == *:* ]]; then
+              normalized="${normalized%%:*}"
+            fi
+
+            printf '%s' "$normalized"
+          }
+
+          tunnel_host="$(normalize_cloudflare_hostname "${RAW_CLOUDFLARE_TUNNEL_HOST:-}")"
+
+          if [ "$use_tunnel" = "true" ]; then
+            if [ -z "$tunnel_host" ]; then
+              echo "::error::[${SERVER_NAME}] Cloudflare tunnel mode is enabled but CLOUDFLARE_TUNNEL_HOST is empty. Set it to the published tunnel hostname (for example ssh.example.com), or disable tunnel mode."
+              exit 1
+            fi
+
+            if [[ "$tunnel_host" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::[${SERVER_NAME}] CLOUDFLARE_TUNNEL_HOST must be a published hostname such as ssh.example.com, not a raw server IP (${tunnel_host})."
+              exit 1
+            fi
+
+            echo "connection_mode=cloudflare" >> "$GITHUB_OUTPUT"
+            echo "target_host=$tunnel_host" >> "$GITHUB_OUTPUT"
+            echo "target_port=22" >> "$GITHUB_OUTPUT"
+            echo "[${SERVER_NAME}] Cloudflare Tunnel enabled. Using SSH hostname: $tunnel_host"
+          else
+            echo "connection_mode=native" >> "$GITHUB_OUTPUT"
+            echo "target_host=${DEPLOY_HOST}" >> "$GITHUB_OUTPUT"
+            echo "target_port=${native_port}" >> "$GITHUB_OUTPUT"
+            echo "[${SERVER_NAME}] Native SSH enabled. Using ${DEPLOY_HOST}:${native_port}"
+          fi
+
+      - name: Prepare SSH client
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+
+          sudo apt-get update
+          sudo apt-get install -y rsync openssh-client
+
+          if [ "${{ steps.ssh_target.outputs.connection_mode }}" = "cloudflare" ]; then
+            curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+            chmod +x cloudflared
+            sudo mv cloudflared /usr/local/bin/cloudflared
+
+            resolved_tunnel_host='${{ steps.ssh_target.outputs.target_host }}'
+            if ! getent ahosts "$resolved_tunnel_host" >/dev/null 2>&1; then
+              echo "::error::[${SERVER_NAME}] Cloudflare tunnel hostname '$resolved_tunnel_host' does not resolve from the GitHub runner. Make sure CLOUDFLARE_TUNNEL_HOST is the published Cloudflare hostname (for example ssh.example.com), not a URL, username@host, host:port, or server IP."
+              exit 1
+            fi
+
+            if [ -z "${CF_ACCESS_CLIENT_ID:-}" ] || [ -z "${CF_ACCESS_CLIENT_SECRET:-}" ]; then
+              echo "::warning::[${SERVER_NAME}] Cloudflare tunnel mode is enabled without CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET. If Cloudflare Access requires authentication, deployment may fail in GitHub Actions."
+            fi
+          fi
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          cat > ~/.ssh/id_github_actions << 'EOF'
+          ${{ secrets.HK1_PRODUCTION_SERVER_SSH_KEY }}
+          EOF
+          chmod 600 ~/.ssh/id_github_actions
+
+          cat > "$SSH_CONFIG_FILE" << EOF
+          Host ${SSH_ALIAS}
+            HostName ${{ steps.ssh_target.outputs.target_host }}
+            User ${DEPLOY_USER}
+            Port ${{ steps.ssh_target.outputs.target_port }}
+            IdentityFile ~/.ssh/id_github_actions
+            IdentitiesOnly yes
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ServerAliveInterval 30
+            ServerAliveCountMax 120
+          EOF
+          chmod 600 "$SSH_CONFIG_FILE"
+
+          if [ "${{ steps.ssh_target.outputs.connection_mode }}" = "cloudflare" ]; then
+            if [ -n "${CF_ACCESS_CLIENT_ID:-}" ] && [ -n "${CF_ACCESS_CLIENT_SECRET:-}" ]; then
+              printf '  ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %%h --service-token-id %q --service-token-secret %q\n' "${CF_ACCESS_CLIENT_ID}" "${CF_ACCESS_CLIENT_SECRET}" >> "$SSH_CONFIG_FILE"
+              echo "[${SERVER_NAME}] Using Cloudflare Access service token for SSH authentication."
+            else
+              cat >> "$SSH_CONFIG_FILE" << 'EOF'
+            ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
+          EOF
+              echo "::warning::[${SERVER_NAME}] Cloudflare tunnel mode is enabled without a service token in the SSH proxy command. cloudflared will attempt interactive browser authentication, which usually fails in CI."
+            fi
+            cloudflared --version
+          fi
+
+      - name: Verify SSH connectivity
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+          echo "[${SERVER_NAME}] Testing SSH connectivity..."
+          timeout 60s ssh -F "$SSH_CONFIG_FILE" -o BatchMode=yes -o ConnectTimeout=30 ${SSH_ALIAS} 'echo "[${SERVER_NAME}] Connected to $(hostname)"'
+
+      # ------------------------------------------
+      # Deploy to Server
+      # ------------------------------------------
+      - name: Deploy Frontend to Server
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+          echo "[${SERVER_NAME}] Deploying frontend..."
+          rsync -avzr --delete -e "ssh -F $SSH_CONFIG_FILE" frontend/dist/ ${SSH_ALIAS}:/tmp/aodai-frontend-deploy
+
+      - name: Deploy Backend to Server
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+          echo "[${SERVER_NAME}] Deploying backend..."
+          rsync -avzr --delete -e "ssh -F $SSH_CONFIG_FILE" backend/publish/ ${SSH_ALIAS}:/tmp/aodai-backend-deploy
+
+      # ------------------------------------------
+      # Finalize Deployment & Restart Services
+      # ------------------------------------------
+      - name: Finalize Deployment via SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+          ssh -F "$SSH_CONFIG_FILE" ${SSH_ALIAS} 'bash -se' << 'REMOTE_SCRIPT'
+          set -e
+
+          SERVER_NAME="${SERVER_NAME}"
+          echo "=== [${SERVER_NAME}] Starting Deployment ==="
+
+          # ==========================================
+          # 1. Setup .NET Runtime
+          # ==========================================
+          if ! command -v dotnet &> /dev/null; then
+            echo "[${SERVER_NAME}] Installing .NET runtime..."
+            wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+            chmod +x dotnet-install.sh
+            ./dotnet-install.sh --channel 10.0 --install-dir /usr/share/dotnet
+            export PATH="$PATH:/usr/share/dotnet"
+            echo 'export PATH="$PATH:/usr/share/dotnet"' >> ~/.bashrc
+          fi
+
+          DOTNET_PATH=$(which dotnet || echo "/usr/share/dotnet/dotnet")
+          echo "[${SERVER_NAME}] Dotnet path: $DOTNET_PATH"
+
+          # ==========================================
+          # 2. Ensure Deployment Directories Exist
+          # ==========================================
+          mkdir -p /root/AoDaiNhaUyen/frontend
+          mkdir -p /root/AoDaiNhaUyen/backend
+
+          # ==========================================
+          # 3. Create Backend Runtime Environment
+          # ==========================================
+          echo "[${SERVER_NAME}] Writing backend runtime-env.sh..."
+          cat > /root/AoDaiNhaUyen/backend/runtime-env.sh << 'EOF'
+          export ASPNETCORE_ENVIRONMENT='Production'
+          export ConnectionStrings__DefaultConnection='${{ secrets.HK1_POSTGRESQL_CONNECTION_STRING }}'
+          export RunMigrationsAndSeedOnStartup='false'
+          EOF
+          chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
+
+          # ==========================================
+          # 4. Stop PM2 Processes
+          # ==========================================
+          echo "[${SERVER_NAME}] Stopping PM2 processes..."
+          pm2 stop aodai-api 2>/dev/null || true
+
+          # ==========================================
+          # 5. Deploy Frontend
+          # ==========================================
+          echo "[${SERVER_NAME}] Deploying Frontend..."
+          cd /root/AoDaiNhaUyen/frontend
+          if [ -d "dist" ]; then
+            mv dist dist.backup.$(date +%Y%m%d_%H%M%S) || true
+          fi
+          mv /tmp/aodai-frontend-deploy dist
+          rm -rf /tmp/aodai-frontend-deploy
+
+          # ==========================================
+          # 6. Deploy Backend
+          # ==========================================
+          echo "[${SERVER_NAME}] Deploying Backend..."
+          cd /root/AoDaiNhaUyen/backend
+          if [ -f "AoDaiNhaUyen.Api.dll" ]; then
+            mkdir -p publish.backup
+            cp *.dll *.json *.deps.json publish.backup/ 2>/dev/null || true
+          fi
+          rm -rf *.dll *.json *.deps.json 2>/dev/null || true
+          cp -r /tmp/aodai-backend-deploy/* .
+          rm -rf /tmp/aodai-backend-deploy
+
+          if [ -f appsettings.Production.json ]; then
+            cp appsettings.Production.json appsettings.Production.json.bak
+          fi
+
+          cat > /root/AoDaiNhaUyen/backend/start.sh << EOF
+          #!/bin/bash
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
+          cd /root/AoDaiNhaUyen/backend
+          ASPNETCORE_ENVIRONMENT=Production $DOTNET_PATH AoDaiNhaUyen.Api.dll
+          EOF
+          chmod +x /root/AoDaiNhaUyen/backend/start.sh
+
+          # ==========================================
+          # 7. Restart PM2 Processes
+          # ==========================================
+          echo "[${SERVER_NAME}] Restarting PM2 processes..."
+          pm2 delete aodai-api 2>/dev/null || true
+
+          pm2 start /root/AoDaiNhaUyen/backend/start.sh --name "aodai-api"
+
+          pm2 save
+
+          # ==========================================
+          # 8. Cleanup
+          # ==========================================
+          echo "[${SERVER_NAME}] Cleaning up old backups..."
+          cd /root/AoDaiNhaUyen/frontend
+          ls -dt dist.backup.* 2>/dev/null | tail -n +4 | xargs rm -rf 2>/dev/null || true
+
+          cd /root/AoDaiNhaUyen/backend
+          rm -rf publish.backup 2>/dev/null || true
+
+          echo "=== [${SERVER_NAME}] Deployment Completed Successfully ==="
+
+          pm2 status
+          REMOTE_SCRIPT
+
+  # ==========================================
+  # Deploy to US1 Server
+  # ==========================================
+  deploy-us1:
+    needs: [build-frontend-us1, build-backend]
+    runs-on: ubuntu-latest
+    environment: US1
+
+    env:
+      SERVER_NAME: "US1"
+      SSH_ALIAS: "aodai-us1"
+      ENABLE_CLOUDFLARE_TUNNEL: ${{ secrets.US1_ENABLE_CLOUDFLARE_TUNNEL || '' }}
+      RAW_CLOUDFLARE_TUNNEL_HOST: ${{ secrets.US1_CLOUDFLARE_TUNNEL_HOST || '' }}
+      DEPLOY_HOST: ${{ secrets.US1_PRODUCTION_SERVER_HOST }}
+      DEPLOY_PORT: ${{ secrets.US1_PRODUCTION_SERVER_PORT }}
+      DEPLOY_USER: ${{ secrets.US1_PRODUCTION_SERVER_USER }}
+      CF_ACCESS_CLIENT_ID: ${{ secrets.US1_CF_ACCESS_CLIENT_ID }}
+      CF_ACCESS_CLIENT_SECRET: ${{ secrets.US1_CF_ACCESS_CLIENT_SECRET }}
+
+    steps:
+      # ------------------------------------------
+      # Download Artifacts
+      # ------------------------------------------
+      - name: Download Frontend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-us1
+          path: frontend/dist
+
+      - name: Download Backend Publish
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-publish
+          path: backend/publish
+
+      # ------------------------------------------
+      # Resolve SSH transport & prepare client tools
+      # ------------------------------------------
+      - name: Resolve SSH transport
+        id: ssh_target
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          enable_tunnel="$(printf '%s' "${ENABLE_CLOUDFLARE_TUNNEL}" | tr '[:upper:]' '[:lower:]')"
+          native_port="${DEPLOY_PORT:-22}"
+
+          use_tunnel="false"
+          if [ "$enable_tunnel" = "true" ] || [ "$enable_tunnel" = "1" ] || [ "$enable_tunnel" = "yes" ]; then
+            use_tunnel="true"
+          fi
+
+          normalize_cloudflare_hostname() {
+            local raw_value="$1"
+            local normalized
+
+            normalized="$(printf '%s' "$raw_value" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')"
+            normalized="${normalized#*://}"
+            normalized="${normalized%%/*}"
+            normalized="${normalized##*@}"
+
+            if [[ "$normalized" == *:* ]]; then
+              normalized="${normalized%%:*}"
+            fi
+
+            printf '%s' "$normalized"
+          }
+
+          tunnel_host="$(normalize_cloudflare_hostname "${RAW_CLOUDFLARE_TUNNEL_HOST:-}")"
+
+          if [ "$use_tunnel" = "true" ]; then
+            if [ -z "$tunnel_host" ]; then
+              echo "::error::[${SERVER_NAME}] Cloudflare tunnel mode is enabled but CLOUDFLARE_TUNNEL_HOST is empty. Set it to the published tunnel hostname (for example ssh.example.com), or disable tunnel mode."
+              exit 1
+            fi
+
+            if [[ "$tunnel_host" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::[${SERVER_NAME}] CLOUDFLARE_TUNNEL_HOST must be a published hostname such as ssh.example.com, not a raw server IP (${tunnel_host})."
+              exit 1
+            fi
+
+            echo "connection_mode=cloudflare" >> "$GITHUB_OUTPUT"
+            echo "target_host=$tunnel_host" >> "$GITHUB_OUTPUT"
+            echo "target_port=22" >> "$GITHUB_OUTPUT"
+            echo "[${SERVER_NAME}] Cloudflare Tunnel enabled. Using SSH hostname: $tunnel_host"
+          else
+            echo "connection_mode=native" >> "$GITHUB_OUTPUT"
+            echo "target_host=${DEPLOY_HOST}" >> "$GITHUB_OUTPUT"
+            echo "target_port=${native_port}" >> "$GITHUB_OUTPUT"
+            echo "[${SERVER_NAME}] Native SSH enabled. Using ${DEPLOY_HOST}:${native_port}"
+          fi
+
+      - name: Prepare SSH client
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+
+          sudo apt-get update
+          sudo apt-get install -y rsync openssh-client
+
+          if [ "${{ steps.ssh_target.outputs.connection_mode }}" = "cloudflare" ]; then
+            curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+            chmod +x cloudflared
+            sudo mv cloudflared /usr/local/bin/cloudflared
+
+            resolved_tunnel_host='${{ steps.ssh_target.outputs.target_host }}'
+            if ! getent ahosts "$resolved_tunnel_host" >/dev/null 2>&1; then
+              echo "::error::[${SERVER_NAME}] Cloudflare tunnel hostname '$resolved_tunnel_host' does not resolve from the GitHub runner. Make sure CLOUDFLARE_TUNNEL_HOST is the published Cloudflare hostname (for example ssh.example.com), not a URL, username@host, host:port, or server IP."
+              exit 1
+            fi
+
+            if [ -z "${CF_ACCESS_CLIENT_ID:-}" ] || [ -z "${CF_ACCESS_CLIENT_SECRET:-}" ]; then
+              echo "::warning::[${SERVER_NAME}] Cloudflare tunnel mode is enabled without CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET. If Cloudflare Access requires authentication, deployment may fail in GitHub Actions."
+            fi
+          fi
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          cat > ~/.ssh/id_github_actions << 'EOF'
+          ${{ secrets.US1_PRODUCTION_SERVER_SSH_KEY }}
+          EOF
+          chmod 600 ~/.ssh/id_github_actions
+
+          cat > "$SSH_CONFIG_FILE" << EOF
+          Host ${SSH_ALIAS}
+            HostName ${{ steps.ssh_target.outputs.target_host }}
+            User ${DEPLOY_USER}
+            Port ${{ steps.ssh_target.outputs.target_port }}
+            IdentityFile ~/.ssh/id_github_actions
+            IdentitiesOnly yes
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+            ServerAliveInterval 30
+            ServerAliveCountMax 120
+          EOF
+          chmod 600 "$SSH_CONFIG_FILE"
+
+          if [ "${{ steps.ssh_target.outputs.connection_mode }}" = "cloudflare" ]; then
+            if [ -n "${CF_ACCESS_CLIENT_ID:-}" ] && [ -n "${CF_ACCESS_CLIENT_SECRET:-}" ]; then
+              printf '  ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %%h --service-token-id %q --service-token-secret %q\n' "${CF_ACCESS_CLIENT_ID}" "${CF_ACCESS_CLIENT_SECRET}" >> "$SSH_CONFIG_FILE"
+              echo "[${SERVER_NAME}] Using Cloudflare Access service token for SSH authentication."
+            else
+              cat >> "$SSH_CONFIG_FILE" << 'EOF'
+            ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
+          EOF
+              echo "::warning::[${SERVER_NAME}] Cloudflare tunnel mode is enabled without a service token in the SSH proxy command. cloudflared will attempt interactive browser authentication, which usually fails in CI."
+            fi
+            cloudflared --version
+          fi
+
+      - name: Verify SSH connectivity
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+          echo "[${SERVER_NAME}] Testing SSH connectivity..."
+          timeout 60s ssh -F "$SSH_CONFIG_FILE" -o BatchMode=yes -o ConnectTimeout=30 ${SSH_ALIAS} 'echo "[${SERVER_NAME}] Connected to $(hostname)"'
+
+      # ------------------------------------------
+      # Deploy to Server
+      # ------------------------------------------
+      - name: Deploy Frontend to Server
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+          echo "[${SERVER_NAME}] Deploying frontend..."
+          rsync -avzr --delete -e "ssh -F $SSH_CONFIG_FILE" frontend/dist/ ${SSH_ALIAS}:/tmp/aodai-frontend-deploy
+
+      - name: Deploy Backend to Server
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+          echo "[${SERVER_NAME}] Deploying backend..."
+          rsync -avzr --delete -e "ssh -F $SSH_CONFIG_FILE" backend/publish/ ${SSH_ALIAS}:/tmp/aodai-backend-deploy
+
+      # ------------------------------------------
+      # Finalize Deployment & Restart Services
+      # ------------------------------------------
+      - name: Finalize Deployment via SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+          ssh -F "$SSH_CONFIG_FILE" ${SSH_ALIAS} 'bash -se' << 'REMOTE_SCRIPT'
+          set -e
+
+          SERVER_NAME="${SERVER_NAME}"
+          echo "=== [${SERVER_NAME}] Starting Deployment ==="
+
+          # ==========================================
+          # 1. Setup .NET Runtime
+          # ==========================================
+          if ! command -v dotnet &> /dev/null; then
+            echo "[${SERVER_NAME}] Installing .NET runtime..."
+            wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
+            chmod +x dotnet-install.sh
+            ./dotnet-install.sh --channel 10.0 --install-dir /usr/share/dotnet
+            export PATH="$PATH:/usr/share/dotnet"
+            echo 'export PATH="$PATH:/usr/share/dotnet"' >> ~/.bashrc
+          fi
+
+          DOTNET_PATH=$(which dotnet || echo "/usr/share/dotnet/dotnet")
+          echo "[${SERVER_NAME}] Dotnet path: $DOTNET_PATH"
+
+          # ==========================================
+          # 2. Ensure Deployment Directories Exist
+          # ==========================================
+          mkdir -p /root/AoDaiNhaUyen/frontend
+          mkdir -p /root/AoDaiNhaUyen/backend
+
+          # ==========================================
+          # 3. Create Backend Runtime Environment
+          # ==========================================
+          echo "[${SERVER_NAME}] Writing backend runtime-env.sh..."
+          cat > /root/AoDaiNhaUyen/backend/runtime-env.sh << 'EOF'
+          export ASPNETCORE_ENVIRONMENT='Production'
+          export ConnectionStrings__DefaultConnection='${{ secrets.US1_POSTGRESQL_CONNECTION_STRING }}'
+          export RunMigrationsAndSeedOnStartup='false'
+          EOF
+          chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
+
+          # ==========================================
+          # 4. Stop PM2 Processes
+          # ==========================================
+          echo "[${SERVER_NAME}] Stopping PM2 processes..."
+          pm2 stop aodai-api 2>/dev/null || true
+
+          # ==========================================
+          # 5. Deploy Frontend
+          # ==========================================
+          echo "[${SERVER_NAME}] Deploying Frontend..."
+          cd /root/AoDaiNhaUyen/frontend
+          if [ -d "dist" ]; then
+            mv dist dist.backup.$(date +%Y%m%d_%H%M%S) || true
+          fi
+          mv /tmp/aodai-frontend-deploy dist
+          rm -rf /tmp/aodai-frontend-deploy
+
+          # ==========================================
+          # 6. Deploy Backend
+          # ==========================================
+          echo "[${SERVER_NAME}] Deploying Backend..."
+          cd /root/AoDaiNhaUyen/backend
+          if [ -f "AoDaiNhaUyen.Api.dll" ]; then
+            mkdir -p publish.backup
+            cp *.dll *.json *.deps.json publish.backup/ 2>/dev/null || true
+          fi
+          rm -rf *.dll *.json *.deps.json 2>/dev/null || true
+          cp -r /tmp/aodai-backend-deploy/* .
+          rm -rf /tmp/aodai-backend-deploy
+
+          if [ -f appsettings.Production.json ]; then
+            cp appsettings.Production.json appsettings.Production.json.bak
+          fi
+
+          cat > /root/AoDaiNhaUyen/backend/start.sh << EOF
+          #!/bin/bash
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
+          cd /root/AoDaiNhaUyen/backend
+          ASPNETCORE_ENVIRONMENT=Production $DOTNET_PATH AoDaiNhaUyen.Api.dll
+          EOF
+          chmod +x /root/AoDaiNhaUyen/backend/start.sh
+
+          # ==========================================
+          # 7. Restart PM2 Processes
+          # ==========================================
+          echo "[${SERVER_NAME}] Restarting PM2 processes..."
+          pm2 delete aodai-api 2>/dev/null || true
+
+          pm2 start /root/AoDaiNhaUyen/backend/start.sh --name "aodai-api"
+
+          pm2 save
+
+          # ==========================================
+          # 8. Cleanup
+          # ==========================================
+          echo "[${SERVER_NAME}] Cleaning up old backups..."
+          cd /root/AoDaiNhaUyen/frontend
+          ls -dt dist.backup.* 2>/dev/null | tail -n +4 | xargs rm -rf 2>/dev/null || true
+
+          cd /root/AoDaiNhaUyen/backend
+          rm -rf publish.backup 2>/dev/null || true
+
+          echo "=== [${SERVER_NAME}] Deployment Completed Successfully ==="
+
+          pm2 status
+          REMOTE_SCRIPT
