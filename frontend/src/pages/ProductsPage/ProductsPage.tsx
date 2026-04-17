@@ -163,7 +163,7 @@ function SizeDropdown() {
         type="button"
       >
         {selected ?? 'Chọn size'}
-        <svg width="10" height="6" viewBox="0 0 10 6" fill="none">
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true" role="img">
           <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </button>
