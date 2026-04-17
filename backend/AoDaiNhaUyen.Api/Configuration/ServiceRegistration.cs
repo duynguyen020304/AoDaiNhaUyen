@@ -33,7 +33,14 @@ public static class ServiceRegistration
     }
 
     services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
-    services.Configure<GoogleOAuthSettings>(configuration.GetSection("GoogleOAuth"));
+    services
+      .AddOptions<GoogleOAuthSettings>()
+      .Bind(configuration.GetSection("GoogleOAuth"))
+      .ValidateDataAnnotations()
+      .Validate(
+        settings => Uri.TryCreate(settings.RedirectUri, UriKind.Absolute, out _),
+        "GoogleOAuth:RedirectUri must be a valid absolute URI.")
+      .ValidateOnStart();
     services.Configure<CookieSettings>(configuration.GetSection("CookieSettings"));
 
     var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();

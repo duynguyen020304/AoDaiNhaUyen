@@ -13,7 +13,7 @@ interface AuthContextValue {
   status: AuthStatus;
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<AuthUser>;
-  completeGoogleLogin: (code: string, redirectUri: string) => Promise<AuthUser>;
+  completeGoogleLogin: (code: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<AuthUser>;
   startGoogleLogin: () => void;
@@ -63,8 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return authenticatedUser;
   }
 
-  async function completeGoogleLogin(code: string, redirectUri: string) {
-    const authenticatedUser = await authApi.googleLogin(code, redirectUri);
+  async function completeGoogleLogin(code: string) {
+    const authenticatedUser = await authApi.googleLogin(code);
     startTransition(() => {
       setUser(authenticatedUser);
       setStatus('authenticated');

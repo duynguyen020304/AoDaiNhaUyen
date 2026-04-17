@@ -1,4 +1,5 @@
 using AoDaiNhaUyen.Application.DTOs.Auth;
+using AoDaiNhaUyen.Application.Exceptions;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
 using AoDaiNhaUyen.Domain.Entities;
@@ -69,12 +70,20 @@ public sealed class AuthService(
 
   public async Task<AuthResult<AuthSessionDto>> LoginWithGoogleAsync(
     string code,
-    string redirectUri,
     string? ipAddress,
     string? userAgent,
     CancellationToken cancellationToken = default)
   {
-    var googleUser = await googleOAuthService.ExchangeCodeForUserAsync(code, redirectUri, cancellationToken);
+    GoogleUserInfoDto googleUser;
+    try
+    {
+      googleUser = await googleOAuthService.ExchangeCodeForUserAsync(code, cancellationToken);
+    }
+    catch (GoogleOAuthExchangeException ex)
+    {
+      return AuthResult<AuthSessionDto>.Failure("google_exchange_failed", ex.Message);
+    }
+
     if (!googleUser.EmailVerified)
     {
       return AuthResult<AuthSessionDto>.Failure("google_email_unverified", "Tài khoản Google chưa xác minh email.");

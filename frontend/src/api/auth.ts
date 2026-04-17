@@ -10,10 +10,10 @@ export function login(email: string, password: string): Promise<AuthUser> {
   });
 }
 
-export function googleLogin(code: string, redirectUri: string): Promise<AuthUser> {
+export function googleLogin(code: string): Promise<AuthUser> {
   return request<AuthUser>('/api/auth/google', {
     method: 'POST',
-    body: JSON.stringify({ code, redirectUri }),
+    body: JSON.stringify({ code }),
   });
 }
 

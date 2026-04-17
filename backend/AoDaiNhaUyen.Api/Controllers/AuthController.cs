@@ -43,7 +43,6 @@ public sealed class AuthController(
   {
     var result = await authService.LoginWithGoogleAsync(
       request.Code,
-      request.RedirectUri,
       GetIpAddress(),
       Request.Headers.UserAgent.ToString(),
       cancellationToken);
@@ -156,5 +155,5 @@ public sealed class AuthController(
   }
 
   public sealed record LoginRequest(string Email, string Password);
-  public sealed record GoogleLoginRequest(string Code, string RedirectUri);
+  public sealed record GoogleLoginRequest(string Code);
 }

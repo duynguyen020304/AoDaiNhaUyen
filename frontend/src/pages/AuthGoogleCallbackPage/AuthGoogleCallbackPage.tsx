@@ -14,8 +14,7 @@ export default function AuthGoogleCallbackPage() {
       return;
     }
 
-    const redirectUri = `${window.location.origin}/auth/google/callback`;
-    void completeGoogleLogin(code, redirectUri)
+    void completeGoogleLogin(code)
       .then(() => {
         navigate('/account', { replace: true });
       })

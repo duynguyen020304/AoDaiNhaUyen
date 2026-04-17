@@ -6,6 +6,5 @@ public interface IGoogleOAuthService
 {
   Task<GoogleUserInfoDto> ExchangeCodeForUserAsync(
     string code,
-    string redirectUri,
     CancellationToken cancellationToken = default);
 }

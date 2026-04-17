@@ -13,7 +13,6 @@ public interface IAuthService
 
   Task<AuthResult<AuthSessionDto>> LoginWithGoogleAsync(
     string code,
-    string redirectUri,
     string? ipAddress,
     string? userAgent,
     CancellationToken cancellationToken = default);

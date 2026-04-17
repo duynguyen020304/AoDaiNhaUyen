@@ -25,7 +25,9 @@
   position: absolute;
   top: 15px;
   left: 50%;
-  width: 887px;
+  width: max-content;
+  max-width: calc(100% - 112px);
+  box-sizing: border-box;
   height: 48px;
   transform: translateX(-50%);
   display: flex;

@@ -2,21 +2,23 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using AoDaiNhaUyen.Application.DTOs.Auth;
+using AoDaiNhaUyen.Application.Exceptions;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
 public sealed class GoogleOAuthService(
   IHttpClientFactory httpClientFactory,
-  IOptions<GoogleOAuthSettings> googleOAuthSettings) : IGoogleOAuthService
+  IOptions<GoogleOAuthSettings> googleOAuthSettings,
+  ILogger<GoogleOAuthService> logger) : IGoogleOAuthService
 {
   private readonly GoogleOAuthSettings googleOAuthSettings = googleOAuthSettings.Value;
 
   public async Task<GoogleUserInfoDto> ExchangeCodeForUserAsync(
     string code,
-    string redirectUri,
     CancellationToken cancellationToken = default)
   {
     using var client = httpClientFactory.CreateClient();
@@ -29,12 +31,20 @@ public sealed class GoogleOAuthService(
         ["client_secret"] = googleOAuthSettings.ClientSecret,
         ["code"] = code,
         ["grant_type"] = "authorization_code",
-        ["redirect_uri"] = redirectUri
+        ["redirect_uri"] = googleOAuthSettings.RedirectUri
       })
     };
 
     using var tokenResponse = await client.SendAsync(tokenRequest, cancellationToken);
-    tokenResponse.EnsureSuccessStatusCode();
+    if (!tokenResponse.IsSuccessStatusCode)
+    {
+      var errorBody = await tokenResponse.Content.ReadAsStringAsync(cancellationToken);
+      logger.LogWarning(
+        "Google token exchange failed with status code {StatusCode}. Response: {ResponseBody}",
+        (int)tokenResponse.StatusCode,
+        errorBody);
+      throw new GoogleOAuthExchangeException("Không thể xác minh đăng nhập Google. Vui lòng thử lại.");
+    }
 
     var tokenPayload = await tokenResponse.Content.ReadFromJsonAsync<GoogleTokenResponse>(cancellationToken: cancellationToken)
       ?? throw new InvalidOperationException("Google token response was empty.");
