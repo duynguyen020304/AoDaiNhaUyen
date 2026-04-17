@@ -5,17 +5,20 @@ import styles from './ResultPanel.module.css';
 interface ResultPanelProps {
   tryonResult: string | null;
   selectedGarment: string | null;
+  canTryOn: boolean;
   isProcessing: boolean;
+  errorMessage?: string | null;
   onTryonClick: () => void;
 }
 
 export default function ResultPanel({
   tryonResult,
-  selectedGarment,
+  canTryOn,
   isProcessing,
+  errorMessage,
   onTryonClick,
 }: ResultPanelProps) {
-  const canTryOn = !!selectedGarment && !isProcessing;
+  const isEnabled = canTryOn && !isProcessing;
 
   return (
     <div className={styles.panel}>
@@ -48,12 +51,13 @@ export default function ResultPanel({
       </div>
 
       <button
-        className={`${styles.tryonButton} ${canTryOn ? styles.enabled : ''}`}
-        disabled={!canTryOn}
+        className={`${styles.tryonButton} ${isEnabled ? styles.enabled : ''}`}
+        disabled={!isEnabled}
         onClick={onTryonClick}
       >
         {isProcessing ? 'ĐANG XỬ LÝ...' : 'THỬ ĐỒ NGAY'}
       </button>
+      {errorMessage ? <p className={styles.errorMessage}>{errorMessage}</p> : null}
     </div>
   );
 }

@@ -2,8 +2,10 @@ using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Repositories;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Services;
+using AoDaiNhaUyen.Infrastructure.Configuration;
 using AoDaiNhaUyen.Infrastructure.Data;
 using AoDaiNhaUyen.Infrastructure.Repositories;
+using AoDaiNhaUyen.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace AoDaiNhaUyen.Api.Configuration;
@@ -33,6 +35,11 @@ public static class ServiceRegistration
 
     services.AddScoped<ICatalogService, CatalogService>();
     services.AddScoped<ISeedDataService, SeedDataService>();
+    services.Configure<GoogleCloudOptions>(configuration.GetSection("GoogleCloud"));
+    services.AddHttpClient<IAiTryOnService, VertexAiTryOnService>(httpClient =>
+    {
+      httpClient.Timeout = Timeout.InfiniteTimeSpan;
+    });
 
     return services;
   }
