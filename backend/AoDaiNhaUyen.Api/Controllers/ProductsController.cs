@@ -13,6 +13,7 @@ public sealed class ProductsController(ICatalogService catalogService) : Control
     [FromQuery] string? categorySlug,
     [FromQuery] string? productType,
     [FromQuery] bool? featured,
+    [FromQuery] string? size,
     [FromQuery] int page = 1,
     [FromQuery] int pageSize = 12,
     CancellationToken cancellationToken = default)
@@ -21,6 +22,7 @@ public sealed class ProductsController(ICatalogService catalogService) : Control
       categorySlug,
       productType,
       featured,
+      size,
       page,
       pageSize,
       cancellationToken);

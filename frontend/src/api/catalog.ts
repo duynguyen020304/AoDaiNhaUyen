@@ -9,6 +9,7 @@ interface GetProductsParams {
   categorySlug?: string;
   productType?: string;
   featured?: boolean;
+  size?: string;
   page?: number;
   pageSize?: number;
 }
@@ -26,6 +27,10 @@ export function getProducts(params: GetProductsParams = {}): Promise<PaginatedPr
 
   if (typeof params.featured === 'boolean') {
     search.set('featured', String(params.featured));
+  }
+
+  if (params.size) {
+    search.set('size', params.size);
   }
 
   if (params.page) {

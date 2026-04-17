@@ -10,6 +10,7 @@ public interface ICatalogService
     string? categorySlug,
     string? productType,
     bool? featured,
+    string? size,
     int page,
     int pageSize,
     CancellationToken cancellationToken = default);

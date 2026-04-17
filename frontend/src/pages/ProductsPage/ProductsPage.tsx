@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styles from './ProductsPage.module.css';
 import { sectionReveal, staggerContainer, viewportOnce } from '../../utils/motion';
 import { CATEGORIES, SIZES, type Badge, type Category, type Product } from './data';
@@ -45,14 +45,49 @@ function mapProduct(product: ProductListItem, index: number): Product {
   };
 }
 
+function getSizeParamKey(categorySlug: string) {
+  return `size_${categorySlug}`;
+}
+
+function isValidSize(size: string | null): size is (typeof SIZES)[number] {
+  return SIZES.includes(size as (typeof SIZES)[number]);
+}
+
 export default function ProductsPage() {
   const location = useLocation();
-  const activeCategorySlug = useMemo(() => {
-    return new URLSearchParams(location.search).get('category');
-  }, [location.search]);
+  const navigate = useNavigate();
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const activeCategorySlug = searchParams.get('category');
+  const selectedSizesByCategory = useMemo(() => {
+    const selectedSizes = new Map<string, string>();
+
+    searchParams.forEach((value, key) => {
+      if (key.startsWith('size_') && isValidSize(value)) {
+        selectedSizes.set(key.replace('size_', ''), value);
+      }
+    });
+
+    return selectedSizes;
+  }, [searchParams]);
   const [categories, setCategories] = useState<Category[]>(CATEGORIES);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  const hasSelectedSize = selectedSizesByCategory.size > 0;
+
+  const handleSelectSize = (categorySlug: string, size: string | null) => {
+    const nextParams = new URLSearchParams(location.search);
+    const sizeParamKey = getSizeParamKey(categorySlug);
+
+    if (size) {
+      nextParams.set(sizeParamKey, size);
+    } else {
+      nextParams.delete(sizeParamKey);
+    }
+
+    const query = nextParams.toString();
+    navigate(query ? `/products?${query}` : '/products');
+  };
 
   useEffect(() => {
     let ignore = false;
@@ -78,8 +113,10 @@ export default function ProductsPage() {
 
         const groups = await Promise.all(
           visibleCategories.map(async (category: HeaderCategoryChild) => {
+            const selectedSize = selectedSizesByCategory.get(category.slug);
             const result = await getProducts({
               categorySlug: category.slug,
+              size: selectedSize ?? undefined,
               page: 1,
               pageSize: PRODUCT_PAGE_SIZE,
             });
@@ -93,8 +130,8 @@ export default function ProductsPage() {
         );
 
         if (!ignore) {
-          const nonEmptyGroups = groups.filter((category) => category.products.length > 0);
-          setCategories(nonEmptyGroups.length > 0 ? nonEmptyGroups : CATEGORIES);
+          const hasProducts = groups.some((category) => category.products.length > 0);
+          setCategories(hasProducts || hasSelectedSize ? groups : CATEGORIES);
         }
       } catch (error) {
         if (!ignore) {
@@ -113,7 +150,7 @@ export default function ProductsPage() {
     return () => {
       ignore = true;
     };
-  }, [activeCategorySlug]);
+  }, [activeCategorySlug, hasSelectedSize, selectedSizesByCategory]);
 
   return (
     <main className={styles.page}>
@@ -123,6 +160,14 @@ export default function ProductsPage() {
         </p>
       ) : null}
       {loading ? <p className={styles.statusMessage}>Đang tải sản phẩm...</p> : null}
+      {!loading && categories.length === 0 ? (
+        <div className={styles.emptyState}>
+          <p>Không có sản phẩm phù hợp với size đã chọn.</p>
+          <Link className={styles.resetLink} to="/products">
+            Xem tất cả sản phẩm
+          </Link>
+        </div>
+      ) : null}
       {categories.map((category) => (
         <div key={category.id}>
           <CategoryBanner title={category.name} />
@@ -134,16 +179,28 @@ export default function ProductsPage() {
             viewport={viewportOnce}
           >
             <div className={styles.filterBar}>
-              <SizeDropdown />
+              <SizeDropdown
+                selected={selectedSizesByCategory.get(category.id) ?? null}
+                onSelect={(size) => handleSelectSize(category.id, size)}
+              />
             </div>
-            <motion.div
-              className={styles.productGrid}
-              variants={staggerContainer}
-            >
-              {category.products.map((product) => (
-                <ProductCard key={product.id} data={product} />
-              ))}
-            </motion.div>
+            {category.products.length === 0 ? (
+              <div className={styles.categoryEmptyState}>
+                <p>Không có sản phẩm phù hợp với size đã chọn trong danh mục này.</p>
+                <Link className={styles.resetLink} to="/products">
+                  Xem tất cả sản phẩm
+                </Link>
+              </div>
+            ) : (
+              <motion.div
+                className={styles.productGrid}
+                variants={staggerContainer}
+              >
+                {category.products.map((product) => (
+                  <ProductCard key={product.id} data={product} />
+                ))}
+              </motion.div>
+            )}
           </motion.section>
         </div>
       ))}
@@ -151,9 +208,13 @@ export default function ProductsPage() {
   );
 }
 
-function SizeDropdown() {
+interface SizeDropdownProps {
+  selected: string | null;
+  onSelect: (size: string | null) => void;
+}
+
+function SizeDropdown({ selected, onSelect }: SizeDropdownProps) {
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <div className={styles.dropdown}>
@@ -169,12 +230,21 @@ function SizeDropdown() {
       </button>
       {open && (
         <ul className={styles.dropdownMenu}>
+          <li>
+            <button
+              type="button"
+              className={`${styles.dropdownOption} ${selected === null ? styles.active : ''}`}
+              onClick={() => { onSelect(null); setOpen(false); }}
+            >
+              Tất cả size
+            </button>
+          </li>
           {SIZES.map((size) => (
             <li key={size}>
               <button
                 type="button"
                 className={`${styles.dropdownOption} ${selected === size ? styles.active : ''}`}
-                onClick={() => { setSelected(size); setOpen(false); }}
+                onClick={() => { onSelect(size); setOpen(false); }}
               >
                 {size}
               </button>

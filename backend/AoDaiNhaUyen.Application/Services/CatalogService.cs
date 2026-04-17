@@ -56,6 +56,7 @@ public sealed class CatalogService(
     string? categorySlug,
     string? productType,
     bool? featured,
+    string? size,
     int page,
     int pageSize,
     CancellationToken cancellationToken = default)
@@ -67,16 +68,23 @@ public sealed class CatalogService(
       categorySlug,
       productType,
       featured,
+      size,
       validatedPage,
       validatedPageSize,
       cancellationToken);
 
     var mapped = items.Select(p =>
     {
+      var normalizedSize = size?.Trim();
       var primaryVariant = p.Variants
+        .Where(v => string.IsNullOrWhiteSpace(normalizedSize) ||
+          string.Equals(v.Size, normalizedSize, StringComparison.OrdinalIgnoreCase))
         .OrderByDescending(v => v.IsDefault)
         .ThenBy(v => v.Id)
-        .FirstOrDefault();
+        .FirstOrDefault() ?? p.Variants
+          .OrderByDescending(v => v.IsDefault)
+          .ThenBy(v => v.Id)
+          .FirstOrDefault();
 
       var primaryImage = p.Images
         .OrderBy(i => i.SortOrder)
