@@ -10,11 +10,10 @@ public static class DefaultCategories
     new("Áo dài cách tân", "ao-dai-cach-tan", 2, "ao-dai"),
     new("Áo dài lụa trơn", "ao-dai-lua-tron", 3, "ao-dai"),
     new("Áo dài thêu hoa", "ao-dai-theu-hoa", 4, "ao-dai"),
-    new("Áo dài cưới", "ao-dai-cuoi", 5, "ao-dai"),
-    new("Quạt cầm tay", "quat-cam-tay", 1, "phu-kien"),
-    new("Túi xách", "tui-xach", 2, "phu-kien"),
-    new("Trâm cài tóc", "tram-cai-toc", 3, "phu-kien"),
-    new("Guốc", "guoc", 4, "phu-kien")
+    new("Trâm cài", "tram-cai", 1, "phu-kien"),
+    new("Túi sách", "tui-sach", 2, "phu-kien"),
+    new("Quạt", "quat", 3, "phu-kien"),
+    new("Giày", "giay", 4, "phu-kien")
   ];
 }
 
