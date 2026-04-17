@@ -17,14 +17,19 @@ import ProtectedRoute from './auth/ProtectedRoute';
 
 export default function App() {
   const { pathname } = useLocation();
-  const hideLayout = pathname === '/login'
+  const hideHeader = pathname === '/login'
+    || pathname === '/reset-password'
+    || pathname === '/auth/google/callback'
+    || pathname === '/auth/facebook/callback'
+    || pathname === '/account';
+  const hideFooter = pathname === '/login'
     || pathname === '/reset-password'
     || pathname === '/auth/google/callback'
     || pathname === '/auth/facebook/callback';
 
   return (
     <>
-      {!hideLayout && <Header />}
+      {!hideHeader && <Header />}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/collection" element={<CollectionPage />} />
@@ -41,7 +46,7 @@ export default function App() {
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-      {!hideLayout && <Footer />}
+      {!hideFooter && <Footer />}
     </>
   );
 }

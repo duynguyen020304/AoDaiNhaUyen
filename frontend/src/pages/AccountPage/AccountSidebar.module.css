@@ -11,6 +11,22 @@
   background: #680000;
   border-radius: 0 0 8px 8px;
   height: 80px;
+  display: flex;
+  align-items: flex-start;
+  padding: 16px 16px 0;
+}
+
+.logoButton {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.logo {
+  display: block;
+  width: 54px;
+  height: auto;
 }
 
 .avatarWrapper {
@@ -57,6 +73,25 @@
   padding: 0 24px;
 }
 
+.homeButton {
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #680000;
+  background: transparent;
+  border: none;
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s, border-color 0.15s;
+  font-weight: 600;
+}
+
+.homeButton:hover {
+  background: rgba(104, 0, 0, 0.06);
+}
+
 .navItem {
   padding: 10px 16px;
   border-radius: 8px;
@@ -96,7 +131,12 @@
   }
 
   .header {
-    display: none;
+    display: flex;
+    width: 100%;
+    height: auto;
+    min-height: 72px;
+    border-radius: 0;
+    padding: 12px 16px 0;
   }
 
   .avatarWrapper {
@@ -120,5 +160,10 @@
     width: 100%;
     padding: 8px 16px;
     overflow-x: auto;
+  }
+
+  .homeButton {
+    width: auto;
+    white-space: nowrap;
   }
 }
