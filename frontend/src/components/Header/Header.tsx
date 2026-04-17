@@ -47,6 +47,8 @@ const fallbackCategories: HeaderCategory[] = [
   },
 ];
 
+const DISMISSED_DROPDOWN_CLASS = 'headerDropdownDismissed';
+
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -128,6 +130,7 @@ export default function Header() {
               <a
                 className={`${styles.navLink} ${isActive ? styles.isActive : ''}`}
                 href={link.to}
+                onMouseEnter={() => document.body.classList.remove(DISMISSED_DROPDOWN_CLASS)}
                 onClick={(e) => handleClick(link, e)}
               >
                 {isActive ? (
@@ -150,6 +153,7 @@ export default function Header() {
                         href={target}
                         onClick={(event) => {
                           event.preventDefault();
+                          document.body.classList.add(DISMISSED_DROPDOWN_CLASS);
                           navigate(target);
                         }}
                       >

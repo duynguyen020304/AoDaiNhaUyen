@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import styles from './ProductCard.module.css';
-import { cardReveal, cardHover, fadeUp, viewportOnce } from '../../utils/motion';
+import { cardReveal, cardHover, viewportOnce } from '../../utils/motion';
 import type { Product, Badge } from '../../pages/ProductsPage/data';
 
 const BADGE_COLORS: Record<Badge, string> = {
