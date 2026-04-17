@@ -1065,11 +1065,6 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_login_at");
 
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("password_hash");
-
                     b.Property<string>("Phone")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
@@ -1107,6 +1102,63 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
                             t.HasCheckConstraint("ck_users_status", "status IN ('active', 'inactive', 'blocked')");
                         });
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.UserAccount", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<bool>("IsVerified")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_verified");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("text")
+                        .HasColumnName("password_hash");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("ProviderAccountId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("provider_account_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("Provider", "ProviderAccountId")
+                        .IsUnique();
+
+                    b.ToTable("user_accounts", (string)null);
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.UserAddress", b =>
@@ -1448,6 +1500,17 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.UserAccount", b =>
+                {
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.User", "User")
+                        .WithMany("UserAccounts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.UserAddress", b =>
                 {
                     b.HasOne("AoDaiNhaUyen.Domain.Entities.User", "User")
@@ -1546,6 +1609,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.Navigation("Reviews");
 
                     b.Navigation("Sessions");
+
+                    b.Navigation("UserAccounts");
 
                     b.Navigation("UserRoles");
                 });

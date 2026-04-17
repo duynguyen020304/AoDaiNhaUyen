@@ -15,12 +15,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("Frontend", policy =>
-    {
-        policy
-            .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+  options.AddPolicy("Frontend", policy =>
+  {
+    var origins = builder.Configuration.GetSection("FrontendOrigins").Get<string[]>() ??
+      ["http://localhost:5173", "http://127.0.0.1:5173"];
+
+    policy
+      .WithOrigins(origins)
+      .AllowAnyHeader()
+      .AllowAnyMethod()
+      .AllowCredentials();
     });
 });
 builder.Services.AddOpenApi();
@@ -48,6 +52,7 @@ if (Directory.Exists(uploadPath))
     });
 }
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

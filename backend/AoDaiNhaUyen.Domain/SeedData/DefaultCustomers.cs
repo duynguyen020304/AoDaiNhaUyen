@@ -30,4 +30,4 @@ public sealed record SeedCustomer(
   string Email,
   string Phone,
   string Gender,
-  string PasswordHash);
+  string Password);

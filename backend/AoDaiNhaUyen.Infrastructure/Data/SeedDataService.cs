@@ -1,11 +1,14 @@
 using AoDaiNhaUyen.Application.Interfaces;
+using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Domain.SeedData;
 using Microsoft.EntityFrameworkCore;
 
 namespace AoDaiNhaUyen.Infrastructure.Data;
 
-public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
+public sealed class SeedDataService(
+  AppDbContext dbContext,
+  IPasswordHasher passwordHasher) : ISeedDataService
 {
   public async Task SeedAllAsync()
   {
@@ -106,7 +109,6 @@ public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
           FullName = item.FullName,
           Email = item.Email,
           Phone = item.Phone,
-          PasswordHash = item.PasswordHash,
           Gender = item.Gender,
           Status = "active",
           EmailVerifiedAt = DateTime.UtcNow,
@@ -119,7 +121,6 @@ public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
       {
         user.FullName = item.FullName;
         user.Phone = item.Phone;
-        user.PasswordHash = item.PasswordHash;
         user.Gender = item.Gender;
         user.Status = "active";
         user.EmailVerifiedAt ??= DateTime.UtcNow;
@@ -129,7 +130,30 @@ public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
 
       if (!user.UserRoles.Any(x => x.RoleId == customerRole.Id))
       {
-        user.UserRoles.Add(new UserRole { RoleId = customerRole.Id });
+        user.UserRoles.Add(new UserRole { User = user, RoleId = customerRole.Id });
+      }
+
+      var normalizedEmail = item.Email.Trim().ToLowerInvariant();
+      var credentialsAccount = await dbContext.UserAccounts.FirstOrDefaultAsync(
+        x => x.Provider == "credentials" && x.ProviderAccountId == normalizedEmail,
+        CancellationToken.None);
+
+      if (credentialsAccount is null)
+      {
+        dbContext.UserAccounts.Add(new UserAccount
+        {
+          User = user,
+          Provider = "credentials",
+          ProviderAccountId = normalizedEmail,
+          PasswordHash = passwordHasher.HashPassword(item.Password),
+          IsVerified = true
+        });
+      }
+      else
+      {
+        credentialsAccount.PasswordHash = passwordHasher.HashPassword(item.Password);
+        credentialsAccount.IsVerified = true;
+        credentialsAccount.UpdatedAt = DateTime.UtcNow;
       }
     }
 

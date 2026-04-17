@@ -8,6 +8,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 {
   public DbSet<Role> Roles => Set<Role>();
   public DbSet<User> Users => Set<User>();
+  public DbSet<UserAccount> UserAccounts => Set<UserAccount>();
   public DbSet<UserRole> UserRoles => Set<UserRole>();
   public DbSet<UserSession> UserSessions => Set<UserSession>();
   public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
@@ -55,7 +56,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.FullName).HasMaxLength(120).IsRequired();
       builder.Property(x => x.Email).HasMaxLength(150);
       builder.Property(x => x.Phone).HasMaxLength(20);
-      builder.Property(x => x.PasswordHash).IsRequired();
       builder.Property(x => x.Gender).HasMaxLength(10);
       builder.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("active").IsRequired();
       builder.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
@@ -64,6 +64,21 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => x.Phone).IsUnique();
       builder.ToTable(t => t.HasCheckConstraint("ck_users_status", "status IN ('active', 'inactive', 'blocked')"));
       builder.ToTable(t => t.HasCheckConstraint("ck_users_contact", "email IS NOT NULL OR phone IS NOT NULL"));
+    });
+
+    modelBuilder.Entity<UserAccount>(builder =>
+    {
+      builder.ToTable("user_accounts");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Provider).HasMaxLength(50).IsRequired();
+      builder.Property(x => x.ProviderAccountId).HasMaxLength(255).IsRequired();
+      builder.Property(x => x.PasswordHash);
+      builder.Property(x => x.IsVerified).HasDefaultValue(false).IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.Provider, x.ProviderAccountId }).IsUnique();
+      builder.HasIndex(x => x.UserId);
+      builder.HasOne(x => x.User).WithMany(x => x.UserAccounts).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
     });
 
     modelBuilder.Entity<UserRole>(builder =>
