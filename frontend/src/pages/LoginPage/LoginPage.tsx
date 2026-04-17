@@ -54,17 +54,6 @@ export default function LoginPage() {
   return (
     <section className={styles.page}>
       <div className={styles.container}>
-        {/* Header: logo + close */}
-        <div className={styles.header}>
-          <img src="/assets/login/logo.svg" alt="Nhà Uyên" />
-          <button className={styles.closeBtn} onClick={() => navigate(-1)} aria-label="Đóng">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18" stroke="#99A1AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M6 6L18 18" stroke="#99A1AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
-
         {/* Tabs */}
         <div className={styles.tabs}>
           <button

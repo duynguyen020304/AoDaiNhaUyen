@@ -21,8 +21,7 @@ public static class ServiceRegistration
   {
     var configuredConnection = configuration.GetConnectionString("DefaultConnection");
     var envConnection =
-      Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") ??
-      Environment.GetEnvironmentVariable("POSTGRESQL_CONNECTION_STRING");
+      Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 
     var connectionString = !string.IsNullOrWhiteSpace(envConnection)
       ? envConnection

@@ -15,30 +15,6 @@
 }
 
 /* ---- Header ---- */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 24px;
-  height: 83px;
-  border-bottom: 0.8px solid #f3f4f6;
-}
-
-.header img {
-  height: 32px;
-  width: auto;
-}
-
-.closeBtn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* ---- Tabs ---- */
 .tabs {
   display: flex;
