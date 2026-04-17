@@ -1,0 +1,6 @@
+@AoDaiNhaUyen.Api_HostAddress = http://localhost:5043
+
+GET {{AoDaiNhaUyen.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

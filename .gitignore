@@ -3,6 +3,8 @@ node_modules/
 
 # Build output
 dist/
+**/bin/
+**/obj/
 
 # Claude Code Configuration
 .claude/
@@ -13,6 +15,7 @@ dist/
 .env
 .env.local
 .env.*.local
+backend/**/.env
 
 # Backup files
 *.old.*
