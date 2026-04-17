@@ -1,3 +1,4 @@
+using AoDaiNhaUyen.Api.Responses;
 using System.Net;
 using System.Text.Json;
 
@@ -18,14 +19,12 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
       context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
       context.Response.ContentType = "application/json";
 
-      var payload = JsonSerializer.Serialize(new
-      {
-        error = new
-        {
-          code = "internal_server_error",
-          message = "An unexpected error occurred."
-        }
-      });
+      var payload = JsonSerializer.Serialize(
+        ApiResponseFactory.Failure(
+          "Có lỗi xảy ra",
+          "internal_server_error",
+          "An unexpected error occurred."),
+        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
       await context.Response.WriteAsync(payload);
     }

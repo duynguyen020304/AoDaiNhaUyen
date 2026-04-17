@@ -1,4 +1,5 @@
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Api.Responses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AoDaiNhaUyen.Api.Controllers;
@@ -12,6 +13,7 @@ public sealed class ProductsController(ICatalogService catalogService) : Control
     [FromQuery] string? categorySlug,
     [FromQuery] string? productType,
     [FromQuery] bool? featured,
+    [FromQuery] string? size,
     [FromQuery] int page = 1,
     [FromQuery] int pageSize = 12,
     CancellationToken cancellationToken = default)
@@ -20,13 +22,14 @@ public sealed class ProductsController(ICatalogService catalogService) : Control
       categorySlug,
       productType,
       featured,
+      size,
       page,
       pageSize,
       cancellationToken);
 
-    return Ok(new
+    return Ok(ApiResponseFactory.Success(new
     {
-      data = result.Items,
+      items = result.Items,
       meta = new
       {
         total = result.TotalCount,
@@ -34,7 +37,7 @@ public sealed class ProductsController(ICatalogService catalogService) : Control
         pageSize = result.PageSize,
         totalPages = (int)Math.Ceiling((double)result.TotalCount / result.PageSize)
       }
-    });
+    }));
   }
 
   [HttpGet("{slug}")]
@@ -43,16 +46,12 @@ public sealed class ProductsController(ICatalogService catalogService) : Control
     var product = await catalogService.GetProductBySlugAsync(slug, cancellationToken);
     if (product is null)
     {
-      return NotFound(new
-      {
-        error = new
-        {
-          code = "not_found",
-          message = "Product not found."
-        }
-      });
+      return NotFound(ApiResponseFactory.Failure(
+        "Không tìm thấy dữ liệu",
+        "not_found",
+        "Product not found."));
     }
 
-    return Ok(new { data = product });
+    return Ok(ApiResponseFactory.Success(product));
   }
 }

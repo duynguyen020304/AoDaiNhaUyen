@@ -25,10 +25,38 @@ public sealed class CatalogService(
       .ToList();
   }
 
+  public async Task<IReadOnlyList<CategoryTreeDto>> GetHeaderCategoriesAsync(CancellationToken cancellationToken = default)
+  {
+    var categories = await categoryRepository.GetActiveAsync(cancellationToken);
+    var childrenByParent = categories
+      .Where(c => c.Parent.HasValue)
+      .GroupBy(c => c.Parent!.Value)
+      .ToDictionary(
+        g => g.Key,
+        g => g
+          .OrderBy(c => c.SortOrder)
+          .ThenBy(c => c.Name)
+          .Select(c => new CategoryTreeChildDto(c.Id, c.Name, c.Slug, c.SortOrder))
+          .ToList() as IReadOnlyList<CategoryTreeChildDto>);
+
+    return categories
+      .Where(c => c.Parent is null)
+      .OrderBy(c => c.SortOrder)
+      .ThenBy(c => c.Name)
+      .Select(c => new CategoryTreeDto(
+        c.Id,
+        c.Name,
+        c.Slug,
+        c.SortOrder,
+        childrenByParent.TryGetValue(c.Id, out var children) ? children : []))
+      .ToList();
+  }
+
   public async Task<PagedResult<ProductListItemDto>> GetProductsAsync(
     string? categorySlug,
     string? productType,
     bool? featured,
+    string? size,
     int page,
     int pageSize,
     CancellationToken cancellationToken = default)
@@ -40,16 +68,23 @@ public sealed class CatalogService(
       categorySlug,
       productType,
       featured,
+      size,
       validatedPage,
       validatedPageSize,
       cancellationToken);
 
     var mapped = items.Select(p =>
     {
+      var normalizedSize = size?.Trim();
       var primaryVariant = p.Variants
+        .Where(v => string.IsNullOrWhiteSpace(normalizedSize) ||
+          string.Equals(v.Size, normalizedSize, StringComparison.OrdinalIgnoreCase))
         .OrderByDescending(v => v.IsDefault)
         .ThenBy(v => v.Id)
-        .FirstOrDefault();
+        .FirstOrDefault() ?? p.Variants
+          .OrderByDescending(v => v.IsDefault)
+          .ThenBy(v => v.Id)
+          .FirstOrDefault();
 
       var primaryImage = p.Images
         .OrderBy(i => i.SortOrder)

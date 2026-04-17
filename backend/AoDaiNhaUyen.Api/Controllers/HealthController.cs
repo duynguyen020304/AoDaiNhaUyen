@@ -1,3 +1,4 @@
+using AoDaiNhaUyen.Api.Responses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AoDaiNhaUyen.Api.Controllers;
@@ -9,10 +10,10 @@ public sealed class HealthController : ControllerBase
   [HttpGet]
   public IActionResult Get()
   {
-    return Ok(new
+    return Ok(ApiResponseFactory.Success(new
     {
       status = "ok",
       timestampUtc = DateTime.UtcNow
-    });
+    }));
   }
 }

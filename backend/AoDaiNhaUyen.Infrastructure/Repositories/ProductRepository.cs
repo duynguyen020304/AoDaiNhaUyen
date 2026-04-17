@@ -11,6 +11,7 @@ public sealed class ProductRepository(AppDbContext dbContext) : IProductReposito
     string? categorySlug,
     string? productType,
     bool? featured,
+    string? size,
     int page,
     int pageSize,
     CancellationToken cancellationToken = default)
@@ -36,6 +37,15 @@ public sealed class ProductRepository(AppDbContext dbContext) : IProductReposito
     if (featured.HasValue)
     {
       query = query.Where(p => p.IsFeatured == featured.Value);
+    }
+
+    if (!string.IsNullOrWhiteSpace(size))
+    {
+      var normalizedSize = size.Trim();
+      query = query.Where(p => p.Variants.Any(v =>
+        v.Status == "active" &&
+        v.Size != null &&
+        v.Size.ToLower() == normalizedSize.ToLower()));
     }
 
     var totalCount = await query.CountAsync(cancellationToken);

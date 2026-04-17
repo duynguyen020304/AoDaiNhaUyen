@@ -6,7 +6,7 @@ interface ImageDropZoneProps {
   onFileSelect: (file: File) => void;
   compact?: boolean;
   photoUrl?: string | null;
-  fileName?: string;
+  fileName?: string | null;
 }
 
 export default function ImageDropZone({ onFileSelect, compact, photoUrl, fileName }: ImageDropZoneProps) {
