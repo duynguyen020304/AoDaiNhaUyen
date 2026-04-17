@@ -25,6 +25,33 @@ public sealed class CatalogService(
       .ToList();
   }
 
+  public async Task<IReadOnlyList<CategoryTreeDto>> GetHeaderCategoriesAsync(CancellationToken cancellationToken = default)
+  {
+    var categories = await categoryRepository.GetActiveAsync(cancellationToken);
+    var childrenByParent = categories
+      .Where(c => c.Parent.HasValue)
+      .GroupBy(c => c.Parent!.Value)
+      .ToDictionary(
+        g => g.Key,
+        g => g
+          .OrderBy(c => c.SortOrder)
+          .ThenBy(c => c.Name)
+          .Select(c => new CategoryTreeChildDto(c.Id, c.Name, c.Slug, c.SortOrder))
+          .ToList() as IReadOnlyList<CategoryTreeChildDto>);
+
+    return categories
+      .Where(c => c.Parent is null)
+      .OrderBy(c => c.SortOrder)
+      .ThenBy(c => c.Name)
+      .Select(c => new CategoryTreeDto(
+        c.Id,
+        c.Name,
+        c.Slug,
+        c.SortOrder,
+        childrenByParent.TryGetValue(c.Id, out var children) ? children : []))
+      .ToList();
+  }
+
   public async Task<PagedResult<ProductListItemDto>> GetProductsAsync(
     string? categorySlug,
     string? productType,

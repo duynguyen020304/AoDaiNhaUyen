@@ -1,4 +1,5 @@
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Api.Responses;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AoDaiNhaUyen.Api.Controllers;
@@ -11,6 +12,13 @@ public sealed class CategoriesController(ICatalogService catalogService) : Contr
   public async Task<IActionResult> Get(CancellationToken cancellationToken)
   {
     var data = await catalogService.GetCategoriesAsync(cancellationToken);
-    return Ok(new { data });
+    return Ok(ApiResponseFactory.Success(data));
+  }
+
+  [HttpGet("header")]
+  public async Task<IActionResult> GetHeader(CancellationToken cancellationToken)
+  {
+    var data = await catalogService.GetHeaderCategoriesAsync(cancellationToken);
+    return Ok(ApiResponseFactory.Success(data));
   }
 }

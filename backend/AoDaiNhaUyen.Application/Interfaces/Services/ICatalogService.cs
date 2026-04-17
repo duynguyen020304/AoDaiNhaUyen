@@ -5,6 +5,7 @@ namespace AoDaiNhaUyen.Application.Interfaces.Services;
 public interface ICatalogService
 {
   Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default);
+  Task<IReadOnlyList<CategoryTreeDto>> GetHeaderCategoriesAsync(CancellationToken cancellationToken = default);
   Task<PagedResult<ProductListItemDto>> GetProductsAsync(
     string? categorySlug,
     string? productType,

@@ -1,0 +1,22 @@
+namespace AoDaiNhaUyen.Api.Responses;
+
+public static class ApiResponseFactory
+{
+  public static ApiResponse<T> Success<T>(T data, string message = "Lấy dữ liệu thành công")
+  {
+    return new ApiResponse<T>(true, message, data, null, DateTime.UtcNow);
+  }
+
+  public static ApiResponse<object> Failure(
+    string message,
+    string code,
+    string errorMessage)
+  {
+    return new ApiResponse<object>(
+      false,
+      message,
+      null,
+      [new ApiError(code, errorMessage)],
+      DateTime.UtcNow);
+  }
+}

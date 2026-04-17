@@ -46,6 +46,12 @@
   white-space: nowrap;
 }
 
+.navItem {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
 .navLink {
   position: relative;
   display: inline-flex;
@@ -55,6 +61,51 @@
   padding: 3px 16px;
   border-radius: 999px;
   overflow: hidden;
+}
+
+.caret {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  min-width: 188px;
+  transform: translateX(-50%) translateY(8px);
+  padding: 8px 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(128, 23, 36, 0.96);
+  box-shadow: 0 20px 40px rgba(39, 8, 13, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.navItem:hover .dropdown,
+.navItem:focus-within .dropdown {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.dropdownLink {
+  display: block;
+  padding: 6px 14px;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 20px;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.dropdownLink:hover,
+.dropdownActive {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff3f3;
 }
 
 .activePill {
@@ -118,6 +169,16 @@
     min-height: 48px;
     flex-wrap: wrap;
     padding: 12px;
+  }
+
+  .dropdown {
+    left: 0;
+    transform: translateY(8px);
+  }
+
+  .navItem:hover .dropdown,
+  .navItem:focus-within .dropdown {
+    transform: translateY(0);
   }
 }
 

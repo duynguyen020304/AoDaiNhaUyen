@@ -1,7 +1,10 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import styles from './Header.module.css';
 import { fadeUp, staggerContainer } from '../../utils/motion';
+import { getHeaderCategories } from '../../api/catalog';
+import type { HeaderCategory } from '../../types/catalog';
 
 interface NavLinkConfig {
   label: string;
@@ -17,9 +20,63 @@ const navLinks: NavLinkConfig[] = [
   { label: 'Phụ kiện', to: '/accessories', matchPath: '/accessories' },
 ];
 
+const fallbackCategories: HeaderCategory[] = [
+  {
+    id: 1,
+    name: 'Áo dài',
+    slug: 'ao-dai',
+    sortOrder: 1,
+    children: [
+      { id: 3, name: 'Áo dài truyền thống', slug: 'ao-dai-truyen-thong', sortOrder: 1 },
+      { id: 4, name: 'Áo dài cách tân', slug: 'ao-dai-cach-tan', sortOrder: 2 },
+      { id: 5, name: 'Áo dài lụa trơn', slug: 'ao-dai-lua-tron', sortOrder: 3 },
+      { id: 6, name: 'Áo dài thêu hoa', slug: 'ao-dai-theu-hoa', sortOrder: 4 },
+    ],
+  },
+  {
+    id: 2,
+    name: 'Phụ kiện',
+    slug: 'phu-kien',
+    sortOrder: 2,
+    children: [
+      { id: 7, name: 'Trâm cài', slug: 'tram-cai', sortOrder: 1 },
+      { id: 8, name: 'Túi sách', slug: 'tui-sach', sortOrder: 2 },
+      { id: 9, name: 'Quạt', slug: 'quat', sortOrder: 3 },
+      { id: 10, name: 'Giày', slug: 'giay', sortOrder: 4 },
+    ],
+  },
+];
+
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [categories, setCategories] = useState<HeaderCategory[]>(fallbackCategories);
+
+  useEffect(() => {
+    let ignore = false;
+
+    getHeaderCategories()
+      .then((data) => {
+        if (!ignore && data.length > 0) {
+          setCategories(data);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setCategories(fallbackCategories);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const categoriesBySlug = useMemo(() => {
+    return new Map(categories.map((category) => [category.slug, category]));
+  }, [categories]);
+
+  const activeCategory = new URLSearchParams(location.search).get('category');
 
   const handleClick = (link: NavLinkConfig, e: React.MouseEvent) => {
     if (location.pathname !== link.to) {
@@ -54,22 +111,55 @@ export default function Header() {
         animate="show"
       >
         {navLinks.map((link) => {
-          const isActive = location.pathname === link.matchPath;
+          const category = link.to === '/products'
+            ? categoriesBySlug.get('ao-dai')
+            : link.to === '/accessories'
+              ? categoriesBySlug.get('phu-kien')
+              : undefined;
+          const isCategoryActive = category?.children.some((child) => child.slug === activeCategory) ?? false;
+          const isActive = location.pathname === link.matchPath || isCategoryActive;
           return (
-            <motion.a
+            <motion.div
               key={link.to}
-              className={`${styles.navLink} ${isActive ? styles.isActive : ''}`}
-              href={link.to}
-              onClick={(e) => handleClick(link, e)}
+              className={styles.navItem}
               variants={fadeUp}
               whileHover={{ y: -1 }}
-              whileTap={{ scale: 0.97 }}
             >
-              {isActive ? (
-                <motion.span className={styles.activePill} layoutId="header-active-pill" />
+              <a
+                className={`${styles.navLink} ${isActive ? styles.isActive : ''}`}
+                href={link.to}
+                onClick={(e) => handleClick(link, e)}
+              >
+                {isActive ? (
+                  <motion.span className={styles.activePill} layoutId="header-active-pill" />
+                ) : null}
+                <span className={styles.navLabel}>
+                  {link.label}
+                  {category ? <span className={styles.caret}>⌄</span> : null}
+                </span>
+              </a>
+              {category && category.children.length > 0 ? (
+                <div className={styles.dropdown}>
+                  {category.children.map((child) => {
+                    const targetPath = category.slug === 'ao-dai' ? '/products' : '/accessories';
+                    const target = `${targetPath}?category=${child.slug}`;
+                    return (
+                      <a
+                        key={child.slug}
+                        className={`${styles.dropdownLink} ${activeCategory === child.slug ? styles.dropdownActive : ''}`}
+                        href={target}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          navigate(target);
+                        }}
+                      >
+                        {child.name}
+                      </a>
+                    );
+                  })}
+                </div>
               ) : null}
-              <span className={styles.navLabel}>{link.label}</span>
-            </motion.a>
+            </motion.div>
           );
         })}
         <motion.a
