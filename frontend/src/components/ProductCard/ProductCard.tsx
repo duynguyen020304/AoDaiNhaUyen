@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import styles from './ProductCard.module.css';
-import { cardReveal, cardHover, fadeUp, viewportOnce } from '../../utils/motion';
+import { cardReveal, cardHover, viewportOnce } from '../../utils/motion';
 import type { Product, Badge } from '../../pages/ProductsPage/data';
 
 const BADGE_COLORS: Record<Badge, string> = {
@@ -11,7 +11,7 @@ const BADGE_COLORS: Record<Badge, string> = {
 
 function StarIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" role="img">
       <path d="M8 1.333l2.067 4.18 4.6.67-3.334 3.248.787 4.587L8 11.863 3.88 14.018l.787-4.587L1.333 6.183l4.6-.67z" fill="#FFD400" stroke="#FFD400" strokeWidth="0.5"/>
     </svg>
   );
@@ -19,7 +19,7 @@ function StarIcon() {
 
 function CartIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true" role="img">
       <path d="M5.667 14.333a.833.833 0 110 1.667.833.833 0 010-1.667M13.667 14.333a.833.833 0 110 1.667.833.833 0 010-1.667M2.5 3h2.167l1.5 8h7.5l1.5-5.333H6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
@@ -47,7 +47,7 @@ export default function ProductCard({ data }: { data: Product }) {
       <div className={styles.info}>
         <h3 className={styles.name}>{data.name}</h3>
         <div className={styles.rating}>
-          {[...Array(5)].map((_, i) => <StarIcon key={i} />)}
+          {[1, 2, 3, 4, 5].map((n) => <StarIcon key={n} />)}
           <span className={styles.reviewCount}>({data.reviews})</span>
         </div>
         <div className={styles.priceRow}>

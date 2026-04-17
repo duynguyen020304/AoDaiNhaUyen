@@ -83,8 +83,9 @@ export default function Header() {
         </motion.a>
         <motion.a
           className={styles.cartLink}
-          href="#footer"
+          href="/cart"
           aria-label="Giỏ hàng"
+          onClick={(e) => { e.preventDefault(); navigate('/cart'); }}
           variants={fadeUp}
           whileHover={{ y: -1, scale: 1.03 }}
           whileTap={{ scale: 0.95 }}

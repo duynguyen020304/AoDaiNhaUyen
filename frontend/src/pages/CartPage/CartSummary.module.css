@@ -1,0 +1,214 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 21px;
+  width: 270px;
+  flex-shrink: 0;
+}
+
+.card {
+  background: #fff;
+  border: 0.8px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12.75px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 21px;
+}
+
+.cardTitle {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1;
+  color: #0a0a0a;
+  margin: 0;
+}
+
+.summaryTitle {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1.21;
+  color: #721311;
+  margin: 0;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10.5px;
+  padding: 0 21px 21px;
+}
+
+/* Promo */
+.promoRow {
+  display: flex;
+  gap: 7px;
+}
+
+.promoInput {
+  flex: 1;
+  height: 31.5px;
+  padding: 3.5px 10.5px;
+  background: #f3f3f5;
+  border: 0.8px solid transparent;
+  border-radius: 6.75px;
+  font-family: var(--font-body);
+  font-size: 12.25px;
+  line-height: 1.21;
+  color: #717182;
+  outline: none;
+
+  &::placeholder {
+    color: #717182;
+  }
+
+  &:focus {
+    border-color: rgba(0, 0, 0, 0.15);
+  }
+}
+
+.promoBtn {
+  width: 62px;
+  height: 31.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 0.8px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6.75px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 12.25px;
+  line-height: 1.43;
+  color: #0a0a0a;
+  cursor: pointer;
+  opacity: 0.5;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.promoHint {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 10.5px;
+  line-height: 1.33;
+  color: #717182;
+  margin: 0;
+}
+
+/* Order Summary */
+.priceRow {
+  display: flex;
+  justify-content: space-between;
+  align-self: stretch;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #0a0a0a;
+}
+
+.priceValue {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #0a0a0a;
+}
+
+.priceValueSmall {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #0a0a0a;
+  text-align: right;
+}
+
+.divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-self: stretch;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #0a0a0a;
+}
+
+.totalValue {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 15.75px;
+  line-height: 1.56;
+  color: #0a0a0a;
+}
+
+.checkoutBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 35px;
+  background: #721311;
+  border: none;
+  border-radius: 6.75px;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #fff;
+  cursor: pointer;
+  margin-top: 13px;
+
+  &:hover {
+    background: #5e0f0e;
+  }
+}
+
+/* Shipping Info */
+.shippingList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px 21px 12px 21px;
+}
+
+.shippingItem {
+  display: flex;
+  align-items: center;
+  gap: 10.5px;
+}
+
+.shippingTitle {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #0a0a0a;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.shippingSub {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 10.5px;
+  line-height: 1.33;
+  color: #717182;
+  margin: 3px 0 0;
+}

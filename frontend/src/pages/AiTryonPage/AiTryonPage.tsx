@@ -83,7 +83,7 @@ export default function AiTryonPage() {
             <ImageDropZone
               compact={!!userPhoto}
               photoUrl={userPhoto}
-              fileName={userFileName}
+              fileName={userFileName ?? undefined}
               onFileSelect={handleUploadPhoto}
             />
           </div>
