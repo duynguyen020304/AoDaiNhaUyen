@@ -1,0 +1,17 @@
+using AoDaiNhaUyen.Application.DTOs;
+
+namespace AoDaiNhaUyen.Application.Interfaces.Services;
+
+public interface ICatalogService
+{
+  Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default);
+  Task<PagedResult<ProductListItemDto>> GetProductsAsync(
+    string? categorySlug,
+    string? productType,
+    bool? featured,
+    int page,
+    int pageSize,
+    CancellationToken cancellationToken = default);
+
+  Task<ProductDetailDto?> GetProductBySlugAsync(string slug, CancellationToken cancellationToken = default);
+}
