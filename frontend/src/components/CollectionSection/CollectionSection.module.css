@@ -65,7 +65,11 @@
   z-index: 2;
   width: min(1620px, calc(100% - 72px));
   margin: 92px auto 0;
+}
+
+.dressGrid {
   display: grid;
+  width: 100%;
   grid-template-columns: repeat(3, minmax(260px, 1fr));
   gap: 92px;
   align-items: end;
@@ -124,7 +128,7 @@
 }
 
 @media (max-width: 1400px) {
-  .dressShowcase {
+  .dressGrid {
     gap: 40px;
   }
 }
@@ -141,7 +145,7 @@
     margin-top: 60px;
   }
 
-  .dressShowcase {
+  .dressGrid {
     grid-template-columns: 1fr;
   }
 }
