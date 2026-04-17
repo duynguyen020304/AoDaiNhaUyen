@@ -1,11 +1,293 @@
 .page {
   min-height: 100vh;
+  background: var(--ai-page-bg);
+  color: var(--ink);
+  padding-top: 80px;
+}
+
+/* Hero Section */
+.hero {
+  max-width: 1280px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 44px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  background: var(--ai-badge-bg);
+  color: var(--deep-red);
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.4;
+  border-radius: 9999px;
+}
+
+.hero h1 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 48px;
+  line-height: 1;
+  color: var(--deep-red);
+  margin: 0;
+}
+
+.description {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 700px;
+  margin: 0;
+}
+
+/* Try-On Section */
+.tryonSection {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  gap: 32px;
+  padding: 0 24px 80px;
+}
+
+/* Upload Panel */
+.uploadPanel,
+.resultPanel {
+  flex: 1;
+  min-width: 0;
   background: var(--burgundy);
-  color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px -1px rgba(0, 0, 0, 0.1), 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.stepHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 24px 0;
+}
+
+.stepBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--ai-page-bg);
+  color: var(--deep-red);
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.5;
+  border-radius: 9999px;
+}
+
+.uploadPanel h2,
+.resultPanel h2 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--ai-page-bg);
+  margin: 0;
+}
+
+.resultPanel h2 {
+  font-weight: 700;
+  font-size: 20px;
+  padding: 24px 24px 0;
+}
+
+.dropZone {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 80px 24px;
+  gap: 16px;
+  margin: 24px;
+  height: 512px;
+  border: 2px dashed var(--ai-upload-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropZone:hover {
+  background: rgba(249, 250, 251, 0.05);
+  border-color: var(--ai-helper-text);
+}
+
+.uploadIcon {
+  width: 48px;
+  height: 48px;
+}
+
+.dropZone p {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ai-upload-label);
+  margin: 0;
+}
+
+.dropZone span {
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ai-helper-text);
+  margin: 0;
+}
+
+/* Result Panel */
+.resultPlaceholder {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 24px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  min-height: 400px;
+}
+
+.resultPlaceholder p {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ai-placeholder-text);
+  margin: 0;
+}
+
+.tryonButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 576px;
+  margin: 0 24px 24px;
+  padding: 16px 32px;
+  background: var(--ai-btn-bg);
+  color: var(--deep-red);
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.55;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tryonButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tryonButton:active {
+  transform: translateY(0);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1400px) {
+  .hero {
+    padding: 32px 24px 40px;
+  }
+
+  .hero h1 {
+    font-size: 42px;
+  }
+
+  .tryonSection {
+    padding: 0 24px 64px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .tryonSection {
+    flex-direction: column;
+  }
+
+  .uploadPanel,
+  .resultPanel {
+    width: 100%;
+  }
+
+  .dropZone {
+    height: 400px;
+  }
+}
+
+@media (max-width: 680px) {
+  .hero {
+    padding: 24px 16px 32px;
+    gap: 12px;
+  }
+
+  .hero h1 {
+    font-size: 32px;
+  }
+
+  .description {
+    font-size: 16px;
+  }
+
+  .badge {
+    font-size: 12px;
+    padding: 4px 12px;
+  }
+
+  .tryonSection {
+    padding: 0 16px 48px;
+    gap: 24px;
+  }
+
+  .stepHeader {
+    padding: 20px 20px 0;
+  }
+
+  .resultPanel h2 {
+    padding: 20px 20px 0;
+  }
+
+  .dropZone,
+  .resultPlaceholder {
+    margin: 20px;
+    height: 320px;
+  }
+
+  .dropZone p {
+    font-size: 14px;
+  }
+
+  .dropZone span {
+    font-size: 12px;
+  }
+
+  .tryonButton {
+    margin: 0 20px 20px;
+    padding: 14px 24px;
+    font-size: 16px;
+  }
+
+  .uploadIcon {
+    width: 40px;
+    height: 40px;
+  }
 }
