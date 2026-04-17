@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { forgotPassword, register } from '../../api/auth';
 import { useAuth } from '../../auth/useAuth';
+import { useToast } from '../../components/Toast/useToast';
 import styles from './LoginPage.module.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, startGoogleLogin } = useAuth();
+  const { login, startGoogleLogin, startFacebookLogin, status } = useAuth();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Login fields
   const [email, setEmail] = useState('');
@@ -20,11 +24,41 @@ export default function LoginPage() {
   const [regPhone, setRegPhone] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirm, setRegConfirm] = useState('');
+  const [forgotEmail, setForgotEmail] = useState('');
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
   const redirectTo = location.state?.from || '/account';
+  const verified = query.get('verified');
+  const autoLogin = query.get('autologin');
+  const verificationReason = query.get('reason');
+
+  useEffect(() => {
+    if (verified === 'true') {
+      showToast('Email da duoc xac thuc. He thong dang khoi phuc phien dang nhap cua ban.', 'success');
+      setError(null);
+      setActiveTab('login');
+      setShowForgotPassword(false);
+      return;
+    }
+
+    if (verified === 'false') {
+      const message = verificationReason === 'verification_token_expired'
+        ? 'Lien ket xac thuc da het han. Vui long dang ky lai hoac lien he ho tro.'
+        : 'Khong the xac thuc email voi lien ket nay.';
+      showToast(message, 'error');
+      setActiveTab('login');
+      setShowForgotPassword(false);
+    }
+  }, [showToast, verificationReason, verified]);
+
+  useEffect(() => {
+    if (verified === 'true' && autoLogin === 'true' && status === 'authenticated') {
+      navigate('/account', { replace: true });
+    }
+  }, [autoLogin, navigate, status, verified]);
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -40,48 +74,71 @@ export default function LoginPage() {
     }
   }
 
-  function handleRegister(event: React.FormEvent<HTMLFormElement>) {
+  async function handleRegister(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setIsSubmitting(true);
     setError(null);
     if (regPassword !== regConfirm) {
       setError('Mật khẩu xác nhận không khớp.');
+      setIsSubmitting(false);
       return;
     }
-    // TODO: implement register API
-    setError('Chức năng đăng ký chưa được hỗ trợ.');
+
+    try {
+      await register({
+        fullName: regName,
+        email: regEmail,
+        phone: regPhone,
+        password: regPassword,
+        confirmPassword: regConfirm,
+      });
+      showToast('Dang ky thanh cong. Vui long kiem tra email de xac thuc tai khoan.', 'success');
+      setActiveTab('login');
+      setRegPassword('');
+      setRegConfirm('');
+      setPassword('');
+      setEmail(regEmail);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Khong the dang ky tai khoan.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleForgotPassword() {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      await forgotPassword(forgotEmail);
+      showToast('Neu email ton tai trong he thong, huong dan dat lai mat khau da duoc gui.', 'success');
+      setShowForgotPassword(false);
+      setForgotEmail('');
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Khong the gui email dat lai mat khau.');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <section className={styles.page}>
       <div className={styles.container}>
-        {/* Header: logo + close */}
-        <div className={styles.header}>
-          <img src="/assets/login/logo.svg" alt="Nhà Uyên" />
-          <button className={styles.closeBtn} onClick={() => navigate(-1)} aria-label="Đóng">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18" stroke="#99A1AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M6 6L18 18" stroke="#99A1AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Tabs */}
         <div className={styles.tabs}>
           <button
             className={activeTab === 'login' ? styles.tabActive : styles.tab}
-            onClick={() => { setActiveTab('login'); setError(null); }}
+            onClick={() => { setActiveTab('login'); setError(null); setShowForgotPassword(false); }}
           >
             ĐĂNG NHẬP
           </button>
           <button
             className={activeTab === 'register' ? styles.tabActive : styles.tab}
-            onClick={() => { setActiveTab('register'); setError(null); }}
+            onClick={() => { setActiveTab('register'); setError(null); setShowForgotPassword(false); }}
           >
             ĐĂNG KÝ
           </button>
         </div>
 
-        {/* Login Form */}
         {activeTab === 'login' && (
           <form className={styles.form} onSubmit={handleLogin}>
             <div className={styles.field}>
@@ -125,8 +182,51 @@ export default function LoginPage() {
                 />
                 Ghi nhớ đăng nhập
               </label>
-              <button type="button" className={styles.forgot}>Quên mật khẩu?</button>
+              <button
+                type="button"
+                className={styles.forgot}
+                onClick={() => {
+                  setShowForgotPassword((current) => !current);
+                  setError(null);
+                  setForgotEmail(email);
+                }}
+              >
+                Quên mật khẩu?
+              </button>
             </div>
+
+            {showForgotPassword ? (
+              <div className={styles.inlinePanel}>
+                <p className={styles.inlineCopy}>
+                  Nhap email dang ky. Neu tai khoan ton tai, chung toi se gui lien ket dat lai mat khau.
+                </p>
+                <div className={styles.inlineForm}>
+                  <div className={styles.field}>
+                    <label htmlFor="forgot-email">Email khoi phuc</label>
+                    <div className={styles.inputWrapper}>
+                      <img className={styles.inputIcon} src="/assets/login/icon-email.svg" alt="" />
+                      <input
+                        id="forgot-email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="example@gmail.com"
+                        value={forgotEmail}
+                        onChange={(event) => setForgotEmail(event.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <button
+                    className={styles.secondaryBtn}
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => { void handleForgotPassword(); }}
+                  >
+                    {isSubmitting ? 'Dang gui...' : 'Gui email dat lai mat khau'}
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             <button className={styles.loginBtn} type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Đang xử lý...' : 'ĐĂNG NHẬP'}
@@ -143,7 +243,7 @@ export default function LoginPage() {
                 <img src="/assets/login/icon-google.svg" alt="Google" />
                 Google
               </button>
-              <button type="button" className={styles.socialBtn}>
+              <button type="button" className={styles.socialBtn} onClick={startFacebookLogin}>
                 <img src="/assets/login/icon-facebook.svg" alt="Facebook" />
                 Facebook
               </button>
@@ -151,7 +251,6 @@ export default function LoginPage() {
           </form>
         )}
 
-        {/* Register Form */}
         {activeTab === 'register' && (
           <form className={styles.form} onSubmit={handleRegister}>
             <div className={styles.field}>
@@ -249,7 +348,7 @@ export default function LoginPage() {
                 <img src="/assets/login/icon-google.svg" alt="Google" />
                 Google
               </button>
-              <button type="button" className={styles.socialBtn}>
+              <button type="button" className={styles.socialBtn} onClick={startFacebookLogin}>
                 <img src="/assets/login/icon-facebook.svg" alt="Facebook" />
                 Facebook
               </button>

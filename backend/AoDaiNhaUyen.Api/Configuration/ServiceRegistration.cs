@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using AoDaiNhaUyen.Api.Services;
 using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Repositories;
 using AoDaiNhaUyen.Application.Interfaces.Services;
@@ -21,8 +22,7 @@ public static class ServiceRegistration
   {
     var configuredConnection = configuration.GetConnectionString("DefaultConnection");
     var envConnection =
-      Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") ??
-      Environment.GetEnvironmentVariable("POSTGRESQL_CONNECTION_STRING");
+      Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 
     var connectionString = !string.IsNullOrWhiteSpace(envConnection)
       ? envConnection
@@ -35,12 +35,31 @@ public static class ServiceRegistration
 
     services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
     services
+      .AddOptions<EmailSettings>()
+      .Bind(configuration.GetSection("EmailSettings"))
+      .ValidateDataAnnotations()
+      .Validate(
+        settings => Uri.TryCreate(settings.ApiBaseUrl, UriKind.Absolute, out _),
+        "EmailSettings:ApiBaseUrl must be a valid absolute URI.")
+      .Validate(
+        settings => Uri.TryCreate(settings.FrontendBaseUrl, UriKind.Absolute, out _),
+        "EmailSettings:FrontendBaseUrl must be a valid absolute URI.")
+      .ValidateOnStart();
+    services
       .AddOptions<GoogleOAuthSettings>()
       .Bind(configuration.GetSection("GoogleOAuth"))
       .ValidateDataAnnotations()
       .Validate(
         settings => Uri.TryCreate(settings.RedirectUri, UriKind.Absolute, out _),
         "GoogleOAuth:RedirectUri must be a valid absolute URI.")
+      .ValidateOnStart();
+    services
+      .AddOptions<FacebookOAuthSettings>()
+      .Bind(configuration.GetSection("FacebookOAuth"))
+      .ValidateDataAnnotations()
+      .Validate(
+        settings => Uri.TryCreate(settings.RedirectUri, UriKind.Absolute, out _),
+        "FacebookOAuth:RedirectUri must be a valid absolute URI.")
       .ValidateOnStart();
     services.Configure<CookieSettings>(configuration.GetSection("CookieSettings"));
 
@@ -93,7 +112,9 @@ public static class ServiceRegistration
     services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
     services.AddScoped<IRefreshTokenService, RefreshTokenService>();
     services.AddScoped<IJwtTokenService, JwtTokenService>();
+    services.AddScoped<IEmailService, SmtpEmailService>();
     services.AddScoped<IGoogleOAuthService, GoogleOAuthService>();
+    services.AddScoped<IFacebookOAuthService, FacebookOAuthService>();
     services.AddScoped<IAuthService, AuthService>();
     services.Configure<GoogleCloudOptions>(configuration.GetSection("GoogleCloud"));
     services.AddHttpClient<IAiTryOnService, VertexAiTryOnService>(httpClient =>

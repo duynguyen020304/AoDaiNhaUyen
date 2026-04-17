@@ -1,0 +1,65 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 30px;
+}
+
+.title {
+  font-size: 40px;
+  font-weight: 700;
+  color: #680000;
+  margin: 0 0 40px;
+  text-align: center;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 520px;
+}
+
+.field {
+  height: 30px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #000;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+.value {
+  flex: 1;
+}
+
+.editButton {
+  margin-top: 40px;
+  background: none;
+  border: none;
+  color: #680000;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 24px;
+  letter-spacing: 0.05em;
+}
+
+.editButton:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .fields {
+    width: 100%;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+}

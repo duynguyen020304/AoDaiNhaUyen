@@ -1,10 +1,19 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth';
+import AccountSidebar from './AccountSidebar';
+import AccountInfo from './AccountInfo';
+import AccountEditForm from './AccountEditForm';
+import AddressList from './AddressList';
+import OrderList from './OrderList';
 import styles from './AccountPage.module.css';
+
+export type TabKey = 'info' | 'edit' | 'orders' | 'addresses';
 
 export default function AccountPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [activeTab, setActiveTab] = useState<TabKey>('info');
 
   async function handleLogout() {
     await logout();
@@ -15,30 +24,34 @@ export default function AccountPage() {
     return null;
   }
 
+  function handleTabChange(tab: TabKey) {
+    if (tab === 'info' || tab === 'orders' || tab === 'addresses') {
+      setActiveTab(tab);
+    }
+  }
+
   return (
     <section className={styles.page}>
-      <div className={styles.shell}>
-        <div className={styles.hero}>
-          <p>Tai khoan da xac thuc</p>
-          <h1>Xin chao, {user.fullName}.</h1>
-        </div>
-
-        <div className={styles.grid}>
-          <article className={styles.panel}>
-            <h2 className={styles.panelTitle}>Thong tin tai khoan</h2>
-            <p className={styles.value}>Email: {user.email ?? 'Chua cap nhat'}</p>
-            <p className={styles.value}>Vai tro: {user.roles.join(', ') || 'customer'}</p>
-          </article>
-
-          <article className={styles.panel}>
-            <h2 className={styles.panelTitle}>Phien dang nhap</h2>
-            <p className={styles.value}>
-              Access token va refresh token duoc luu trong cookie HttpOnly va khong hien thi trong JavaScript.
-            </p>
-            <button className={styles.logoutButton} type="button" onClick={handleLogout}>
-              Dang xuat
-            </button>
-          </article>
+      <button
+        className={styles.closeButton}
+        type="button"
+        onClick={() => navigate('/')}
+        aria-label="Close"
+      >
+        ✕
+      </button>
+      <div className={styles.layout}>
+        <AccountSidebar
+          user={user}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onLogout={handleLogout}
+        />
+        <div className={styles.content}>
+          {activeTab === 'info' && <AccountInfo onEdit={() => setActiveTab('edit')} />}
+          {activeTab === 'edit' && <AccountEditForm onCancel={() => setActiveTab('info')} />}
+          {activeTab === 'orders' && <OrderList />}
+          {activeTab === 'addresses' && <AddressList />}
         </div>
       </div>
     </section>

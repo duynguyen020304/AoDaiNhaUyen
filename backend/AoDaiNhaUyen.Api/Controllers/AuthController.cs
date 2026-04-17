@@ -14,9 +14,33 @@ namespace AoDaiNhaUyen.Api.Controllers;
 public sealed class AuthController(
   IAuthService authService,
   IOptions<CookieSettings> cookieSettings,
+  IOptions<EmailSettings> emailSettings,
   IWebHostEnvironment environment) : ControllerBase
 {
   private readonly CookieSettings cookieSettings = cookieSettings.Value;
+  private readonly EmailSettings emailSettings = emailSettings.Value;
+
+  [HttpPost("register")]
+  public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
+  {
+    var result = await authService.RegisterAsync(
+      request.FullName,
+      request.Email,
+      request.Phone,
+      request.Password,
+      request.ConfirmPassword,
+      cancellationToken);
+
+    if (!result.Succeeded)
+    {
+      return Conflict(ApiResponseFactory.Failure(
+        "Dang ky that bai",
+        result.ErrorCode ?? "register_failed",
+        result.ErrorMessage ?? "Khong the tao tai khoan."));
+    }
+
+    return Ok(ApiResponseFactory.Success(new { registered = true }, result.Value ?? "Vui long kiem tra email de xac thuc tai khoan."));
+  }
 
   [HttpPost("login")]
   public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
@@ -57,6 +81,25 @@ public sealed class AuthController(
     return Ok(ApiResponseFactory.Success(result.Value.User, "Đăng nhập Google thành công"));
   }
 
+  [HttpPost("facebook")]
+  public async Task<IActionResult> Facebook([FromBody] FacebookLoginRequest request, CancellationToken cancellationToken)
+  {
+    var result = await authService.LoginWithFacebookAsync(
+      request.Code,
+      GetIpAddress(),
+      Request.Headers.UserAgent.ToString(),
+      cancellationToken);
+
+    if (!result.Succeeded || result.Value is null)
+    {
+      ClearAuthCookies();
+      return Unauthorized(ApiResponseFactory.Failure("Đăng nhập Facebook thất bại", result.ErrorCode ?? "facebook_login_failed", result.ErrorMessage ?? "Không thể đăng nhập với Facebook."));
+    }
+
+    WriteAuthCookies(result.Value.AccessToken, result.Value.RefreshToken);
+    return Ok(ApiResponseFactory.Success(result.Value.User, "Đăng nhập Facebook thành công"));
+  }
+
   [HttpPost("refresh")]
   public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
   {
@@ -90,6 +133,49 @@ public sealed class AuthController(
     ClearAuthCookies();
 
     return Ok(ApiResponseFactory.Success(new { loggedOut = true }, "Đăng xuất thành công"));
+  }
+
+  [HttpGet("verify-email")]
+  public async Task<IActionResult> VerifyEmail([FromQuery] string token, CancellationToken cancellationToken)
+  {
+    var result = await authService.VerifyEmailAsync(token, cancellationToken);
+    if (!result.Succeeded || result.Value is null)
+    {
+      var redirectUrl = BuildFrontendRedirect(
+        "verified=false",
+        $"reason={Uri.EscapeDataString(result.ErrorCode ?? "verification_failed")}");
+      return Redirect(redirectUrl);
+    }
+
+    WriteAuthCookies(result.Value.AccessToken, result.Value.RefreshToken);
+    return Redirect(BuildFrontendRedirect("verified=true", "autologin=true"));
+  }
+
+  [HttpPost("forgot-password")]
+  public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
+  {
+    await authService.ForgotPasswordAsync(request.Email, cancellationToken);
+    return Ok(ApiResponseFactory.Success(new { sent = true }, "Neu email ton tai, huong dan dat lai mat khau da duoc gui."));
+  }
+
+  [HttpPost("reset-password")]
+  public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+  {
+    var result = await authService.ResetPasswordAsync(
+      request.UserId,
+      request.Token,
+      request.NewPassword,
+      cancellationToken);
+
+    if (!result.Succeeded)
+    {
+      return BadRequest(ApiResponseFactory.Failure(
+        "Dat lai mat khau that bai",
+        result.ErrorCode ?? "reset_password_failed",
+        result.ErrorMessage ?? "Khong the dat lai mat khau."));
+    }
+
+    return Ok(ApiResponseFactory.Success(new { reset = true }, result.Value ?? "Dat lai mat khau thanh cong."));
   }
 
   [Authorize]
@@ -154,6 +240,26 @@ public sealed class AuthController(
     return long.TryParse(claimValue, out var userId) ? userId : null;
   }
 
+  private string BuildFrontendRedirect(params string[] queryParts)
+  {
+    var baseUrl = emailSettings.FrontendBaseUrl.TrimEnd('/');
+    if (queryParts.Length == 0)
+    {
+      return $"{baseUrl}/login";
+    }
+
+    return $"{baseUrl}/login?{string.Join("&", queryParts)}";
+  }
+
+  public sealed record RegisterRequest(
+    string FullName,
+    string Email,
+    string? Phone,
+    string Password,
+    string ConfirmPassword);
   public sealed record LoginRequest(string Email, string Password);
+  public sealed record ForgotPasswordRequest(string Email);
+  public sealed record ResetPasswordRequest(long UserId, string Token, string NewPassword);
   public sealed record GoogleLoginRequest(string Code);
+  public sealed record FacebookLoginRequest(string Code);
 }
