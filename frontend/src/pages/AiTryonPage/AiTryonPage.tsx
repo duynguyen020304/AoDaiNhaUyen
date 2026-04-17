@@ -5,16 +5,20 @@ import AccessoryPanel from './AccessoryPanel';
 import ClothingPanel from './ClothingPanel';
 import ResultPanel from './ResultPanel';
 import ImageDropZone from './ImageDropZone';
+import { submitAiTryOn } from '../../api/aiTryon';
+import { ACCESSORIES, GARMENTS } from './data';
 import styles from './AiTryonPage.module.css';
 
 export default function AiTryonPage() {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
+  const [userPhotoFile, setUserPhotoFile] = useState<File | null>(null);
   const [userFileName, setUserFileName] = useState<string | null>(null);
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [selectedGarment, setSelectedGarment] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [tryonResult, setTryonResult] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [tryonError, setTryonError] = useState<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -27,7 +31,10 @@ export default function AiTryonPage() {
       if (prev) URL.revokeObjectURL(prev);
       return URL.createObjectURL(file);
     });
+    setUserPhotoFile(file);
     setUserFileName(file.name);
+    setTryonResult(null);
+    setTryonError(null);
   }, []);
 
   const handleToggleAccessory = useCallback((id: string) => {
@@ -36,15 +43,48 @@ export default function AiTryonPage() {
     );
   }, []);
 
-  const handleTryonClick = useCallback(() => {
-    if (!userPhoto || !selectedGarment) return;
+  const handleTryonClick = useCallback(async () => {
+    if (!userPhotoFile || !selectedGarment) return;
+
+    const garment = GARMENTS.find((item) => item.id === selectedGarment);
+    if (!garment) {
+      setTryonError('Không tìm thấy trang phục đã chọn.');
+      return;
+    }
+
     setIsProcessing(true);
-    // TODO: API integration
-    setTimeout(() => {
-      setIsProcessing(false);
+    setTryonError(null);
+
+    try {
+      const garmentImage = await fetchGarmentImage(garment.thumbnail, garment.id);
+      const accessoryImages = await Promise.all(
+        selectedAccessories.map(async (accessoryId) => {
+          const accessory = ACCESSORIES.find((item) => item.id === accessoryId);
+          if (!accessory) {
+            throw new Error('Không tìm thấy phụ kiện đã chọn.');
+          }
+
+          return {
+            id: accessory.id,
+            file: await fetchTryOnAsset(accessory.thumbnail, accessory.id),
+          };
+        }),
+      );
+      const result = await submitAiTryOn({
+        personImage: userPhotoFile,
+        garmentImage,
+        garmentId: garment.id,
+        accessoryImages,
+      });
+
+      setTryonResult(result.resultImageUrl);
+    } catch (error) {
       setTryonResult(null);
-    }, 2000);
-  }, [userPhoto, selectedGarment]);
+      setTryonError(error instanceof Error ? error.message : 'Không thể tạo ảnh thử đồ.');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [userPhotoFile, selectedGarment, selectedAccessories]);
 
   return (
     <main className={styles.page}>
@@ -108,11 +148,30 @@ export default function AiTryonPage() {
           <ResultPanel
             tryonResult={tryonResult}
             selectedGarment={selectedGarment}
+            canTryOn={!!userPhotoFile && !!selectedGarment}
             isProcessing={isProcessing}
+            errorMessage={tryonError}
             onTryonClick={handleTryonClick}
           />
         </motion.div>
       </motion.section>
     </main>
   );
+}
+
+async function fetchGarmentImage(thumbnail: string, garmentId: string): Promise<File> {
+  return fetchTryOnAsset(thumbnail, garmentId);
+}
+
+async function fetchTryOnAsset(thumbnail: string, fileName: string): Promise<File> {
+  const response = await fetch(thumbnail);
+  if (!response.ok) {
+    throw new Error('Không thể tải ảnh đã chọn.');
+  }
+
+  const blob = await response.blob();
+  const extension = blob.type === 'image/png' ? 'png' : 'jpg';
+  return new File([blob], `${fileName}.${extension}`, {
+    type: blob.type || 'image/png',
+  });
 }

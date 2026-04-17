@@ -5,6 +5,7 @@ using AoDaiNhaUyen.Application.Interfaces.Repositories;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
 using AoDaiNhaUyen.Application.Services;
+using AoDaiNhaUyen.Infrastructure.Configuration;
 using AoDaiNhaUyen.Infrastructure.Data;
 using AoDaiNhaUyen.Infrastructure.Repositories;
 using AoDaiNhaUyen.Infrastructure.Services;
@@ -94,6 +95,11 @@ public static class ServiceRegistration
     services.AddScoped<IJwtTokenService, JwtTokenService>();
     services.AddScoped<IGoogleOAuthService, GoogleOAuthService>();
     services.AddScoped<IAuthService, AuthService>();
+    services.Configure<GoogleCloudOptions>(configuration.GetSection("GoogleCloud"));
+    services.AddHttpClient<IAiTryOnService, VertexAiTryOnService>(httpClient =>
+    {
+      httpClient.Timeout = Timeout.InfiniteTimeSpan;
+    });
 
     return services;
   }

@@ -92,6 +92,14 @@
   transform: translateY(0);
 }
 
+.errorMessage {
+  margin: -8px 24px 24px;
+  color: #b42318;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 @media (max-width: 680px) {
   .heading {
     padding: 20px 20px 0;
@@ -115,5 +123,9 @@
     margin: 0 20px 20px;
     padding: 14px 24px;
     font-size: 16px;
+  }
+
+  .errorMessage {
+    margin: -4px 20px 20px;
   }
 }
