@@ -12,8 +12,10 @@ public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
     await dbContext.Database.MigrateAsync();
 
     await SeedRolesAsync();
+    await SeedCustomersAsync();
     await SeedCategoriesAsync();
     await SeedProductsAsync();
+    await RemoveStaleCategoriesAsync();
   }
 
   private async Task SeedRolesAsync()
@@ -87,8 +89,57 @@ public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
     await dbContext.SaveChangesAsync();
   }
 
+  private async Task SeedCustomersAsync()
+  {
+    var customerRole = await dbContext.Roles.FirstAsync(x => x.Name == "customer");
+
+    foreach (var item in DefaultCustomers.Items)
+    {
+      var user = await dbContext.Users
+        .Include(x => x.UserRoles)
+        .FirstOrDefaultAsync(x => x.Email == item.Email);
+
+      if (user is null)
+      {
+        user = new User
+        {
+          FullName = item.FullName,
+          Email = item.Email,
+          Phone = item.Phone,
+          PasswordHash = item.PasswordHash,
+          Gender = item.Gender,
+          Status = "active",
+          EmailVerifiedAt = DateTime.UtcNow,
+          PhoneVerifiedAt = DateTime.UtcNow
+        };
+
+        dbContext.Users.Add(user);
+      }
+      else
+      {
+        user.FullName = item.FullName;
+        user.Phone = item.Phone;
+        user.PasswordHash = item.PasswordHash;
+        user.Gender = item.Gender;
+        user.Status = "active";
+        user.EmailVerifiedAt ??= DateTime.UtcNow;
+        user.PhoneVerifiedAt ??= DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
+      }
+
+      if (!user.UserRoles.Any(x => x.RoleId == customerRole.Id))
+      {
+        user.UserRoles.Add(new UserRole { RoleId = customerRole.Id });
+      }
+    }
+
+    await dbContext.SaveChangesAsync();
+  }
+
   private async Task SeedProductsAsync()
   {
+    await RemoveStaleProductsAsync();
+
     var materialsBySlug = DefaultMaterials.Items.ToDictionary(x => x.Slug, x => x.Name);
 
     foreach (var item in DefaultProducts.Items)
@@ -138,29 +189,12 @@ public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
         product.UpdatedAt = DateTime.UtcNow;
       }
 
-      var sku = item.Slug.ToUpperInvariant().Replace('-', '_');
-      var variant = product.Variants.FirstOrDefault(x => x.Sku == sku);
-      if (variant is null)
+      foreach (var variantSeed in item.Variants)
       {
-        product.Variants.Add(new ProductVariant
-        {
-          Sku = sku,
-          VariantName = "Mac dinh",
-          Price = item.Price,
-          StockQty = 20,
-          IsDefault = true,
-          Status = "active"
-        });
-      }
-      else
-      {
-        variant.Price = item.Price;
-        variant.StockQty = Math.Max(variant.StockQty, 20);
-        variant.IsDefault = true;
-        variant.Status = "active";
-        variant.UpdatedAt = DateTime.UtcNow;
+        UpsertVariant(product, variantSeed);
       }
 
+      var defaultVariant = product.Variants.FirstOrDefault(x => x.IsDefault) ?? product.Variants.First();
       foreach (var image in item.Images)
       {
         var existingImage = product.Images.FirstOrDefault(x => x.ImageUrl == image.ImageUrl);
@@ -170,6 +204,7 @@ public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
           {
             ImageUrl = image.ImageUrl,
             AltText = image.AltText,
+            Variant = image.IsPrimary ? defaultVariant : null,
             SortOrder = image.SortOrder,
             IsPrimary = image.IsPrimary
           });
@@ -177,12 +212,78 @@ public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
         }
 
         existingImage.AltText = image.AltText;
+        existingImage.Variant = image.IsPrimary ? defaultVariant : null;
         existingImage.SortOrder = image.SortOrder;
         existingImage.IsPrimary = image.IsPrimary;
       }
     }
 
     await dbContext.SaveChangesAsync();
+  }
+
+  private async Task RemoveStaleProductsAsync()
+  {
+    var currentSlugs = DefaultProducts.Items.Select(x => x.Slug).ToHashSet();
+    var staleProducts = await dbContext.Products
+      .Where(x => x.Brand == "Nha Uyen" && !currentSlugs.Contains(x.Slug))
+      .ToListAsync();
+
+    if (staleProducts.Count == 0)
+    {
+      return;
+    }
+
+    dbContext.Products.RemoveRange(staleProducts);
+    await dbContext.SaveChangesAsync();
+  }
+
+  private async Task RemoveStaleCategoriesAsync()
+  {
+    var currentSlugs = DefaultCategories.Items.Select(x => x.Slug).ToHashSet();
+    var staleCategories = await dbContext.Categories
+      .Where(x => !currentSlugs.Contains(x.Slug) && !x.Products.Any())
+      .OrderByDescending(x => x.Parent.HasValue)
+      .ToListAsync();
+
+    if (staleCategories.Count == 0)
+    {
+      return;
+    }
+
+    dbContext.Categories.RemoveRange(staleCategories);
+    await dbContext.SaveChangesAsync();
+  }
+
+  private static void UpsertVariant(Product product, SeedProductVariant item)
+  {
+    var variant = product.Variants.FirstOrDefault(x => x.Sku == item.Sku);
+    if (variant is null)
+    {
+      product.Variants.Add(new ProductVariant
+      {
+        Sku = item.Sku,
+        VariantName = item.VariantName,
+        Size = item.Size,
+        Color = item.Color,
+        Price = item.Price,
+        SalePrice = item.SalePrice,
+        StockQty = item.StockQty,
+        IsDefault = item.IsDefault,
+        Status = "active"
+      });
+
+      return;
+    }
+
+    variant.VariantName = item.VariantName;
+    variant.Size = item.Size;
+    variant.Color = item.Color;
+    variant.Price = item.Price;
+    variant.SalePrice = item.SalePrice;
+    variant.StockQty = item.StockQty;
+    variant.IsDefault = item.IsDefault;
+    variant.Status = "active";
+    variant.UpdatedAt = DateTime.UtcNow;
   }
 
   private async Task<string> ResolveProductTypeAsync(Category category)

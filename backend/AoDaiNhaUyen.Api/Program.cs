@@ -2,6 +2,7 @@ using AoDaiNhaUyen.Api.Configuration;
 using AoDaiNhaUyen.Api.Middleware;
 using AoDaiNhaUyen.Application.Interfaces;
 using DotNetEnv;
+using Microsoft.Extensions.FileProviders;
 
 var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env");
 if (File.Exists(envPath))
@@ -24,6 +25,18 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+var uploadPath = Path.Combine(app.Environment.ContentRootPath, "upload");
+if (Directory.Exists(uploadPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(uploadPath),
+        RequestPath = "/upload"
+    });
+}
+
 app.UseAuthorization();
 app.MapControllers();
 
