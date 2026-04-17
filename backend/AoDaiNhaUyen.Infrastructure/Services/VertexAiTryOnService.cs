@@ -81,13 +81,19 @@ public sealed class VertexAiTryOnService(
 
     var prompt = string.Join(
       "\n",
-      "Hãy tạo ảnh thử đồ thời trang chân thực từ các ảnh đầu vào.",
-      "Ảnh thứ nhất là ảnh người dùng.",
-      "Ảnh thứ hai là áo dài cần mặc lên người dùng.",
-      $"Các ảnh tiếp theo là phụ kiện đi kèm: {accessoryNames}.",
-      "Giữ nguyên khuôn mặt, bố cục tự nhiên, ánh sáng hài hòa.",
-      "Hãy mặc áo dài lên người và thêm các phụ kiện đã cung cấp nếu phù hợp.",
-      "Trả về đúng một ảnh kết quả.");
+      "Hãy tạo ảnh thời trang chân thực từ các ảnh đầu vào.",
+      "Ảnh 1 là ảnh người dùng.",
+      "Ảnh 2 là ảnh trang phục mẫu.",
+      $"Các ảnh tiếp theo là ảnh phụ kiện đi kèm: {accessoryNames}.",
+      "Yêu cầu xử lý:",
+      "1. Remove background của ảnh 1.",
+      "2. Lấy trang phục của người trong ảnh 2 và ghép cho người trong ảnh 1.",
+      "3. Giữ khuôn mặt, vóc dáng và danh tính của người trong ảnh 1.",
+      "4. Final image phải dùng background của ảnh 2.",
+      "5. Nhân vật cuối cùng phải là người trong ảnh 1 nhưng mặc trang phục của người trong ảnh 2.",
+      "6. Nếu có ảnh phụ kiện, hãy thêm các phụ kiện đó lên nhân vật cuối cùng một cách tự nhiên và phù hợp.",
+      "7. Kết quả phải chân thực, toàn thân nếu có thể, ánh sáng hài hòa, không méo người, không đổi khuôn mặt.",
+      "Chỉ trả về đúng một ảnh kết quả.");
 
     var parts = new List<GeminiPart>
     {
