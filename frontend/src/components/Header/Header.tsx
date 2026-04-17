@@ -5,6 +5,7 @@ import styles from './Header.module.css';
 import { fadeUp, staggerContainer } from '../../utils/motion';
 import { getHeaderCategories } from '../../api/catalog';
 import type { HeaderCategory } from '../../types/catalog';
+import { useAuth } from '../../auth/useAuth';
 
 interface NavLinkConfig {
   label: string;
@@ -52,6 +53,7 @@ const DISMISSED_DROPDOWN_CLASS = 'headerDropdownDismissed';
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { status, user, logout } = useAuth();
   const [categories, setCategories] = useState<HeaderCategory[]>(fallbackCategories);
 
   useEffect(() => {
@@ -86,6 +88,11 @@ export default function Header() {
       navigate(link.to);
     }
   };
+
+  async function handleLogout() {
+    await logout();
+    navigate('/login');
+  }
 
   return (
     <motion.header
@@ -166,15 +173,37 @@ export default function Header() {
             </motion.div>
           );
         })}
-        <motion.a
-          className={styles.loginLink}
-          href="#footer"
-          variants={fadeUp}
-          whileHover={{ y: -1, backgroundColor: 'rgba(255, 255, 255, 0.12)' }}
-          whileTap={{ scale: 0.97 }}
-        >
-          ĐĂNG NHẬP
-        </motion.a>
+        {status === 'authenticated' && user ? (
+          <motion.div className={styles.authGroup} variants={fadeUp}>
+            <a
+              className={styles.accountLink}
+              href="/account"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate('/account');
+              }}
+            >
+              {user.fullName}
+            </a>
+            <button className={styles.logoutButton} type="button" onClick={handleLogout}>
+              Dang xuat
+            </button>
+          </motion.div>
+        ) : (
+          <motion.a
+            className={styles.loginLink}
+            href="/login"
+            onClick={(event) => {
+              event.preventDefault();
+              navigate('/login');
+            }}
+            variants={fadeUp}
+            whileHover={{ y: -1, backgroundColor: 'rgba(255, 255, 255, 0.12)' }}
+            whileTap={{ scale: 0.97 }}
+          >
+            DANG NHAP
+          </motion.a>
+        )}
         <motion.a
           className={styles.cartLink}
           href="/cart"

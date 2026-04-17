@@ -6,7 +6,6 @@ public sealed class User
   public required string FullName { get; set; }
   public string? Email { get; set; }
   public string? Phone { get; set; }
-  public required string PasswordHash { get; set; }
   public string? Gender { get; set; }
   public DateOnly? DateOfBirth { get; set; }
   public string? AvatarUrl { get; set; }
@@ -17,6 +16,7 @@ public sealed class User
   public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
   public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+  public ICollection<UserAccount> UserAccounts { get; set; } = new List<UserAccount>();
   public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
   public ICollection<UserSession> Sessions { get; set; } = new List<UserSession>();
   public ICollection<EmailVerificationToken> EmailVerificationTokens { get; set; } = new List<EmailVerificationToken>();
