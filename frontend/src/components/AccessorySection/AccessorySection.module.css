@@ -163,18 +163,11 @@
 
 .logoBadge {
   width: 321px;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--gold);
-  border-radius: 50%;
 }
 
 .logoBadge img {
-  width: 188px;
   height: auto;
   object-fit: contain;
-  filter: brightness(0) saturate(100%) invert(76%) sepia(77%) saturate(1951%) hue-rotate(360deg) brightness(103%) contrast(106%);
 }
 
 .cardTitle {
@@ -247,7 +240,7 @@
   width: 284px;
   margin: 0;
   color: gold;
-  background: var(--gold-gradient);
+  background: linear-gradient(108.56deg, #ffe562 2.62%, #e2d48e 29.97%, #f6d948 56.94%, #c2b887 79.41%, #e4c322 107.51%);
   -webkit-background-clip: text;
   background-clip: text;
   font-family: 'Italianno', cursive;

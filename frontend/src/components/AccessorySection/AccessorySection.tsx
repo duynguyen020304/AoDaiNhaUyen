@@ -77,12 +77,12 @@ export default function AccessorySection() {
         aria-hidden="true"
       />
       <div className={styles.centerPanel} aria-hidden="true" />
-      <img className={styles.cornerLeft} src="/assets/accessories/corner-decor.png" alt="" aria-hidden="true" />
-      <img className={styles.cornerRight} src="/assets/accessories/corner-decor.png" alt="" aria-hidden="true" />
+      <img className={styles.cornerLeft} src="/assets/accessories/corner-decor.svg" alt="" aria-hidden="true" />
+      <img className={styles.cornerRight} src="/assets/accessories/corner-decor.svg" alt="" aria-hidden="true" />
 
       <motion.aside className={styles.infoPanel} variants={fadeUp}>
         <div className={styles.logoBadge} aria-hidden="true">
-          <img src="/assets/footer-logo.png" alt="" />
+          <img src="/assets/accessories/logo-phu-kien.svg" alt="" />
         </div>
         <AnimatePresence mode="wait">
           <motion.div key={activeAccessory.id} variants={carouselCopy} initial="enter" animate="center" exit="exit">

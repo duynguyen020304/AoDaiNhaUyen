@@ -7,7 +7,7 @@
   line-height: 92px;
   font-weight: 400;
   text-align: center;
-  color: transparent;
+  color: yellow;
   background: var(--gold-gradient);
   -webkit-background-clip: text;
   background-clip: text;
@@ -15,7 +15,7 @@
 }
 
 .gold {
-  color: transparent;
+  color: yellow;
   background: var(--gold-gradient);
   -webkit-background-clip: text;
   background-clip: text;
