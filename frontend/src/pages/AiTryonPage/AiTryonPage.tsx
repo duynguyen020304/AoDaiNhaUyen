@@ -1,8 +1,51 @@
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { sectionReveal, fadeUp, viewportOnce } from '../../utils/motion';
+import AccessoryPanel from './AccessoryPanel';
+import ClothingPanel from './ClothingPanel';
+import ResultPanel from './ResultPanel';
+import ImageDropZone from './ImageDropZone';
 import styles from './AiTryonPage.module.css';
 
 export default function AiTryonPage() {
+  const [userPhoto, setUserPhoto] = useState<string | null>(null);
+  const [userFileName, setUserFileName] = useState<string | null>(null);
+  const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
+  const [selectedGarment, setSelectedGarment] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [tryonResult, setTryonResult] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (userPhoto) URL.revokeObjectURL(userPhoto);
+    };
+  }, [userPhoto]);
+
+  const handleUploadPhoto = useCallback((file: File) => {
+    setUserPhoto((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    setUserFileName(file.name);
+  }, []);
+
+  const handleToggleAccessory = useCallback((id: string) => {
+    setSelectedAccessories((prev) =>
+      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
+    );
+  }, []);
+
+  const handleTryonClick = useCallback(() => {
+    if (!userPhoto || !selectedGarment) return;
+    setIsProcessing(true);
+    // TODO: API integration
+    setTimeout(() => {
+      setIsProcessing(false);
+      setTryonResult(null);
+    }, 2000);
+  }, [userPhoto, selectedGarment]);
+
   return (
     <main className={styles.page}>
       <motion.section
@@ -23,30 +66,51 @@ export default function AiTryonPage() {
       </motion.section>
 
       <motion.section
-        className={styles.tryonSection}
+        className={styles.mainSection}
         variants={sectionReveal}
         initial="hidden"
         whileInView="show"
         viewport={viewportOnce}
       >
-        <motion.div className={styles.uploadPanel} variants={fadeUp}>
-          <div className={styles.stepHeader}>
-            <span className={styles.stepBadge}>1</span>
-            <h2>TẢI LÊN ẢNH CỦA BẠN</h2>
+        {/* Left column: User photo + Clothing + Accessories */}
+        <motion.div variants={fadeUp} className={styles.leftCol}>
+          {/* Upload / User photo */}
+          <div className={styles.card}>
+            <div className={styles.stepHeader}>
+              <span className={styles.stepBadge}>1</span>
+              <h2>TẢI LÊN ẢNH CỦA BẠN</h2>
+            </div>
+            <ImageDropZone
+              compact={!!userPhoto}
+              photoUrl={userPhoto}
+              fileName={userFileName}
+              onFileSelect={handleUploadPhoto}
+            />
           </div>
-          <div className={styles.dropZone}>
-            <img src="/assets/ai-tryon/upload-icon.svg" alt="" className={styles.uploadIcon} />
-            <p>Nhấn để tải ảnh lên</p>
-            <span>Hỗ trợ JPG, PNG (Khuyến khích ảnh chụp chân dung)</span>
-          </div>
+
+          {/* Clothing selection */}
+          <ClothingPanel
+            selectedCategory={selectedCategory}
+            selectedGarment={selectedGarment}
+            onCategoryChange={setSelectedCategory}
+            onSelectGarment={setSelectedGarment}
+          />
+
+          {/* Accessories selection */}
+          <AccessoryPanel
+            selectedAccessories={selectedAccessories}
+            onToggleAccessory={handleToggleAccessory}
+          />
         </motion.div>
 
-        <motion.div className={styles.resultPanel} variants={fadeUp}>
-          <h2>KẾT QUẢ</h2>
-          <div className={styles.resultPlaceholder}>
-            <p>Kết quả thử đồ sẽ hiển thị tại đây</p>
-          </div>
-          <button className={styles.tryonButton}>THỬ ĐỒ NGAY</button>
+        {/* Right column: Results */}
+        <motion.div variants={fadeUp}>
+          <ResultPanel
+            tryonResult={tryonResult}
+            selectedGarment={selectedGarment}
+            isProcessing={isProcessing}
+            onTryonClick={handleTryonClick}
+          />
         </motion.div>
       </motion.section>
     </main>

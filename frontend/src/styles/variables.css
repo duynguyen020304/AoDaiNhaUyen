@@ -15,6 +15,8 @@
   --ai-helper-text: #6a7282;
   --ai-upload-label: #364153;
   --ai-btn-bg: #d1d5dc;
+  --ai-active-border: #730707;
+  --ai-grid-gap: 12px;
   --gold-gradient: linear-gradient(
     96deg,
     #ffe562 2%,
