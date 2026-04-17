@@ -7,10 +7,10 @@ using Xunit;
 
 namespace AoDaiNhaUyen.Tests.Configuration;
 
-public sealed class GoogleOAuthSettingsValidationTests
+public sealed class FacebookOAuthSettingsValidationTests
 {
   [Fact]
-  public void AddBackendServices_RejectsMissingGoogleRedirectUri()
+  public void AddBackendServices_RejectsMissingFacebookRedirectUri()
   {
     var configuration = new ConfigurationBuilder()
       .AddInMemoryCollection(new Dictionary<string, string?>
@@ -21,10 +21,10 @@ public sealed class GoogleOAuthSettingsValidationTests
         ["JwtSettings:Audience"] = "AoDaiNhaUyen.Frontend",
         ["GoogleOAuth:ClientId"] = "client-id",
         ["GoogleOAuth:ClientSecret"] = "client-secret",
-        ["GoogleOAuth:RedirectUri"] = "",
+        ["GoogleOAuth:RedirectUri"] = "http://localhost:5173/auth/google/callback",
         ["FacebookOAuth:AppId"] = "app-id",
         ["FacebookOAuth:AppSecret"] = "app-secret",
-        ["FacebookOAuth:RedirectUri"] = "http://localhost:5173/auth/facebook/callback"
+        ["FacebookOAuth:RedirectUri"] = ""
       })
       .Build();
 
@@ -33,7 +33,7 @@ public sealed class GoogleOAuthSettingsValidationTests
     services.AddBackendServices(configuration);
     using var provider = services.BuildServiceProvider();
 
-    var exception = Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<GoogleOAuthSettings>>().Value);
+    var exception = Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<FacebookOAuthSettings>>().Value);
     Assert.Contains("RedirectUri", exception.Message, StringComparison.OrdinalIgnoreCase);
   }
 }
