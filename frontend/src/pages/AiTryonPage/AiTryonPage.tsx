@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { sectionReveal, fadeUp, viewportOnce } from '../../utils/motion';
+import { convertToSupportedFormat } from '../../utils/imageConversion';
 import AccessoryPanel from './AccessoryPanel';
 import ClothingPanel from './ClothingPanel';
 import ResultPanel from './ResultPanel';
@@ -113,7 +114,7 @@ export default function AiTryonPage() {
   return (
     <main
       className={styles.page}
-      onPaste={(event) => {
+      onPaste={async (event) => {
         const clipboardItems = event.clipboardData?.items;
         const clipboardFiles = event.clipboardData?.files;
 
@@ -121,7 +122,8 @@ export default function AiTryonPage() {
         if (!pastedFile) return;
 
         event.preventDefault();
-        handlePastePhoto(pastedFile);
+        const convertedFile = await convertToSupportedFormat(pastedFile);
+        handlePastePhoto(convertedFile);
       }}
     >
       <motion.section
@@ -213,17 +215,19 @@ async function fetchTryOnAsset(thumbnail: string, fileName: string): Promise<Fil
   });
 }
 
+function isAllowedImage(file: File): boolean {
+  return file.type.startsWith('image/') && file.type !== 'image/gif';
+}
+
 function getPastedImageFile(
   items: DataTransferItemList | undefined,
   files: FileList | undefined,
 ): File | null {
-  const supportedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-
   if (items) {
     for (const item of Array.from(items)) {
       if (item.kind !== 'file') continue;
       const file = item.getAsFile();
-      if (file && supportedTypes.has(file.type)) {
+      if (file && isAllowedImage(file)) {
         return file;
       }
     }
@@ -231,7 +235,7 @@ function getPastedImageFile(
 
   if (files) {
     for (const file of Array.from(files)) {
-      if (supportedTypes.has(file.type)) {
+      if (isAllowedImage(file)) {
         return file;
       }
     }

@@ -13,7 +13,6 @@ public sealed class AiTryOnController(IAiTryOnService aiTryOnService) : Controll
   private const long MaxImageBytes = 8 * 1024 * 1024;
   private const int MaxAccessoryImages = 3;
   private const long MaxRequestBytes = MaxImageBytes * (2 + MaxAccessoryImages);
-  private static readonly HashSet<string> AllowedImageTypes = ["image/jpeg", "image/png"];
 
   [HttpPost]
   [RequestSizeLimit(MaxRequestBytes)]
@@ -132,9 +131,11 @@ public sealed class AiTryOnController(IAiTryOnService aiTryOnService) : Controll
       return ("invalid_image", $"{label} must be 8MB or smaller.");
     }
 
-    if (!AllowedImageTypes.Contains(file.ContentType))
+    if (string.IsNullOrWhiteSpace(file.ContentType)
+        || !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
+        || file.ContentType.Equals("image/gif", StringComparison.OrdinalIgnoreCase))
     {
-      return ("invalid_image", $"{label} must be JPEG or PNG.");
+      return ("invalid_image", $"{label} must be an image (GIF is not supported).");
     }
 
     return null;
