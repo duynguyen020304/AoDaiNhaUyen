@@ -1,26 +1,25 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import styles from './HeroBlank.module.css';
-import { carouselCopy, carouselCopyItem, easeOutQuart } from '../../utils/motion';
+import { easeOutQuart } from '../../utils/motion';
 
-const slides = [
+type HeroSlide = {
+  image: string;
+  video?: string;
+};
+
+const slides: HeroSlide[] = [
   {
-    eyebrow: 'Áo Dài Nhã Uyên',
-    title: 'Tà áo Việt cho ngày đáng nhớ',
-    desc: 'Lụa mềm, dáng thanh và sắc đỏ son cho những khoảnh khắc rạng rỡ.',
-    image: '/assets/dress-panel.png',
+    image: '/assets/BANNER ÁO DÀI 1.png', //thumbnail
+    video: '/assets/áo dài 1.mp4',
   },
   {
-    eyebrow: 'Bộ Sưu Tập',
-    title: 'Hoa văn truyền thống, phom dáng hiện đại',
-    desc: 'Những thiết kế tôn dáng với nhịp chuyển nhẹ như một dải lụa.',
-    image: '/assets/red-floral.png',
+    image: '/assets/BANNER ÁO DÀI 2.png', //thumbnail
+    video: '/assets/áo dài 2_1.mp4',
   },
   {
-    eyebrow: 'Thử Đồ AI',
-    title: 'Xem trước tà áo hợp với bạn',
-    desc: 'Chọn mẫu yêu thích và bắt đầu trải nghiệm chỉ trong vài giây.',
-    image: '/assets/ai-scene.png',
+    image: '/assets/BANNER ÁO DÀI 3.png', //thumbnail
+    video: '/assets/áo dài 3_1.mp4',
   },
 ];
 
@@ -66,44 +65,38 @@ export default function HeroBlank() {
       }}
     >
       <AnimatePresence mode="wait" initial={false}>
-        <motion.img
-          key={slide.image}
-          className={styles.heroImage}
-          src={slide.image}
-          alt=""
-          aria-hidden="true"
-          variants={slideMotion}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ duration: 0.78, ease: easeOutQuart }}
-        />
-      </AnimatePresence>
-
-      <div className={styles.heroShade} aria-hidden="true" />
-
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={slide.title}
-          className={styles.heroCopy}
-          variants={carouselCopy}
-          initial="enter"
-          animate="center"
-          exit="exit"
-        >
-          <motion.p variants={carouselCopyItem}>{slide.eyebrow}</motion.p>
-          <motion.h1 variants={carouselCopyItem}>{slide.title}</motion.h1>
-          <motion.span variants={carouselCopyItem}>{slide.desc}</motion.span>
-          <motion.a
-            className={styles.heroCta}
-            href="/collection"
-            variants={carouselCopyItem}
-            whileHover={prefersReducedMotion ? undefined : { y: -2, scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            Khám phá bộ sưu tập
-          </motion.a>
-        </motion.div>
+        {slide.video ? (
+          <motion.video
+            key={slide.video}
+            className={styles.heroMedia}
+            poster={slide.image}
+            src={slide.video}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            aria-hidden="true"
+            variants={slideMotion}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.78, ease: easeOutQuart }}
+          />
+        ) : (
+          <motion.img
+            key={slide.image}
+            className={styles.heroMedia}
+            src={slide.image}
+            alt=""
+            aria-hidden="true"
+            variants={slideMotion}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.78, ease: easeOutQuart }}
+          />
+        )}
       </AnimatePresence>
 
       <div className={styles.sliderControls} aria-label="Điều khiển banner">
@@ -119,18 +112,18 @@ export default function HeroBlank() {
         <div className={styles.slideDots}>
           {slides.map((item, index) => (
             <motion.button
-              key={item.title}
+              key={item.image || item.video}
               type="button"
               className={index === active ? styles.isActive : ''}
               onClick={() => goToSlide(index)}
-              aria-label={`Chuyển đến ${item.title}`}
+              aria-label={`Chuyển đến`}
               aria-pressed={index === active}
               whileHover={prefersReducedMotion ? undefined : { scaleY: 1.25 }}
               whileTap={{ scale: 0.9 }}
             >
               {index === active && !prefersReducedMotion ? (
                 <motion.span
-                  key={`${item.title}-${isPaused ? 'paused' : 'playing'}`}
+                  key={`${isPaused ? 'paused' : 'playing'}`}
                   className={styles.dotProgress}
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: isPaused ? 0.18 : 1 }}
