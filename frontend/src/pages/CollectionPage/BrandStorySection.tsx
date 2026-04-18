@@ -14,8 +14,11 @@ export default function BrandStorySection() {
     >
       {/* Background texture */}
       <div className={styles.textureOverlay}>
-        <img src={IMG.bst6Texture} alt="" />
+        <img src={IMG.figmaBst6Bg} alt="" />
       </div>
+
+      <img src={IMG.figmaCloudPattern} alt="" className={styles.cloudDecor} aria-hidden="true" />
+      <img src={IMG.figmaVectorRight} alt="" className={styles.vectorDecor} aria-hidden="true" />
 
       {/* Title */}
       <motion.h2
