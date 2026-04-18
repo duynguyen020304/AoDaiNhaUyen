@@ -28,6 +28,7 @@ jobs:
           bun install
           PUBLIC_BACKEND_DOMAIN=${{ secrets.HK1_PUBLIC_BACKEND_DOMAIN }} \
           PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.HK1_PUBLIC_GOOGLE_CLIENT_ID }} \
+          PUBLIC_FACEBOOK_CLIENT_ID=${{ secrets.HK1_PUBLIC_FACEBOOK_CLIENT_ID }} \
           bun run build
 
       - name: Upload Frontend Artifact
@@ -58,6 +59,7 @@ jobs:
           bun install
           PUBLIC_BACKEND_DOMAIN=${{ secrets.US1_PUBLIC_BACKEND_DOMAIN }} \
           PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.US1_PUBLIC_GOOGLE_CLIENT_ID }} \
+          PUBLIC_FACEBOOK_CLIENT_ID=${{ secrets.US1_PUBLIC_FACEBOOK_CLIENT_ID }} \
           bun run build
 
       - name: Upload Frontend Artifact
@@ -317,6 +319,28 @@ jobs:
           export ASPNETCORE_ENVIRONMENT='Production'
           export ConnectionStrings__DefaultConnection='${{ secrets.HK1_POSTGRESQL_CONNECTION_STRING }}'
           export RunMigrationsAndSeedOnStartup='false'
+          export JwtSettings__SecretKey='${{ secrets.HK1_JWT_SECRET_KEY }}'
+          export GoogleOAuth__ClientId='${{ secrets.HK1_GOOGLE_OAUTH_CLIENT_ID }}'
+          export GoogleOAuth__ClientSecret='${{ secrets.HK1_GOOGLE_OAUTH_CLIENT_SECRET }}'
+          export GoogleOAuth__RedirectUri='${{ secrets.HK1_GOOGLE_OAUTH_REDIRECT_URI }}'
+          export FacebookOAuth__AppId='${{ secrets.HK1_FACEBOOK_OAUTH_APP_ID }}'
+          export FacebookOAuth__AppSecret='${{ secrets.HK1_FACEBOOK_OAUTH_APP_SECRET }}'
+          export FacebookOAuth__RedirectUri='${{ secrets.HK1_FACEBOOK_OAUTH_REDIRECT_URI }}'
+          export EmailSettings__SmtpHost='${{ secrets.HK1_EMAIL_SMTP_HOST }}'
+          export EmailSettings__SmtpPort='${{ secrets.HK1_EMAIL_SMTP_PORT }}'
+          export EmailSettings__SmtpUsername='${{ secrets.HK1_EMAIL_SMTP_USERNAME }}'
+          export EmailSettings__SmtpPassword='${{ secrets.HK1_EMAIL_SMTP_PASSWORD }}'
+          export EmailSettings__EnableSsl='${{ secrets.HK1_EMAIL_ENABLE_SSL }}'
+          export EmailSettings__FromEmail='${{ secrets.HK1_EMAIL_FROM_EMAIL }}'
+          export EmailSettings__FromName='${{ secrets.HK1_EMAIL_FROM_NAME }}'
+          export EmailSettings__ApiBaseUrl='${{ secrets.HK1_EMAIL_API_BASE_URL }}'
+          export EmailSettings__FrontendBaseUrl='${{ secrets.HK1_EMAIL_FRONTEND_BASE_URL }}'
+          export GoogleCloud__ProjectId='${{ secrets.HK1_GCLOUD_PROJECT_ID }}'
+          export GoogleCloud__ApiKey='${{ secrets.HK1_GCLOUD_API_KEY }}'
+          export GoogleCloud__Location='${{ secrets.HK1_GCLOUD_LOCATION }}'
+          export GoogleCloud__VirtualTryOnModel='${{ secrets.HK1_GCLOUD_MODEL }}'
+          export GoogleCloud__TimeoutSeconds='${{ secrets.HK1_GCLOUD_TIMEOUT_SECONDS }}'
+          export FrontendOrigins='${{ secrets.HK1_FRONTEND_ORIGINS }}'
           EOF
           chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
 
@@ -611,6 +635,28 @@ jobs:
           export ASPNETCORE_ENVIRONMENT='Production'
           export ConnectionStrings__DefaultConnection='${{ secrets.US1_POSTGRESQL_CONNECTION_STRING }}'
           export RunMigrationsAndSeedOnStartup='false'
+          export JwtSettings__SecretKey='${{ secrets.US1_JWT_SECRET_KEY }}'
+          export GoogleOAuth__ClientId='${{ secrets.US1_GOOGLE_OAUTH_CLIENT_ID }}'
+          export GoogleOAuth__ClientSecret='${{ secrets.US1_GOOGLE_OAUTH_CLIENT_SECRET }}'
+          export GoogleOAuth__RedirectUri='${{ secrets.US1_GOOGLE_OAUTH_REDIRECT_URI }}'
+          export FacebookOAuth__AppId='${{ secrets.US1_FACEBOOK_OAUTH_APP_ID }}'
+          export FacebookOAuth__AppSecret='${{ secrets.US1_FACEBOOK_OAUTH_APP_SECRET }}'
+          export FacebookOAuth__RedirectUri='${{ secrets.US1_FACEBOOK_OAUTH_REDIRECT_URI }}'
+          export EmailSettings__SmtpHost='${{ secrets.US1_EMAIL_SMTP_HOST }}'
+          export EmailSettings__SmtpPort='${{ secrets.US1_EMAIL_SMTP_PORT }}'
+          export EmailSettings__SmtpUsername='${{ secrets.US1_EMAIL_SMTP_USERNAME }}'
+          export EmailSettings__SmtpPassword='${{ secrets.US1_EMAIL_SMTP_PASSWORD }}'
+          export EmailSettings__EnableSsl='${{ secrets.US1_EMAIL_ENABLE_SSL }}'
+          export EmailSettings__FromEmail='${{ secrets.US1_EMAIL_FROM_EMAIL }}'
+          export EmailSettings__FromName='${{ secrets.US1_EMAIL_FROM_NAME }}'
+          export EmailSettings__ApiBaseUrl='${{ secrets.US1_EMAIL_API_BASE_URL }}'
+          export EmailSettings__FrontendBaseUrl='${{ secrets.US1_EMAIL_FRONTEND_BASE_URL }}'
+          export GoogleCloud__ProjectId='${{ secrets.US1_GCLOUD_PROJECT_ID }}'
+          export GoogleCloud__ApiKey='${{ secrets.US1_GCLOUD_API_KEY }}'
+          export GoogleCloud__Location='${{ secrets.US1_GCLOUD_LOCATION }}'
+          export GoogleCloud__VirtualTryOnModel='${{ secrets.US1_GCLOUD_MODEL }}'
+          export GoogleCloud__TimeoutSeconds='${{ secrets.US1_GCLOUD_TIMEOUT_SECONDS }}'
+          export FrontendOrigins='${{ secrets.US1_FRONTEND_ORIGINS }}'
           EOF
           chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
 

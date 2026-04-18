@@ -1,0 +1,149 @@
+.container {
+  background: #680000;
+  min-height: 100%;
+  padding: 50px 40px;
+  margin: -50px -40px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  margin: 0 0 32px;
+}
+
+.empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+}
+
+.orderList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.orderCard {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+  padding: 20px;
+}
+
+.orderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.orderCode {
+  font-weight: 700;
+  font-size: 16px;
+  color: #000;
+}
+
+.orderDate {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.itemRow {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 12px 0;
+}
+
+.itemImage {
+  width: 130px;
+  height: 145px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.itemImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  background: #f6f6f6;
+}
+
+.itemInfo {
+  flex: 1;
+}
+
+.itemName {
+  font-size: 24px;
+  font-weight: 400;
+  color: #000;
+  margin: 0 0 8px;
+}
+
+.itemDetail {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.6);
+  margin: 4px 0;
+}
+
+.itemPrice {
+  font-size: 16px;
+  font-weight: 600;
+  color: #000;
+  white-space: nowrap;
+  padding-top: 8px;
+}
+
+.itemPrice p {
+  margin: 0;
+}
+
+.orderFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.status {
+  font-size: 16px;
+  color: #000;
+}
+
+.total {
+  font-size: 16px;
+  font-weight: 700;
+  color: #680000;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 30px 16px;
+    margin: -30px -16px;
+  }
+
+  .itemRow {
+    flex-direction: column;
+  }
+
+  .itemImage {
+    width: 100%;
+    height: 200px;
+  }
+
+  .itemName {
+    font-size: 18px;
+  }
+}

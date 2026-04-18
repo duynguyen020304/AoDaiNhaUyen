@@ -11,15 +11,25 @@ import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import AccountPage from './pages/AccountPage/AccountPage';
 import AuthGoogleCallbackPage from './pages/AuthGoogleCallbackPage/AuthGoogleCallbackPage';
+import AuthFacebookCallbackPage from './pages/AuthFacebookCallbackPage/AuthFacebookCallbackPage';
+import ResetPasswordPage from './pages/ResetPasswordPage/ResetPasswordPage';
 import ProtectedRoute from './auth/ProtectedRoute';
 
 export default function App() {
   const { pathname } = useLocation();
-  const hideLayout = pathname === '/login';
+  const hideHeader = pathname === '/login'
+    || pathname === '/reset-password'
+    || pathname === '/auth/google/callback'
+    || pathname === '/auth/facebook/callback'
+    || pathname === '/account';
+  const hideFooter = pathname === '/login'
+    || pathname === '/reset-password'
+    || pathname === '/auth/google/callback'
+    || pathname === '/auth/facebook/callback';
 
   return (
     <>
-      {!hideLayout && <Header />}
+      {!hideHeader && <Header />}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/collection" element={<CollectionPage />} />
@@ -28,13 +38,15 @@ export default function App() {
         <Route path="/accessories" element={<AccessoriesPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/google/callback" element={<AuthGoogleCallbackPage />} />
+        <Route path="/auth/facebook/callback" element={<AuthFacebookCallbackPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/account" element={<AccountPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-      {!hideLayout && <Footer />}
+      {!hideFooter && <Footer />}
     </>
   );
 }
