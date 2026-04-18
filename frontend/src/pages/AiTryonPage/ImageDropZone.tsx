@@ -7,9 +7,15 @@ interface ImageDropZoneProps {
   compact?: boolean;
   photoUrl?: string | null;
   fileName?: string | null;
+  source?: 'file' | 'paste';
 }
 
-export default function ImageDropZone({ onFileSelect, compact, photoUrl, fileName }: ImageDropZoneProps) {
+export default function ImageDropZone({
+  onFileSelect,
+  compact,
+  photoUrl,
+  fileName,
+}: ImageDropZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -17,7 +23,7 @@ export default function ImageDropZone({ onFileSelect, compact, photoUrl, fileNam
   const handleFiles = (files: FileList | null) => {
     if (!files?.length) return;
     const file = files[0];
-    if (file.type !== 'image/jpeg' && file.type !== 'image/png') return;
+    if (!isSupportedImage(file)) return;
     onFileSelect(file);
   };
 
@@ -32,6 +38,19 @@ export default function ImageDropZone({ onFileSelect, compact, photoUrl, fileNam
     e.preventDefault();
     setDragOver(false);
     handleFiles(e.dataTransfer.files);
+  };
+
+  const downloadName = fileName ?? 'uploaded-image.png';
+
+  const handleDownload = () => {
+    if (!photoUrl) return;
+    if (photoUrl.startsWith('data:')) {
+      const blobUrl = dataUrlToObjectUrl(photoUrl);
+      triggerDownload(blobUrl, downloadName);
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
+      return;
+    }
+    triggerDownload(photoUrl, downloadName);
   };
 
   if (compact && fileName) {
@@ -54,7 +73,7 @@ export default function ImageDropZone({ onFileSelect, compact, photoUrl, fileNam
           <input
             ref={inputRef}
             type="file"
-            accept="image/jpeg,image/png"
+            accept="image/jpeg,image/png,image/webp,image/gif"
             className={styles.hiddenInput}
             onChange={(e) => handleFiles(e.target.files)}
           />
@@ -78,6 +97,15 @@ export default function ImageDropZone({ onFileSelect, compact, photoUrl, fileNam
                 exit={{ scale: 0.9, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
               />
+              <div className={styles.previewActions} onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  className={styles.previewAction}
+                  onClick={handleDownload}
+                >
+                  Tải xuống
+                </button>
+              </div>
               <button
                 type="button"
                 className={styles.previewClose}
@@ -106,10 +134,39 @@ export default function ImageDropZone({ onFileSelect, compact, photoUrl, fileNam
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png"
+        accept="image/jpeg,image/png,image/webp,image/gif"
         className={styles.hiddenInput}
         onChange={(e) => handleFiles(e.target.files)}
       />
     </div>
   );
+}
+
+function isSupportedImage(file: File) {
+  return ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type);
+}
+
+function triggerDownload(href: string, filename: string) {
+  const link = document.createElement('a');
+  link.href = href;
+  link.download = filename;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+function dataUrlToObjectUrl(dataUrl: string) {
+  const commaIndex = dataUrl.indexOf(',');
+  const meta = dataUrl.slice(0, commaIndex);
+  const data = dataUrl.slice(commaIndex + 1);
+  const mimeMatch = meta.match(/^data:(.*?)(;base64)?$/);
+  const mimeType = mimeMatch?.[1] || 'image/png';
+  const isBase64 = meta.includes(';base64');
+  const raw = isBase64 ? atob(data) : decodeURIComponent(data);
+  const bytes = new Uint8Array(raw.length);
+  for (let index = 0; index < raw.length; index += 1) {
+    bytes[index] = raw.charCodeAt(index);
+  }
+  return URL.createObjectURL(new Blob([bytes], { type: mimeType }));
 }

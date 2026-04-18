@@ -9,10 +9,13 @@ import { submitAiTryOn } from '../../api/aiTryon';
 import { ACCESSORIES, GARMENTS } from './data';
 import styles from './AiTryonPage.module.css';
 
+type UserPhotoSource = 'file' | 'paste';
+
 export default function AiTryonPage() {
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [userPhotoFile, setUserPhotoFile] = useState<File | null>(null);
   const [userFileName, setUserFileName] = useState<string | null>(null);
+  const [userPhotoSource, setUserPhotoSource] = useState<UserPhotoSource>('file');
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
   const [selectedGarment, setSelectedGarment] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -33,6 +36,27 @@ export default function AiTryonPage() {
     });
     setUserPhotoFile(file);
     setUserFileName(file.name);
+    setUserPhotoSource('file');
+    setTryonResult(null);
+    setTryonError(null);
+  }, []);
+
+  const handlePastePhoto = useCallback((file: File) => {
+    const pastedName = file.name && file.name.trim().length > 0
+      ? file.name
+      : `pasted-image-${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+
+    const pastedFile = file.name === pastedName
+      ? file
+      : new File([file], pastedName, { type: file.type || 'image/png' });
+
+    setUserPhoto((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(pastedFile);
+    });
+    setUserPhotoFile(pastedFile);
+    setUserFileName(pastedFile.name);
+    setUserPhotoSource('paste');
     setTryonResult(null);
     setTryonError(null);
   }, []);
@@ -87,7 +111,19 @@ export default function AiTryonPage() {
   }, [userPhotoFile, selectedGarment, selectedAccessories]);
 
   return (
-    <main className={styles.page}>
+    <main
+      className={styles.page}
+      onPaste={(event) => {
+        const clipboardItems = event.clipboardData?.items;
+        const clipboardFiles = event.clipboardData?.files;
+
+        const pastedFile = getPastedImageFile(clipboardItems, clipboardFiles);
+        if (!pastedFile) return;
+
+        event.preventDefault();
+        handlePastePhoto(pastedFile);
+      }}
+    >
       <motion.section
         className={styles.hero}
         variants={sectionReveal}
@@ -124,6 +160,7 @@ export default function AiTryonPage() {
               compact={!!userPhoto}
               photoUrl={userPhoto}
               fileName={userFileName ?? undefined}
+              source={userPhotoSource}
               onFileSelect={handleUploadPhoto}
             />
           </div>
@@ -174,4 +211,31 @@ async function fetchTryOnAsset(thumbnail: string, fileName: string): Promise<Fil
   return new File([blob], `${fileName}.${extension}`, {
     type: blob.type || 'image/png',
   });
+}
+
+function getPastedImageFile(
+  items: DataTransferItemList | undefined,
+  files: FileList | undefined,
+): File | null {
+  const supportedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+
+  if (items) {
+    for (const item of Array.from(items)) {
+      if (item.kind !== 'file') continue;
+      const file = item.getAsFile();
+      if (file && supportedTypes.has(file.type)) {
+        return file;
+      }
+    }
+  }
+
+  if (files) {
+    for (const file of Array.from(files)) {
+      if (supportedTypes.has(file.type)) {
+        return file;
+      }
+    }
+  }
+
+  return null;
 }
