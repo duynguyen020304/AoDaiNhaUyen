@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import styles from './MaterialSection.module.css';
 import { easeOutQuart, sectionReveal, viewportOnce } from '../../utils/motion';
 
@@ -32,7 +32,6 @@ const copyVariants = {
 
 export default function MaterialSection() {
   const [active, setActive] = useState(0);
-  const prefersReducedMotion = useReducedMotion();
 
   return (
     <motion.section
@@ -49,17 +48,6 @@ export default function MaterialSection() {
       <div className={styles.dotTexture} aria-hidden="true" />
       <div className={styles.leftGlow} aria-hidden="true" />
       <div className={styles.rightGlow} aria-hidden="true" />
-
-      <motion.div
-        className={styles.sheen}
-        aria-hidden="true"
-        animate={
-          prefersReducedMotion
-            ? { opacity: 0.22 }
-            : { opacity: [0.12, 0.26, 0.12], x: ['-14%', '8%', '-14%'] }
-        }
-        transition={{ duration: 8.5, repeat: Infinity, ease: 'easeInOut' }}
-      />
 
       <header className={styles.heading}>
         <h2 className="script-title" id="material-title">
@@ -108,9 +96,9 @@ export default function MaterialSection() {
                   <img src={material.thumbnail} alt="" aria-hidden="true" />
                 </button>
               ))}
+              <span className={styles.selectionBar} aria-hidden="true" />
             </div>
 
-            <span className={styles.selectionBar} aria-hidden="true" />
           </div>
         </div>
 
@@ -139,7 +127,7 @@ export default function MaterialSection() {
 
       <img
         className={styles.drumPattern}
-        src="/assets/drum-pattern.png"
+        src="/assets/drum-pattern.svg"
         alt=""
         aria-hidden="true"
       />

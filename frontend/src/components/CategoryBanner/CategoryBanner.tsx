@@ -21,7 +21,7 @@ export default function CategoryBanner({ title }: CategoryBannerProps) {
       </motion.h2>
       <img
         className={styles.drumPattern}
-        src="/assets/drum-pattern.png"
+        src="/assets/drum-pattern.svg"
         alt=""
         aria-hidden="true"
       />
