@@ -352,7 +352,7 @@ jobs:
           # 4. Stop PM2 Processes
           # ==========================================
           echo "[${SERVER_NAME}] Stopping PM2 processes..."
-          pm2 stop aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 stop aodai-api 2>/dev/null || true
 
           # ==========================================
           # 5. Deploy Frontend
@@ -396,11 +396,11 @@ jobs:
           # 7. Restart PM2 Processes
           # ==========================================
           echo "[${SERVER_NAME}] Restarting PM2 processes..."
-          pm2 delete aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 delete aodai-api 2>/dev/null || true
 
-          pm2 start /root/AoDaiNhaUyen/backend/start.sh --name "aodai-api"
+          /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/backend/start.sh --name "aodai-api"
 
-          pm2 save
+          /root/.bun/bin/pm2 save
 
           # ==========================================
           # 8. Cleanup
@@ -414,7 +414,7 @@ jobs:
 
           echo "=== [${SERVER_NAME}] Deployment Completed Successfully ==="
 
-          pm2 status
+          /root/.bun/bin/pm2 status
           REMOTE_SCRIPT
 
   # ==========================================
@@ -672,7 +672,7 @@ jobs:
           # 4. Stop PM2 Processes
           # ==========================================
           echo "[${SERVER_NAME}] Stopping PM2 processes..."
-          pm2 stop aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 stop aodai-api 2>/dev/null || true
 
           # ==========================================
           # 5. Deploy Frontend
@@ -716,11 +716,11 @@ jobs:
           # 7. Restart PM2 Processes
           # ==========================================
           echo "[${SERVER_NAME}] Restarting PM2 processes..."
-          pm2 delete aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 delete aodai-api 2>/dev/null || true
 
-          pm2 start /root/AoDaiNhaUyen/backend/start.sh --name "aodai-api"
+          /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/backend/start.sh --name "aodai-api"
 
-          pm2 save
+          /root/.bun/bin/pm2 save
 
           # ==========================================
           # 8. Cleanup
@@ -734,5 +734,5 @@ jobs:
 
           echo "=== [${SERVER_NAME}] Deployment Completed Successfully ==="
 
-          pm2 status
+          /root/.bun/bin/pm2 status
           REMOTE_SCRIPT
