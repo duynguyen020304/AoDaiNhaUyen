@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { UserProfile, UpdateProfilePayload } from '../../types/user';
 import { getUserProfile, updateProfile } from '../../api/user';
 import styles from './AccountEditForm.module.css';
 
-interface AccountEditFormProps {
-  onCancel: () => void;
-}
-
-export default function AccountEditForm({ onCancel }: AccountEditFormProps) {
+export default function AccountEditForm() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [form, setForm] = useState<UpdateProfilePayload>({
     fullName: '',
@@ -40,7 +38,7 @@ export default function AccountEditForm({ onCancel }: AccountEditFormProps) {
     setSaving(true);
     try {
       await updateProfile(form);
-      onCancel();
+      navigate('/account/profile');
     } finally {
       setSaving(false);
     }

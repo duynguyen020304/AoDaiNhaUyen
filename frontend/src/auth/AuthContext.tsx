@@ -27,10 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [user, setUser] = useState<AuthUser | null>(null);
 
-  useEffect(() => {
-    void bootstrapSession();
-  }, []);
-
   async function bootstrapSession() {
     try {
       const currentUser = await authApi.getCurrentUser();
@@ -93,6 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     }
   }
+
+  useEffect(() => {
+    void bootstrapSession();
+  }, []);
 
   async function refreshSession() {
     const refreshedUser = await authApi.refreshSession();
