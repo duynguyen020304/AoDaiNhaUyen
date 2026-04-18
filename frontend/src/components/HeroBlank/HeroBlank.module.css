@@ -7,12 +7,16 @@
     linear-gradient(124deg, #3d6291 0%, #0d408c 45%, #003485 100%);
 }
 
-.heroImage {
+.heroMediaFrame {
   position: absolute;
   inset: 0;
+}
+
+.heroMedia {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  display: block;
+  object-fit: fill;
   object-position: center;
   filter: saturate(0.95) contrast(1.02);
 }

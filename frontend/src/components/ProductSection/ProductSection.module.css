@@ -195,7 +195,8 @@
 
 .archFrame {
   position: relative;
-  width: 328px;
+  width: 20vw;
+  min-height: 70vh;
   height: 792px;
   margin: 0 auto;
   overflow: hidden;
