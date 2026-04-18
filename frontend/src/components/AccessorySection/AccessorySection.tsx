@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import styles from './AccessorySection.module.css';
 import {
-  cardHover,
-  cardReveal,
   carouselCopy,
   carouselCopyItem,
   fadeScale,
@@ -14,23 +12,45 @@ import {
   viewportOnce,
 } from '../../utils/motion';
 
-const PRODUCTS = [
-  { id: 'tram', title: 'Trâm cài tóc', hero: '/assets/accessories/hero-tram.png' },
-  { id: 'quat', title: 'Quạt cầm tay', hero: '/assets/accessories/hero-quat.png' },
-];
-
-const THUMBNAILS = [
-  { src: '/assets/accessories/thumb-1.png', productIndex: 0 },
-  { src: '/assets/accessories/thumb-2.png', productIndex: 0 },
-  { src: '/assets/accessories/thumb-3.png', productIndex: 1 },
-  { src: '/assets/accessories/thumb-4.png', productIndex: 1 },
+const ACCESSORIES = [
+  {
+    variant: 'Frame 322',
+    id: 'bag',
+    title: 'Túi xách',
+    hero: '/assets/accessories/hero-bag.png',
+    thumb: '/assets/accessories/thumb-bag.png',
+    alt: 'Túi xách trắng phối hoa nổi',
+  },
+  {
+    variant: 'Frame 323',
+    id: 'shoes',
+    title: 'Giày',
+    hero: '/assets/accessories/hero-shoes.png',
+    thumb: '/assets/accessories/thumb-shoes.png',
+    alt: 'Giày trắng quai mảnh',
+  },
+  {
+    variant: 'Frame 313',
+    id: 'tram',
+    title: 'Trâm cài tóc',
+    hero: '/assets/accessories/hero-tram-figma.png',
+    thumb: '/assets/accessories/thumb-tram.png',
+    alt: 'Trâm cài tóc xanh ngọc',
+  },
+  {
+    variant: 'Frame 324',
+    id: 'fan',
+    title: 'Quạt cầm tay',
+    hero: '/assets/accessories/hero-fan.png',
+    thumb: '/assets/accessories/thumb-fan.png',
+    alt: 'Quạt cầm tay trắng',
+  },
 ];
 
 export default function AccessorySection() {
   const prefersReducedMotion = useReducedMotion();
-  const [activeThumb, setActiveThumb] = useState(0);
-  const activeProduct = THUMBNAILS[activeThumb].productIndex;
-  const product = PRODUCTS[activeProduct];
+  const [activeIndex, setActiveIndex] = useState(1);
+  const activeAccessory = ACCESSORIES[activeIndex];
 
   return (
     <motion.section
@@ -42,100 +62,96 @@ export default function AccessorySection() {
       whileInView="show"
       viewport={viewportOnce}
     >
-      {/* Decorative background layers */}
-      <div className={styles.leftPanel} />
-      <div className={styles.dragonPattern} />
-      <div className={styles.circleOverlay} />
-      <div className={styles.subtractShape} />
+      <div className={styles.leftWash} aria-hidden="true" />
+      <div className={styles.leftPattern} aria-hidden="true" />
+      <div className={styles.largeGoldCircle} aria-hidden="true" />
+      <div className={styles.sceneWrap} aria-hidden="true">
+        <img className={styles.sceneBlur} src="/assets/accessories/garden-scene.png" alt="" />
+        <img className={styles.sceneImage} src="/assets/accessories/garden-scene.png" alt="" />
+      </div>
+      <img className={styles.mountainLayer} src="/assets/accessories/mountain-scene.png" alt="" aria-hidden="true" />
+      <img
+        className={styles.rightPanel}
+        src={`/assets/accessories/right-panel-${activeAccessory.id}.svg`}
+        alt=""
+        aria-hidden="true"
+      />
+      <div className={styles.centerPanel} aria-hidden="true" />
+      <img className={styles.cornerLeft} src="/assets/accessories/corner-decor.svg" alt="" aria-hidden="true" />
+      <img className={styles.cornerRight} src="/assets/accessories/corner-decor.svg" alt="" aria-hidden="true" />
 
-      {/* Hero product image */}
+      <motion.aside className={styles.infoPanel} variants={fadeUp}>
+        <div className={styles.logoBadge} aria-hidden="true">
+          <img src="/assets/accessories/logo-phu-kien.svg" alt="" />
+        </div>
+        <AnimatePresence mode="wait">
+          <motion.div key={activeAccessory.id} variants={carouselCopy} initial="enter" animate="center" exit="exit">
+            <motion.h2 id="accessory-title" className={styles.cardTitle} variants={carouselCopyItem}>
+              {activeAccessory.title}
+            </motion.h2>
+          </motion.div>
+        </AnimatePresence>
+        <p className={styles.cardDesc}>
+          Được chế tác từ lụa tơ tằm cao cấp và da thuộc thủ công, phụ kiện Nhã Uyên tôn vinh cốt
+          cách thanh cao của phụ nữ Việt.
+        </p>
+      </motion.aside>
+
       <AnimatePresence mode="wait">
         <motion.div
-          key={product.id}
-          className={`${styles.heroWrapper} ${activeProduct === 0 ? styles.heroLeft : styles.heroCenter}`}
+          key={activeAccessory.id}
+          className={`${styles.heroProduct} ${styles[`${activeAccessory.id}Product`]}`}
           variants={fadeScale}
           initial="hidden"
           animate="show"
-          exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.28 } }}
+          exit={{ opacity: 0, scale: 0.94, y: 18, filter: 'blur(6px)', transition: { duration: 0.24 } }}
         >
           <motion.img
-            className={styles.heroImage}
-            src={product.hero}
-            alt={product.title}
+            src={activeAccessory.hero}
+            alt={activeAccessory.alt}
             whileHover={prefersReducedMotion ? undefined : imageParallaxHover.hover}
             transition={{ duration: 0.36, ease: 'easeOut' }}
           />
         </motion.div>
       </AnimatePresence>
 
-      {/* Product info card */}
-      <motion.div
-        className={styles.card}
-        variants={cardReveal}
-        whileHover={prefersReducedMotion ? undefined : cardHover.hover}
-        transition={{ duration: 0.28, ease: 'easeOut' }}
-      >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={product.id}
-            variants={carouselCopy}
-            initial="enter"
-            animate="center"
-            exit="exit"
-          >
-            <motion.h2
-              id="accessory-title"
-              className={styles.cardTitle}
-              variants={carouselCopyItem}
-            >
-              {product.title}
-            </motion.h2>
-          </motion.div>
-        </AnimatePresence>
-        <motion.p className={styles.cardDesc} variants={fadeUp}>
-          Được chế tác từ lụa tơ tằm cao cấp và da thuộc thủ công, phụ kiện Nhã Uyên tôn vinh
-          cốt cách thanh cao của phụ nữ Việt.
-        </motion.p>
-      </motion.div>
-
-      {/* "Phụ kiện" floating label */}
       <motion.h3
         className={styles.label}
         variants={fadeUp}
-        animate={prefersReducedMotion ? undefined : { y: [0, -8, 0] }}
-        transition={{ duration: 5.6, repeat: Infinity, ease: 'easeInOut' }}
+        animate={prefersReducedMotion ? undefined : { y: [0, -7, 0] }}
+        transition={{ duration: 5.4, repeat: Infinity, ease: 'easeInOut' }}
       >
         Phụ kiện
       </motion.h3>
 
-      {/* Thumbnail gallery */}
-      <motion.div className={styles.thumbnails} variants={listStagger}>
-        {THUMBNAILS.map((thumb, i) => (
+      <motion.div className={styles.thumbnails} variants={listStagger} aria-label="Chọn phụ kiện">
+        {ACCESSORIES.map((accessory, index) => (
           <motion.button
-            key={i}
-            className={`${styles.thumb} ${activeThumb === i ? styles.thumbActive : ''}`}
+            key={accessory.id}
+            type="button"
+            className={`${styles.thumb} ${activeIndex === index ? styles.thumbActive : ''}`}
+            onClick={() => setActiveIndex(index)}
+            aria-pressed={activeIndex === index}
+            aria-label={accessory.title}
             variants={fadeUp}
-            onClick={() => setActiveThumb(i)}
-            whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
+            whileHover={prefersReducedMotion ? undefined : { scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
             transition={{ duration: 0.2 }}
           >
-            <img src={thumb.src} alt={`Phụ kiện ${i + 1}`} />
-            {activeThumb === i && (
-              <motion.div className={styles.thumbIndicator} layoutId="activeThumb" />
-            )}
+            <img src={accessory.thumb} alt="" />
+            {activeIndex === index ? (
+              <motion.span
+                className={styles.thumbIndicator}
+                layoutId="active-accessory-thumb"
+                transition={{ type: 'spring', stiffness: 360, damping: 32 }}
+              />
+            ) : null}
           </motion.button>
         ))}
       </motion.div>
 
-      {/* Decorative gold line + dot */}
-      <motion.div
-        className={styles.goldLine}
-        variants={{
-          hidden: { scaleY: 0, transformOrigin: 'top center' },
-          show: { scaleY: 1, transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] } },
-        }}
-      />
-      <motion.div className={styles.goldDot} variants={fadeUp} />
+      <motion.div className={styles.goldLine} variants={fadeScale} aria-hidden="true" />
+      <motion.div className={styles.goldDot} variants={fadeUp} aria-hidden="true" />
     </motion.section>
   );
 }
