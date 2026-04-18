@@ -407,7 +407,7 @@ jobs:
           cat > /root/AoDaiNhaUyen/frontend/start.sh << EOF
           #!/bin/bash
           cd /root/AoDaiNhaUyen/frontend/dist
-          /root/.bun/bin/serve -l ${{ secrets.HK1_FRONTEND_PORT }} .
+          /root/.bun/bin/serve -s -l ${{ secrets.HK1_FRONTEND_PORT }} .
           EOF
           chmod +x /root/AoDaiNhaUyen/frontend/start.sh
 
@@ -746,7 +746,7 @@ jobs:
           cat > /root/AoDaiNhaUyen/frontend/start.sh << EOF
           #!/bin/bash
           cd /root/AoDaiNhaUyen/frontend/dist
-          /root/.bun/bin/serve -l ${{ secrets.US1_FRONTEND_PORT }} .
+          /root/.bun/bin/serve -s -l ${{ secrets.US1_FRONTEND_PORT }} .
           EOF
           chmod +x /root/AoDaiNhaUyen/frontend/start.sh
 
