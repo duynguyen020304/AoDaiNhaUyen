@@ -46,6 +46,19 @@
   font-family: "Alexandria", "Inter", sans-serif;
   font-size: 16px;
   line-height: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.storeCard p i {
+  flex: 0 0 20px;
+  width: 20px;
+  margin-top: 3px;
+  color: #b61d19;
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
 }
 
 .storeMap {
@@ -59,7 +72,7 @@
   background: #d9d9d9;
 }
 
-.storeMap img {
+.storeMap iframe {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -68,7 +81,7 @@
   will-change: transform;
 }
 
-.storeMap img + img {
+.storeMap iframe + iframe {
   mix-blend-mode: multiply;
   opacity: 0.78;
 }
@@ -76,7 +89,6 @@
 .storeHeading {
   position: absolute;
   left: 50%;
-  bottom: 100px;
   width: 703px;
   transform: translateX(-50%);
   margin: 0;
@@ -88,6 +100,7 @@
   font-size: 60px;
   line-height: 70px;
   font-weight: 700;
+  z-index: 1;
 }
 
 @media (max-width: 1400px) {
