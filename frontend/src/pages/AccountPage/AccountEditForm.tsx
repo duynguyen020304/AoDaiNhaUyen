@@ -12,21 +12,22 @@ export default function AccountEditForm() {
     phone: '',
     dateOfBirth: '',
     gender: '',
-    address: '',
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getUserProfile().then((p) => {
-      setProfile(p);
-      setForm({
-        fullName: p.fullName,
-        phone: p.phone ?? '',
-        dateOfBirth: p.dateOfBirth ?? '',
-        gender: p.gender ?? '',
-        address: p.address ?? '',
-      });
-    });
+    getUserProfile()
+      .then((p) => {
+        setProfile(p);
+        setForm({
+          fullName: p.fullName,
+          phone: p.phone ?? '',
+          dateOfBirth: p.dateOfBirth ?? '',
+          gender: p.gender ?? '',
+        });
+      })
+      .catch((value: Error) => setError(value.message));
   }, []);
 
   function handleChange(field: keyof UpdateProfilePayload, value: string) {
@@ -36,19 +37,23 @@ export default function AccountEditForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setError(null);
     try {
       await updateProfile(form);
       navigate('/account/profile');
+    } catch (value) {
+      setError(value instanceof Error ? value.message : 'Không thể cập nhật tài khoản.');
     } finally {
       setSaving(false);
     }
   }
 
-  if (!profile) return null;
+  if (!profile && !error) return null;
 
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>CAP NHAT TAI KHOAN</h1>
+      {error ? <p>{error}</p> : null}
 
       <form className={styles.form} onSubmit={handleSubmit}>
         <label className={styles.fieldLabel}>
@@ -72,16 +77,6 @@ export default function AccountEditForm() {
         </label>
 
         <label className={styles.fieldLabel}>
-          Dia chi
-          <input
-            className={styles.fieldInput}
-            type="text"
-            value={form.address}
-            onChange={(e) => handleChange('address', e.target.value)}
-          />
-        </label>
-
-        <label className={styles.fieldLabel}>
           Ngay sinh
           <input
             className={styles.fieldInput}
@@ -96,7 +91,7 @@ export default function AccountEditForm() {
           <input
             className={styles.fieldInput}
             type="email"
-            value={profile.email ?? ''}
+            value={profile?.email ?? ''}
             readOnly
           />
         </label>

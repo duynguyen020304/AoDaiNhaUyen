@@ -1,30 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getHeaderCategories, getProducts } from '../../api/catalog';
+import { addCartItem } from '../../api/cart';
 import { resolveAssetUrl } from '../../api/client';
 import CategoryBanner from '../../components/CategoryBanner/CategoryBanner';
 import ProductCard from '../../components/ProductCard/ProductCard';
+import { useToast } from '../../components/Toast/useToast';
+import { useAuth } from '../../auth/useAuth';
 import { sectionReveal, staggerContainer, viewportOnce } from '../../utils/motion';
 import type { HeaderCategoryChild, ProductListItem } from '../../types/catalog';
 import type { Badge, Category, Product } from '../ProductsPage/data';
 import styles from './AccessoriesPage.module.css';
 
 const ACCESSORY_PAGE_SIZE = 100;
+const ACCESSORY_CATEGORY_TITLES: Record<string, string> = {
+  'tram-cai': 'Trâm cài',
+  'tui-sach': 'Túi sách',
+  quat: 'Quạt',
+  giay: 'Giày',
+};
 
 const vndFormatter = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
   currency: 'VND',
   maximumFractionDigits: 0,
 });
-
-const fallbackCategories: Category[] = [
-  {
-    id: 'phu-kien',
-    name: 'Phụ kiện',
-    products: [],
-  },
-];
 
 function formatPrice(value: number) {
   return vndFormatter.format(value).replace('₫', 'đ');
@@ -41,6 +42,7 @@ function getBadge(product: ProductListItem, index: number): Badge | undefined {
 function mapProduct(product: ProductListItem, index: number): Product {
   return {
     id: String(product.id),
+    variantId: product.primaryVariantId,
     name: product.name,
     image: resolveAssetUrl(product.primaryImageUrl) ?? '/assets/products/product-truyen-thong-1.png',
     badge: getBadge(product, index),
@@ -52,10 +54,16 @@ function mapProduct(product: ProductListItem, index: number): Product {
 
 export default function AccessoriesPage() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { status } = useAuth();
+  const { showToast } = useToast();
   const activeCategorySlug = useMemo(() => {
     return new URLSearchParams(location.search).get('category');
   }, [location.search]);
-  const [categories, setCategories] = useState<Category[]>(fallbackCategories);
+  const loadingBannerTitle = activeCategorySlug
+    ? ACCESSORY_CATEGORY_TITLES[activeCategorySlug] ?? null
+    : null;
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -76,7 +84,7 @@ export default function AccessoriesPage() {
 
         if (visibleCategories.length === 0) {
           if (!ignore) {
-            setCategories(fallbackCategories);
+            setCategories([]);
           }
           return;
         }
@@ -92,7 +100,7 @@ export default function AccessoriesPage() {
             return {
               id: category.slug,
               name: category.name,
-              products: result.items.map(mapProduct),
+              products: result.data.map(mapProduct),
             };
           }),
         );
@@ -102,7 +110,7 @@ export default function AccessoriesPage() {
         }
       } catch (error) {
         if (!ignore) {
-          setCategories(fallbackCategories);
+          setCategories([]);
           setLoadError(error instanceof Error ? error.message : 'Không thể tải phụ kiện.');
         }
       } finally {
@@ -119,18 +127,43 @@ export default function AccessoriesPage() {
     };
   }, [activeCategorySlug]);
 
+  const handleAddToCart = async (product: Product) => {
+    if (status !== 'authenticated') {
+      navigate('/login');
+      return;
+    }
+
+    if (!product.variantId) {
+      showToast('Phụ kiện này hiện chưa sẵn sàng để thêm vào giỏ.', 'error');
+      return;
+    }
+
+    try {
+      await addCartItem({ variantId: product.variantId, quantity: 1 });
+      showToast('Đã thêm phụ kiện vào giỏ hàng.');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Không thể thêm vào giỏ hàng.', 'error');
+    }
+  };
+
   return (
     <main className={styles.page}>
       {loadError ? (
-        <p className={styles.statusMessage}>
-          Chưa tải được dữ liệu phụ kiện. {loadError}
-        </p>
+        <div className={styles.statusMessage}>
+          <p>Không thể tải danh sách phụ kiện.</p>
+          <p className={styles.errorDetail}>{loadError}</p>
+        </div>
       ) : null}
-      {loading ? <p className={styles.statusMessage}>Đang tải phụ kiện...</p> : null}
-      {!loading && categories.length === 0 ? (
+      {loading ? (
+        <div className={styles.loadingContainer}>
+          {loadingBannerTitle ? <CategoryBanner title={loadingBannerTitle} /> : null}
+          <div className={styles.spinner} aria-label="Đang tải" />
+        </div>
+      ) : null}
+      {!loading && !loadError && categories.length === 0 ? (
         <p className={styles.emptyMessage}>Chưa có phụ kiện trong danh mục này.</p>
       ) : null}
-      {categories.map((category) => (
+      {!loading && categories.map((category) => (
         <div key={category.id}>
           <CategoryBanner title={category.name} />
           <motion.section
@@ -142,7 +175,7 @@ export default function AccessoriesPage() {
           >
             <motion.div className={styles.productGrid} variants={staggerContainer}>
               {category.products.map((product) => (
-                <ProductCard key={product.id} data={product} />
+                <ProductCard key={product.id} data={product} onAddToCart={handleAddToCart} />
               ))}
             </motion.div>
           </motion.section>

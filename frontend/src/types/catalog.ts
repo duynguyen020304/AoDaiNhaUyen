@@ -1,3 +1,5 @@
+import type { PaginatedApiEnvelope } from './api';
+
 export interface HeaderCategoryChild {
   id: number;
   name: string;
@@ -26,15 +28,8 @@ export interface ProductListItem {
   isFeatured: boolean;
   stockQty: number;
   primaryImageUrl: string | null;
+  primaryVariantId: number | null;
   primaryVariantSku: string | null;
 }
 
-export interface PaginatedProducts {
-  items: ProductListItem[];
-  meta: {
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-  };
-}
+export type PaginatedProducts = PaginatedApiEnvelope<ProductListItem[]>;

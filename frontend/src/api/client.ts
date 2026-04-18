@@ -1,4 +1,4 @@
-import type { ApiEnvelope } from '../types/api';
+import type { ApiEnvelope, PaginatedApiEnvelope } from '../types/api';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:5043';
 
@@ -56,12 +56,23 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    credentials: 'include',
-    ...init,
-    headers,
-  });
-  const payload = await response.json() as ApiEnvelope<T>;
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      credentials: 'include',
+      ...init,
+      headers,
+    });
+  } catch {
+    throw new Error('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
+  }
+
+  let payload: ApiEnvelope<T>;
+  try {
+    payload = await response.json() as ApiEnvelope<T>;
+  } catch {
+    throw new Error('Không thể đọc phản hồi từ máy chủ. Vui lòng thử lại sau.');
+  }
 
   if (!response.ok || !payload.success) {
     const message = payload.errors?.[0]?.message || payload.message || 'Không thể tải dữ liệu.';
@@ -69,6 +80,38 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return payload.data;
+}
+
+export async function requestPaginated<T>(path: string, init?: RequestInit): Promise<PaginatedApiEnvelope<T>> {
+  const headers = new Headers(init?.headers);
+  if (shouldSetJsonContentType(init?.body) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      credentials: 'include',
+      ...init,
+      headers,
+    });
+  } catch {
+    throw new Error('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
+  }
+
+  let payload: PaginatedApiEnvelope<T>;
+  try {
+    payload = await response.json() as PaginatedApiEnvelope<T>;
+  } catch {
+    throw new Error('Không thể đọc phản hồi từ máy chủ. Vui lòng thử lại sau.');
+  }
+
+  if (!response.ok || !payload.success) {
+    const message = payload.errors?.[0]?.message || payload.message || 'Không thể tải dữ liệu.';
+    throw new Error(message);
+  }
+
+  return payload;
 }
 
 export function resolveAssetUrl(url: string | null): string | null {

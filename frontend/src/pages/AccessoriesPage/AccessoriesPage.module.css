@@ -30,6 +30,32 @@
   min-height: 280px;
 }
 
+.errorDetail {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.loadingContainer {
+  max-width: 1694px;
+  margin: 0 auto;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: 48px auto;
+  border: 3px solid rgba(212, 175, 55, 0.2);
+  border-top-color: rgb(212, 175, 55);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 1200px) {
   .productGrid {
     grid-template-columns: repeat(2, 1fr);

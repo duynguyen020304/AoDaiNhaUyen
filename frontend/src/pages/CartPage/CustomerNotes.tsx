@@ -1,6 +1,11 @@
 import styles from './CustomerNotes.module.css';
 
-export default function CustomerNotes() {
+interface CustomerNotesProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+export default function CustomerNotes({ value, onChange }: CustomerNotesProps) {
   return (
     <div className={styles.card}>
       <div className={styles.cardHeader}>
@@ -23,6 +28,8 @@ export default function CustomerNotes() {
           className={styles.textarea}
           placeholder="Bức cứ những yêu cầu đặc biệt, lời nhắn gửi và vấn đề đóng gói"
           rows={3}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
         />
         <p className={styles.hint}>
           Ví dụ: "Xin hãy gói quà cho sản phẩm", "Quà này dành cho mẹ tôi", "Bảo quản với chất lượng tốt nhất",...

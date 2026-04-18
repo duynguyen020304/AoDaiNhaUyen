@@ -1,5 +1,5 @@
-import { request } from './client';
-import type { HeaderCategory, PaginatedProducts } from '../types/catalog';
+import { request, requestPaginated } from './client';
+import type { HeaderCategory, PaginatedProducts, ProductListItem } from '../types/catalog';
 
 export function getHeaderCategories(): Promise<HeaderCategory[]> {
   return request<HeaderCategory[]>('/api/v1/categories/header');
@@ -42,5 +42,5 @@ export function getProducts(params: GetProductsParams = {}): Promise<PaginatedPr
   }
 
   const query = search.toString();
-  return request<PaginatedProducts>(`/api/v1/products${query ? `?${query}` : ''}`);
+  return requestPaginated<ProductListItem[]>(`/api/v1/products${query ? `?${query}` : ''}`);
 }

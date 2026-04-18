@@ -105,9 +105,14 @@ public static class ServiceRegistration
       });
 
     services.AddScoped<ICategoryRepository, CategoryRepository>();
+    services.AddScoped<ICartRepository, CartRepository>();
     services.AddScoped<IProductRepository, ProductRepository>();
+    services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 
     services.AddScoped<ICatalogService, CatalogService>();
+    services.AddScoped<ICartService, CartService>();
+    services.AddScoped<ICheckoutService, CheckoutService>();
+    services.AddScoped<IUserService, UserService>();
     services.AddScoped<ISeedDataService, SeedDataService>();
     services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
     services.AddScoped<IRefreshTokenService, RefreshTokenService>();

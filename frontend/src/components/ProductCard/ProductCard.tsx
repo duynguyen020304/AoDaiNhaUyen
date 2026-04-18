@@ -25,7 +25,12 @@ function CartIcon() {
   );
 }
 
-export default function ProductCard({ data }: { data: Product }) {
+interface ProductCardProps {
+  data: Product;
+  onAddToCart: (product: Product) => void;
+}
+
+export default function ProductCard({ data, onAddToCart }: ProductCardProps) {
   return (
     <motion.article
       className={styles.card}
@@ -56,7 +61,12 @@ export default function ProductCard({ data }: { data: Product }) {
             <span className={styles.originalPrice}>{data.originalPrice}</span>
           )}
         </div>
-        <motion.button className={styles.cartBtn} whileTap={{ scale: 0.96 }}>
+        <motion.button
+          className={styles.cartBtn}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => onAddToCart(data)}
+          type="button"
+        >
           <CartIcon />
           Thêm vào giỏ
         </motion.button>
