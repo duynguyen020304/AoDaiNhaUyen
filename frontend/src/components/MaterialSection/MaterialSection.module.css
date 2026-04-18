@@ -37,7 +37,7 @@
 
 .floralTexture {
   inset: 0;
-  z-index: 2;
+  z-index: 1;
   opacity: 0.58;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
@@ -47,7 +47,7 @@
 
 .dotTexture {
   inset: 0;
-  z-index: 2;
+  z-index: 1;
   opacity: 0.14;
   background-image: radial-gradient(circle, rgba(255, 219, 171, 0.88) 0 2px, transparent 2.5px);
   background-size: 160px 160px;
@@ -81,7 +81,7 @@
 .heading,
 .contentGrid {
   position: relative;
-  z-index: 4;
+  z-index: 1;
 }
 
 .heading {
@@ -92,7 +92,7 @@
 }
 
 .heading h2 {
-  display: inline-block;
+  display: inline;
   margin: 0;
   font-size: clamp(112px, 7.9vw, 152px);
   line-height: 0.32;
@@ -111,8 +111,8 @@
 }
 
 .contentGrid {
-  display: grid;
-  grid-template-columns: 540px 600px;
+  display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   column-gap: 276px;
@@ -120,7 +120,8 @@
 }
 
 .copyColumn {
-  max-width: 540px;
+  margin-left: 10%;
+  width: 50%;
   color: var(--cream);
   text-align: center;
 }
@@ -194,7 +195,7 @@
   position: absolute;
   left: 0;
   bottom: -52px;
-  width: 196px;
+  width: 7vw;
   height: 9px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.96);
@@ -208,8 +209,7 @@
   justify-self: end;
   width: min(600px, 100%);
   aspect-ratio: 1;
-  margin-right: 0;
-  margin-top: 34px;
+  right: 5%;
 }
 
 .previewHalo {
@@ -242,7 +242,6 @@
   width: var(--home-drum-size);
   aspect-ratio: 1;
   height: auto;
-  opacity: var(--home-drum-opacity);
   mix-blend-mode: screen;
   transform: translate(var(--home-drum-offset-x), var(--home-drum-offset-y));
 }
