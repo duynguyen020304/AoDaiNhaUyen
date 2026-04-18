@@ -287,6 +287,10 @@ jobs:
           ssh -F "$SSH_CONFIG_FILE" ${SSH_ALIAS} 'bash -se' << 'REMOTE_SCRIPT'
           set -e
 
+          source ~/.bashrc 2>/dev/null || true
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" 2>/dev/null || true
+
           SERVER_NAME="${SERVER_NAME}"
           echo "=== [${SERVER_NAME}] Starting Deployment ==="
 
@@ -602,6 +606,10 @@ jobs:
           SSH_CONFIG_FILE="$HOME/.ssh/config"
           ssh -F "$SSH_CONFIG_FILE" ${SSH_ALIAS} 'bash -se' << 'REMOTE_SCRIPT'
           set -e
+
+          source ~/.bashrc 2>/dev/null || true
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" 2>/dev/null || true
 
           SERVER_NAME="${SERVER_NAME}"
           echo "=== [${SERVER_NAME}] Starting Deployment ==="
