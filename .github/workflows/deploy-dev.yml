@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - dev
+      - master
 
 jobs:
   # ==========================================
@@ -27,6 +27,7 @@ jobs:
           cd frontend
           bun install
           PUBLIC_BACKEND_DOMAIN=${{ secrets.HK1_PUBLIC_BACKEND_DOMAIN }} \
+          VITE_API_BASE_URL=${{ secrets.HK1_VITE_API_BASE_URL }} \
           PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.HK1_PUBLIC_GOOGLE_CLIENT_ID }} \
           PUBLIC_FACEBOOK_CLIENT_ID=${{ secrets.HK1_PUBLIC_FACEBOOK_CLIENT_ID }} \
           bun run build
@@ -58,6 +59,7 @@ jobs:
           cd frontend
           bun install
           PUBLIC_BACKEND_DOMAIN=${{ secrets.US1_PUBLIC_BACKEND_DOMAIN }} \
+          VITE_API_BASE_URL=${{ secrets.US1_VITE_API_BASE_URL }} \
           PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.US1_PUBLIC_GOOGLE_CLIENT_ID }} \
           PUBLIC_FACEBOOK_CLIENT_ID=${{ secrets.US1_PUBLIC_FACEBOOK_CLIENT_ID }} \
           bun run build
@@ -321,6 +323,7 @@ jobs:
           echo "[${SERVER_NAME}] Writing backend runtime-env.sh..."
           cat > /root/AoDaiNhaUyen/backend/runtime-env.sh << 'EOF'
           export ASPNETCORE_ENVIRONMENT='Production'
+          export ASPNETCORE_URLS='http://localhost:${{ secrets.HK1_BACKEND_PORT }}'
           export ConnectionStrings__DefaultConnection='${{ secrets.HK1_POSTGRESQL_CONNECTION_STRING }}'
           export RunMigrationsAndSeedOnStartup='false'
           export JwtSettings__SecretKey='${{ secrets.HK1_JWT_SECRET_KEY }}'
@@ -353,9 +356,18 @@ jobs:
           # ==========================================
           echo "[${SERVER_NAME}] Stopping PM2 processes..."
           /root/.bun/bin/pm2 stop aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 stop aodai-frontend 2>/dev/null || true
 
           # ==========================================
-          # 5. Deploy Frontend
+          # 5. Ensure serve is installed
+          # ==========================================
+          if ! /root/.bun/bin/bun pm ls -g 2>/dev/null | grep -q serve; then
+            echo "[${SERVER_NAME}] Installing serve..."
+            /root/.bun/bin/bun add -g serve
+          fi
+
+          # ==========================================
+          # 6. Deploy Frontend
           # ==========================================
           echo "[${SERVER_NAME}] Deploying Frontend..."
           cd /root/AoDaiNhaUyen/frontend
@@ -366,7 +378,7 @@ jobs:
           rm -rf /tmp/aodai-frontend-deploy
 
           # ==========================================
-          # 6. Deploy Backend
+          # 7. Deploy Backend
           # ==========================================
           echo "[${SERVER_NAME}] Deploying Backend..."
           cd /root/AoDaiNhaUyen/backend
@@ -392,18 +404,27 @@ jobs:
           EOF
           chmod +x /root/AoDaiNhaUyen/backend/start.sh
 
+          cat > /root/AoDaiNhaUyen/frontend/start.sh << EOF
+          #!/bin/bash
+          cd /root/AoDaiNhaUyen/frontend/dist
+          /root/.bun/bin/serve -l ${{ secrets.HK1_FRONTEND_PORT }} .
+          EOF
+          chmod +x /root/AoDaiNhaUyen/frontend/start.sh
+
           # ==========================================
-          # 7. Restart PM2 Processes
+          # 8. Restart PM2 Processes
           # ==========================================
           echo "[${SERVER_NAME}] Restarting PM2 processes..."
           /root/.bun/bin/pm2 delete aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 delete aodai-frontend 2>/dev/null || true
 
           /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/backend/start.sh --name "aodai-api"
+          /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/frontend/start.sh --name "aodai-frontend"
 
           /root/.bun/bin/pm2 save
 
           # ==========================================
-          # 8. Cleanup
+          # 9. Cleanup
           # ==========================================
           echo "[${SERVER_NAME}] Cleaning up old backups..."
           cd /root/AoDaiNhaUyen/frontend
@@ -641,6 +662,7 @@ jobs:
           echo "[${SERVER_NAME}] Writing backend runtime-env.sh..."
           cat > /root/AoDaiNhaUyen/backend/runtime-env.sh << 'EOF'
           export ASPNETCORE_ENVIRONMENT='Production'
+          export ASPNETCORE_URLS='http://localhost:${{ secrets.US1_BACKEND_PORT }}'
           export ConnectionStrings__DefaultConnection='${{ secrets.US1_POSTGRESQL_CONNECTION_STRING }}'
           export RunMigrationsAndSeedOnStartup='false'
           export JwtSettings__SecretKey='${{ secrets.US1_JWT_SECRET_KEY }}'
@@ -673,9 +695,18 @@ jobs:
           # ==========================================
           echo "[${SERVER_NAME}] Stopping PM2 processes..."
           /root/.bun/bin/pm2 stop aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 stop aodai-frontend 2>/dev/null || true
 
           # ==========================================
-          # 5. Deploy Frontend
+          # 5. Ensure serve is installed
+          # ==========================================
+          if ! /root/.bun/bin/bun pm ls -g 2>/dev/null | grep -q serve; then
+            echo "[${SERVER_NAME}] Installing serve..."
+            /root/.bun/bin/bun add -g serve
+          fi
+
+          # ==========================================
+          # 6. Deploy Frontend
           # ==========================================
           echo "[${SERVER_NAME}] Deploying Frontend..."
           cd /root/AoDaiNhaUyen/frontend
@@ -686,7 +717,7 @@ jobs:
           rm -rf /tmp/aodai-frontend-deploy
 
           # ==========================================
-          # 6. Deploy Backend
+          # 7. Deploy Backend
           # ==========================================
           echo "[${SERVER_NAME}] Deploying Backend..."
           cd /root/AoDaiNhaUyen/backend
@@ -712,18 +743,27 @@ jobs:
           EOF
           chmod +x /root/AoDaiNhaUyen/backend/start.sh
 
+          cat > /root/AoDaiNhaUyen/frontend/start.sh << EOF
+          #!/bin/bash
+          cd /root/AoDaiNhaUyen/frontend/dist
+          /root/.bun/bin/serve -l ${{ secrets.US1_FRONTEND_PORT }} .
+          EOF
+          chmod +x /root/AoDaiNhaUyen/frontend/start.sh
+
           # ==========================================
-          # 7. Restart PM2 Processes
+          # 8. Restart PM2 Processes
           # ==========================================
           echo "[${SERVER_NAME}] Restarting PM2 processes..."
           /root/.bun/bin/pm2 delete aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 delete aodai-frontend 2>/dev/null || true
 
           /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/backend/start.sh --name "aodai-api"
+          /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/frontend/start.sh --name "aodai-frontend"
 
           /root/.bun/bin/pm2 save
 
           # ==========================================
-          # 8. Cleanup
+          # 9. Cleanup
           # ==========================================
           echo "[${SERVER_NAME}] Cleaning up old backups..."
           cd /root/AoDaiNhaUyen/frontend

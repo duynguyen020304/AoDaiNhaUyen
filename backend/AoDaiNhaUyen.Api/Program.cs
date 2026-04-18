@@ -17,8 +17,7 @@ builder.Services.AddCors(options =>
 {
   options.AddPolicy("Frontend", policy =>
   {
-    var origins = builder.Configuration.GetSection("FrontendOrigins").Get<string[]>() ??
-      ["http://localhost:5173", "http://127.0.0.1:5173"];
+    var origins = GetFrontendOrigins(builder.Configuration);
 
     policy
       .WithOrigins(origins)
@@ -64,3 +63,44 @@ if (app.Configuration.GetValue<bool>("RunMigrationsAndSeedOnStartup"))
 }
 
 app.Run();
+
+static string[] GetFrontendOrigins(IConfiguration configuration)
+{
+  var configuredOrigins = configuration.GetSection("FrontendOrigins").Get<string[]>();
+  if (configuredOrigins is { Length: > 0 })
+  {
+    return NormalizeOrigins(configuredOrigins);
+  }
+
+  var rawOrigins = configuration["FrontendOrigins"];
+  if (!string.IsNullOrWhiteSpace(rawOrigins))
+  {
+    var parsedOrigins = rawOrigins
+      .Trim()
+      .TrimStart('[')
+      .TrimEnd(']')
+      .Split([',', ';', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    if (parsedOrigins.Length > 0)
+    {
+      return NormalizeOrigins(parsedOrigins);
+    }
+  }
+
+  return
+  [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://aodainhauyen.io.vn",
+    "https://backup.aodainhauyen.io.vn"
+  ];
+}
+
+static string[] NormalizeOrigins(IEnumerable<string> origins)
+{
+  return origins
+    .Select(origin => origin.Trim().Trim('"', '\'').TrimEnd('/'))
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
+}
