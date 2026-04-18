@@ -13,4 +13,5 @@ public sealed record ProductListItemDto(
   bool IsFeatured,
   int StockQty,
   string? PrimaryImageUrl,
+  long? PrimaryVariantId,
   string? PrimaryVariantSku);

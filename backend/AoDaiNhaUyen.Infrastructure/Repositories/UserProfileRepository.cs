@@ -58,13 +58,23 @@ public sealed class UserProfileRepository(AppDbContext dbContext) : IUserProfile
     {
         var query = dbContext.Orders
             .AsNoTracking()
+            .Include(o => o.Payment)
+            .Include(o => o.Items)
+              .ThenInclude(oi => oi.Variant)
+                .ThenInclude(variant => variant!.Images)
+            .Include(o => o.Items)
+              .ThenInclude(oi => oi.Product)
+                .ThenInclude(product => product!.Images)
             .Where(o => o.UserId == userId)
             .OrderByDescending(o => o.PlacedAt);
 
         var totalCount = await query.CountAsync(cancellationToken);
-        var orders = await query
+        var orderEntities = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var orders = orderEntities
             .Select(o => new UserOrderDto(
                 o.Id,
                 o.OrderCode,
@@ -79,6 +89,7 @@ public sealed class UserProfileRepository(AppDbContext dbContext) : IUserProfile
                 o.ShippingFee,
                 o.TotalAmount,
                 o.OrderStatus,
+                o.Payment != null ? "paid" : null,
                 o.Note,
                 o.PlacedAt,
                 o.ConfirmedAt,
@@ -97,12 +108,30 @@ public sealed class UserProfileRepository(AppDbContext dbContext) : IUserProfile
                     oi.UnitPrice,
                     oi.Quantity,
                     oi.LineTotal,
+                    ResolveOrderItemImageUrl(oi),
                     oi.IsCustomTailoring,
                     oi.MeasurementProfileId,
                     oi.CustomMeasurementsJson,
                     oi.Note)).ToList()))
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         return new PagedResult<UserOrderDto>(orders, totalCount, page, pageSize);
+    }
+
+    private static string? ResolveOrderItemImageUrl(OrderItem orderItem)
+    {
+        if (orderItem.Variant != null)
+        {
+            return orderItem.Variant.Images.OrderBy(image => image.SortOrder).FirstOrDefault(image => image.IsPrimary)?.ImageUrl
+                ?? orderItem.Variant.Images.OrderBy(image => image.SortOrder).FirstOrDefault()?.ImageUrl;
+        }
+
+        if (orderItem.Product != null)
+        {
+            return orderItem.Product.Images.OrderBy(image => image.SortOrder).FirstOrDefault(image => image.IsPrimary)?.ImageUrl
+                ?? orderItem.Product.Images.OrderBy(image => image.SortOrder).FirstOrDefault()?.ImageUrl;
+        }
+
+        return null;
     }
 }

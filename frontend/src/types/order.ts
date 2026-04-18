@@ -1,6 +1,9 @@
+import type { PaginatedApiEnvelope } from './api';
+
 export interface OrderItem {
   id: number;
   productName: string;
+  sku: string | null;
   size: string | null;
   color: string | null;
   unitPrice: number;
@@ -12,6 +15,12 @@ export interface OrderItem {
 export interface UserOrder {
   id: number;
   orderCode: string;
+  recipientName: string;
+  recipientPhone: string;
+  province: string;
+  district: string;
+  ward: string | null;
+  addressLine: string;
   orderStatus: string;
   subtotal: number;
   discountAmount: number;
@@ -20,4 +29,12 @@ export interface UserOrder {
   placedAt: string;
   items: OrderItem[];
   paymentStatus: string | null;
+  note: string | null;
+  confirmedAt: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
+
+export type PaginatedUserOrders = PaginatedApiEnvelope<UserOrder[]>;

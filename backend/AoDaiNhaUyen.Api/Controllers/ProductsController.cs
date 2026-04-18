@@ -27,17 +27,11 @@ public sealed class ProductsController(ICatalogService catalogService) : Control
       pageSize,
       cancellationToken);
 
-    return Ok(ApiResponseFactory.Success(new
-    {
-      items = result.Items,
-      meta = new
-      {
-        total = result.TotalCount,
-        page = result.Page,
-        pageSize = result.PageSize,
-        totalPages = (int)Math.Ceiling((double)result.TotalCount / result.PageSize)
-      }
-    }));
+    return Ok(ApiResponseFactory.PaginatedSuccess(
+      result.Items,
+      result.Page,
+      result.PageSize,
+      result.TotalCount));
   }
 
   [HttpGet("{slug}")]

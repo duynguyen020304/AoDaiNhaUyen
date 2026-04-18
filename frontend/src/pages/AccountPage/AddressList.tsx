@@ -17,9 +17,14 @@ export default function AddressList() {
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [form, setForm] = useState<CreateAddressPayload>(EMPTY_FORM);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getAddresses().then(setAddresses);
+    getAddresses()
+      .then(setAddresses)
+      .catch((value: Error) => setError(value.message))
+      .finally(() => setLoading(false));
   }, []);
 
   function handleChange(field: keyof CreateAddressPayload, value: string) {
@@ -28,20 +33,31 @@ export default function AddressList() {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    const newAddr = await createAddress(form);
-    setAddresses((prev) => [...prev, newAddr]);
-    setForm(EMPTY_FORM);
-    setIsAdding(false);
+    try {
+      const newAddr = await createAddress(form);
+      setAddresses((prev) => [...prev, newAddr]);
+      setForm(EMPTY_FORM);
+      setIsAdding(false);
+      setError(null);
+    } catch (value) {
+      setError(value instanceof Error ? value.message : 'Không thể tạo địa chỉ.');
+    }
   }
 
   async function handleDelete(id: number) {
-    await deleteAddress(id);
-    setAddresses((prev) => prev.filter((a) => a.id !== id));
+    try {
+      await deleteAddress(id);
+      setAddresses((prev) => prev.filter((a) => a.id !== id));
+    } catch (value) {
+      setError(value instanceof Error ? value.message : 'Không thể xóa địa chỉ.');
+    }
   }
 
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>THONG TIN DIA CHI</h1>
+      {loading ? <p>Đang tải địa chỉ...</p> : null}
+      {error ? <p>{error}</p> : null}
 
       <div className={styles.header}>
         <button
@@ -125,6 +141,7 @@ export default function AddressList() {
             </div>
           </div>
         ))}
+        {!loading && addresses.length === 0 ? <p>Chưa có địa chỉ nào.</p> : null}
       </div>
     </div>
   );

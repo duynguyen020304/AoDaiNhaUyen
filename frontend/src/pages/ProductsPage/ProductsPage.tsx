@@ -7,7 +7,10 @@ import { SIZES, type Badge, type Category, type Product } from './data';
 import CategoryBanner from '../../components/CategoryBanner/CategoryBanner';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import { getHeaderCategories, getProducts } from '../../api/catalog';
+import { addCartItem } from '../../api/cart';
 import { resolveAssetUrl } from '../../api/client';
+import { useToast } from '../../components/Toast/useToast';
+import { useAuth } from '../../auth/useAuth';
 import type { HeaderCategoryChild, ProductListItem } from '../../types/catalog';
 
 const PRODUCT_PAGE_SIZE = 100;
@@ -43,6 +46,7 @@ function mapProduct(product: ProductListItem, index: number): Product {
 
   return {
     id: String(product.id),
+    variantId: product.primaryVariantId,
     name: product.name,
     image,
     badge: getBadge(product, index),
@@ -63,6 +67,8 @@ function isValidSize(size: string | null): size is (typeof SIZES)[number] {
 export default function ProductsPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { status } = useAuth();
+  const { showToast } = useToast();
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const activeCategorySlug = searchParams.get('category');
   const loadingBannerTitle = activeCategorySlug
@@ -97,6 +103,25 @@ export default function ProductsPage() {
 
     const query = nextParams.toString();
     navigate(query ? `/products?${query}` : '/products');
+  };
+
+  const handleAddToCart = async (product: Product) => {
+    if (status !== 'authenticated') {
+      navigate('/login');
+      return;
+    }
+
+    if (!product.variantId) {
+      showToast('Sản phẩm này hiện chưa sẵn sàng để thêm vào giỏ.', 'error');
+      return;
+    }
+
+    try {
+      await addCartItem({ variantId: product.variantId, quantity: 1 });
+      showToast('Đã thêm sản phẩm vào giỏ hàng.');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Không thể thêm vào giỏ hàng.', 'error');
+    }
   };
 
   useEffect(() => {
@@ -134,7 +159,7 @@ export default function ProductsPage() {
             return {
               id: category.slug,
               name: category.name,
-              products: result.items.map(mapProduct),
+              products: result.data.map(mapProduct),
             };
           }),
         );
@@ -212,7 +237,7 @@ export default function ProductsPage() {
                 variants={staggerContainer}
               >
                 {category.products.map((product) => (
-                  <ProductCard key={product.id} data={product} />
+                  <ProductCard key={product.id} data={product} onAddToCart={handleAddToCart} />
                 ))}
               </motion.div>
             )}

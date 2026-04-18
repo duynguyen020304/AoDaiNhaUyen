@@ -14,6 +14,7 @@ public sealed record UserOrderDto(
     decimal ShippingFee,
     decimal TotalAmount,
     string OrderStatus,
+    string? PaymentStatus,
     string? Note,
     DateTime PlacedAt,
     DateTime? ConfirmedAt,

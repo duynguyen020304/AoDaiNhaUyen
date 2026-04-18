@@ -11,6 +11,7 @@ public sealed record OrderItemDto(
     decimal UnitPrice,
     int Quantity,
     decimal LineTotal,
+    string? ImageUrl,
     bool IsCustomTailoring,
     long? MeasurementProfileId,
     string? CustomMeasurementsJson,

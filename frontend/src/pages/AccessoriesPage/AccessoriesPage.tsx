@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getHeaderCategories, getProducts } from '../../api/catalog';
+import { addCartItem } from '../../api/cart';
 import { resolveAssetUrl } from '../../api/client';
 import CategoryBanner from '../../components/CategoryBanner/CategoryBanner';
 import ProductCard from '../../components/ProductCard/ProductCard';
+import { useToast } from '../../components/Toast/useToast';
+import { useAuth } from '../../auth/useAuth';
 import { sectionReveal, staggerContainer, viewportOnce } from '../../utils/motion';
 import type { HeaderCategoryChild, ProductListItem } from '../../types/catalog';
 import type { Badge, Category, Product } from '../ProductsPage/data';
@@ -24,7 +27,6 @@ const vndFormatter = new Intl.NumberFormat('vi-VN', {
   maximumFractionDigits: 0,
 });
 
-
 function formatPrice(value: number) {
   return vndFormatter.format(value).replace('₫', 'đ');
 }
@@ -40,6 +42,7 @@ function getBadge(product: ProductListItem, index: number): Badge | undefined {
 function mapProduct(product: ProductListItem, index: number): Product {
   return {
     id: String(product.id),
+    variantId: product.primaryVariantId,
     name: product.name,
     image: resolveAssetUrl(product.primaryImageUrl) ?? '/assets/products/product-truyen-thong-1.png',
     badge: getBadge(product, index),
@@ -51,6 +54,9 @@ function mapProduct(product: ProductListItem, index: number): Product {
 
 export default function AccessoriesPage() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { status } = useAuth();
+  const { showToast } = useToast();
   const activeCategorySlug = useMemo(() => {
     return new URLSearchParams(location.search).get('category');
   }, [location.search]);
@@ -94,7 +100,7 @@ export default function AccessoriesPage() {
             return {
               id: category.slug,
               name: category.name,
-              products: result.items.map(mapProduct),
+              products: result.data.map(mapProduct),
             };
           }),
         );
@@ -120,6 +126,25 @@ export default function AccessoriesPage() {
       ignore = true;
     };
   }, [activeCategorySlug]);
+
+  const handleAddToCart = async (product: Product) => {
+    if (status !== 'authenticated') {
+      navigate('/login');
+      return;
+    }
+
+    if (!product.variantId) {
+      showToast('Phụ kiện này hiện chưa sẵn sàng để thêm vào giỏ.', 'error');
+      return;
+    }
+
+    try {
+      await addCartItem({ variantId: product.variantId, quantity: 1 });
+      showToast('Đã thêm phụ kiện vào giỏ hàng.');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Không thể thêm vào giỏ hàng.', 'error');
+    }
+  };
 
   return (
     <main className={styles.page}>
@@ -150,7 +175,7 @@ export default function AccessoriesPage() {
           >
             <motion.div className={styles.productGrid} variants={staggerContainer}>
               {category.products.map((product) => (
-                <ProductCard key={product.id} data={product} />
+                <ProductCard key={product.id} data={product} onAddToCart={handleAddToCart} />
               ))}
             </motion.div>
           </motion.section>

@@ -6,7 +6,7 @@ export interface UserProfile {
   dateOfBirth: string | null;
   gender: string | null;
   avatarUrl: string | null;
-  address: string | null;
+  status?: string;
 }
 
 export interface UpdateProfilePayload {
@@ -14,5 +14,4 @@ export interface UpdateProfilePayload {
   phone: string;
   dateOfBirth: string;
   gender: string;
-  address: string;
 }

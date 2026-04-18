@@ -10,3 +10,10 @@ export interface ApiEnvelope<T> {
   errors: ApiError[] | null;
   timestamp: string;
 }
+
+export interface PaginatedApiEnvelope<T> extends ApiEnvelope<T> {
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  totalPage: number;
+  totalItem: number;
+}

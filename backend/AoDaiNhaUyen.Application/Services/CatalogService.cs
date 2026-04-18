@@ -104,6 +104,7 @@ public sealed class CatalogService(
         p.IsFeatured,
         primaryVariant?.StockQty ?? 0,
         primaryImage,
+        primaryVariant?.Id,
         primaryVariant?.Sku);
     }).ToList();
 

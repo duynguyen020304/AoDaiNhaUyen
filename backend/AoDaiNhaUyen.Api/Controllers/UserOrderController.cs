@@ -40,7 +40,11 @@ public sealed class UserOrderController(
                 result.ErrorMessage ?? "Không thể lấy lịch sử đơn hàng."));
         }
 
-        return Ok(ApiResponseFactory.Success(result.Value));
+        return Ok(ApiResponseFactory.PaginatedSuccess(
+            result.Value!.Items,
+            result.Value.Page,
+            result.Value.PageSize,
+            result.Value.TotalCount));
     }
 
     private long GetCurrentUserId()
