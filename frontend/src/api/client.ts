@@ -2,11 +2,45 @@ import type { ApiEnvelope } from '../types/api';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:5043';
 
-export const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.PUBLIC_BACKEND_DOMAIN ||
-  DEFAULT_API_BASE_URL
-).replace(/\/$/, '');
+function isLocalhostUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+}
+
+function resolveRegionalApiBaseUrl(): string {
+  const configuredBaseUrl =
+    import.meta.env.VITE_API_BASE_URL ||
+    import.meta.env.PUBLIC_BACKEND_DOMAIN;
+
+  if (typeof window === 'undefined') {
+    return configuredBaseUrl || DEFAULT_API_BASE_URL;
+  }
+
+  let regionalBaseUrl: string | null = null;
+  switch (window.location.hostname) {
+    case 'aodainhauyen.io.vn':
+      regionalBaseUrl = 'https://api-hk1.aodainhauyen.io.vn';
+      break;
+    case 'backup.aodainhauyen.io.vn':
+      regionalBaseUrl = 'https://api-us1.aodainhauyen.io.vn';
+      break;
+    default:
+      regionalBaseUrl = null;
+      break;
+  }
+
+  if (regionalBaseUrl && (!configuredBaseUrl || isLocalhostUrl(configuredBaseUrl))) {
+    return regionalBaseUrl;
+  }
+
+  return configuredBaseUrl || DEFAULT_API_BASE_URL;
+}
+
+export const API_BASE_URL = resolveRegionalApiBaseUrl().replace(/\/$/, '');
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
