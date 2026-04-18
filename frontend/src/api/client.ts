@@ -42,9 +42,17 @@ function resolveRegionalApiBaseUrl(): string {
 
 export const API_BASE_URL = resolveRegionalApiBaseUrl().replace(/\/$/, '');
 
+function shouldSetJsonContentType(body: BodyInit | null | undefined): boolean {
+  if (!body) {
+    return false;
+  }
+
+  return !(body instanceof FormData);
+}
+
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
-  if (init?.body && !headers.has('Content-Type')) {
+  if (shouldSetJsonContentType(init?.body) && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
