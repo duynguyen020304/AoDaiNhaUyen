@@ -71,7 +71,7 @@
 /* Title */
 .storyTitle {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   font-family: "Italianno", cursive;
   font-size: 152px;
   line-height: 92px;

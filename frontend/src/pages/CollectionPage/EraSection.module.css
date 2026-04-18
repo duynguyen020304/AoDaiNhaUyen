@@ -19,7 +19,6 @@
   height: 100%;
   object-fit: cover;
   opacity: 0.2;
-  filter: blur(50px);
 }
 
 /* ── Decorative vector ──────────────────────────── */
@@ -86,7 +85,7 @@
   line-height: 1;
   font-weight: 400;
   text-align: center;
-  color: transparent;
+  color: yellow;
   -webkit-background-clip: text;
   background-clip: text;
   text-shadow: 3px 4px 4px rgba(0, 0, 0, 0.25);

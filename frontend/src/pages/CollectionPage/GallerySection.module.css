@@ -1,13 +1,10 @@
 .gallery {
   position: relative;
   width: 100%;
-  min-height: 5100px;
-  padding: 80px 0 120px;
   overflow: hidden;
   background: #160303;
 }
 
-/* ── Top blur ───────────────────────────────────── */
 .topBlur {
   position: absolute;
   top: 0;
@@ -15,7 +12,8 @@
   right: 0;
   height: 225px;
   pointer-events: none;
-  filter: blur(31.25px);
+  filter: blur(31px);
+  z-index: 3;
 }
 
 .topBlur img {
@@ -25,26 +23,25 @@
   opacity: 0.2;
 }
 
-/* ── Rotated background pattern ─────────────────── */
 .bgPattern {
   position: absolute;
-  top: 50%;
   left: 50%;
-  width: 5700px;
-  height: 4500px;
+  top: 47%;
+  width: 296.77%;
+  min-width: 2600px;
+  aspect-ratio: 5698 / 5783;
   transform: translate(-50%, -50%) rotate(-21.33deg);
   pointer-events: none;
   opacity: 0.26;
+  z-index: 1;
 }
 
 .bgPattern img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  opacity: 0.51;
 }
 
-/* ── Collections grid ───────────────────────────── */
 .collections {
   position: relative;
   z-index: 2;
@@ -52,187 +49,354 @@
   margin: 0 auto;
 }
 
-/* ── Individual collection card ─────────────────── */
 .collectionCard {
+  --frame-height: 1198;
   position: relative;
   width: 100%;
-  min-height: 1100px;
-  margin-bottom: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.collectionCard:nth-child(odd) {
-  flex-direction: row;
-}
-
-.collectionCard:nth-child(even) {
-  flex-direction: row-reverse;
-}
-
-/* ── Product images ─────────────────────────────── */
-.images {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  gap: 0;
-  flex: 1;
-}
-
-.imageFrame {
-  position: relative;
+  aspect-ratio: 1920 / var(--frame-height);
+  min-height: 680px;
   overflow: hidden;
+  background: #160303;
 }
 
-.imageMain {
-  width: 875px;
-  height: auto;
-  max-height: 1314px;
+.collectionCard::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 296.77%;
+  aspect-ratio: 5698 / 5783;
+  background: url('/assets/collection/figma-gallery-pattern.png') center / contain no-repeat;
+  opacity: 0.13;
+  transform: translate(-50%, -50%) rotate(-21.33deg);
+  pointer-events: none;
+  z-index: 1;
 }
 
-.imageMain img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: scaleY(-1) rotate(180deg);
+.collectionCard2::before {
+  left: 45%;
+  top: 42%;
 }
 
-.imageSide {
-  width: 927px;
-  height: auto;
-  max-height: 1393px;
-  margin-left: -200px;
+.collectionCard1 {
+  min-height: 720px;
 }
 
-.imageSide img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.collectionCard2 {
+  min-height: 680px;
 }
 
-/* ── Label overlay ──────────────────────────────── */
+.collectionCard3 {
+  min-height: 720px;
+}
+
+.collectionCard4 {
+  min-height: 760px;
+}
+
+.images,
+.imageFrame,
 .labelOverlay {
   position: absolute;
-  z-index: 5;
-  text-align: center;
+}
+
+.images {
+  inset: 0;
+  z-index: 3;
   pointer-events: none;
 }
 
-.collectionCard:nth-child(odd) .labelOverlay {
-  right: 8%;
+.imageFrame {
+  overflow: visible;
 }
 
-.collectionCard:nth-child(even) .labelOverlay {
-  left: 8%;
+.imageFrame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.collectionCard1 .imageMain {
+  left: 6.3%;
+  top: 7.85%;
+  width: 39.17%;
+  height: 94.32%;
+}
+
+.collectionCard1 .imageSide {
+  left: 27.55%;
+  top: 9.93%;
+  width: 32.03%;
+  height: 90.07%;
+}
+
+.collectionCard2 .imageMain {
+  left: 34.69%;
+  top: -12.52%;
+  width: 45.94%;
+  height: 114.25%;
+}
+
+.collectionCard2 .imageSide {
+  left: 51.41%;
+  top: -19.17%;
+  width: 47.92%;
+  height: 119.17%;
+}
+
+.collectionCard3 .imageMain {
+  left: 5.73%;
+  top: 7.17%;
+  width: 32.14%;
+  height: 86.96%;
+}
+
+.collectionCard3 .imageSide {
+  left: 57.66%;
+  top: 3.86%;
+  width: 39.79%;
+  height: 92.27%;
+}
+
+.collectionCard4 .imageMain {
+  left: 0;
+  top: -3.19%;
+  width: 45.57%;
+  height: 87.37%;
+}
+
+.collectionCard4 .imageSide {
+  left: 54.48%;
+  top: -8.11%;
+  width: 48.28%;
+  height: 92.62%;
+}
+
+.labelOverlay {
+  z-index: 4;
+  width: min(720px, 38vw);
+  text-align: center;
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.collectionCard1 .labelOverlay {
+  left: 55.52%;
+  top: 31.97%;
+}
+
+.collectionCard2 .labelOverlay {
+  left: 17.5%;
+  top: 28.67%;
+  width: 25%;
+}
+
+.collectionCard3 .labelOverlay {
+  left: 35.83%;
+  top: 33.33%;
+  width: 26.3%;
+}
+
+.collectionCard4 .labelOverlay {
+  left: 37.4%;
+  top: 29.06%;
+  width: 26.3%;
 }
 
 .collectionNumber {
   font-family: "Italianno", cursive;
-  font-size: 104px;
-  line-height: 1;
+  font-size: clamp(64px, 5.42vw, 104px);
+  line-height: 1.25;
   color: #ffffff;
-  margin: 0 0 8px;
+  margin: 0 0 0;
 }
 
 .collectionLabel {
   font-family: "Inter", sans-serif;
-  font-size: 40px;
+  font-size: clamp(24px, 2.08vw, 40px);
+  line-height: 1.21;
   font-weight: 700;
   color: #ffffff;
-  margin: 0 0 20px;
+  margin: 0 0 18px;
+}
+
+.collectionCard2 .collectionNumber {
+  margin-bottom: 38px;
+}
+
+.collectionCard2 .collectionTitle {
+  margin-bottom: 0;
+}
+
+.collectionCard2 .collectionLabel {
+  margin-bottom: 22px;
+}
+
+.collectionCard3 .collectionTitle {
+  margin-bottom: -3px;
+}
+
+.collectionCard4 .collectionNumber,
+.collectionCard4 .collectionTitle {
+  margin-bottom: 8px;
+}
+
+.collectionCard4 .collectionLabel {
+  margin-bottom: 31px;
 }
 
 .collectionTitle {
   display: flex;
   flex-direction: column;
   font-family: "Italianno", cursive;
-  font-size: 104px;
-  line-height: 1.1;
+  font-size: clamp(64px, 5.42vw, 104px);
+  line-height: 1.25;
   font-weight: 400;
-  color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: #ffffff;
+  margin: 0 0 18px;
   text-shadow: 3px 4px 4px rgba(0, 0, 0, 0.25);
-  margin: 0 0 16px;
 }
 
 .collectionQuote {
   font-family: "Inter", sans-serif;
-  font-size: 24px;
+  font-size: clamp(16px, 1.25vw, 24px);
+  line-height: 1.21;
   color: #f0f0f0;
   margin: 0;
-  font-style: italic;
-}
-
-/* ── Responsive ─────────────────────────────────── */
-@media (max-width: 1400px) {
-  .collectionTitle {
-    font-size: 80px;
-  }
-  .collectionNumber {
-    font-size: 80px;
-  }
-  .collectionLabel {
-    font-size: 32px;
-  }
 }
 
 @media (max-width: 1100px) {
   .gallery {
-    min-height: auto;
-    padding: 40px 0 60px;
+    padding-bottom: 24px;
   }
-  .collectionCard,
-  .collectionCard:nth-child(odd),
-  .collectionCard:nth-child(even) {
-    flex-direction: column;
-    min-height: auto;
-    padding: 40px 24px;
-  }
-  .images {
-    width: 100%;
-    justify-content: center;
-  }
-  .imageMain {
-    width: 100%;
-    max-width: 500px;
-    max-height: 600px;
-  }
-  .imageSide {
-    width: 100%;
-    max-width: 500px;
-    max-height: 600px;
-    margin-left: 0;
-  }
-  .labelOverlay {
-    position: relative;
-    right: auto !important;
-    left: auto !important;
-    padding: 20px 0;
-  }
-  .collectionTitle {
-    font-size: 56px;
-  }
-  .collectionNumber {
-    font-size: 56px;
-  }
+
   .bgPattern {
-    display: none;
+    min-width: 1800px;
+    opacity: 0.2;
+  }
+
+  .collectionCard,
+  .collectionCard1,
+  .collectionCard2,
+  .collectionCard3,
+  .collectionCard4 {
+    min-height: 760px;
+    aspect-ratio: auto;
+  }
+
+  .collectionCard1 .imageMain,
+  .collectionCard1 .imageSide,
+  .collectionCard2 .imageMain,
+  .collectionCard2 .imageSide,
+  .collectionCard3 .imageMain,
+  .collectionCard3 .imageSide,
+  .collectionCard4 .imageMain,
+  .collectionCard4 .imageSide {
+    top: 40px;
+    width: 46%;
+    height: 470px;
+  }
+
+  .collectionCard1 .imageMain,
+  .collectionCard3 .imageMain,
+  .collectionCard4 .imageMain {
+    left: 3%;
+  }
+
+  .collectionCard1 .imageSide,
+  .collectionCard3 .imageSide,
+  .collectionCard4 .imageSide {
+    left: 35%;
+  }
+
+  .collectionCard2 .imageMain {
+    left: 28%;
+    width: 46%;
+  }
+
+  .collectionCard2 .imageSide {
+    left: 50%;
+    width: 50%;
+  }
+
+  .labelOverlay,
+  .collectionCard1 .labelOverlay,
+  .collectionCard2 .labelOverlay,
+  .collectionCard3 .labelOverlay,
+  .collectionCard4 .labelOverlay {
+    left: 50%;
+    top: 500px;
+    width: min(640px, calc(100% - 48px));
+    transform: translateX(-50%);
   }
 }
 
 @media (max-width: 680px) {
+  .collectionCard,
+  .collectionCard1,
+  .collectionCard3,
+  .collectionCard4 {
+    min-height: 680px;
+  }
+
+  .collectionCard2 {
+    min-height: 820px;
+  }
+
+  .collectionCard1 .imageMain,
+  .collectionCard1 .imageSide,
+  .collectionCard2 .imageMain,
+  .collectionCard2 .imageSide,
+  .collectionCard3 .imageMain,
+  .collectionCard3 .imageSide,
+  .collectionCard4 .imageMain,
+  .collectionCard4 .imageSide {
+    top: 28px;
+    height: 390px;
+  }
+
+  .collectionCard1 .imageMain,
+  .collectionCard3 .imageMain,
+  .collectionCard4 .imageMain {
+    left: -3%;
+    width: 54%;
+  }
+
+  .collectionCard1 .imageSide,
+  .collectionCard3 .imageSide,
+  .collectionCard4 .imageSide {
+    left: 34%;
+    width: 63%;
+  }
+
+  .collectionCard2 .imageMain {
+    left: 16%;
+    width: 52%;
+  }
+
+  .collectionCard2 .imageSide {
+    left: 43%;
+    width: 60%;
+  }
+
+  .labelOverlay,
+  .collectionCard1 .labelOverlay,
+  .collectionCard3 .labelOverlay,
+  .collectionCard4 .labelOverlay {
+    top: 420px;
+  }
+
+  .collectionCard2 .labelOverlay {
+    top: 390px;
+  }
+
+  .collectionNumber,
   .collectionTitle {
-    font-size: 40px;
+    font-size: 56px;
   }
-  .collectionNumber {
-    font-size: 40px;
-  }
+
   .collectionLabel {
-    font-size: 24px;
-  }
-  .collectionQuote {
-    font-size: 16px;
+    font-size: 22px;
   }
 }

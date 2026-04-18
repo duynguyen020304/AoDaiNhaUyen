@@ -37,6 +37,12 @@ export const IMG = {
   galTT1: '/assets/collection/gal-truyen-thong-1.png',
   galTT2: '/assets/collection/gal-truyen-thong-2.png',
   galLT: '/assets/collection/gal-lua-tron.png',
+  figmaBst8Pink: '/assets/collection/figma-bst8-pink.png',
+  figmaBst8White: '/assets/collection/figma-bst8-white.png',
+  figmaBst9Left: '/assets/collection/figma-bst9-left.png',
+  figmaBst9Right: '/assets/collection/figma-bst9-right.png',
+  figmaBst10Left: '/assets/collection/figma-bst10-left.png',
+  figmaBst10Right: '/assets/collection/figma-bst10-right.png',
   galTH1: '/assets/collection/gal-theu-hoa-1.png',
   galTH2: '/assets/collection/gal-theu-hoa-2.png',
   galCT: '/assets/collection/gal-cach-tan.png',
@@ -73,7 +79,7 @@ export const ERAS: EraData[] = [
     subtitle: 'Áo dài truyền thống – màu trầm, cổ cao kín đáo',
     description:
       'Đây là thời kỳ của những giá trị nền tảng. Trong bối cảnh xã hội xưa, chiếc áo dài màu nâu sồng, tím thẫm hay đen huyền với phần cổ cao nghiêm cẩn chính là biểu tượng của đức hạnh.',
-    layout: 'right',
+    layout: 'left',
     images: { product: IMG.bst2Product, street: IMG.bst2Street },
   },
   {
@@ -121,6 +127,8 @@ export interface CollectionItem {
   label: string;
   quote: string;
   images: string[];
+  frameHeight: number;
+  textLayout?: 'label-first' | 'title-first';
 }
 
 export const COLLECTIONS: CollectionItem[] = [
@@ -130,26 +138,32 @@ export const COLLECTIONS: CollectionItem[] = [
     label: 'NEW COLLECTION',
     quote: '"Cổ điển soi bóng, cốt cách trường tồn."',
     images: [IMG.galTT1, IMG.galTT2],
+    frameHeight: 1198,
   },
   {
     number: 'No 2.',
     titleLines: ['ÁO DÀI', 'LỤA  TRƠN'],
     label: 'NEW COLLECTION',
     quote: '"Gói trọn thanh xuân, mượt mà nét Việt."',
-    images: [IMG.galLT],
+    images: [IMG.figmaBst8Pink, IMG.figmaBst8White],
+    frameHeight: 1158,
+    textLayout: 'title-first',
   },
   {
     number: 'No 3.',
     titleLines: ['ÁO DÀI', 'THÊU  HOA'],
     label: 'NEW COLLECTION',
     quote: '"Gấm hoa hội tụ, tuyệt tác thủ công."',
-    images: [IMG.galTH1, IMG.galTH2],
+    images: [IMG.figmaBst9Left, IMG.figmaBst9Right],
+    frameHeight: 1242,
   },
   {
     number: 'No 4.',
     titleLines: ['ÁO DÀI', 'CÁCH  TÂN'],
     label: 'NEW COLLECTION',
     quote: '"Phá vỡ giới hạn, định nghĩa thời đại."',
-    images: [IMG.galCT, IMG.galExtra],
+    images: [IMG.figmaBst10Left, IMG.figmaBst10Right],
+    frameHeight: 1504,
+    textLayout: 'title-first',
   },
 ];

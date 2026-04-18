@@ -54,9 +54,6 @@ export default function CollectionPage() {
 
       {/* bst7–bst10 – Gallery */}
       <GallerySection />
-
-      {/* Bottom background */}
-      <div className={styles.bottomBg} />
     </div>
   );
 }
