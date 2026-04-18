@@ -321,6 +321,7 @@ jobs:
           echo "[${SERVER_NAME}] Writing backend runtime-env.sh..."
           cat > /root/AoDaiNhaUyen/backend/runtime-env.sh << 'EOF'
           export ASPNETCORE_ENVIRONMENT='Production'
+          export ASPNETCORE_URLS='http://localhost:${{ secrets.HK1_BACKEND_PORT }}'
           export ConnectionStrings__DefaultConnection='${{ secrets.HK1_POSTGRESQL_CONNECTION_STRING }}'
           export RunMigrationsAndSeedOnStartup='false'
           export JwtSettings__SecretKey='${{ secrets.HK1_JWT_SECRET_KEY }}'
@@ -659,6 +660,7 @@ jobs:
           echo "[${SERVER_NAME}] Writing backend runtime-env.sh..."
           cat > /root/AoDaiNhaUyen/backend/runtime-env.sh << 'EOF'
           export ASPNETCORE_ENVIRONMENT='Production'
+          export ASPNETCORE_URLS='http://localhost:${{ secrets.US1_BACKEND_PORT }}'
           export ConnectionStrings__DefaultConnection='${{ secrets.US1_POSTGRESQL_CONNECTION_STRING }}'
           export RunMigrationsAndSeedOnStartup='false'
           export JwtSettings__SecretKey='${{ secrets.US1_JWT_SECRET_KEY }}'
