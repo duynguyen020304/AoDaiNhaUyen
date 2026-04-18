@@ -1,26 +1,21 @@
 import type { AuthUser } from '../../types/auth';
 import { resolveAssetUrl } from '../../api/client';
-import { useNavigate } from 'react-router-dom';
-import type { TabKey } from './AccountPage';
+import { useNavigate, NavLink } from 'react-router-dom';
 import styles from './AccountSidebar.module.css';
 
 interface AccountSidebarProps {
   user: AuthUser;
-  activeTab: TabKey;
-  onTabChange: (tab: TabKey) => void;
   onLogout: () => void;
 }
 
-const NAV_ITEMS: { key: TabKey; label: string }[] = [
-  { key: 'info', label: 'Thông tin tài khoản' },
-  { key: 'orders', label: 'Quản lý đơn hàng' },
-  { key: 'addresses', label: 'Danh sách địa chỉ' },
+const NAV_ITEMS: { path: string; label: string }[] = [
+  { path: '/account/profile', label: 'Thông tin tài khoản' },
+  { path: '/account/orders', label: 'Quản lý đơn hàng' },
+  { path: '/account/addresses', label: 'Danh sách địa chỉ' },
 ];
 
 export default function AccountSidebar({
   user,
-  activeTab,
-  onTabChange,
   onLogout,
 }: AccountSidebarProps) {
   const navigate = useNavigate();
@@ -60,21 +55,16 @@ export default function AccountSidebar({
         >
           Trang chủ
         </button>
-        {NAV_ITEMS.map(({ key, label }) => (
-          <button
-            key={key}
-            type="button"
-            className={`${styles.navItem} ${
-              (key === 'info' && activeTab === 'edit')
-                ? styles.navItemActive
-                : activeTab === key
-                  ? styles.navItemActive
-                  : ''
-            }`}
-            onClick={() => onTabChange(key)}
+        {NAV_ITEMS.map(({ path, label }) => (
+          <NavLink
+            key={path}
+            to={path}
+            className={({ isActive }) =>
+              `${styles.navItem} ${isActive ? styles.navItemActive : ''}`
+            }
           >
             {label}
-          </button>
+          </NavLink>
         ))}
         <button
           type="button"

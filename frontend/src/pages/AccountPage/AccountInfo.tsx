@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { UserProfile } from '../../types/user';
 import { getUserProfile } from '../../api/user';
 import styles from './AccountInfo.module.css';
 
-interface AccountInfoProps {
-  onEdit: () => void;
-}
-
-export default function AccountInfo({ onEdit }: AccountInfoProps) {
+export default function AccountInfo() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
@@ -47,7 +45,7 @@ export default function AccountInfo({ onEdit }: AccountInfoProps) {
         </div>
       </div>
 
-      <button type="button" className={styles.editButton} onClick={onEdit}>
+      <button type="button" className={styles.editButton} onClick={() => navigate('/account/profile/edit')}>
         CAP NHAT THONG TIN TAI KHOAN
       </button>
     </div>

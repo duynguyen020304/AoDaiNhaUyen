@@ -177,10 +177,10 @@ export default function Header() {
           <motion.div className={styles.authGroup} variants={fadeUp}>
             <a
               className={styles.accountLink}
-              href="/account"
+              href="/account/profile"
               onClick={(event) => {
                 event.preventDefault();
-                navigate('/account');
+                navigate('/account/profile');
               }}
             >
               {user.fullName}
