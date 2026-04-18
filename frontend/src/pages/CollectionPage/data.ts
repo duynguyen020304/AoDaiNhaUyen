@@ -7,29 +7,43 @@ export const IMG = {
   textureBg: '/assets/collection/texture-bg.jpg',
   patternDecor: '/assets/collection/pattern-decor.png',
   vectorDecor: '/assets/collection/vector-decor.svg',
+  figmaBst1Bg: '/assets/collection/figma-bst1-bg.jpg',
+  figmaCloudPattern: '/assets/collection/figma-cloud-pattern.png',
 
   // bst2 – Truyền thống
   bst2Product: '/assets/collection/bst2-product.png',
   bst2Street: '/assets/collection/bst2-street.jpg',
+  figmaBst2Product: '/assets/collection/figma-bst2-product.png',
+  figmaBst2Bg: '/assets/collection/figma-bst2-bg.jpg',
 
   // bst3 – Lụa trơn
   bst3Product: '/assets/collection/bst3-product.png',
   bst3Bg: '/assets/collection/bst3-bg.jpg',
   bst3Street: '/assets/collection/bst3-street.jpg',
+  figmaBst3Product: '/assets/collection/figma-bst3-product.png',
+  figmaBst3Bg: '/assets/collection/figma-bst3-bg.jpg',
 
   // bst4 – Thêu hoa
   bst4Product: '/assets/collection/bst4-product.png',
   bst4Bg: '/assets/collection/bst4-bg.jpg',
   bst4CachTan: '/assets/collection/bst4-cach-tan.png',
+  figmaBst4Product: '/assets/collection/figma-bst4-product.png',
+  figmaBst4Bg: '/assets/collection/figma-bst4-bg.jpg',
 
   // bst5 – Cách tân
   bst5Reflection: '/assets/collection/bst5-reflection.png',
   bst5Product: '/assets/collection/bst5-product.png',
   bst5Bg: '/assets/collection/bst5-bg.jpg',
   bst5CachTan: '/assets/collection/bst5-cach-tan.png',
+  figmaBst5Product: '/assets/collection/figma-bst5-product.png',
+  figmaBst5Bg: '/assets/collection/figma-bst5-bg.jpg',
 
   // bst6 – Brand story
   bst6Texture: '/assets/collection/bst6-texture.jpg',
+  figmaBst6Bg: '/assets/collection/figma-bst6-bg.jpg',
+  figmaVectorRight: '/assets/collection/figma-vector-right.svg',
+  figmaVectorBase: '/assets/collection/figma-vector-base.svg',
+  figmaVectorSmall: '/assets/collection/figma-vector-small.svg',
 
   // Gallery
   galleryPattern: '/assets/collection/gallery-pattern.png',
@@ -64,50 +78,60 @@ export const STORY_INTRO = {
 
 /* ── Era sections (bst2–bst5) ──────────────────────── */
 export interface EraData {
+  variant: 'bst2' | 'bst3' | 'bst4' | 'bst5';
   title: string;
   era: string;
   subtitle: string;
   description: string;
   layout: 'left' | 'right';
+  frameHeight: number;
   images: { product: string; bg?: string; street?: string; cachTan?: string };
 }
 
 export const ERAS: EraData[] = [
   {
+    variant: 'bst2',
     title: 'Áo dài truyền thống cổ cao',
     era: 'Thập niên 1920 - 1940: Điểm tựa của Truyền thống',
     subtitle: 'Áo dài truyền thống – màu trầm, cổ cao kín đáo',
     description:
       'Đây là thời kỳ của những giá trị nền tảng. Trong bối cảnh xã hội xưa, chiếc áo dài màu nâu sồng, tím thẫm hay đen huyền với phần cổ cao nghiêm cẩn chính là biểu tượng của đức hạnh.',
     layout: 'left',
-    images: { product: IMG.bst2Product, street: IMG.bst2Street },
+    frameHeight: 922,
+    images: { product: IMG.figmaBst2Product, bg: IMG.figmaBst2Bg },
   },
   {
+    variant: 'bst3',
     title: 'Áo dài lụa trơn',
     era: 'Thập niên 1950 - 1970: Bản tình ca của Lụa',
     subtitle: 'Áo dài lụa trơn – nhẹ nhàng, mềm mại, không cầu kỳ',
     description:
       'Khi nhịp sống bắt đầu len lỏi hơi thở của sự tự do, những tà áo lụa Hà Đông hay lụa tơ tằm trơn màu trắng, hồng phấn bắt đầu xuống phố. Không cần tầng tầng lớp lớp họa tiết, chính chất liệu lụa tự nhiên đã tôn vinh đường nét thanh xuân.',
     layout: 'left',
-    images: { product: IMG.bst3Product, bg: IMG.bst3Bg, street: IMG.bst3Street },
+    frameHeight: 872,
+    images: { product: IMG.figmaBst3Product, bg: IMG.figmaBst3Bg },
   },
   {
+    variant: 'bst4',
     title: 'Áo dài thêu hoa',
     era: 'Thập niên 1980 - 2000: Đóa hoa của sự Kiên nhẫn',
     subtitle: 'Áo dài thêu hoa – từng cánh hoa được thêu tay tinh xảo',
     description:
       'Sau những năm tháng thăng trầm, đây là lúc nghệ thuật thủ công thăng hoa. Những chiếc áo dài được chăm chút tỉ mỉ với những mẫu thêu rực rỡ từ đôi bàn tay nghệ nhân trở thành chuẩn mực của sự sang trọng.',
     layout: 'right',
-    images: { product: IMG.bst4Product, bg: IMG.bst4Bg, cachTan: IMG.bst4CachTan },
+    frameHeight: 821,
+    images: { product: IMG.figmaBst4Product, bg: IMG.figmaBst4Bg },
   },
   {
+    variant: 'bst5',
     title: 'Áo dài cách tân',
     era: 'Từ năm 2010 đến Tương lai: Tiếng nói của Sự tự do',
     subtitle: 'Áo dài cách tân – phóng khoáng, sáng tạo',
     description:
       'Bước vào kỷ nguyên số và hội nhập, chiếc áo dài không còn bị bó buộc trong những quy chuẩn cũ. Những đường cắt xẻ táo bạo, phối cùng váy xòe, quần lửng hay họa tiết đương đại đã ra đời.',
     layout: 'left',
-    images: { product: IMG.bst5Product, bg: IMG.bst5Bg, cachTan: IMG.bst5CachTan },
+    frameHeight: 1000,
+    images: { product: IMG.figmaBst5Product, bg: IMG.figmaBst5Bg },
   },
 ];
 

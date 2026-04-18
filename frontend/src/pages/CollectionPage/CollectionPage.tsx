@@ -23,13 +23,13 @@ export default function CollectionPage() {
       >
         {/* Background textures */}
         <div className={styles.textureTop}>
-          <img src={IMG.textureBg} alt="" />
+          <img src={IMG.figmaBst1Bg} alt="" />
         </div>
         <div className={styles.textureBottom}>
-          <img src={IMG.textureBg} alt="" />
+          <img src={IMG.figmaBst1Bg} alt="" />
         </div>
         <div className={styles.patternDecor}>
-          <img src={IMG.patternDecor} alt="" />
+          <img src={IMG.figmaCloudPattern} alt="" />
         </div>
 
         <motion.h2

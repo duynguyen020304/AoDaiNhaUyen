@@ -3,101 +3,102 @@
   min-height: 100vh;
 }
 
-/* ── Story intro (bst1) ─────────────────────────── */
 .storyIntro {
   position: relative;
   width: 100%;
-  min-height: 861px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 120px 80px;
+  aspect-ratio: 1920 / 861;
+  min-height: 640px;
   overflow: hidden;
   background: #160303;
 }
 
-/* Texture overlays */
 .textureTop {
   position: absolute;
-  top: 0;
+  top: 16.38%;
   left: 0;
-  right: 0;
-  height: 611px;
+  width: 100%;
+  height: 70.96%;
   pointer-events: none;
+  z-index: 1;
 }
 
 .textureTop img {
   width: 100%;
-  height: 100%;
+  height: 154.91%;
   object-fit: cover;
+  object-position: top center;
   opacity: 0.2;
 }
 
 .textureBottom {
   position: absolute;
-  bottom: 0;
+  bottom: -13.6%;
   left: 0;
-  right: 0;
-  height: 258px;
+  width: 100%;
+  height: 29.97%;
   pointer-events: none;
   filter: blur(50px);
+  z-index: 2;
 }
 
 .textureBottom img {
   width: 100%;
-  height: 100%;
+  height: 366.85%;
   object-fit: cover;
+  object-position: bottom center;
   opacity: 0.2;
 }
 
 .patternDecor {
   position: absolute;
-  bottom: -60px;
-  left: -80px;
-  width: 919px;
-  height: 242px;
+  bottom: -21.7%;
+  left: -8.28%;
+  width: 47.86%;
+  aspect-ratio: 737 / 194;
   pointer-events: none;
+  z-index: 3;
 }
 
 .patternDecor img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   opacity: 0.5;
   transform: scaleY(-1) rotate(180deg);
 }
 
-/* Title */
 .storyTitle {
-  position: relative;
+  position: absolute;
+  left: 26.74%;
+  top: 19.4%;
   z-index: 3;
+  width: 46.51%;
   font-family: "Italianno", cursive;
-  font-size: 152px;
-  line-height: 92px;
+  font-size: clamp(92px, 7.92vw, 152px);
+  line-height: 0.68;
   font-weight: 400;
   text-align: center;
   color: yellow;
   -webkit-background-clip: text;
   background-clip: text;
   text-shadow: 3px 4px 4px rgba(0, 0, 0, 0.25);
-  margin: 0 0 60px;
+  margin: 0;
 }
 
-/* Description */
 .storyDesc {
-  position: relative;
+  position: absolute;
+  left: 21.4%;
+  top: 38.68%;
   z-index: 2;
-  max-width: 1028px;
+  width: 57.19%;
   font-family: "Inter", sans-serif;
-  font-size: 24px;
-  line-height: 1.5;
+  font-size: clamp(18px, 1.25vw, 24px);
+  line-height: 1.2;
   text-align: center;
   color: #ffffff;
   margin: 0;
 }
 
-/* ── Bottom background ──────────────────────────── */
 .bottomBg {
   position: relative;
   width: 100%;
@@ -110,40 +111,42 @@
   );
 }
 
-/* ── Responsive ─────────────────────────────────── */
-@media (max-width: 1400px) {
-  .storyTitle {
-    font-size: 120px;
-    line-height: 80px;
-  }
-  .storyIntro {
-    padding: 100px 40px;
-  }
-}
-
 @media (max-width: 1100px) {
   .storyIntro {
-    min-height: auto;
-    padding: 80px 24px;
+    aspect-ratio: auto;
+    min-height: 580px;
   }
+
   .storyTitle {
+    left: 24px;
+    top: 22%;
+    width: calc(100% - 48px);
     font-size: 80px;
-    line-height: 60px;
+    line-height: 0.8;
   }
+
   .storyDesc {
+    left: 24px;
+    top: 42%;
+    width: calc(100% - 48px);
     font-size: 20px;
-    max-width: 100%;
   }
+
   .patternDecor {
     display: none;
   }
 }
 
 @media (max-width: 680px) {
+  .storyIntro {
+    min-height: 520px;
+  }
+
   .storyTitle {
     font-size: 56px;
-    line-height: 44px;
+    line-height: 0.9;
   }
+
   .storyDesc {
     font-size: 16px;
   }
