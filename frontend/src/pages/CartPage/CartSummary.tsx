@@ -1,9 +1,34 @@
 import styles from './CartSummary.module.css';
+import type { UserAddress } from '../../types/address';
+import { formatCurrency } from './currency';
 
-export default function CartSummary() {
+interface CartSummaryProps {
+  subtotal: number;
+  shippingFee: number;
+  totalItemCount: number;
+  addresses: UserAddress[];
+  selectedAddressId: number | null;
+  onSelectAddress: (addressId: number) => void;
+  onCheckout: () => void;
+  checkingOut: boolean;
+  disabled: boolean;
+}
+
+export default function CartSummary({
+  subtotal,
+  shippingFee,
+  totalItemCount,
+  addresses,
+  selectedAddressId,
+  onSelectAddress,
+  onCheckout,
+  checkingOut,
+  disabled,
+}: CartSummaryProps) {
+  const total = subtotal + shippingFee;
+
   return (
     <div className={styles.sidebar}>
-      {/* Promo Code Card */}
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <svg width="17.5" height="17.5" viewBox="0 0 17.5 17.5" fill="none">
@@ -19,47 +44,55 @@ export default function CartSummary() {
         </div>
         <div className={styles.cardBody}>
           <div className={styles.promoRow}>
-            <input
-              className={styles.promoInput}
-              type="text"
-              placeholder="Nhập mã"
-            />
-            <button className={styles.promoBtn}>Nhập</button>
+            <input className={styles.promoInput} type="text" placeholder="Nhập mã" disabled />
+            <button className={styles.promoBtn} type="button" disabled>Nhập</button>
           </div>
-          <p className={styles.promoHint}>Ví dụ: NHAUYEN25, DAILE15,...</p>
+          <p className={styles.promoHint}>Mã giảm giá chưa được hỗ trợ ở phiên bản này.</p>
         </div>
       </div>
 
-      {/* Order Summary Card */}
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <h3 className={styles.summaryTitle}>Tổng đơn hàng</h3>
         </div>
         <div className={styles.cardBody}>
           <div className={styles.priceRow}>
-            <span>Giá tiền (1 sản phẩm)</span>
-            <span className={styles.priceValue}>600.000</span>
+            <span>Giá tiền ({totalItemCount} sản phẩm)</span>
+            <span className={styles.priceValue}>{formatCurrency(subtotal)}</span>
           </div>
           <div className={styles.priceRow}>
             <span>Phí vận chuyển</span>
-            <span className={styles.priceValueSmall}>25.000</span>
+            <span className={styles.priceValueSmall}>{formatCurrency(shippingFee)}</span>
           </div>
           <div className={styles.divider} />
           <div className={styles.totalRow}>
             <span>Tổng</span>
-            <span className={styles.totalValue}>625.000</span>
+            <span className={styles.totalValue}>{formatCurrency(total)}</span>
           </div>
-          <button className={styles.checkoutBtn}>
+          <label className={styles.cardTitle} htmlFor="cart-address-select">Địa chỉ nhận hàng</label>
+          <select
+            id="cart-address-select"
+            className={styles.promoInput}
+            value={selectedAddressId ?? ''}
+            onChange={(event) => onSelectAddress(Number(event.target.value))}
+          >
+            <option value="" disabled>Chọn địa chỉ</option>
+            {addresses.map((address) => (
+              <option key={address.id} value={address.id}>
+                {address.recipientName} - {address.addressLine}, {address.district}
+              </option>
+            ))}
+          </select>
+          <button className={styles.checkoutBtn} onClick={onCheckout} type="button" disabled={disabled || checkingOut}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M1.33 3.33h13.34" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" />
               <path d="M2 3.33l1.17 10a1.33 1.33 0 001.33 1.17h7a1.33 1.33 0 001.33-1.17L14 3.33" stroke="#fff" strokeWidth="1.3" strokeLinecap="round" />
             </svg>
-            Thanh toán
+            {checkingOut ? 'Đang thanh toán...' : 'Thanh toán'}
           </button>
         </div>
       </div>
 
-      {/* Shipping Info Card */}
       <div className={styles.card}>
         <div className={styles.shippingList}>
           <div className={styles.shippingItem}>

@@ -6,9 +6,14 @@ import styles from './OrderList.module.css';
 
 export default function OrderList() {
   const [orders, setOrders] = useState<UserOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getOrders().then(setOrders);
+    getOrders()
+      .then(setOrders)
+      .catch((value: Error) => setError(value.message))
+      .finally(() => setLoading(false));
   }, []);
 
   function formatDate(iso: string) {
@@ -22,8 +27,10 @@ export default function OrderList() {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>DON HANG CUA BAN</h1>
+      {loading ? <p className={styles.empty}>Đang tải đơn hàng...</p> : null}
+      {error ? <p className={styles.empty}>{error}</p> : null}
 
-      {orders.length === 0 && (
+      {!loading && !error && orders.length === 0 && (
         <p className={styles.empty}>Ban chua co don hang nao.</p>
       )}
 
