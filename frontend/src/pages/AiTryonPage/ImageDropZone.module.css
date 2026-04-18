@@ -109,6 +109,35 @@
   cursor: default;
 }
 
+.previewActions {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  z-index: 1;
+}
+
+.previewAction {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: 9999px;
+  border: none;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.previewAction {
+  background: #FFFFFF;
+  color: var(--ink);
+}
+
+.previewAction:hover {
+  background: #f3f4f6;
+}
+
 .previewClose {
   position: absolute;
   top: 24px;
