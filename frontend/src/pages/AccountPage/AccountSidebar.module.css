@@ -104,6 +104,8 @@
   text-align: left;
   width: 100%;
   transition: background 0.15s;
+  text-decoration: none;
+  display: block;
 }
 
 .navItem:hover {

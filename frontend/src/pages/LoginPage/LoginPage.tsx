@@ -30,7 +30,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
-  const redirectTo = location.state?.from || '/account';
+  const redirectTo = location.state?.from || '/account/profile';
   const verified = query.get('verified');
   const autoLogin = query.get('autologin');
   const verificationReason = query.get('reason');
@@ -38,9 +38,11 @@ export default function LoginPage() {
   useEffect(() => {
     if (verified === 'true') {
       showToast('Email da duoc xac thuc. He thong dang khoi phuc phien dang nhap cua ban.', 'success');
-      setError(null);
-      setActiveTab('login');
-      setShowForgotPassword(false);
+      window.setTimeout(() => {
+        setError(null);
+        setActiveTab('login');
+        setShowForgotPassword(false);
+      }, 0);
       return;
     }
 
@@ -49,14 +51,16 @@ export default function LoginPage() {
         ? 'Lien ket xac thuc da het han. Vui long dang ky lai hoac lien he ho tro.'
         : 'Khong the xac thuc email voi lien ket nay.';
       showToast(message, 'error');
-      setActiveTab('login');
-      setShowForgotPassword(false);
+      window.setTimeout(() => {
+        setActiveTab('login');
+        setShowForgotPassword(false);
+      }, 0);
     }
   }, [showToast, verificationReason, verified]);
 
   useEffect(() => {
     if (verified === 'true' && autoLogin === 'true' && status === 'authenticated') {
-      navigate('/account', { replace: true });
+      navigate('/account/profile', { replace: true });
     }
   }, [autoLogin, navigate, status, verified]);
 

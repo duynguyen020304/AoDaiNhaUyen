@@ -19,8 +19,8 @@
   max-width: 1705px;
   margin: 10px auto 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 210px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 120px;
 }
 
 .footerGrid section {
@@ -127,7 +127,7 @@
 
 @media (max-width: 1400px) {
   .footerGrid {
-    gap: 100px;
+    gap: 80px;
   }
 }
 

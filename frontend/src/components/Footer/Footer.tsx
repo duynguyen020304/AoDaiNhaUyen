@@ -30,6 +30,11 @@ export default function Footer() {
           <a href="#collection">Blog thời trang</a>
         </motion.section>
         <motion.section variants={fadeUp} whileHover={cardHover.hover} transition={{ duration: 0.24, ease: 'easeOut' }}>
+          <h3>Pháp Lý</h3>
+          <a href="/privacy-policy">Chính sách quyền riêng tư</a>
+          <a href="/data-deletion">Xóa dữ liệu người dùng</a>
+        </motion.section>
+        <motion.section variants={fadeUp} whileHover={cardHover.hover} transition={{ duration: 0.24, ease: 'easeOut' }}>
           <h3>Liên Hệ</h3>
           <p>123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh</p>
           <p>1900 123 456</p>
