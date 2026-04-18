@@ -17,6 +17,8 @@ import AddressList from './pages/AccountPage/AddressList';
 import AuthGoogleCallbackPage from './pages/AuthGoogleCallbackPage/AuthGoogleCallbackPage';
 import AuthFacebookCallbackPage from './pages/AuthFacebookCallbackPage/AuthFacebookCallbackPage';
 import ResetPasswordPage from './pages/ResetPasswordPage/ResetPasswordPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage/PrivacyPolicyPage';
+import DataDeletionPage from './pages/DataDeletionPage/DataDeletionPage';
 import ProtectedRoute from './auth/ProtectedRoute';
 
 export default function App() {
@@ -45,6 +47,8 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/google/callback" element={<AuthGoogleCallbackPage />} />
         <Route path="/auth/facebook/callback" element={<AuthFacebookCallbackPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/data-deletion" element={<DataDeletionPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/account" element={<AccountPage />}>
             <Route index element={<Navigate to="profile" replace />} />
