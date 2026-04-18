@@ -4,7 +4,7 @@
   overflow: hidden;
 }
 
-.heroImg {
+.heroMedia {
   display: block;
   width: 100%;
   height: auto;
@@ -30,13 +30,13 @@
 }
 
 @media (max-width: 1100px) {
-  .heroImg {
+  .heroMedia {
     min-height: 320px;
   }
 }
 
 @media (max-width: 680px) {
-  .heroImg {
+  .heroMedia {
     min-height: 220px;
   }
 }

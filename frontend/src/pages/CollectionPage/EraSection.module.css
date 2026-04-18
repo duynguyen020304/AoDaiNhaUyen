@@ -142,6 +142,7 @@
   width: 600px;
   opacity: 0.6;
   pointer-events: none;
+  z-index: -1;
 }
 
 .cachTanImg {
@@ -150,6 +151,7 @@
   object-fit: cover;
   border-radius: 60px;
   filter: blur(3px);
+  z-index: 1;
 }
 
 /* ── Bottom blur ────────────────────────────────── */
