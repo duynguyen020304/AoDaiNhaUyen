@@ -353,9 +353,18 @@ jobs:
           # ==========================================
           echo "[${SERVER_NAME}] Stopping PM2 processes..."
           /root/.bun/bin/pm2 stop aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 stop aodai-frontend 2>/dev/null || true
 
           # ==========================================
-          # 5. Deploy Frontend
+          # 5. Ensure serve is installed
+          # ==========================================
+          if ! /root/.bun/bin/bun pm ls -g 2>/dev/null | grep -q serve; then
+            echo "[${SERVER_NAME}] Installing serve..."
+            /root/.bun/bin/bun add -g serve
+          fi
+
+          # ==========================================
+          # 6. Deploy Frontend
           # ==========================================
           echo "[${SERVER_NAME}] Deploying Frontend..."
           cd /root/AoDaiNhaUyen/frontend
@@ -366,7 +375,7 @@ jobs:
           rm -rf /tmp/aodai-frontend-deploy
 
           # ==========================================
-          # 6. Deploy Backend
+          # 7. Deploy Backend
           # ==========================================
           echo "[${SERVER_NAME}] Deploying Backend..."
           cd /root/AoDaiNhaUyen/backend
@@ -393,17 +402,19 @@ jobs:
           chmod +x /root/AoDaiNhaUyen/backend/start.sh
 
           # ==========================================
-          # 7. Restart PM2 Processes
+          # 8. Restart PM2 Processes
           # ==========================================
           echo "[${SERVER_NAME}] Restarting PM2 processes..."
           /root/.bun/bin/pm2 delete aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 delete aodai-frontend 2>/dev/null || true
 
           /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/backend/start.sh --name "aodai-api"
+          /root/.bun/bin/pm2 start serve --name "aodai-frontend" -l ${{ secrets.HK1_FRONTEND_PORT }} -- /root/AoDaiNhaUyen/frontend/dist
 
           /root/.bun/bin/pm2 save
 
           # ==========================================
-          # 8. Cleanup
+          # 9. Cleanup
           # ==========================================
           echo "[${SERVER_NAME}] Cleaning up old backups..."
           cd /root/AoDaiNhaUyen/frontend
@@ -673,9 +684,18 @@ jobs:
           # ==========================================
           echo "[${SERVER_NAME}] Stopping PM2 processes..."
           /root/.bun/bin/pm2 stop aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 stop aodai-frontend 2>/dev/null || true
 
           # ==========================================
-          # 5. Deploy Frontend
+          # 5. Ensure serve is installed
+          # ==========================================
+          if ! /root/.bun/bin/bun pm ls -g 2>/dev/null | grep -q serve; then
+            echo "[${SERVER_NAME}] Installing serve..."
+            /root/.bun/bin/bun add -g serve
+          fi
+
+          # ==========================================
+          # 6. Deploy Frontend
           # ==========================================
           echo "[${SERVER_NAME}] Deploying Frontend..."
           cd /root/AoDaiNhaUyen/frontend
@@ -686,7 +706,7 @@ jobs:
           rm -rf /tmp/aodai-frontend-deploy
 
           # ==========================================
-          # 6. Deploy Backend
+          # 7. Deploy Backend
           # ==========================================
           echo "[${SERVER_NAME}] Deploying Backend..."
           cd /root/AoDaiNhaUyen/backend
@@ -713,17 +733,19 @@ jobs:
           chmod +x /root/AoDaiNhaUyen/backend/start.sh
 
           # ==========================================
-          # 7. Restart PM2 Processes
+          # 8. Restart PM2 Processes
           # ==========================================
           echo "[${SERVER_NAME}] Restarting PM2 processes..."
           /root/.bun/bin/pm2 delete aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 delete aodai-frontend 2>/dev/null || true
 
           /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/backend/start.sh --name "aodai-api"
+          /root/.bun/bin/pm2 start serve --name "aodai-frontend" -l ${{ secrets.US1_FRONTEND_PORT }} -- /root/AoDaiNhaUyen/frontend/dist
 
           /root/.bun/bin/pm2 save
 
           # ==========================================
-          # 8. Cleanup
+          # 9. Cleanup
           # ==========================================
           echo "[${SERVER_NAME}] Cleaning up old backups..."
           cd /root/AoDaiNhaUyen/frontend
