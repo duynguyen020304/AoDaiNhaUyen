@@ -11,6 +11,12 @@ import type { Badge, Category, Product } from '../ProductsPage/data';
 import styles from './AccessoriesPage.module.css';
 
 const ACCESSORY_PAGE_SIZE = 100;
+const ACCESSORY_CATEGORY_TITLES: Record<string, string> = {
+  'tram-cai': 'Trâm cài',
+  'tui-sach': 'Túi sách',
+  quat: 'Quạt',
+  giay: 'Giày',
+};
 
 const vndFormatter = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
@@ -18,13 +24,6 @@ const vndFormatter = new Intl.NumberFormat('vi-VN', {
   maximumFractionDigits: 0,
 });
 
-const fallbackCategories: Category[] = [
-  {
-    id: 'phu-kien',
-    name: 'Phụ kiện',
-    products: [],
-  },
-];
 
 function formatPrice(value: number) {
   return vndFormatter.format(value).replace('₫', 'đ');
@@ -55,7 +54,10 @@ export default function AccessoriesPage() {
   const activeCategorySlug = useMemo(() => {
     return new URLSearchParams(location.search).get('category');
   }, [location.search]);
-  const [categories, setCategories] = useState<Category[]>(fallbackCategories);
+  const loadingBannerTitle = activeCategorySlug
+    ? ACCESSORY_CATEGORY_TITLES[activeCategorySlug] ?? null
+    : null;
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -76,7 +78,7 @@ export default function AccessoriesPage() {
 
         if (visibleCategories.length === 0) {
           if (!ignore) {
-            setCategories(fallbackCategories);
+            setCategories([]);
           }
           return;
         }
@@ -102,7 +104,7 @@ export default function AccessoriesPage() {
         }
       } catch (error) {
         if (!ignore) {
-          setCategories(fallbackCategories);
+          setCategories([]);
           setLoadError(error instanceof Error ? error.message : 'Không thể tải phụ kiện.');
         }
       } finally {
@@ -122,15 +124,21 @@ export default function AccessoriesPage() {
   return (
     <main className={styles.page}>
       {loadError ? (
-        <p className={styles.statusMessage}>
-          Chưa tải được dữ liệu phụ kiện. {loadError}
-        </p>
+        <div className={styles.statusMessage}>
+          <p>Không thể tải danh sách phụ kiện.</p>
+          <p className={styles.errorDetail}>{loadError}</p>
+        </div>
       ) : null}
-      {loading ? <p className={styles.statusMessage}>Đang tải phụ kiện...</p> : null}
-      {!loading && categories.length === 0 ? (
+      {loading ? (
+        <div className={styles.loadingContainer}>
+          {loadingBannerTitle ? <CategoryBanner title={loadingBannerTitle} /> : null}
+          <div className={styles.spinner} aria-label="Đang tải" />
+        </div>
+      ) : null}
+      {!loading && !loadError && categories.length === 0 ? (
         <p className={styles.emptyMessage}>Chưa có phụ kiện trong danh mục này.</p>
       ) : null}
-      {categories.map((category) => (
+      {!loading && categories.map((category) => (
         <div key={category.id}>
           <CategoryBanner title={category.name} />
           <motion.section

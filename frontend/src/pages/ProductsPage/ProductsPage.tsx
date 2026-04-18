@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styles from './ProductsPage.module.css';
 import { sectionReveal, staggerContainer, viewportOnce } from '../../utils/motion';
-import { CATEGORIES, SIZES, type Badge, type Category, type Product } from './data';
+import { SIZES, type Badge, type Category, type Product } from './data';
 import CategoryBanner from '../../components/CategoryBanner/CategoryBanner';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import { getHeaderCategories, getProducts } from '../../api/catalog';
@@ -11,6 +11,13 @@ import { resolveAssetUrl } from '../../api/client';
 import type { HeaderCategoryChild, ProductListItem } from '../../types/catalog';
 
 const PRODUCT_PAGE_SIZE = 100;
+const PRODUCT_CATEGORY_TITLES: Record<string, string> = {
+  'ao-dai-truyen-thong': 'Áo dài truyền thống',
+  'ao-dai-cach-tan': 'Áo dài cách tân',
+  'ao-gami': 'Áo Gấm',
+  'ao-dui-hoi-nu': 'Áo hội nữ',
+  'ao-dui-hoi-nam': 'Áo hội nam',
+};
 
 const vndFormatter = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
@@ -58,6 +65,9 @@ export default function ProductsPage() {
   const navigate = useNavigate();
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const activeCategorySlug = searchParams.get('category');
+  const loadingBannerTitle = activeCategorySlug
+    ? PRODUCT_CATEGORY_TITLES[activeCategorySlug] ?? null
+    : null;
   const selectedSizesByCategory = useMemo(() => {
     const selectedSizes = new Map<string, string>();
 
@@ -69,7 +79,7 @@ export default function ProductsPage() {
 
     return selectedSizes;
   }, [searchParams]);
-  const [categories, setCategories] = useState<Category[]>(CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -106,7 +116,7 @@ export default function ProductsPage() {
 
         if (visibleCategories.length === 0) {
           if (!ignore) {
-            setCategories(CATEGORIES);
+            setCategories([]);
           }
           return;
         }
@@ -130,12 +140,11 @@ export default function ProductsPage() {
         );
 
         if (!ignore) {
-          const hasProducts = groups.some((category) => category.products.length > 0);
-          setCategories(hasProducts || hasSelectedSize ? groups : CATEGORIES);
+          setCategories(groups);
         }
       } catch (error) {
         if (!ignore) {
-          setCategories(CATEGORIES);
+          setCategories([]);
           setLoadError(error instanceof Error ? error.message : 'Không thể tải sản phẩm.');
         }
       } finally {
@@ -155,12 +164,18 @@ export default function ProductsPage() {
   return (
     <main className={styles.page}>
       {loadError ? (
-        <p className={styles.statusMessage}>
-          Đang hiển thị dữ liệu mẫu. {loadError}
-        </p>
+        <div className={styles.statusMessage}>
+          <p>Không thể tải danh sách sản phẩm.</p>
+          <p className={styles.errorDetail}>{loadError}</p>
+        </div>
       ) : null}
-      {loading ? <p className={styles.statusMessage}>Đang tải sản phẩm...</p> : null}
-      {!loading && categories.length === 0 ? (
+      {loading ? (
+        <div className={styles.loadingContainer}>
+          {loadingBannerTitle ? <CategoryBanner title={loadingBannerTitle} /> : null}
+          <div className={styles.spinner} aria-label="Đang tải" />
+        </div>
+      ) : null}
+      {!loading && !loadError && categories.length === 0 ? (
         <div className={styles.emptyState}>
           <p>Không có sản phẩm phù hợp với size đã chọn.</p>
           <Link className={styles.resetLink} to="/products">
@@ -168,7 +183,7 @@ export default function ProductsPage() {
           </Link>
         </div>
       ) : null}
-      {categories.map((category) => (
+      {!loading && categories.map((category) => (
         <div key={category.id}>
           <CategoryBanner title={category.name} />
           <motion.section

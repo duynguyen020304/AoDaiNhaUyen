@@ -47,7 +47,7 @@ export default function Footer() {
         </motion.section>
       </motion.div>
       <motion.div className={styles.footerBottom} variants={fadeUp}>
-        <p>&copy; 2024 MaryMy. All rights reserved.</p>
+        <p>&copy; 2026 Áo Dài Nhã Uyên. All rights reserved.</p>
         <div className={styles.socials} aria-label="Mạng xã hội">
           <a className="hover-lift" href="/" aria-label="Facebook">f</a>
           <a className="hover-lift" href="/" aria-label="Instagram">◎</a>

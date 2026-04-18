@@ -21,7 +21,7 @@ const navLinks: NavLinkConfig[] = [
   { label: 'Phụ kiện', to: '/accessories', matchPath: '/accessories' },
 ];
 
-const fallbackCategories: HeaderCategory[] = [
+const NAV_FALLBACK_CATEGORIES: HeaderCategory[] = [
   {
     id: 1,
     name: 'Áo dài',
@@ -54,7 +54,7 @@ export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const { status, user, logout } = useAuth();
-  const [categories, setCategories] = useState<HeaderCategory[]>(fallbackCategories);
+  const [categories, setCategories] = useState<HeaderCategory[]>(NAV_FALLBACK_CATEGORIES);
 
   useEffect(() => {
     let ignore = false;
@@ -67,7 +67,7 @@ export default function Header() {
       })
       .catch(() => {
         if (!ignore) {
-          setCategories(fallbackCategories);
+          setCategories(NAV_FALLBACK_CATEGORIES);
         }
       });
 
