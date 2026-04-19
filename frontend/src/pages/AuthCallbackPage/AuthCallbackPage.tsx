@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth';
 import styles from './AuthCallbackPage.module.css';
 
-type Provider = 'google' | 'facebook';
+type Provider = 'google' | 'zalo';
 
 type CallbackState = 'idle' | 'completing' | 'error';
 
@@ -14,13 +14,13 @@ function getCacheKey(provider: Provider, code: string) {
 }
 
 function getProviderLabel(provider: Provider) {
-  return provider === 'google' ? 'Google' : 'Facebook';
+  return provider === 'google' ? 'Google' : 'Zalo';
 }
 
 function getFailureMessage(provider: Provider) {
   return provider === 'google'
     ? 'Khong the xac minh dang nhap Google. Vui long thu lai.'
-    : 'Khong the xac minh dang nhap Facebook. Vui long thu lai.';
+    : 'Khong the xac minh dang nhap Zalo. Vui long thu lai.';
 }
 
 export interface AuthCallbackPageProps {
@@ -29,16 +29,63 @@ export interface AuthCallbackPageProps {
 
 export default function AuthCallbackPage({ provider }: AuthCallbackPageProps) {
   const navigate = useNavigate();
-  const { completeGoogleLogin, completeFacebookLogin } = useAuth();
-  const code = useMemo(() => new URLSearchParams(window.location.search).get('code'), []);
+  const { completeGoogleLogin, completeZaloLogin } = useAuth();
+  const query = useMemo(() => new URLSearchParams(window.location.search), []);
+  const code = useMemo(() => query.get('code'), [query]);
+  const statusParam = useMemo(() => query.get('status'), [query]);
+  const reasonParam = useMemo(() => query.get('reason'), [query]);
+  const isZaloBackendSuccess = provider === 'zalo' && statusParam === 'success';
   const exchangeStarted = useRef(false);
-  const [state, setState] = useState<CallbackState>(() => (code ? 'completing' : 'error'));
-  const [error, setError] = useState<string | null>(() => (
-    code ? null : `Khong tim thay ma xac thuc tu ${getProviderLabel(provider)}.`
-  ));
+  const [state, setState] = useState<CallbackState>(() => ((code || isZaloBackendSuccess) ? 'completing' : 'error'));
+  const [error, setError] = useState<string | null>(() => {
+    if (code || isZaloBackendSuccess) {
+      return null;
+    }
+
+    if (provider === 'zalo' && statusParam === 'error') {
+      return `Dang nhap Zalo that bai: ${reasonParam || 'zalo_login_failed'}.`;
+    }
+
+    return `Khong tim thay ma xac thuc tu ${getProviderLabel(provider)}.`;
+  });
 
   useEffect(() => {
+    if (provider === 'zalo' && statusParam === 'error') {
+      return;
+    }
+
+    if (provider === 'zalo' && statusParam === 'success') {
+      if (exchangeStarted.current) {
+        return;
+      }
+
+      const cacheKey = 'zalo:backend-callback';
+      const exchange = oauthExchangeCache.get(cacheKey) ?? completeZaloLogin();
+      if (!oauthExchangeCache.has(cacheKey)) {
+        oauthExchangeCache.set(cacheKey, Promise.resolve(exchange));
+      }
+
+      exchangeStarted.current = true;
+
+      void Promise.resolve(exchange)
+        .then(() => {
+          oauthExchangeCache.delete(cacheKey);
+          navigate('/account', { replace: true });
+        })
+        .catch((callbackError) => {
+          oauthExchangeCache.delete(cacheKey);
+          setState('error');
+          setError(callbackError instanceof Error ? callbackError.message : getFailureMessage(provider));
+        });
+
+      return;
+    }
+
     if (!code) {
+      return;
+    }
+
+    if (exchangeStarted.current) {
       return;
     }
 
@@ -47,14 +94,10 @@ export default function AuthCallbackPage({ provider }: AuthCallbackPageProps) {
       oauthExchangeCache.get(cacheKey) ??
       (provider === 'google'
         ? completeGoogleLogin(code)
-        : completeFacebookLogin(code));
+        : Promise.reject(new Error('Dang nhap Zalo phai duoc xu ly qua backend callback.')));
 
     if (!oauthExchangeCache.has(cacheKey)) {
       oauthExchangeCache.set(cacheKey, Promise.resolve(exchange));
-    }
-
-    if (exchangeStarted.current) {
-      return;
     }
 
     exchangeStarted.current = true;
@@ -69,7 +112,7 @@ export default function AuthCallbackPage({ provider }: AuthCallbackPageProps) {
         setState('error');
         setError(callbackError instanceof Error ? callbackError.message : getFailureMessage(provider));
       });
-  }, [code, completeFacebookLogin, completeGoogleLogin, navigate, provider]);
+  }, [code, completeGoogleLogin, completeZaloLogin, navigate, provider, reasonParam, statusParam]);
 
   return (
     <section className={styles.page}>
@@ -80,15 +123,17 @@ export default function AuthCallbackPage({ provider }: AuthCallbackPageProps) {
             {getProviderLabel(provider)} sign-in
           </p>
           <h1 className={styles.title}>
-            {code ? `Dang hoan tat dang nhap ${getProviderLabel(provider)}` : `Ma xac thuc ${getProviderLabel(provider)} khong hop le`}
+            {state === 'error'
+              ? `Ma xac thuc ${getProviderLabel(provider)} khong hop le`
+              : `Dang hoan tat dang nhap ${getProviderLabel(provider)}`}
           </h1>
           <p className={styles.message}>
-            {code
-              ? 'He thong dang xac minh ma uy quyen va tao phien dang nhap bang cookie HttpOnly. Ban se duoc chuyen toi trang tai khoan ngay lap tuc.'
-              : `Khong tim thay ma xac thuc tu ${getProviderLabel(provider)}. Hay quay lai trang dang nhap va thu lai.`}
+            {state === 'error'
+              ? `Khong the hoan tat dang nhap ${getProviderLabel(provider)}. Hay quay lai trang dang nhap va thu lai.`
+              : 'He thong dang xac minh ma uy quyen va tao phien dang nhap bang cookie HttpOnly. Ban se duoc chuyen toi trang tai khoan ngay lap tuc.'}
           </p>
 
-          {state === 'completing' && code ? (
+          {state === 'completing' ? (
             <div className={styles.statusRow} aria-live="polite">
               <div className={styles.spinner} />
               <div>

@@ -72,7 +72,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => x.Email).IsUnique();
       builder.HasIndex(x => x.Phone).IsUnique();
       builder.ToTable(t => t.HasCheckConstraint("ck_users_status", "status IN ('active', 'inactive', 'blocked')"));
-      builder.ToTable(t => t.HasCheckConstraint("ck_users_contact", "email IS NOT NULL OR phone IS NOT NULL"));
     });
 
     modelBuilder.Entity<UserAccount>(builder =>

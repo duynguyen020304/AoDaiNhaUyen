@@ -22,9 +22,9 @@ public sealed class GoogleOAuthSettingsValidationTests
         ["GoogleOAuth:ClientId"] = "client-id",
         ["GoogleOAuth:ClientSecret"] = "client-secret",
         ["GoogleOAuth:RedirectUri"] = "",
-        ["FacebookOAuth:AppId"] = "app-id",
-        ["FacebookOAuth:AppSecret"] = "app-secret",
-        ["FacebookOAuth:RedirectUri"] = "http://localhost:5173/auth/facebook/callback"
+        ["ZaloOAuth:AppId"] = "app-id",
+        ["ZaloOAuth:SecretKey"] = "secret-key",
+        ["ZaloOAuth:RedirectUri"] = "http://localhost:5173/auth/callback/zalo"
       })
       .Build();
 

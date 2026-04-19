@@ -2,6 +2,7 @@ using AoDaiNhaUyen.Application.DTOs.Auth;
 using AoDaiNhaUyen.Application.Exceptions;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
+using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using AoDaiNhaUyen.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +21,7 @@ public sealed class AuthServiceTests
     var service = CreateService(
       dbContext,
       googleOAuthService: new ThrowingGoogleOAuthService(),
-      facebookOAuthService: new StubFacebookOAuthService());
+      zaloOAuthService: new StubZaloOAuthService());
 
     var result = await service.LoginWithGoogleAsync("bad-code", "127.0.0.1", "test-agent");
 
@@ -31,65 +32,97 @@ public sealed class AuthServiceTests
   }
 
   [Fact]
-  public async Task LoginWithFacebookAsync_ReturnsFailure_WhenFacebookExchangeFails()
+  public async Task LoginWithZaloAsync_ReturnsFailure_WhenZaloExchangeFails()
   {
     await using var dbContext = CreateDbContext();
     var service = CreateService(
       dbContext,
       googleOAuthService: new StubGoogleOAuthService(),
-      facebookOAuthService: new ThrowingFacebookOAuthService());
+      zaloOAuthService: new ThrowingZaloOAuthService());
 
-    var result = await service.LoginWithFacebookAsync("bad-code", "127.0.0.1", "test-agent");
+    var result = await service.LoginWithZaloAsync("bad-code", "code-verifier", "127.0.0.1", "test-agent");
 
     Assert.False(result.Succeeded);
     Assert.Null(result.Value);
-    Assert.Equal("facebook_exchange_failed", result.ErrorCode);
-    Assert.Equal("Không thể xác minh đăng nhập Facebook. Vui lòng thử lại.", result.ErrorMessage);
+    Assert.Equal("zalo_exchange_failed", result.ErrorCode);
+    Assert.Equal("Không thể xác minh đăng nhập Zalo. Vui lòng thử lại.", result.ErrorMessage);
   }
 
   [Fact]
-  public async Task LoginWithFacebookAsync_ReturnsFailure_WhenFacebookEmailIsMissing()
+  public async Task LoginWithZaloAsync_CreatesUserAccountAndSessionWithoutEmailOrPhone()
   {
     await using var dbContext = CreateDbContext();
     var service = CreateService(
       dbContext,
       googleOAuthService: new StubGoogleOAuthService(),
-      facebookOAuthService: new MissingEmailFacebookOAuthService());
+      zaloOAuthService: new StubZaloOAuthService());
 
-    var result = await service.LoginWithFacebookAsync("auth-code", "127.0.0.1", "test-agent");
+    var result = await service.LoginWithZaloAsync("auth-code", "code-verifier", "127.0.0.1", "test-agent");
 
-    Assert.False(result.Succeeded);
-    Assert.Null(result.Value);
-    Assert.Equal("facebook_email_missing", result.ErrorCode);
-    Assert.Equal("Tài khoản Facebook chưa cung cấp email.", result.ErrorMessage);
+    Assert.True(result.Succeeded);
+    Assert.NotNull(result.Value);
+    Assert.Equal("Uyen Zalo", result.Value.User.FullName);
+    Assert.Null(result.Value.User.Email);
+
+    var user = await dbContext.Users.Include(x => x.UserAccounts).Include(x => x.Sessions).SingleAsync();
+    Assert.Null(user.Email);
+    Assert.Null(user.Phone);
+    Assert.Equal("https://example.com/avatar.png", user.AvatarUrl);
+    Assert.Contains(user.UserAccounts, account => account.Provider == "zalo" && account.ProviderAccountId == "zalo-user" && account.IsVerified);
+    Assert.Single(user.Sessions);
   }
 
   [Fact]
-  public async Task LoginWithFacebookAsync_ReturnsFailure_WhenFacebookEmailIsNotVerified()
+  public async Task LoginWithZaloAsync_ReusesExistingAccountAndUpdatesProfile()
   {
     await using var dbContext = CreateDbContext();
+    var user = new User
+    {
+      FullName = "Old Name",
+      AvatarUrl = "https://example.com/old.png",
+      Status = "active"
+    };
+    user.UserAccounts.Add(new UserAccount
+    {
+      Provider = "zalo",
+      ProviderAccountId = "zalo-user",
+      IsVerified = true
+    });
+    user.UserRoles.Add(new UserRole { RoleId = 1 });
+    dbContext.Users.Add(user);
+    await dbContext.SaveChangesAsync();
+
     var service = CreateService(
       dbContext,
       googleOAuthService: new StubGoogleOAuthService(),
-      facebookOAuthService: new UnverifiedFacebookOAuthService());
+      zaloOAuthService: new UpdatedZaloOAuthService());
 
-    var result = await service.LoginWithFacebookAsync("auth-code", "127.0.0.1", "test-agent");
+    var result = await service.LoginWithZaloAsync("auth-code", "code-verifier", "127.0.0.1", "test-agent");
 
-    Assert.False(result.Succeeded);
-    Assert.Null(result.Value);
-    Assert.Equal("facebook_email_unverified", result.ErrorCode);
-    Assert.Equal("Tài khoản Facebook chưa xác minh email.", result.ErrorMessage);
+    Assert.True(result.Succeeded);
+
+    var accounts = await dbContext.UserAccounts.Where(x => x.Provider == "zalo").ToListAsync();
+    Assert.Single(accounts);
+    var updatedUser = await dbContext.Users.Include(x => x.Sessions).SingleAsync();
+    Assert.Equal("Updated Zalo", updatedUser.FullName);
+    Assert.Equal("https://example.com/new.png", updatedUser.AvatarUrl);
+    Assert.Single(updatedUser.Sessions);
   }
 
   private static AppDbContext CreateDbContext()
   {
-    return new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().Options);
+    var dbContext = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+      .UseInMemoryDatabase(Guid.NewGuid().ToString())
+      .Options);
+    dbContext.Roles.Add(new Role { Id = 1, Name = "customer" });
+    dbContext.SaveChanges();
+    return dbContext;
   }
 
   private static AuthService CreateService(
     AppDbContext dbContext,
     IGoogleOAuthService googleOAuthService,
-    IFacebookOAuthService facebookOAuthService)
+    IZaloOAuthService zaloOAuthService)
   {
     return new AuthService(
       dbContext,
@@ -97,7 +130,7 @@ public sealed class AuthServiceTests
       new StubJwtTokenService(),
       new StubRefreshTokenService(),
       googleOAuthService,
-      facebookOAuthService,
+      zaloOAuthService,
       new StubEmailService(),
       Options.Create(new JwtSettings { SecretKey = "abcdefghijklmnopqrstuvwxyz123456" }),
       Options.Create(new EmailSettings
@@ -130,35 +163,27 @@ public sealed class AuthServiceTests
     }
   }
 
-  private sealed class ThrowingFacebookOAuthService : IFacebookOAuthService
+  private sealed class ThrowingZaloOAuthService : IZaloOAuthService
   {
-    public Task<FacebookUserInfoDto> ExchangeCodeForUserAsync(string code, CancellationToken cancellationToken = default)
+    public Task<ZaloUserInfoDto> ExchangeCodeForUserAsync(string code, string codeVerifier, CancellationToken cancellationToken = default)
     {
-      throw new FacebookOAuthExchangeException("Không thể xác minh đăng nhập Facebook. Vui lòng thử lại.");
+      throw new ZaloOAuthExchangeException("Không thể xác minh đăng nhập Zalo. Vui lòng thử lại.");
     }
   }
 
-  private sealed class StubFacebookOAuthService : IFacebookOAuthService
+  private sealed class StubZaloOAuthService : IZaloOAuthService
   {
-    public Task<FacebookUserInfoDto> ExchangeCodeForUserAsync(string code, CancellationToken cancellationToken = default)
+    public Task<ZaloUserInfoDto> ExchangeCodeForUserAsync(string code, string codeVerifier, CancellationToken cancellationToken = default)
     {
-      return Task.FromResult(new FacebookUserInfoDto("facebook-user", "uyen@example.com", true, "Uyen", null));
+      return Task.FromResult(new ZaloUserInfoDto("zalo-user", "Uyen Zalo", "https://example.com/avatar.png"));
     }
   }
 
-  private sealed class MissingEmailFacebookOAuthService : IFacebookOAuthService
+  private sealed class UpdatedZaloOAuthService : IZaloOAuthService
   {
-    public Task<FacebookUserInfoDto> ExchangeCodeForUserAsync(string code, CancellationToken cancellationToken = default)
+    public Task<ZaloUserInfoDto> ExchangeCodeForUserAsync(string code, string codeVerifier, CancellationToken cancellationToken = default)
     {
-      return Task.FromResult(new FacebookUserInfoDto("facebook-user", null, false, "Uyen", null));
-    }
-  }
-
-  private sealed class UnverifiedFacebookOAuthService : IFacebookOAuthService
-  {
-    public Task<FacebookUserInfoDto> ExchangeCodeForUserAsync(string code, CancellationToken cancellationToken = default)
-    {
-      return Task.FromResult(new FacebookUserInfoDto("facebook-user", "uyen@example.com", false, "Uyen", null));
+      return Task.FromResult(new ZaloUserInfoDto("zalo-user", "Updated Zalo", "https://example.com/new.png"));
     }
   }
 

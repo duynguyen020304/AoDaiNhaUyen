@@ -1,8 +1,7 @@
-import { request } from './client';
+import { API_BASE_URL, request } from './client';
 import type { AuthUser } from '../types/auth';
 
 const GOOGLE_CLIENT_ID = import.meta.env.PUBLIC_GOOGLE_CLIENT_ID || '';
-const FACEBOOK_CLIENT_ID = import.meta.env.PUBLIC_FACEBOOK_CLIENT_ID || '';
 
 export interface RegisterPayload {
   fullName: string;
@@ -40,13 +39,6 @@ export function register(payload: RegisterPayload): Promise<FlagResponse> {
 
 export function googleLogin(code: string): Promise<AuthUser> {
   return request<AuthUser>('/api/auth/google', {
-    method: 'POST',
-    body: JSON.stringify({ code }),
-  });
-}
-
-export function facebookLogin(code: string): Promise<AuthUser> {
-  return request<AuthUser>('/api/auth/facebook', {
     method: 'POST',
     body: JSON.stringify({ code }),
   });
@@ -100,16 +92,6 @@ export function buildGoogleAuthorizeUrl(redirectUri: string): string {
   return url.toString();
 }
 
-export function buildFacebookAuthorizeUrl(redirectUri: string): string {
-  if (!FACEBOOK_CLIENT_ID) {
-    throw new Error('PUBLIC_FACEBOOK_CLIENT_ID is not configured.');
-  }
-
-  const url = new URL('https://www.facebook.com/v21.0/dialog/oauth');
-  url.searchParams.set('client_id', FACEBOOK_CLIENT_ID);
-  url.searchParams.set('redirect_uri', redirectUri);
-  url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', 'public_profile,email');
-
-  return url.toString();
+export function buildZaloAuthorizeUrl(): string {
+  return `${API_BASE_URL}/api/auth/zalo/authorize`;
 }

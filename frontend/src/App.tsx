@@ -13,7 +13,7 @@ import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import AccountPage, { type AccountView } from './pages/AccountPage/AccountPage';
 import AuthGoogleCallbackPage from './pages/AuthGoogleCallbackPage/AuthGoogleCallbackPage';
-import AuthFacebookCallbackPage from './pages/AuthFacebookCallbackPage/AuthFacebookCallbackPage';
+import AuthZaloCallbackPage from './pages/AuthZaloCallbackPage/AuthZaloCallbackPage';
 import ResetPasswordPage from './pages/ResetPasswordPage/ResetPasswordPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage/PrivacyPolicyPage';
 import DataDeletionPage from './pages/DataDeletionPage/DataDeletionPage';
@@ -45,11 +45,11 @@ export default function App() {
   const hideHeader = pathname === '/login'
     || pathname === '/reset-password'
     || pathname === '/auth/google/callback'
-    || pathname === '/auth/facebook/callback';
+    || pathname === '/auth/callback/zalo';
   const hideFooter = pathname === '/login'
     || pathname === '/reset-password'
     || pathname === '/auth/google/callback'
-    || pathname === '/auth/facebook/callback';
+    || pathname === '/auth/callback/zalo';
 
   function openAccountModal(view: AccountView = 'profile') {
     setAccountView(view);
@@ -94,7 +94,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/google/callback" element={<AuthGoogleCallbackPage />} />
-        <Route path="/auth/facebook/callback" element={<AuthFacebookCallbackPage />} />
+        <Route path="/auth/callback/zalo" element={<AuthZaloCallbackPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/data-deletion" element={<DataDeletionPage />} />
         <Route path="/account/*" element={<HomePage />} />

@@ -25,8 +25,9 @@ public interface IAuthService
     string? userAgent,
     CancellationToken cancellationToken = default);
 
-  Task<AuthResult<AuthSessionDto>> LoginWithFacebookAsync(
+  Task<AuthResult<AuthSessionDto>> LoginWithZaloAsync(
     string code,
+    string codeVerifier,
     string? ipAddress,
     string? userAgent,
     CancellationToken cancellationToken = default);

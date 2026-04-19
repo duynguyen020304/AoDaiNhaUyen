@@ -1,5 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
@@ -15,10 +17,14 @@ public sealed class AuthController(
   IAuthService authService,
   IOptions<CookieSettings> cookieSettings,
   IOptions<EmailSettings> emailSettings,
+  IOptions<ZaloOAuthSettings> zaloOAuthSettings,
   IWebHostEnvironment environment) : ControllerBase
 {
+  private const string ZaloPkceStateCookieName = "aodai_zalo_oauth_state";
+  private const string ZaloPkceVerifierCookieName = "aodai_zalo_oauth_verifier";
   private readonly CookieSettings cookieSettings = cookieSettings.Value;
   private readonly EmailSettings emailSettings = emailSettings.Value;
+  private readonly ZaloOAuthSettings zaloOAuthSettings = zaloOAuthSettings.Value;
 
   [HttpPost("register")]
   public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
@@ -81,11 +87,12 @@ public sealed class AuthController(
     return Ok(ApiResponseFactory.Success(result.Value.User, "Đăng nhập Google thành công"));
   }
 
-  [HttpPost("facebook")]
-  public async Task<IActionResult> Facebook([FromBody] FacebookLoginRequest request, CancellationToken cancellationToken)
+  [HttpPost("zalo")]
+  public async Task<IActionResult> Zalo([FromBody] ZaloLoginRequest request, CancellationToken cancellationToken)
   {
-    var result = await authService.LoginWithFacebookAsync(
+    var result = await authService.LoginWithZaloAsync(
       request.Code,
+      request.CodeVerifier,
       GetIpAddress(),
       Request.Headers.UserAgent.ToString(),
       cancellationToken);
@@ -93,11 +100,73 @@ public sealed class AuthController(
     if (!result.Succeeded || result.Value is null)
     {
       ClearAuthCookies();
-      return Unauthorized(ApiResponseFactory.Failure("Đăng nhập Facebook thất bại", result.ErrorCode ?? "facebook_login_failed", result.ErrorMessage ?? "Không thể đăng nhập với Facebook."));
+      return Unauthorized(ApiResponseFactory.Failure("Đăng nhập Zalo thất bại", result.ErrorCode ?? "zalo_login_failed", result.ErrorMessage ?? "Không thể đăng nhập với Zalo."));
     }
 
     WriteAuthCookies(result.Value.AccessToken, result.Value.RefreshToken);
-    return Ok(ApiResponseFactory.Success(result.Value.User, "Đăng nhập Facebook thành công"));
+    return Ok(ApiResponseFactory.Success(result.Value.User, "Đăng nhập Zalo thành công"));
+  }
+
+  [HttpGet("zalo/authorize")]
+  public IActionResult ZaloAuthorize()
+  {
+    var state = GenerateBase64Url(24);
+    var codeVerifier = GenerateBase64Url(64);
+    var codeChallenge = BuildPkceCodeChallenge(codeVerifier);
+
+    Response.Cookies.Append(ZaloPkceStateCookieName, state, BuildZaloPkceCookieOptions());
+    Response.Cookies.Append(ZaloPkceVerifierCookieName, codeVerifier, BuildZaloPkceCookieOptions());
+
+    return Redirect(BuildZaloAuthorizeUrl(state, codeChallenge));
+  }
+
+  [HttpGet("zalo/callback")]
+  public async Task<IActionResult> ZaloCallback(
+    [FromQuery] string? code,
+    [FromQuery] string? state,
+    [FromQuery] string? error,
+    CancellationToken cancellationToken)
+  {
+    try
+    {
+      if (!string.IsNullOrWhiteSpace(error))
+      {
+        return Redirect(BuildZaloFrontendRedirect("error", error));
+      }
+
+      if (string.IsNullOrWhiteSpace(code))
+      {
+        return Redirect(BuildZaloFrontendRedirect("error", "missing_code"));
+      }
+
+      if (!Request.Cookies.TryGetValue(ZaloPkceStateCookieName, out var expectedState) ||
+          !Request.Cookies.TryGetValue(ZaloPkceVerifierCookieName, out var codeVerifier) ||
+          string.IsNullOrWhiteSpace(state) ||
+          !string.Equals(expectedState, state, StringComparison.Ordinal))
+      {
+        return Redirect(BuildZaloFrontendRedirect("error", "invalid_state"));
+      }
+
+      var result = await authService.LoginWithZaloAsync(
+        code,
+        codeVerifier,
+        GetIpAddress(),
+        Request.Headers.UserAgent.ToString(),
+        cancellationToken);
+
+      if (!result.Succeeded || result.Value is null)
+      {
+        ClearAuthCookies();
+        return Redirect(BuildZaloFrontendRedirect("error", result.ErrorCode ?? "zalo_login_failed"));
+      }
+
+      WriteAuthCookies(result.Value.AccessToken, result.Value.RefreshToken);
+      return Redirect(BuildZaloFrontendRedirect("success", "zalo_login_success"));
+    }
+    finally
+    {
+      ClearZaloPkceCookies();
+    }
   }
 
   [HttpPost("refresh")]
@@ -217,6 +286,12 @@ public sealed class AuthController(
     Response.Cookies.Delete(cookieSettings.RefreshTokenCookieName, new CookieOptions { Path = "/api/auth" });
   }
 
+  private void ClearZaloPkceCookies()
+  {
+    Response.Cookies.Delete(ZaloPkceStateCookieName, new CookieOptions { Path = "/" });
+    Response.Cookies.Delete(ZaloPkceVerifierCookieName, new CookieOptions { Path = "/" });
+  }
+
   private CookieOptions BuildCookieOptions(string path, DateTimeOffset expiresAt)
   {
     return new CookieOptions
@@ -226,6 +301,18 @@ public sealed class AuthController(
       SameSite = SameSiteMode.Lax,
       Path = path,
       Expires = expiresAt
+    };
+  }
+
+  private CookieOptions BuildZaloPkceCookieOptions()
+  {
+    return new CookieOptions
+    {
+      HttpOnly = true,
+      Secure = !environment.IsDevelopment(),
+      SameSite = SameSiteMode.Lax,
+      Path = "/",
+      Expires = DateTimeOffset.UtcNow.AddMinutes(10)
     };
   }
 
@@ -251,6 +338,48 @@ public sealed class AuthController(
     return $"{baseUrl}/login?{string.Join("&", queryParts)}";
   }
 
+  private string BuildZaloFrontendRedirect(string status, string reason)
+  {
+    var baseUrl = emailSettings.FrontendBaseUrl.TrimEnd('/');
+    return $"{baseUrl}/auth/callback/zalo?status={Uri.EscapeDataString(status)}&reason={Uri.EscapeDataString(reason)}";
+  }
+
+  private string BuildZaloAuthorizeUrl(string state, string codeChallenge)
+  {
+    var uriBuilder = new UriBuilder("https://oauth.zaloapp.com/v4/permission");
+    var query = new Dictionary<string, string>
+    {
+      ["app_id"] = zaloOAuthSettings.AppId,
+      ["redirect_uri"] = zaloOAuthSettings.RedirectUri,
+      ["code_challenge"] = codeChallenge,
+      ["state"] = state
+    };
+
+    uriBuilder.Query = string.Join(
+      "&",
+      query.Select(x => $"{Uri.EscapeDataString(x.Key)}={Uri.EscapeDataString(x.Value)}"));
+
+    return uriBuilder.Uri.ToString();
+  }
+
+  private static string GenerateBase64Url(int byteLength)
+  {
+    return Base64UrlEncode(RandomNumberGenerator.GetBytes(byteLength));
+  }
+
+  private static string BuildPkceCodeChallenge(string codeVerifier)
+  {
+    return Base64UrlEncode(SHA256.HashData(Encoding.ASCII.GetBytes(codeVerifier)));
+  }
+
+  private static string Base64UrlEncode(byte[] bytes)
+  {
+    return Convert.ToBase64String(bytes)
+      .TrimEnd('=')
+      .Replace('+', '-')
+      .Replace('/', '_');
+  }
+
   public sealed record RegisterRequest(
     string FullName,
     string Email,
@@ -261,5 +390,5 @@ public sealed class AuthController(
   public sealed record ForgotPasswordRequest(string Email);
   public sealed record ResetPasswordRequest(long UserId, string Token, string NewPassword);
   public sealed record GoogleLoginRequest(string Code);
-  public sealed record FacebookLoginRequest(string Code);
+  public sealed record ZaloLoginRequest(string Code, string CodeVerifier);
 }

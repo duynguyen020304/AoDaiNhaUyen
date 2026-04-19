@@ -54,12 +54,12 @@ public static class ServiceRegistration
         "GoogleOAuth:RedirectUri must be a valid absolute URI.")
       .ValidateOnStart();
     services
-      .AddOptions<FacebookOAuthSettings>()
-      .Bind(configuration.GetSection("FacebookOAuth"))
+      .AddOptions<ZaloOAuthSettings>()
+      .Bind(configuration.GetSection("ZaloOAuth"))
       .ValidateDataAnnotations()
       .Validate(
         settings => Uri.TryCreate(settings.RedirectUri, UriKind.Absolute, out _),
-        "FacebookOAuth:RedirectUri must be a valid absolute URI.")
+        "ZaloOAuth:RedirectUri must be a valid absolute URI.")
       .ValidateOnStart();
     services.Configure<CookieSettings>(configuration.GetSection("CookieSettings"));
 
@@ -119,7 +119,7 @@ public static class ServiceRegistration
     services.AddScoped<IJwtTokenService, JwtTokenService>();
     services.AddScoped<IEmailService, SmtpEmailService>();
     services.AddScoped<IGoogleOAuthService, GoogleOAuthService>();
-    services.AddScoped<IFacebookOAuthService, FacebookOAuthService>();
+    services.AddScoped<IZaloOAuthService, ZaloOAuthService>();
     services.AddScoped<IAuthService, AuthService>();
     services.AddScoped<ICatalogStylingService, CatalogStylingService>();
     services.AddScoped<ICatalogTryOnService, CatalogTryOnService>();

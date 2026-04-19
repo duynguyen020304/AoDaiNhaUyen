@@ -29,7 +29,6 @@ jobs:
           PUBLIC_BACKEND_DOMAIN=${{ secrets.HK1_PUBLIC_BACKEND_DOMAIN }} \
           VITE_API_BASE_URL=${{ secrets.HK1_VITE_API_BASE_URL }} \
           PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.HK1_PUBLIC_GOOGLE_CLIENT_ID }} \
-          PUBLIC_FACEBOOK_CLIENT_ID=${{ secrets.HK1_PUBLIC_FACEBOOK_CLIENT_ID }} \
           bun run build
 
       - name: Upload Frontend Artifact
@@ -61,7 +60,6 @@ jobs:
           PUBLIC_BACKEND_DOMAIN=${{ secrets.US1_PUBLIC_BACKEND_DOMAIN }} \
           VITE_API_BASE_URL=${{ secrets.US1_VITE_API_BASE_URL }} \
           PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.US1_PUBLIC_GOOGLE_CLIENT_ID }} \
-          PUBLIC_FACEBOOK_CLIENT_ID=${{ secrets.US1_PUBLIC_FACEBOOK_CLIENT_ID }} \
           bun run build
 
       - name: Upload Frontend Artifact
@@ -330,9 +328,9 @@ jobs:
           export GoogleOAuth__ClientId='${{ secrets.HK1_GOOGLE_OAUTH_CLIENT_ID }}'
           export GoogleOAuth__ClientSecret='${{ secrets.HK1_GOOGLE_OAUTH_CLIENT_SECRET }}'
           export GoogleOAuth__RedirectUri='${{ secrets.HK1_GOOGLE_OAUTH_REDIRECT_URI }}'
-          export FacebookOAuth__AppId='${{ secrets.HK1_FACEBOOK_OAUTH_APP_ID }}'
-          export FacebookOAuth__AppSecret='${{ secrets.HK1_FACEBOOK_OAUTH_APP_SECRET }}'
-          export FacebookOAuth__RedirectUri='${{ secrets.HK1_FACEBOOK_OAUTH_REDIRECT_URI }}'
+          export ZaloOAuth__AppId='${{ secrets.HK1_ZALO_OAUTH_APP_ID }}'
+          export ZaloOAuth__SecretKey='${{ secrets.HK1_ZALO_OAUTH_SECRET_KEY }}'
+          export ZaloOAuth__RedirectUri='${{ secrets.HK1_ZALO_OAUTH_REDIRECT_URI }}'
           export EmailSettings__SmtpHost='${{ secrets.HK1_EMAIL_SMTP_HOST }}'
           export EmailSettings__SmtpPort='${{ secrets.HK1_EMAIL_SMTP_PORT }}'
           export EmailSettings__SmtpUsername='${{ secrets.HK1_EMAIL_SMTP_USERNAME }}'
@@ -669,9 +667,9 @@ jobs:
           export GoogleOAuth__ClientId='${{ secrets.US1_GOOGLE_OAUTH_CLIENT_ID }}'
           export GoogleOAuth__ClientSecret='${{ secrets.US1_GOOGLE_OAUTH_CLIENT_SECRET }}'
           export GoogleOAuth__RedirectUri='${{ secrets.US1_GOOGLE_OAUTH_REDIRECT_URI }}'
-          export FacebookOAuth__AppId='${{ secrets.US1_FACEBOOK_OAUTH_APP_ID }}'
-          export FacebookOAuth__AppSecret='${{ secrets.US1_FACEBOOK_OAUTH_APP_SECRET }}'
-          export FacebookOAuth__RedirectUri='${{ secrets.US1_FACEBOOK_OAUTH_REDIRECT_URI }}'
+          export ZaloOAuth__AppId='${{ secrets.US1_ZALO_OAUTH_APP_ID }}'
+          export ZaloOAuth__SecretKey='${{ secrets.US1_ZALO_OAUTH_SECRET_KEY }}'
+          export ZaloOAuth__RedirectUri='${{ secrets.US1_ZALO_OAUTH_REDIRECT_URI }}'
           export EmailSettings__SmtpHost='${{ secrets.US1_EMAIL_SMTP_HOST }}'
           export EmailSettings__SmtpPort='${{ secrets.US1_EMAIL_SMTP_PORT }}'
           export EmailSettings__SmtpUsername='${{ secrets.US1_EMAIL_SMTP_USERNAME }}'
