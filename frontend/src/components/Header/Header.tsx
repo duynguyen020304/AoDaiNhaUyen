@@ -50,7 +50,11 @@ const NAV_FALLBACK_CATEGORIES: HeaderCategory[] = [
 
 const DISMISSED_DROPDOWN_CLASS = 'headerDropdownDismissed';
 
-export default function Header() {
+interface HeaderProps {
+  onOpenAccount: () => void;
+}
+
+export default function Header({ onOpenAccount }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { status, user, logout } = useAuth();
@@ -180,7 +184,7 @@ export default function Header() {
               href="/account/profile"
               onClick={(event) => {
                 event.preventDefault();
-                navigate('/account/profile');
+                onOpenAccount();
               }}
             >
               {user.fullName}
