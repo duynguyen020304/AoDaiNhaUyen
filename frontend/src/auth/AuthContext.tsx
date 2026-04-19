@@ -14,7 +14,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<AuthUser>;
   completeGoogleLogin: (code: string) => Promise<AuthUser>;
-  completeZaloLogin: () => Promise<AuthUser>;
+  completeZaloLogin: (code: string, codeVerifier: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<AuthUser>;
   startGoogleLogin: () => void;
@@ -70,8 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return authenticatedUser;
   }
 
-  async function completeZaloLogin() {
-    const authenticatedUser = await authApi.getCurrentUser();
+  async function completeZaloLogin(code: string, codeVerifier: string) {
+    const authenticatedUser = await authApi.zaloLogin(code, codeVerifier);
     startTransition(() => {
       setUser(authenticatedUser);
       setStatus('authenticated');
@@ -109,7 +109,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function startZaloLogin() {
-    window.location.assign(authApi.buildZaloAuthorizeUrl());
+    void (async () => {
+      const redirectUri = `${window.location.origin}/auth/callback/zalo`;
+      const { state, codeChallenge } = await authApi.createZaloOAuthSession();
+      window.location.assign(authApi.buildZaloAuthorizeUrl(redirectUri, codeChallenge, state));
+    })();
   }
 
   const value = useMemo<AuthContextValue>(() => ({

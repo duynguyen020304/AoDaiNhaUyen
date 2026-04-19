@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { consumeZaloOAuthSession } from '../../api/auth';
 import { useAuth } from '../../auth/useAuth';
 import styles from './AuthCallbackPage.module.css';
 
@@ -30,57 +31,15 @@ export interface AuthCallbackPageProps {
 export default function AuthCallbackPage({ provider }: AuthCallbackPageProps) {
   const navigate = useNavigate();
   const { completeGoogleLogin, completeZaloLogin } = useAuth();
-  const query = useMemo(() => new URLSearchParams(window.location.search), []);
-  const code = useMemo(() => query.get('code'), [query]);
-  const statusParam = useMemo(() => query.get('status'), [query]);
-  const reasonParam = useMemo(() => query.get('reason'), [query]);
-  const isZaloBackendSuccess = provider === 'zalo' && statusParam === 'success';
+  const code = useMemo(() => new URLSearchParams(window.location.search).get('code'), []);
+  const stateParam = useMemo(() => new URLSearchParams(window.location.search).get('state'), []);
   const exchangeStarted = useRef(false);
-  const [state, setState] = useState<CallbackState>(() => ((code || isZaloBackendSuccess) ? 'completing' : 'error'));
-  const [error, setError] = useState<string | null>(() => {
-    if (code || isZaloBackendSuccess) {
-      return null;
-    }
-
-    if (provider === 'zalo' && statusParam === 'error') {
-      return `Dang nhap Zalo that bai: ${reasonParam || 'zalo_login_failed'}.`;
-    }
-
-    return `Khong tim thay ma xac thuc tu ${getProviderLabel(provider)}.`;
-  });
+  const [state, setState] = useState<CallbackState>(() => (code ? 'completing' : 'error'));
+  const [error, setError] = useState<string | null>(() => (
+    code ? null : `Khong tim thay ma xac thuc tu ${getProviderLabel(provider)}.`
+  ));
 
   useEffect(() => {
-    if (provider === 'zalo' && statusParam === 'error') {
-      return;
-    }
-
-    if (provider === 'zalo' && statusParam === 'success') {
-      if (exchangeStarted.current) {
-        return;
-      }
-
-      const cacheKey = 'zalo:backend-callback';
-      const exchange = oauthExchangeCache.get(cacheKey) ?? completeZaloLogin();
-      if (!oauthExchangeCache.has(cacheKey)) {
-        oauthExchangeCache.set(cacheKey, Promise.resolve(exchange));
-      }
-
-      exchangeStarted.current = true;
-
-      void Promise.resolve(exchange)
-        .then(() => {
-          oauthExchangeCache.delete(cacheKey);
-          navigate('/account', { replace: true });
-        })
-        .catch((callbackError) => {
-          oauthExchangeCache.delete(cacheKey);
-          setState('error');
-          setError(callbackError instanceof Error ? callbackError.message : getFailureMessage(provider));
-        });
-
-      return;
-    }
-
     if (!code) {
       return;
     }
@@ -89,12 +48,24 @@ export default function AuthCallbackPage({ provider }: AuthCallbackPageProps) {
       return;
     }
 
+    let codeVerifier: string | null = null;
+    if (provider === 'zalo') {
+      codeVerifier = consumeZaloOAuthSession(stateParam);
+      if (!codeVerifier) {
+        queueMicrotask(() => {
+          setState('error');
+          setError('Phien dang nhap Zalo khong hop le hoac da het han. Vui long thu lai.');
+        });
+        return;
+      }
+    }
+
     const cacheKey = getCacheKey(provider, code);
     const exchange =
       oauthExchangeCache.get(cacheKey) ??
       (provider === 'google'
         ? completeGoogleLogin(code)
-        : Promise.reject(new Error('Dang nhap Zalo phai duoc xu ly qua backend callback.')));
+        : completeZaloLogin(code, codeVerifier ?? ''));
 
     if (!oauthExchangeCache.has(cacheKey)) {
       oauthExchangeCache.set(cacheKey, Promise.resolve(exchange));
@@ -112,7 +83,7 @@ export default function AuthCallbackPage({ provider }: AuthCallbackPageProps) {
         setState('error');
         setError(callbackError instanceof Error ? callbackError.message : getFailureMessage(provider));
       });
-  }, [code, completeGoogleLogin, completeZaloLogin, navigate, provider, reasonParam, statusParam]);
+  }, [code, completeGoogleLogin, completeZaloLogin, navigate, provider, stateParam]);
 
   return (
     <section className={styles.page}>
