@@ -1,6 +1,8 @@
 using AoDaiNhaUyen.Api.Configuration;
 using AoDaiNhaUyen.Api.Middleware;
 using AoDaiNhaUyen.Application.Interfaces;
+using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Infrastructure.Services;
 using DotNetEnv;
 using Microsoft.Extensions.FileProviders;
 
@@ -27,6 +29,8 @@ builder.Services.AddCors(options =>
     });
 });
 builder.Services.AddOpenApi();
+builder.Services.AddSingleton<IUploadStoragePathResolver>(
+  _ => new UploadStoragePathResolver(Path.Combine(builder.Environment.ContentRootPath, "upload")));
 builder.Services.AddBackendServices(builder.Configuration);
 
 var app = builder.Build();
@@ -41,15 +45,13 @@ app.UseHttpsRedirection();
 app.UseCors("Frontend");
 app.UseStaticFiles();
 
-var uploadPath = Path.Combine(app.Environment.ContentRootPath, "upload");
-if (Directory.Exists(uploadPath))
+var uploadStoragePathResolver = app.Services.GetRequiredService<IUploadStoragePathResolver>();
+Directory.CreateDirectory(uploadStoragePathResolver.UploadRootPath);
+app.UseStaticFiles(new StaticFileOptions
 {
-    app.UseStaticFiles(new StaticFileOptions
-    {
-        FileProvider = new PhysicalFileProvider(uploadPath),
-        RequestPath = "/upload"
-    });
-}
+    FileProvider = new PhysicalFileProvider(uploadStoragePathResolver.UploadRootPath),
+    RequestPath = "/upload"
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

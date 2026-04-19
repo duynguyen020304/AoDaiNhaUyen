@@ -9,7 +9,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data;
 
 public sealed class SeedDataService(
   AppDbContext dbContext,
-  IPasswordHasher passwordHasher) : ISeedDataService
+  IPasswordHasher passwordHasher,
+  IUploadStoragePathResolver uploadStoragePathResolver) : ISeedDataService
 {
   private const string CuratedTryOnRoot = "upload/tryon-curated";
 
@@ -408,13 +409,14 @@ public sealed class SeedDataService(
     existingAsset.UpdatedAt = DateTime.UtcNow;
   }
 
-  private static string? TryResolveCuratedAssetUrl(Product product)
+  private string? TryResolveCuratedAssetUrl(Product product)
   {
     var categoryFolder = product.ProductType == "ao_dai" ? "garments" : "accessories";
     foreach (var extension in new[] { ".png", ".webp", ".jpg", ".jpeg" })
     {
       var relativePath = Path.Combine(CuratedTryOnRoot, categoryFolder, $"{product.Slug}{extension}");
-      var absolutePath = Path.Combine(AppContext.BaseDirectory, relativePath);
+      var uploadRelativePath = relativePath["upload".Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+      var absolutePath = uploadStoragePathResolver.GetAbsolutePathForRelativePath(uploadRelativePath);
       if (File.Exists(absolutePath))
       {
         return $"/{relativePath.Replace("\\", "/")}";

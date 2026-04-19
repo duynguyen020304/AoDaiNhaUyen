@@ -16,7 +16,8 @@ public sealed class StylistChatService(
   IThreadMemoryService threadMemoryService,
   ICatalogStylingService catalogStylingService,
   ICatalogTryOnService catalogTryOnService,
-  IStylistResponseComposer stylistResponseComposer) : IStylistChatService
+  IStylistResponseComposer stylistResponseComposer,
+  IUploadStoragePathResolver uploadStoragePathResolver) : IStylistChatService
 {
   private const string AssistantRole = "assistant";
   private const string UserRole = "user";
@@ -541,7 +542,7 @@ public sealed class StylistChatService(
       }
 
       var fileName = $"{Guid.NewGuid():N}{extension}";
-      var absoluteDirectory = Path.Combine(AppContext.BaseDirectory, "upload", "chat", threadId.ToString(CultureInfo.InvariantCulture));
+      var absoluteDirectory = uploadStoragePathResolver.GetChatThreadDirectory(threadId);
       Directory.CreateDirectory(absoluteDirectory);
       await File.WriteAllBytesAsync(Path.Combine(absoluteDirectory, fileName), attachment.Bytes, cancellationToken);
 
@@ -576,7 +577,7 @@ public sealed class StylistChatService(
       _ => ".png"
     };
     var fileName = $"tryon-{Guid.NewGuid():N}{extension}";
-    var absoluteDirectory = Path.Combine(AppContext.BaseDirectory, "upload", "chat", threadId.ToString(CultureInfo.InvariantCulture));
+    var absoluteDirectory = uploadStoragePathResolver.GetChatThreadDirectory(threadId);
     Directory.CreateDirectory(absoluteDirectory);
     await File.WriteAllBytesAsync(Path.Combine(absoluteDirectory, fileName), bytes, cancellationToken);
 
@@ -594,10 +595,18 @@ public sealed class StylistChatService(
     return attachment;
   }
 
-  private static async Task<byte[]> ReadStoredAttachmentBytesAsync(string fileUrl, CancellationToken cancellationToken)
+  private async Task<byte[]> ReadStoredAttachmentBytesAsync(string fileUrl, CancellationToken cancellationToken)
   {
-    var relativePath = fileUrl["/upload/".Length..].Replace('/', Path.DirectorySeparatorChar);
-    var absolutePath = Path.Combine(AppContext.BaseDirectory, "upload", relativePath);
+    if (!uploadStoragePathResolver.TryGetAbsolutePathForRequestPath(fileUrl, out var absolutePath))
+    {
+      throw new InvalidOperationException("Đường dẫn ảnh đã lưu trong chat không hợp lệ.");
+    }
+
+    if (!File.Exists(absolutePath))
+    {
+      throw new InvalidOperationException("Không tìm thấy ảnh người mặc đã lưu trên máy chủ. Vui lòng gửi lại ảnh.");
+    }
+
     return await File.ReadAllBytesAsync(absolutePath, cancellationToken);
   }
 

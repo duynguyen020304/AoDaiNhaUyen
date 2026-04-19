@@ -9,7 +9,8 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 public sealed class CatalogTryOnService(
   AppDbContext dbContext,
   IAiTryOnService aiTryOnService,
-  IHttpClientFactory httpClientFactory) : ICatalogTryOnService
+  IHttpClientFactory httpClientFactory,
+  IUploadStoragePathResolver uploadStoragePathResolver) : ICatalogTryOnService
 {
   private const string CuratedGarmentAssetKind = "tryon_garment_curated";
   private const string GarmentAssetKind = "tryon_garment";
@@ -189,15 +190,8 @@ public sealed class CatalogTryOnService(
       return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }
 
-    var relativePath = fileUrl.Trim();
-    if (relativePath.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase))
+    if (uploadStoragePathResolver.TryGetAbsolutePathForRequestPath(fileUrl.Trim(), out var localPath))
     {
-      relativePath = relativePath["/upload/".Length..];
-      var localPath = Path.Combine(
-        AppContext.BaseDirectory,
-        "upload",
-        relativePath.Replace('/', Path.DirectorySeparatorChar));
-
       if (!File.Exists(localPath))
       {
         throw new FileNotFoundException("Không tìm thấy AI asset của sản phẩm đã chọn.", localPath);
@@ -206,7 +200,7 @@ public sealed class CatalogTryOnService(
       return await File.ReadAllBytesAsync(localPath, cancellationToken);
     }
 
-    throw new FileNotFoundException("AI asset phải là đường dẫn tuyệt đối hoặc /upload/ tương đối.", fileUrl);
+    throw new FileNotFoundException("AI asset phải là đường dẫn tuyệt đối hoặc /upload/... hợp lệ.", fileUrl);
   }
 
   private static ProductAiAsset? SelectAiAsset(Product product, string assetKind, long? variantId = null)

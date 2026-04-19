@@ -22,10 +22,25 @@ export default function ChatWidget() {
   const [activeThread, setActiveThread] = useState<ChatThreadDetail | null>(null);
   const [draft, setDraft] = useState('');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+
+  const pendingFileEntries = useMemo(() => {
+    return pendingFiles.map((file) => ({
+      key: `${file.name}-${file.size}-${file.lastModified}`,
+      name: file.name,
+      url: URL.createObjectURL(file),
+    }));
+  }, [pendingFiles]);
+
+  useEffect(() => {
+    return () => {
+      pendingFileEntries.forEach((entry) => URL.revokeObjectURL(entry.url));
+    };
+  }, [pendingFileEntries]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -175,16 +190,23 @@ export default function ChatWidget() {
 
               <div className={styles.messages}>
                 {activeThread?.messages.map((message) => (
-                  <MessageCard key={message.id} message={message} />
+                  <MessageCard key={message.id} message={message} onPreviewImage={setPreviewImage} />
                 ))}
                 <div ref={endRef} />
               </div>
 
               <div className={styles.composer}>
-                {pendingFiles.length > 0 ? (
+                {pendingFileEntries.length > 0 ? (
                   <div className={styles.pendingFiles}>
-                    {pendingFiles.map((file) => (
-                      <span key={`${file.name}-${file.size}`} className={styles.pendingFile}>{file.name}</span>
+                    {pendingFileEntries.map((file) => (
+                      <button
+                        key={file.key}
+                        type="button"
+                        className={styles.pendingFile}
+                        onClick={() => setPreviewImage({ url: file.url, name: file.name })}
+                      >
+                        {file.name}
+                      </button>
                     ))}
                   </div>
                 ) : null}
@@ -205,23 +227,25 @@ export default function ChatWidget() {
                     <button type="button" className={styles.attachButton} onClick={() => fileInputRef.current?.click()}>
                       📎
                     </button>
-                    {latestTryOnPayload?.structuredPayload?.canTryOn ? (
-                      <button type="button" className={styles.tryOnButton} disabled={submitting} onClick={handleTryOn}>
-                        Thử ngay
+                    <div className={styles.actionCluster}>
+                      {latestTryOnPayload?.structuredPayload?.canTryOn ? (
+                        <button type="button" className={styles.tryOnButton} disabled={submitting} onClick={handleTryOn}>
+                          Thử ngay
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className={styles.sendButton}
+                        disabled={submitting}
+                        onClick={handleSend}
+                        aria-label="Gửi tin nhắn"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true" className={styles.sendIcon}>
+                          <path d="M4.5 11.25 18.75 4.5l-3.375 14.25-4.5-5.25-6.375-2.25Z" />
+                          <path d="m10.875 13.5 7.875-9" />
+                        </svg>
                       </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      className={styles.sendButton}
-                      disabled={submitting}
-                      onClick={handleSend}
-                      aria-label="Gửi tin nhắn"
-                    >
-                      <svg viewBox="0 0 24 24" aria-hidden="true" className={styles.sendIcon}>
-                        <path d="M4.5 11.25 18.75 4.5l-3.375 14.25-4.5-5.25-6.375-2.25Z" />
-                        <path d="m10.875 13.5 7.875-9" />
-                      </svg>
-                    </button>
+                    </div>
                   </div>
                   <input
                     ref={fileInputRef}
@@ -272,6 +296,35 @@ export default function ChatWidget() {
       </AnimatePresence>
 
       <AnimatePresence>
+        {previewImage ? (
+          <motion.div
+            className={styles.previewOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setPreviewImage(null)}
+          >
+            <motion.img
+              src={previewImage.url}
+              alt={previewImage.name}
+              className={styles.previewImage}
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              onClick={(event) => event.stopPropagation()}
+            />
+            <button
+              type="button"
+              className={styles.previewClose}
+              onClick={() => setPreviewImage(null)}
+            >
+              ×
+            </button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {!isOpen && (
           <motion.button
             type="button"
@@ -293,7 +346,9 @@ export default function ChatWidget() {
   );
 }
 
-function MessageCard({ message }: { message: ChatMessage }) {
+function MessageCard(
+  { message, onPreviewImage }: { message: ChatMessage; onPreviewImage: (preview: { url: string; name: string }) => void },
+) {
   const isUser = message.role === 'user';
 
   return (
@@ -302,9 +357,23 @@ function MessageCard({ message }: { message: ChatMessage }) {
         <div>{message.content}</div>
         {message.attachments.map((attachment) => {
           const imageUrl = resolveAssetUrl(attachment.fileUrl) ?? attachment.fileUrl;
-          return attachment.mimeType.startsWith('image/')
-            ? <img key={attachment.id} className={styles.attachmentImage} src={imageUrl} alt={attachment.originalFileName ?? 'Attachment'} />
-            : null;
+          const fileName = attachment.originalFileName ?? 'Xem ảnh đính kèm';
+
+          if (attachment.mimeType.startsWith('image/')) {
+            return (
+              <button
+                key={attachment.id}
+                type="button"
+                className={styles.attachmentLink}
+                onClick={() => onPreviewImage({ url: imageUrl, name: fileName })}
+              >
+                <span className={styles.attachmentLinkIcon}>🖼</span>
+                <span className={styles.attachmentLinkText}>{fileName}</span>
+              </button>
+            );
+          }
+
+          return null;
         })}
         {message.structuredPayload?.products.length ? (
           <div className={styles.productGrid}>

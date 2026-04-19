@@ -29,7 +29,8 @@ public sealed class StylistChatServiceTests
       new ThreadMemoryService(),
       new StubCatalogStylingService(),
       new StubCatalogTryOnService(),
-      new StubStylistResponseComposer());
+      new StubStylistResponseComposer(),
+      new TestUploadStoragePathResolver());
 
     var result = await service.AddMessageAsync(
       thread.Id,
@@ -54,6 +55,122 @@ public sealed class StylistChatServiceTests
     Assert.Equal(lastAssistantMessage.Id, storedThread.Memory!.LastMessageId);
     Assert.True(storedThread.Memory.LastMessageId > 0);
     Assert.Equal(2, result.Messages.Count);
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_WithAttachments_PersistsFilesUnderCanonicalUploadRoot()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web"
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    using var uploadRoot = new TemporaryDirectory();
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(),
+      new ThreadMemoryService(),
+      new StubCatalogStylingService(),
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new TestUploadStoragePathResolver(uploadRoot.Path));
+
+    var threadDetail = await service.AddMessageAsync(
+      thread.Id,
+      1,
+      null,
+      "Đây là ảnh của mình",
+      "client-attachment",
+      [new IncomingChatAttachmentDto("user_image", "person.png", "image/png", [1, 2, 3, 4])],
+      CancellationToken.None);
+
+    var savedAttachment = await dbContext.ChatAttachments.SingleAsync();
+    var expectedPath = Path.Combine(uploadRoot.Path, "chat", thread.Id.ToString(), Path.GetFileName(savedAttachment.FileUrl));
+
+    Assert.Equal("/upload/chat/" + thread.Id + "/" + Path.GetFileName(expectedPath), savedAttachment.FileUrl);
+    Assert.True(File.Exists(expectedPath));
+    Assert.Equal([1, 2, 3, 4], await File.ReadAllBytesAsync(expectedPath));
+    Assert.Contains(threadDetail.Messages.SelectMany(message => message.Attachments), attachment => attachment.Id == savedAttachment.Id);
+  }
+
+  [Fact]
+  public async Task ExecuteTryOnAsync_PersistsGeneratedAttachmentAndUpdatesMemory()
+  {
+    await using var dbContext = CreateDbContext();
+    using var uploadRoot = new TemporaryDirectory();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web"
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var personAttachment = new ChatAttachment
+    {
+      ThreadId = thread.Id,
+      Kind = "user_image",
+      FileUrl = $"/upload/chat/{thread.Id}/person.png",
+      MimeType = "image/png",
+      OriginalFileName = "person.png",
+      FileSizeBytes = 4
+    };
+    dbContext.ChatAttachments.Add(personAttachment);
+    await dbContext.SaveChangesAsync();
+
+    thread.Memory = new ChatThreadMemory
+    {
+      ThreadId = thread.Id,
+      FactsJsonb = $$"""
+                    {
+                      "latestPersonAttachmentId": {{personAttachment.Id}}
+                    }
+                    """
+    };
+    await dbContext.SaveChangesAsync();
+
+    var personDirectory = Path.Combine(uploadRoot.Path, "chat", thread.Id.ToString());
+    Directory.CreateDirectory(personDirectory);
+    await File.WriteAllBytesAsync(Path.Combine(personDirectory, "person.png"), [8, 6, 7, 5]);
+
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(),
+      new ThreadMemoryService(),
+      new StubCatalogStylingService(),
+      new StubCatalogTryOnService(new AiTryOnResultDto("data:image/png;base64,AQIDBA==", "image/png")),
+      new StubStylistResponseComposer(),
+      new TestUploadStoragePathResolver(uploadRoot.Path));
+
+    var message = await service.ExecuteTryOnAsync(
+      thread.Id,
+      1,
+      null,
+      99,
+      [],
+      CancellationToken.None);
+
+    var storedThread = await dbContext.ChatThreads
+      .Include(item => item.Memory)
+      .Include(item => item.Attachments)
+      .Include(item => item.Messages)
+      .SingleAsync(item => item.Id == thread.Id);
+
+    var tryOnAttachment = Assert.Single(storedThread.Attachments, attachment => attachment.Kind == "tryon_result");
+    var absolutePath = Path.Combine(uploadRoot.Path, "chat", thread.Id.ToString(), Path.GetFileName(tryOnAttachment.FileUrl));
+    var storedMemory = new ThreadMemoryService().Read(storedThread.Memory);
+
+    Assert.True(File.Exists(absolutePath));
+    Assert.Equal([1, 2, 3, 4], await File.ReadAllBytesAsync(absolutePath));
+    Assert.Equal(tryOnAttachment.Id, storedMemory.LatestTryOnResultAttachmentId);
+    Assert.Equal(message.Id, storedMemory.LatestTryOnResultMessageId);
+    Assert.Contains(message.Attachments, attachment => attachment.Id == tryOnAttachment.Id);
   }
 
   private static AppDbContext CreateDbContext()
@@ -118,13 +235,20 @@ public sealed class StylistChatServiceTests
 
   private sealed class StubCatalogTryOnService : ICatalogTryOnService
   {
+    private readonly AiTryOnResultDto result;
+
+    public StubCatalogTryOnService(AiTryOnResultDto? result = null)
+    {
+      this.result = result ?? new AiTryOnResultDto("data:image/png;base64,AQID", "image/png");
+    }
+
     public Task<AiTryOnCatalogDto> GetCatalogAsync(CancellationToken cancellationToken = default) =>
       Task.FromResult(new AiTryOnCatalogDto([], []));
 
     public Task<AiTryOnResultDto> CreateAsync(
       CatalogAiTryOnRequestDto request,
       CancellationToken cancellationToken = default) =>
-      throw new NotSupportedException();
+      Task.FromResult(result);
   }
 
   private sealed class StubStylistResponseComposer : IStylistResponseComposer
@@ -137,5 +261,57 @@ public sealed class StylistChatServiceTests
       ChatStructuredPayloadDto? structuredPayload,
       CancellationToken cancellationToken = default) =>
       Task.FromResult(fallbackText);
+  }
+
+  private sealed class TestUploadStoragePathResolver(string? uploadRootPath = null) : IUploadStoragePathResolver
+  {
+    public string UploadRootPath { get; } = uploadRootPath ?? Path.Combine(Path.GetTempPath(), $"chat-upload-{Guid.NewGuid():N}");
+
+    public string GetChatThreadDirectory(long threadId) =>
+      GetAbsolutePathForRelativePath(Path.Combine("chat", threadId.ToString()));
+
+    public string GetAbsolutePathForRelativePath(string relativePath) =>
+      Path.Combine(UploadRootPath, relativePath);
+
+    public string GetAbsolutePathForRequestPath(string requestPath)
+    {
+      if (!TryGetAbsolutePathForRequestPath(requestPath, out var absolutePath))
+      {
+        throw new InvalidOperationException();
+      }
+
+      return absolutePath;
+    }
+
+    public bool TryGetAbsolutePathForRequestPath(string requestPath, out string absolutePath)
+    {
+      absolutePath = string.Empty;
+      if (!requestPath.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase))
+      {
+        return false;
+      }
+
+      absolutePath = Path.Combine(UploadRootPath, requestPath["/upload/".Length..].Replace('/', Path.DirectorySeparatorChar));
+      return true;
+    }
+  }
+
+  private sealed class TemporaryDirectory : IDisposable
+  {
+    public TemporaryDirectory()
+    {
+      Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"aodai-chat-tests-{Guid.NewGuid():N}");
+      Directory.CreateDirectory(Path);
+    }
+
+    public string Path { get; }
+
+    public void Dispose()
+    {
+      if (Directory.Exists(Path))
+      {
+        Directory.Delete(Path, recursive: true);
+      }
+    }
   }
 }
