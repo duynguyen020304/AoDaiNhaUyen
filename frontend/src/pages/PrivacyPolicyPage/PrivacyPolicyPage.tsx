@@ -10,7 +10,7 @@ const sections = [
   { id: 'bao-mat', title: 'Bảo mật dữ liệu' },
   { id: 'chia-se', title: 'Chia sẻ dữ liệu' },
   { id: 'quyen-nguoi-dung', title: 'Quyền của bạn' },
-  { id: 'facebook-login', title: 'Facebook Login' },
+  { id: 'zalo-login', title: 'Zalo Login' },
   { id: 'lien-he', title: 'Liên hệ' },
 ];
 
@@ -97,7 +97,7 @@ export default function PrivacyPolicyPage() {
               Tại Áo Dài Nhà Huyền, chúng tôi trân trọng sự tin tưởng của bạn đối với thương hiệu của chúng tôi.
               Chính sách Quyền Riêng Tư này nhằm giải thích rõ ràng cách chúng tôi thu thập, sử dụng và bảo vệ
               thông tin cá nhân của bạn khi bạn sử dụng dịch vụ của chúng tôi, bao gồm cả việc đăng nhập
-              thông qua tài khoản Facebook.
+              thông qua tài khoản Zalo.
             </p>
             <p>Chúng tôi cam kết:</p>
             <ul>
@@ -115,16 +115,16 @@ export default function PrivacyPolicyPage() {
           <motion.section id="du-lieu-thu-thap" className={styles.section} variants={fadeUp}>
             <h2>Thông tin cá nhân chúng tôi thu thập</h2>
             <p>
-              Khi bạn đăng nhập vào Áo Dài Nhà Huyền bằng Facebook, chúng tôi có thể thu thập các thông tin sau:
+              Khi bạn đăng nhập vào Áo Dài Nhà Huyền bằng Zalo, chúng tôi có thể thu thập các thông tin sau:
             </p>
 
             <div className={styles.subsection}>
-              <h3>📌 Thông tin cơ bản từ Facebook:</h3>
+              <h3>📌 Thông tin cơ bản từ Zalo:</h3>
               <ul>
-                <li>Tên công khai của bạn trên Facebook</li>
-                <li>Địa chỉ email liên kết với tài khoản Facebook</li>
-                <li>Ảnh đại diện (profile picture) từ Facebook</li>
-                <li>Facebook ID hoặc mã định danh tài khoản của bạn</li>
+                <li>Tên công khai của bạn trên Zalo</li>
+                <li>Thông tin định danh cơ bản mà Zalo cho phép chia sẻ</li>
+                <li>Ảnh đại diện (profile picture) từ Zalo</li>
+                <li>Zalo ID hoặc mã định danh tài khoản của bạn</li>
               </ul>
             </div>
 
@@ -330,47 +330,47 @@ export default function PrivacyPolicyPage() {
             </p>
           </motion.section>
 
-          {/* Section 7: Chính sách Facebook Login */}
-          <motion.section id="facebook-login" className={styles.section} variants={fadeUp}>
-            <h2>Quy định khi đăng nhập bằng Facebook</h2>
+          {/* Section 7: Chính sách Zalo Login */}
+          <motion.section id="zalo-login" className={styles.section} variants={fadeUp}>
+            <h2>Quy định khi đăng nhập bằng Zalo</h2>
             <p>
-              Khi bạn chọn đăng nhập vào Áo Dài Nhà Huyền bằng tài khoản Facebook, các điều sau được áp dụng:
+              Khi bạn chọn đăng nhập vào Áo Dài Nhà Huyền bằng tài khoản Zalo, các điều sau được áp dụng:
             </p>
 
             <div className={styles.subsection}>
-              <h3>🔗 Mối quan hệ với Facebook:</h3>
+              <h3>🔗 Mối quan hệ với Zalo:</h3>
               <ul>
-                <li>Áo Dài Nhà Huyền là một ứng dụng bên thứ ba sử dụng Facebook Login</li>
-                <li>Facebook chỉ cung cấp thông tin mà bạn đã đồng ý chia sẻ</li>
-                <li>Chúng tôi tuân thủ Chính sách Sử dụng Dữ liệu của Facebook</li>
+                <li>Áo Dài Nhà Huyền là một ứng dụng bên thứ ba sử dụng Zalo Login</li>
+                <li>Zalo chỉ cung cấp thông tin mà bạn đã đồng ý chia sẻ</li>
+                <li>Chúng tôi tuân thủ Chính sách Sử dụng Dữ liệu của Zalo</li>
               </ul>
             </div>
 
             <div className={styles.subsection}>
-              <h3>📊 Dữ liệu chúng tôi nhận từ Facebook:</h3>
+              <h3>📊 Dữ liệu chúng tôi nhận từ Zalo:</h3>
               <p>
                 Chúng tôi chỉ yêu cầu và lưu trữ những thông tin cần thiết để tạo tài khoản và cung cấp dịch
-                vụ. Chúng tôi không yêu cầu quyền truy cập bạn bè của bạn hay thông tin nhắn cảm xúc.
+                vụ. Chúng tôi không yêu cầu quyền truy cập danh bạ, bạn bè hay nội dung tin nhắn của bạn.
               </p>
             </div>
 
             <div className={styles.subsection}>
-              <h3>🔌 Ngắt kết nối Facebook:</h3>
-              <p>Bạn có thể ngắt kết nối tài khoản Facebook của mình với Áo Dài Nhà Huyền bất cứ lúc nào bằng cách:</p>
+              <h3>🔌 Ngắt kết nối Zalo:</h3>
+              <p>Bạn có thể ngắt kết nối tài khoản Zalo của mình với Áo Dài Nhà Huyền bất cứ lúc nào bằng cách:</p>
               <ol>
-                <li>Vào Cài đặt Facebook</li>
+                <li>Vào Cài đặt Zalo</li>
                 <li>Chọn "Ứng dụng và trang web"</li>
                 <li>Tìm Áo Dài Nhà Huyền và chọn "Xóa"</li>
               </ol>
               <p className={styles.warning}>
-                <strong>Lưu ý:</strong> Ngắt kết nối Facebook không tự động xóa tài khoản và dữ liệu của bạn
+                <strong>Lưu ý:</strong> Ngắt kết nối Zalo không tự động xóa tài khoản và dữ liệu của bạn
                 trên Áo Dài Nhà Huyền. Nếu bạn muốn xóa hoàn toàn, vui lòng gửi yêu cầu theo hướng dẫn trong trang
                 {' '}<a href="/data-deletion">"Xóa Dữ Liệu Người Dùng"</a>.
               </p>
             </div>
 
             <p className={styles.note}>
-              Vui lòng xem Chính sách Quyền Riêng Tư của Facebook để hiểu rõ hơn về cách Facebook xử lý dữ
+              Vui lòng xem Chính sách Quyền Riêng Tư của Zalo để hiểu rõ hơn về cách Zalo xử lý dữ
               liệu của bạn.
             </p>
           </motion.section>

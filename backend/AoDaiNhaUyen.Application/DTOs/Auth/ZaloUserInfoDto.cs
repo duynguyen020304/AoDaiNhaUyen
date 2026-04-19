@@ -1,8 +1,6 @@
 namespace AoDaiNhaUyen.Application.DTOs.Auth;
 
-public sealed record FacebookUserInfoDto(
+public sealed record ZaloUserInfoDto(
   string Subject,
-  string? Email,
-  bool EmailVerified,
   string Name,
   string? Picture);

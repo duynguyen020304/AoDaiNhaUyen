@@ -7,10 +7,10 @@ using Xunit;
 
 namespace AoDaiNhaUyen.Tests.Configuration;
 
-public sealed class FacebookOAuthSettingsValidationTests
+public sealed class ZaloOAuthSettingsValidationTests
 {
   [Fact]
-  public void AddBackendServices_RejectsMissingFacebookRedirectUri()
+  public void AddBackendServices_RejectsMissingZaloRedirectUri()
   {
     var configuration = new ConfigurationBuilder()
       .AddInMemoryCollection(new Dictionary<string, string?>
@@ -22,9 +22,9 @@ public sealed class FacebookOAuthSettingsValidationTests
         ["GoogleOAuth:ClientId"] = "client-id",
         ["GoogleOAuth:ClientSecret"] = "client-secret",
         ["GoogleOAuth:RedirectUri"] = "http://localhost:5173/auth/google/callback",
-        ["FacebookOAuth:AppId"] = "app-id",
-        ["FacebookOAuth:AppSecret"] = "app-secret",
-        ["FacebookOAuth:RedirectUri"] = ""
+        ["ZaloOAuth:AppId"] = "app-id",
+        ["ZaloOAuth:SecretKey"] = "secret-key",
+        ["ZaloOAuth:RedirectUri"] = ""
       })
       .Build();
 
@@ -33,7 +33,7 @@ public sealed class FacebookOAuthSettingsValidationTests
     services.AddBackendServices(configuration);
     using var provider = services.BuildServiceProvider();
 
-    var exception = Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<FacebookOAuthSettings>>().Value);
+    var exception = Assert.Throws<OptionsValidationException>(() => provider.GetRequiredService<IOptions<ZaloOAuthSettings>>().Value);
     Assert.Contains("RedirectUri", exception.Message, StringComparison.OrdinalIgnoreCase);
   }
 }

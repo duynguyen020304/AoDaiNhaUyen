@@ -17,7 +17,7 @@ public sealed class AuthService(
   IJwtTokenService jwtTokenService,
   IRefreshTokenService refreshTokenService,
   IGoogleOAuthService googleOAuthService,
-  IFacebookOAuthService facebookOAuthService,
+  IZaloOAuthService zaloOAuthService,
   IEmailService emailService,
   IOptions<JwtSettings> jwtSettings,
   IOptions<EmailSettings> emailSettings,
@@ -105,7 +105,7 @@ public sealed class AuthService(
       await dbContext.SaveChangesAsync(cancellationToken);
 
       var customerRole = await dbContext.Roles.FirstAsync(x => x.Name == "customer", cancellationToken);
-      user.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = customerRole.Id });
+      user.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = customerRole.Id, Role = customerRole });
     }
     else
     {
@@ -258,7 +258,7 @@ public sealed class AuthService(
         await dbContext.SaveChangesAsync(cancellationToken);
 
         var customerRole = await dbContext.Roles.FirstAsync(x => x.Name == "customer", cancellationToken);
-        existingUser.UserRoles.Add(new UserRole { UserId = existingUser.Id, RoleId = customerRole.Id });
+        existingUser.UserRoles.Add(new UserRole { UserId = existingUser.Id, RoleId = customerRole.Id, Role = customerRole });
       }
       else
       {
@@ -293,30 +293,26 @@ public sealed class AuthService(
     return AuthResult<AuthSessionDto>.Success(session);
   }
 
-  public async Task<AuthResult<AuthSessionDto>> LoginWithFacebookAsync(
+  public async Task<AuthResult<AuthSessionDto>> LoginWithZaloAsync(
     string code,
+    string codeVerifier,
     string? ipAddress,
     string? userAgent,
     CancellationToken cancellationToken = default)
   {
-    FacebookUserInfoDto facebookUser;
+    if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(codeVerifier))
+    {
+      return AuthResult<AuthSessionDto>.Failure("zalo_code_missing", "Thiếu mã xác thực Zalo.");
+    }
+
+    ZaloUserInfoDto zaloUser;
     try
     {
-      facebookUser = await facebookOAuthService.ExchangeCodeForUserAsync(code, cancellationToken);
+      zaloUser = await zaloOAuthService.ExchangeCodeForUserAsync(code, codeVerifier, cancellationToken);
     }
-    catch (FacebookOAuthExchangeException ex)
+    catch (ZaloOAuthExchangeException ex)
     {
-      return AuthResult<AuthSessionDto>.Failure("facebook_exchange_failed", ex.Message);
-    }
-
-    if (string.IsNullOrWhiteSpace(facebookUser.Email))
-    {
-      return AuthResult<AuthSessionDto>.Failure("facebook_email_missing", "Tài khoản Facebook chưa cung cấp email.");
-    }
-
-    if (!facebookUser.EmailVerified)
-    {
-      return AuthResult<AuthSessionDto>.Failure("facebook_email_unverified", "Tài khoản Facebook chưa xác minh email.");
+      return AuthResult<AuthSessionDto>.Failure("zalo_exchange_failed", ex.Message);
     }
 
     var account = await dbContext.UserAccounts
@@ -324,54 +320,39 @@ public sealed class AuthService(
       .ThenInclude(x => x.UserRoles)
       .ThenInclude(x => x.Role)
       .FirstOrDefaultAsync(
-        x => x.Provider == "facebook" && x.ProviderAccountId == facebookUser.Subject,
+        x => x.Provider == "zalo" && x.ProviderAccountId == zaloUser.Subject,
         cancellationToken);
 
     if (account is null)
     {
-      var normalizedEmail = NormalizeEmail(facebookUser.Email);
-      var existingUser = await dbContext.Users
-        .Include(x => x.UserRoles)
-        .ThenInclude(x => x.Role)
-        .Include(x => x.UserAccounts)
-        .FirstOrDefaultAsync(
-          x => x.Email != null && x.Email.ToLower() == normalizedEmail,
-          cancellationToken);
-
-      if (existingUser is null)
+      var user = new User
       {
-        existingUser = new User
-        {
-          FullName = facebookUser.Name,
-          Email = normalizedEmail,
-          AvatarUrl = facebookUser.Picture,
-          Status = "active",
-          EmailVerifiedAt = DateTime.UtcNow
-        };
+        FullName = zaloUser.Name,
+        AvatarUrl = zaloUser.Picture,
+        Status = "active"
+      };
 
-        dbContext.Users.Add(existingUser);
-        await dbContext.SaveChangesAsync(cancellationToken);
+      dbContext.Users.Add(user);
+      await dbContext.SaveChangesAsync(cancellationToken);
 
-        var customerRole = await dbContext.Roles.FirstAsync(x => x.Name == "customer", cancellationToken);
-        existingUser.UserRoles.Add(new UserRole { UserId = existingUser.Id, RoleId = customerRole.Id });
-      }
-      else
-      {
-        existingUser.FullName = facebookUser.Name;
-        existingUser.AvatarUrl = facebookUser.Picture;
-        existingUser.EmailVerifiedAt ??= DateTime.UtcNow;
-        existingUser.UpdatedAt = DateTime.UtcNow;
-      }
+      var customerRole = await dbContext.Roles.FirstAsync(x => x.Name == "customer", cancellationToken);
+      user.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = customerRole.Id, Role = customerRole });
 
       account = new UserAccount
       {
-        User = existingUser,
-        Provider = "facebook",
-        ProviderAccountId = facebookUser.Subject,
+        User = user,
+        Provider = "zalo",
+        ProviderAccountId = zaloUser.Subject,
         IsVerified = true
       };
 
       dbContext.UserAccounts.Add(account);
+    }
+    else
+    {
+      account.User.FullName = zaloUser.Name;
+      account.User.AvatarUrl = zaloUser.Picture;
+      account.User.UpdatedAt = DateTime.UtcNow;
     }
 
     if (!IsUserActive(account.User))

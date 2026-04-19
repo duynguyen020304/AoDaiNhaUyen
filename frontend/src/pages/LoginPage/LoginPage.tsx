@@ -8,7 +8,7 @@ import styles from './LoginPage.module.css';
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, startGoogleLogin, startFacebookLogin, status } = useAuth();
+  const { login, startGoogleLogin, startZaloLogin, status } = useAuth();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -247,9 +247,9 @@ export default function LoginPage() {
                 <img src="/assets/login/icon-google.svg" alt="Google" />
                 Google
               </button>
-              <button type="button" className={styles.socialBtn} onClick={startFacebookLogin}>
-                <img src="/assets/login/icon-facebook.svg" alt="Facebook" />
-                Facebook
+              <button type="button" className={styles.socialBtn} onClick={startZaloLogin}>
+                <img src="/assets/login/icon-zalo.svg" alt="Zalo" />
+                Zalo
               </button>
             </div>
           </form>
@@ -352,9 +352,9 @@ export default function LoginPage() {
                 <img src="/assets/login/icon-google.svg" alt="Google" />
                 Google
               </button>
-              <button type="button" className={styles.socialBtn} onClick={startFacebookLogin}>
-                <img src="/assets/login/icon-facebook.svg" alt="Facebook" />
-                Facebook
+              <button type="button" className={styles.socialBtn} onClick={startZaloLogin}>
+                <img src="/assets/login/icon-zalo.svg" alt="Zalo" />
+                Zalo
               </button>
             </div>
 

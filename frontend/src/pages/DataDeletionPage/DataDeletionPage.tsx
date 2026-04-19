@@ -6,7 +6,7 @@ import { fadeUp, staggerContainer } from '../../utils/motion';
 const sections = [
   { id: 'gioi-thieu', title: 'Giới thiệu' },
   { id: 'lua-chon', title: 'Lựa chọn phương án' },
-  { id: 'ngat-ket-noi', title: 'Ngắt kết nối Facebook' },
+  { id: 'ngat-ket-noi', title: 'Ngắt kết nối Zalo' },
   { id: 'xoa-toan-bo', title: 'Xóa toàn bộ dữ liệu' },
   { id: 'thoi-gian', title: 'Thời gian xử lý' },
   { id: 'du-lieu-xoa', title: 'Dữ liệu bị xóa' },
@@ -48,16 +48,16 @@ export default function DataDeletionPage() {
     }
   };
 
-  const emailSubject = encodeURIComponent('[YÊU CẦU XÓA DỮ LIỆU] - [Tên Facebook của bạn]');
+  const emailSubject = encodeURIComponent('[YÊU CẦU XÓA DỮ LIỆU] - [Tên Zalo của bạn]');
   const emailBody = encodeURIComponent(`Chào Áo Dài Nhà Huyền,
 
-Tôi là [Tên của bạn], email [email của bạn], đã đăng nhập vào Áo Dài Nhà Huyền bằng Facebook.
+Tôi là [Tên của bạn], email hoặc số điện thoại liên hệ [thông tin liên hệ của bạn], đã đăng nhập vào Áo Dài Nhà Huyền bằng Zalo.
 
 Tôi viết email này để yêu cầu xóa hoàn toàn tài khoản và tất cả dữ liệu cá nhân của mình khỏi hệ thống của quý vị.
 
 Thông tin xác nhận:
-• Tên Facebook: [Tên của bạn]
-• Email đăng nhập: [email của bạn]
+• Tên Zalo: [Tên của bạn]
+• Email hoặc số điện thoại liên hệ: [thông tin liên hệ của bạn]
 • Ngày yêu cầu: ${new Date().toLocaleDateString('vi-VN')}
 
 Tôi xác nhận:
@@ -130,10 +130,10 @@ Trân trọng,
             <div className={styles.choiceGrid}>
               <div className={styles.choiceCard}>
                 <div className={styles.choiceIcon}>1️⃣</div>
-                <h3>Ngắt Kết Nối Facebook</h3>
-                <p className={styles.choiceSubtext}>Giữ tài khoản, chỉ ngắt liên kết với Facebook</p>
+                <h3>Ngắt Kết Nối Zalo</h3>
+                <p className={styles.choiceSubtext}>Giữ tài khoản, chỉ ngắt liên kết với Zalo</p>
                 <p className={styles.choiceDesc}>
-                  Phù hợp khi: Bạn muốn tiếp tục sử dụng dịch vụ Áo Dài Nhà Huyền nhưng không muốn liên kết với Facebook nữa.
+                  Phù hợp khi: Bạn muốn tiếp tục sử dụng dịch vụ Áo Dài Nhà Huyền nhưng không muốn liên kết với Zalo nữa.
                 </p>
               </div>
 
@@ -152,18 +152,18 @@ Trân trọng,
             </p>
           </motion.section>
 
-          {/* Section 3: Hướng dẫn ngắt kết nối Facebook */}
+          {/* Section 3: Hướng dẫn ngắt kết nối Zalo */}
           <motion.section id="ngat-ket-noi" className={styles.section} variants={fadeUp}>
-            <h2>Cách 1 - Ngắt kết nối Facebook</h2>
+            <h2>Cách 1 - Ngắt kết nối Zalo</h2>
             <p className={styles.sectionIntro}>
-              Nếu bạn chỉ muốn ngắt liên kết giữa tài khoản Facebook và Áo Dài Nhà Huyền (vẫn giữ tài khoản trên hệ thống của chúng tôi), hãy làm theo các bước sau:
+              Nếu bạn chỉ muốn ngắt liên kết giữa tài khoản Zalo và Áo Dài Nhà Huyền (vẫn giữ tài khoản trên hệ thống của chúng tôi), hãy làm theo các bước sau:
             </p>
 
             <div className={styles.methodBox}>
               <h3>📱 Trên trình duyệt web:</h3>
               <ol>
-                <li>Truy cập: <a href="https://www.facebook.com/settings?tab=applications" target="_blank" rel="noopener noreferrer">https://www.facebook.com/settings?tab=applications</a></li>
-                <li>Đăng nhập vào tài khoản Facebook của bạn</li>
+                <li>Truy cập: <a href="https://www.zalo.me" target="_blank" rel="noopener noreferrer">https://www.zalo.me</a></li>
+                <li>Đăng nhập vào tài khoản Zalo của bạn</li>
                 <li>Trong menu bên trái, chọn "Ứng dụng và trang web"</li>
                 <li>Tìm ứng dụng "Áo Dài Nhà Huyền" trong danh sách</li>
                 <li>Nhấp vào "Xóa" hoặc "Remove"</li>
@@ -171,9 +171,9 @@ Trân trọng,
             </div>
 
             <div className={styles.methodBox}>
-              <h3>📱 Trên ứng dụng Facebook:</h3>
+              <h3>📱 Trên ứng dụng Zalo:</h3>
               <ol>
-                <li>Mở ứng dụng Facebook</li>
+                <li>Mở ứng dụng Zalo</li>
                 <li>Vào Menu (☰) → Cài đặt & quyền riêng tư → Cài đặt</li>
                 <li>Cuộn xuống và chọn "Ứng dụng và trang web"</li>
                 <li>Tìm "Áo Dài Nhà Huyền" và chọn "Xóa"</li>
@@ -183,7 +183,7 @@ Trân trọng,
             <div className={styles.warningBox}>
               <h3>⚠️ Lưu ý quan trọng:</h3>
               <ul>
-                <li>Ngắt kết nối Facebook sẽ <strong>không xóa</strong> tài khoản của bạn trên Áo Dài Nhà Huyền</li>
+                <li>Ngắt kết nối Zalo sẽ <strong>không xóa</strong> tài khoản của bạn trên Áo Dài Nhà Huyền</li>
                 <li>Lịch sử mua hàng và thông tin giao hàng vẫn được lưu trữ</li>
                 <li>Bạn sẽ cần đăng ký lại bằng phương thức khác nếu muốn tiếp tục sử dụng</li>
                 <li>Bạn vẫn có thể yêu cầu xóa toàn bộ dữ liệu bất cứ lúc nào (xem phần 2)</li>
@@ -203,7 +203,7 @@ Trân trọng,
 
             <div className={styles.emailBox}>
               <p><strong>📧 Gửi email tới:</strong> <a href="mailto:thavannanh24@gmail.com">thavannanh24@gmail.com</a></p>
-              <p><strong>📌 Tiêu đề:</strong> [YÊU CẦU XÓA DỮ LIỆU] - [Tên Facebook của bạn]</p>
+              <p><strong>📌 Tiêu đề:</strong> [YÊU CẦU XÓA DỮ LIỆU] - [Tên Zalo của bạn]</p>
             </div>
 
             <div className={styles.emailTemplate}>
@@ -212,8 +212,8 @@ Trân trọng,
               <div className={styles.templateSection}>
                 <h4>1. Thông tin cá nhân:</h4>
                 <ul>
-                  <li>Tên trên Facebook: __________________</li>
-                  <li>Email đã dùng để đăng nhập: __________________</li>
+                  <li>Tên trên Zalo: __________________</li>
+                  <li>Email hoặc số điện thoại liên hệ: __________________</li>
                   <li>Số điện thoại (nếu có): __________________</li>
                 </ul>
               </div>
@@ -243,13 +243,13 @@ Trân trọng,
 Nội dung:
 Chào Áo Dài Nhà Huyền,
 
-Tôi là Nguyen Thi Lan, email lan.nguyen@email.com, đã đăng nhập vào Áo Dài Nhà Huyền bằng Facebook.
+Tôi là Nguyen Thi Lan, email liên hệ lan.nguyen@email.com, đã đăng nhập vào Áo Dài Nhà Huyền bằng Zalo.
 
 Tôi viết email này để yêu cầu xóa hoàn toàn tài khoản và tất cả dữ liệu cá nhân của mình khỏi hệ thống của quý vị.
 
 Thông tin xác nhận:
-• Tên Facebook: Nguyen Thi Lan
-• Email đăng nhập: lan.nguyen@email.com
+• Tên Zalo: Nguyen Thi Lan
+• Email hoặc số điện thoại liên hệ: lan.nguyen@email.com
 • Ngày yêu cầu: 18/04/2026
 
 Tôi xác nhận:
@@ -318,7 +318,7 @@ Nguyen Thi Lan`}
                   <ul>
                     <li>Xóa tài khoản khỏi hệ thống</li>
                     <li>Xóa thông tin cá nhân (tên, email, số điện thoại, địa chỉ)</li>
-                    <li>Xóa thông tin đăng nhập và liên kết với Facebook</li>
+                    <li>Xóa thông tin đăng nhập và liên kết với Zalo</li>
                     <li>Ẩn danh hoặc xóa lịch sử giao dịch (tuỳ theo quy định pháp luật về lưu trữ hóa đơn)</li>
                   </ul>
                 </div>
@@ -357,7 +357,7 @@ Nguyen Thi Lan`}
                   <li>Tài khoản đăng nhập và thông tin xác thực</li>
                   <li>Tên, email, số điện thoại, địa chỉ</li>
                   <li>Ảnh đại diện và thông tin profile</li>
-                  <li>Facebook ID và liên kết với Facebook</li>
+                  <li>Zalo ID và liên kết với Zalo</li>
                   <li>Thông tin sizing (chiều cao, cân nặng, số đo)</li>
                   <li>Lịch sử lướt web và tương tác</li>
                   <li>Giỏ hàng và danh sách yêu thích</li>

@@ -2,9 +2,10 @@ using AoDaiNhaUyen.Application.DTOs.Auth;
 
 namespace AoDaiNhaUyen.Application.Interfaces.Services;
 
-public interface IFacebookOAuthService
+public interface IZaloOAuthService
 {
-  Task<FacebookUserInfoDto> ExchangeCodeForUserAsync(
+  Task<ZaloUserInfoDto> ExchangeCodeForUserAsync(
     string code,
+    string codeVerifier,
     CancellationToken cancellationToken = default);
 }

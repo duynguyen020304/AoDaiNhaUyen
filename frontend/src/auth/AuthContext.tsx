@@ -14,11 +14,11 @@ interface AuthContextValue {
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<AuthUser>;
   completeGoogleLogin: (code: string) => Promise<AuthUser>;
-  completeFacebookLogin: (code: string) => Promise<AuthUser>;
+  completeZaloLogin: () => Promise<AuthUser>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<AuthUser>;
   startGoogleLogin: () => void;
-  startFacebookLogin: () => void;
+  startZaloLogin: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -70,8 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return authenticatedUser;
   }
 
-  async function completeFacebookLogin(code: string) {
-    const authenticatedUser = await authApi.facebookLogin(code);
+  async function completeZaloLogin() {
+    const authenticatedUser = await authApi.getCurrentUser();
     startTransition(() => {
       setUser(authenticatedUser);
       setStatus('authenticated');
@@ -108,9 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.assign(authApi.buildGoogleAuthorizeUrl(redirectUri));
   }
 
-  function startFacebookLogin() {
-    const redirectUri = `${window.location.origin}/auth/facebook/callback`;
-    window.location.assign(authApi.buildFacebookAuthorizeUrl(redirectUri));
+  function startZaloLogin() {
+    window.location.assign(authApi.buildZaloAuthorizeUrl());
   }
 
   const value = useMemo<AuthContextValue>(() => ({
@@ -118,11 +117,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     login,
     completeGoogleLogin,
-    completeFacebookLogin,
+    completeZaloLogin,
     logout,
     refreshSession,
     startGoogleLogin,
-    startFacebookLogin,
+    startZaloLogin,
   }), [status, user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
