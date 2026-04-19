@@ -19,6 +19,15 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<Product> Products => Set<Product>();
   public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
   public DbSet<ProductImage> ProductImages => Set<ProductImage>();
+  public DbSet<StyleScenario> StyleScenarios => Set<StyleScenario>();
+  public DbSet<ProductStyleProfile> ProductStyleProfiles => Set<ProductStyleProfile>();
+  public DbSet<ProductScenario> ProductScenarios => Set<ProductScenario>();
+  public DbSet<ProductPairing> ProductPairings => Set<ProductPairing>();
+  public DbSet<ProductAiAsset> ProductAiAssets => Set<ProductAiAsset>();
+  public DbSet<ChatThread> ChatThreads => Set<ChatThread>();
+  public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+  public DbSet<ChatAttachment> ChatAttachments => Set<ChatAttachment>();
+  public DbSet<ChatThreadMemory> ChatThreadMemories => Set<ChatThreadMemory>();
   public DbSet<Cart> Carts => Set<Cart>();
   public DbSet<CartItem> CartItems => Set<CartItem>();
   public DbSet<Order> Orders => Set<Order>();
@@ -230,6 +239,179 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => x.ProductId).HasDatabaseName("idx_product_images_product_id");
       builder.HasOne(x => x.Product).WithMany(x => x.Images).HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
       builder.HasOne(x => x.Variant).WithMany(x => x.Images).HasForeignKey(x => x.VariantId).OnDelete(DeleteBehavior.Cascade);
+    });
+
+    modelBuilder.Entity<StyleScenario>(builder =>
+    {
+      builder.ToTable("style_scenarios");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Slug).HasMaxLength(80).IsRequired();
+      builder.Property(x => x.Name).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.Description).HasMaxLength(500);
+      builder.Property(x => x.IsActive).HasDefaultValue(true).IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.Slug).IsUnique();
+    });
+
+    modelBuilder.Entity<ProductStyleProfile>(builder =>
+    {
+      builder.ToTable("product_style_profiles");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.StyleKeywordsJsonb).HasColumnType("jsonb");
+      builder.Property(x => x.Formality).HasMaxLength(40);
+      builder.Property(x => x.Silhouette).HasMaxLength(80);
+      builder.Property(x => x.Notes).HasMaxLength(500);
+      builder.Property(x => x.PrimaryColorFamily).HasMaxLength(50);
+      builder.Property(x => x.SecondaryColorFamily).HasMaxLength(50);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.ProductId).IsUnique();
+      builder.HasOne(x => x.Product)
+        .WithMany(x => x.StyleProfiles)
+        .HasForeignKey(x => x.ProductId)
+        .OnDelete(DeleteBehavior.Cascade);
+    });
+
+    modelBuilder.Entity<ProductScenario>(builder =>
+    {
+      builder.ToTable("product_scenarios");
+      builder.HasKey(x => new { x.ProductId, x.ScenarioId });
+      builder.Property(x => x.Score).HasColumnType("numeric(5,2)");
+      builder.Property(x => x.Notes).HasMaxLength(500);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasOne(x => x.Product)
+        .WithMany(x => x.Scenarios)
+        .HasForeignKey(x => x.ProductId)
+        .OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.Scenario)
+        .WithMany(x => x.ProductScenarios)
+        .HasForeignKey(x => x.ScenarioId)
+        .OnDelete(DeleteBehavior.Cascade);
+    });
+
+    modelBuilder.Entity<ProductPairing>(builder =>
+    {
+      builder.ToTable("product_pairings");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Score).HasColumnType("numeric(5,2)");
+      builder.Property(x => x.Notes).HasMaxLength(500);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.BaseProductId, x.PairedProductId, x.ScenarioId }).IsUnique();
+      builder.HasOne(x => x.BaseProduct)
+        .WithMany(x => x.BasePairings)
+        .HasForeignKey(x => x.BaseProductId)
+        .OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.PairedProduct)
+        .WithMany(x => x.PairedWith)
+        .HasForeignKey(x => x.PairedProductId)
+        .OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.Scenario)
+        .WithMany(x => x.ProductPairings)
+        .HasForeignKey(x => x.ScenarioId)
+        .OnDelete(DeleteBehavior.SetNull);
+    });
+
+    modelBuilder.Entity<ProductAiAsset>(builder =>
+    {
+      builder.ToTable("product_ai_assets");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.AssetKind).HasMaxLength(40).IsRequired();
+      builder.Property(x => x.FileUrl).HasMaxLength(500).IsRequired();
+      builder.Property(x => x.MimeType).HasMaxLength(100).IsRequired();
+      builder.Property(x => x.IsActive).HasDefaultValue(true).IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.ProductId).HasDatabaseName("idx_product_ai_assets_product_id");
+      builder.HasIndex(x => new { x.ProductId, x.AssetKind, x.IsActive }).HasDatabaseName("idx_product_ai_assets_lookup");
+      builder.HasOne(x => x.Product)
+        .WithMany(x => x.AiAssets)
+        .HasForeignKey(x => x.ProductId)
+        .OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.Variant)
+        .WithMany(x => x.AiAssets)
+        .HasForeignKey(x => x.VariantId)
+        .OnDelete(DeleteBehavior.SetNull);
+    });
+
+    modelBuilder.Entity<ChatThread>(builder =>
+    {
+      builder.ToTable("chat_threads");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.GuestKeyHash).HasMaxLength(128);
+      builder.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("active").IsRequired();
+      builder.Property(x => x.Source).HasMaxLength(20).HasDefaultValue("web").IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.UserId).HasDatabaseName("idx_chat_threads_user_id");
+      builder.HasIndex(x => x.GuestKeyHash).HasDatabaseName("idx_chat_threads_guest_key_hash");
+      builder.HasOne(x => x.User)
+        .WithMany()
+        .HasForeignKey(x => x.UserId)
+        .OnDelete(DeleteBehavior.SetNull);
+    });
+
+    modelBuilder.Entity<ChatMessage>(builder =>
+    {
+      builder.ToTable("chat_messages");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Role).HasMaxLength(20).HasDefaultValue("user").IsRequired();
+      builder.Property(x => x.Content).IsRequired();
+      builder.Property(x => x.Intent).HasMaxLength(50);
+      builder.Property(x => x.ClientMessageId).HasMaxLength(80);
+      builder.Property(x => x.PromptVersion).HasMaxLength(40);
+      builder.Property(x => x.UsageJsonb).HasColumnType("jsonb");
+      builder.Property(x => x.FinishReason).HasMaxLength(40);
+      builder.Property(x => x.ToolCallsJsonb).HasColumnType("jsonb");
+      builder.Property(x => x.StructuredPayloadJsonb).HasColumnType("jsonb");
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.ThreadId).HasDatabaseName("idx_chat_messages_thread_id");
+      builder.HasOne(x => x.Thread)
+        .WithMany(x => x.Messages)
+        .HasForeignKey(x => x.ThreadId)
+        .OnDelete(DeleteBehavior.Cascade);
+    });
+
+    modelBuilder.Entity<ChatAttachment>(builder =>
+    {
+      builder.ToTable("chat_attachments");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Kind).HasMaxLength(40).HasDefaultValue("user_image").IsRequired();
+      builder.Property(x => x.FileUrl).HasMaxLength(500).IsRequired();
+      builder.Property(x => x.MimeType).HasMaxLength(100).IsRequired();
+      builder.Property(x => x.OriginalFileName).HasMaxLength(255);
+      builder.Property(x => x.MetadataJsonb).HasColumnType("jsonb");
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.ThreadId).HasDatabaseName("idx_chat_attachments_thread_id");
+      builder.HasOne(x => x.Thread)
+        .WithMany(x => x.Attachments)
+        .HasForeignKey(x => x.ThreadId)
+        .OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.Message)
+        .WithMany(x => x.Attachments)
+        .HasForeignKey(x => x.MessageId)
+        .OnDelete(DeleteBehavior.SetNull);
+    });
+
+    modelBuilder.Entity<ChatThreadMemory>(builder =>
+    {
+      builder.ToTable("chat_thread_memory");
+      builder.HasKey(x => x.ThreadId);
+      builder.Property(x => x.Summary).HasMaxLength(2000);
+      builder.Property(x => x.FactsJsonb).HasColumnType("jsonb");
+      builder.Property(x => x.ResolvedRefsJsonb).HasColumnType("jsonb");
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasOne(x => x.Thread)
+        .WithOne(x => x.Memory)
+        .HasForeignKey<ChatThreadMemory>(x => x.ThreadId)
+        .OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.LastMessage)
+        .WithMany()
+        .HasForeignKey(x => x.LastMessageId)
+        .OnDelete(DeleteBehavior.SetNull);
     });
 
     modelBuilder.Entity<Cart>(builder =>

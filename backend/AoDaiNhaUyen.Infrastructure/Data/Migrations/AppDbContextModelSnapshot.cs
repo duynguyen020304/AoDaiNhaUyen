@@ -166,6 +166,247 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.ToTable("categories", (string)null);
                 });
 
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatAttachment", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("file_size_bytes");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("file_url");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasDefaultValue("user_image")
+                        .HasColumnName("kind");
+
+                    b.Property<long?>("MessageId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("message_id");
+
+                    b.Property<string>("MetadataJsonb")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("metadata_jsonb");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("mime_type");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("original_file_name");
+
+                    b.Property<long>("ThreadId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("thread_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.HasIndex("ThreadId")
+                        .HasDatabaseName("idx_chat_attachments_thread_id");
+
+                    b.ToTable("chat_attachments", (string)null);
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatMessage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ClientMessageId")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("client_message_id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("content");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("FinishReason")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("finish_reason");
+
+                    b.Property<string>("Intent")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("intent");
+
+                    b.Property<string>("PromptVersion")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("prompt_version");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("user")
+                        .HasColumnName("role");
+
+                    b.Property<string>("StructuredPayloadJsonb")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("structured_payload_jsonb");
+
+                    b.Property<long>("ThreadId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("thread_id");
+
+                    b.Property<string>("ToolCallsJsonb")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("tool_calls_jsonb");
+
+                    b.Property<string>("UsageJsonb")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("usage_jsonb");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ThreadId")
+                        .HasDatabaseName("idx_chat_messages_thread_id");
+
+                    b.ToTable("chat_messages", (string)null);
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatThread", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime?>("ClaimedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("claimed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("GuestKeyHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("guest_key_hash");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("web")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("active")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GuestKeyHash")
+                        .HasDatabaseName("idx_chat_threads_guest_key_hash");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("idx_chat_threads_user_id");
+
+                    b.ToTable("chat_threads", (string)null);
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatThreadMemory", b =>
+                {
+                    b.Property<long>("ThreadId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("thread_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("FactsJsonb")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("facts_jsonb");
+
+                    b.Property<long?>("LastMessageId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("last_message_id");
+
+                    b.Property<string>("ResolvedRefsJsonb")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("resolved_refs_jsonb");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("summary");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("ThreadId");
+
+                    b.HasIndex("LastMessageId");
+
+                    b.ToTable("chat_thread_memory", (string)null);
+                });
+
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.EmailVerificationToken", b =>
                 {
                     b.Property<long>("Id")
@@ -723,6 +964,72 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductAiAsset", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("AssetKind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("asset_kind");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("file_url");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("mime_type");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("product_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<long?>("VariantId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("variant_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId")
+                        .HasDatabaseName("idx_product_ai_assets_product_id");
+
+                    b.HasIndex("VariantId");
+
+                    b.HasIndex("ProductId", "AssetKind", "IsActive")
+                        .HasDatabaseName("idx_product_ai_assets_lookup");
+
+                    b.ToTable("product_ai_assets", (string)null);
+                });
+
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductImage", b =>
                 {
                     b.Property<long>("Id")
@@ -774,6 +1081,160 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.HasIndex("VariantId");
 
                     b.ToTable("product_images", (string)null);
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductPairing", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("BaseProductId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("base_product_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("notes");
+
+                    b.Property<long>("PairedProductId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("paired_product_id");
+
+                    b.Property<long?>("ScenarioId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("scenario_id");
+
+                    b.Property<decimal>("Score")
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("score");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PairedProductId");
+
+                    b.HasIndex("ScenarioId");
+
+                    b.HasIndex("BaseProductId", "PairedProductId", "ScenarioId")
+                        .IsUnique();
+
+                    b.ToTable("product_pairings", (string)null);
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductScenario", b =>
+                {
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("product_id");
+
+                    b.Property<long>("ScenarioId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("scenario_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("notes");
+
+                    b.Property<decimal>("Score")
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("score");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("ProductId", "ScenarioId");
+
+                    b.HasIndex("ScenarioId");
+
+                    b.ToTable("product_scenarios", (string)null);
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductStyleProfile", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Formality")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("formality");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PrimaryColorFamily")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("primary_color_family");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("product_id");
+
+                    b.Property<string>("SecondaryColorFamily")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("secondary_color_family");
+
+                    b.Property<string>("Silhouette")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("silhouette");
+
+                    b.Property<string>("StyleKeywordsJsonb")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("style_keywords_jsonb");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId")
+                        .IsUnique();
+
+                    b.ToTable("product_style_profiles", (string)null);
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductVariant", b =>
@@ -1016,6 +1477,58 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         {
                             t.HasCheckConstraint("ck_shipments_status", "shipping_status IN ('pending','packed','shipped','delivered','failed','returned')");
                         });
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.StyleScenario", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("slug");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("style_scenarios", (string)null);
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.User", b =>
@@ -1329,6 +1842,63 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.Navigation("ParentCategory");
                 });
 
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatAttachment", b =>
+                {
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.ChatMessage", "Message")
+                        .WithMany("Attachments")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.ChatThread", "Thread")
+                        .WithMany("Attachments")
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+
+                    b.Navigation("Thread");
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatMessage", b =>
+                {
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.ChatThread", "Thread")
+                        .WithMany("Messages")
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Thread");
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatThread", b =>
+                {
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatThreadMemory", b =>
+                {
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.ChatMessage", "LastMessage")
+                        .WithMany()
+                        .HasForeignKey("LastMessageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.ChatThread", "Thread")
+                        .WithOne("Memory")
+                        .HasForeignKey("AoDaiNhaUyen.Domain.Entities.ChatThreadMemory", "ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LastMessage");
+
+                    b.Navigation("Thread");
+                });
+
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.EmailVerificationToken", b =>
                 {
                     b.HasOne("AoDaiNhaUyen.Domain.Entities.User", "User")
@@ -1434,6 +2004,24 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductAiAsset", b =>
+                {
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.Product", "Product")
+                        .WithMany("AiAssets")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.ProductVariant", "Variant")
+                        .WithMany("AiAssets")
+                        .HasForeignKey("VariantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Variant");
+                });
+
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductImage", b =>
                 {
                     b.HasOne("AoDaiNhaUyen.Domain.Entities.Product", "Product")
@@ -1450,6 +2038,62 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("Variant");
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductPairing", b =>
+                {
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.Product", "BaseProduct")
+                        .WithMany("BasePairings")
+                        .HasForeignKey("BaseProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.Product", "PairedProduct")
+                        .WithMany("PairedWith")
+                        .HasForeignKey("PairedProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.StyleScenario", "Scenario")
+                        .WithMany("ProductPairings")
+                        .HasForeignKey("ScenarioId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("BaseProduct");
+
+                    b.Navigation("PairedProduct");
+
+                    b.Navigation("Scenario");
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductScenario", b =>
+                {
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.Product", "Product")
+                        .WithMany("Scenarios")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.StyleScenario", "Scenario")
+                        .WithMany("ProductScenarios")
+                        .HasForeignKey("ScenarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Scenario");
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductStyleProfile", b =>
+                {
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.Product", "Product")
+                        .WithMany("StyleProfiles")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductVariant", b =>
@@ -1564,6 +2208,20 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.Navigation("Products");
                 });
 
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatMessage", b =>
+                {
+                    b.Navigation("Attachments");
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatThread", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Memory");
+
+                    b.Navigation("Messages");
+                });
+
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.Order", b =>
                 {
                     b.Navigation("Items");
@@ -1575,13 +2233,25 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.Product", b =>
                 {
+                    b.Navigation("AiAssets");
+
+                    b.Navigation("BasePairings");
+
                     b.Navigation("Images");
+
+                    b.Navigation("PairedWith");
+
+                    b.Navigation("Scenarios");
+
+                    b.Navigation("StyleProfiles");
 
                     b.Navigation("Variants");
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductVariant", b =>
                 {
+                    b.Navigation("AiAssets");
+
                     b.Navigation("CartItems");
 
                     b.Navigation("Images");
@@ -1590,6 +2260,13 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.Role", b =>
                 {
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.StyleScenario", b =>
+                {
+                    b.Navigation("ProductPairings");
+
+                    b.Navigation("ProductScenarios");
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.User", b =>

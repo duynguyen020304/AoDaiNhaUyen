@@ -121,6 +121,15 @@ public static class ServiceRegistration
     services.AddScoped<IGoogleOAuthService, GoogleOAuthService>();
     services.AddScoped<IFacebookOAuthService, FacebookOAuthService>();
     services.AddScoped<IAuthService, AuthService>();
+    services.AddScoped<ICatalogStylingService, CatalogStylingService>();
+    services.AddScoped<ICatalogTryOnService, CatalogTryOnService>();
+    services.AddScoped<IIntentClassifier, IntentClassifier>();
+    services.AddScoped<IThreadMemoryService, ThreadMemoryService>();
+    services.AddScoped<IStylistChatService, StylistChatService>();
+    services.AddHttpClient<IStylistResponseComposer, VertexAiStylistResponseComposer>(httpClient =>
+    {
+      httpClient.Timeout = Timeout.InfiniteTimeSpan;
+    });
     services.Configure<GoogleCloudOptions>(configuration.GetSection("GoogleCloud"));
     services.AddHttpClient<IAiTryOnService, VertexAiTryOnService>(httpClient =>
     {

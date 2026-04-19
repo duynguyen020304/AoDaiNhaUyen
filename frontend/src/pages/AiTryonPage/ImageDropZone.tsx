@@ -1,5 +1,6 @@
 import { useRef, useState, type DragEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { convertToSupportedFormat } from '../../utils/imageConversion';
 import styles from './ImageDropZone.module.css';
 
 interface ImageDropZoneProps {
@@ -20,11 +21,12 @@ export default function ImageDropZone({
   const [dragOver, setDragOver] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  const handleFiles = (files: FileList | null) => {
+  const handleFiles = async (files: FileList | null) => {
     if (!files?.length) return;
     const file = files[0];
-    if (!isSupportedImage(file)) return;
-    onFileSelect(file);
+    if (!isAllowedImage(file)) return;
+    const processedFile = await convertToSupportedFormat(file);
+    onFileSelect(processedFile);
   };
 
   const onDragOver = (e: DragEvent) => {
@@ -73,7 +75,7 @@ export default function ImageDropZone({
           <input
             ref={inputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
+            accept="image/*"
             className={styles.hiddenInput}
             onChange={(e) => handleFiles(e.target.files)}
           />
@@ -130,11 +132,11 @@ export default function ImageDropZone({
     >
       <img src="/assets/ai-tryon/upload-icon.svg" alt="" className={styles.uploadIcon} />
       <p>Nhấn để tải ảnh lên</p>
-      <span>Hỗ trợ JPG, PNG (Khuyến khích ảnh chụp chân dung)</span>
+      <span>Hỗ trợ mọi định dạng ảnh trừ GIF (Khuyến khích ảnh chụp chân dung)</span>
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept="image/*"
         className={styles.hiddenInput}
         onChange={(e) => handleFiles(e.target.files)}
       />
@@ -142,8 +144,8 @@ export default function ImageDropZone({
   );
 }
 
-function isSupportedImage(file: File) {
-  return ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type);
+function isAllowedImage(file: File) {
+  return file.type.startsWith('image/') && file.type !== 'image/gif';
 }
 
 function triggerDownload(href: string, filename: string) {

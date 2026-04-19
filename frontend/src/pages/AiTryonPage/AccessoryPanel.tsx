@@ -1,14 +1,17 @@
 import { motion } from 'framer-motion';
 import { listStagger, fadeUp } from '../../utils/motion';
-import { ACCESSORIES } from './data';
+import type { AiTryOnCatalogItem } from '../../api/aiTryon';
+import { resolveAssetUrl } from '../../api/client';
 import styles from './AccessoryPanel.module.css';
 
 interface AccessoryPanelProps {
-  selectedAccessories: string[];
-  onToggleAccessory: (id: string) => void;
+  accessories: AiTryOnCatalogItem[];
+  selectedAccessories: number[];
+  onToggleAccessory: (id: number) => void;
 }
 
 export default function AccessoryPanel({
+  accessories,
   selectedAccessories,
   onToggleAccessory,
 }: AccessoryPanelProps) {
@@ -25,20 +28,20 @@ export default function AccessoryPanel({
         initial="hidden"
         animate="show"
       >
-        {ACCESSORIES.map((item) => {
-          const isSelected = selectedAccessories.includes(item.id);
+        {accessories.map((item) => {
+          const isSelected = selectedAccessories.includes(item.productId);
           return (
             <motion.button
-              key={item.id}
+              key={item.productId}
               className={`${styles.card} ${isSelected ? styles.selected : ''}`}
               type="button"
-              onClick={() => onToggleAccessory(item.id)}
+              onClick={() => onToggleAccessory(item.productId)}
               variants={fadeUp}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.97 }}
             >
               <div className={styles.cardImage}>
-                <img src={item.thumbnail} alt={item.name} />
+                <img src={resolveAssetUrl(item.thumbnailUrl) ?? item.thumbnailUrl} alt={item.name} />
                 <div className={styles.cardOverlay} />
               </div>
               <span className={styles.cardName}>{item.name}</span>
