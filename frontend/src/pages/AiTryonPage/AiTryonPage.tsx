@@ -1,23 +1,27 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { sectionReveal, fadeUp, viewportOnce } from '../../utils/motion';
+import { convertToSupportedFormat } from '../../utils/imageConversion';
 import AccessoryPanel from './AccessoryPanel';
 import ClothingPanel from './ClothingPanel';
 import ResultPanel from './ResultPanel';
 import ImageDropZone from './ImageDropZone';
-import { submitAiTryOn } from '../../api/aiTryon';
-import { ACCESSORIES, GARMENTS } from './data';
+import { getAiTryOnCatalog, submitAiTryOn, type AiTryOnCatalogItem } from '../../api/aiTryon';
 import styles from './AiTryonPage.module.css';
 
 type UserPhotoSource = 'file' | 'paste';
 
 export default function AiTryonPage() {
+  const [garments, setGarments] = useState<AiTryOnCatalogItem[]>([]);
+  const [accessories, setAccessories] = useState<AiTryOnCatalogItem[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [userPhotoFile, setUserPhotoFile] = useState<File | null>(null);
   const [userFileName, setUserFileName] = useState<string | null>(null);
   const [userPhotoSource, setUserPhotoSource] = useState<UserPhotoSource>('file');
-  const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
-  const [selectedGarment, setSelectedGarment] = useState<string | null>(null);
+  const [selectedAccessories, setSelectedAccessories] = useState<number[]>([]);
+  const [selectedGarment, setSelectedGarment] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [tryonResult, setTryonResult] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -28,6 +32,37 @@ export default function AiTryonPage() {
       if (userPhoto) URL.revokeObjectURL(userPhoto);
     };
   }, [userPhoto]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadCatalog() {
+      setCatalogLoading(true);
+      setCatalogError(null);
+
+      try {
+        const result = await getAiTryOnCatalog();
+        if (!ignore) {
+          setGarments(result.garments);
+          setAccessories(result.accessories);
+        }
+      } catch (error) {
+        if (!ignore) {
+          setCatalogError(error instanceof Error ? error.message : 'Không thể tải danh mục thử đồ.');
+        }
+      } finally {
+        if (!ignore) {
+          setCatalogLoading(false);
+        }
+      }
+    }
+
+    loadCatalog();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleUploadPhoto = useCallback((file: File) => {
     setUserPhoto((prev) => {
@@ -61,7 +96,7 @@ export default function AiTryonPage() {
     setTryonError(null);
   }, []);
 
-  const handleToggleAccessory = useCallback((id: string) => {
+  const handleToggleAccessory = useCallback((id: number) => {
     setSelectedAccessories((prev) =>
       prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
     );
@@ -70,7 +105,7 @@ export default function AiTryonPage() {
   const handleTryonClick = useCallback(async () => {
     if (!userPhotoFile || !selectedGarment) return;
 
-    const garment = GARMENTS.find((item) => item.id === selectedGarment);
+    const garment = garments.find((item) => item.productId === selectedGarment);
     if (!garment) {
       setTryonError('Không tìm thấy trang phục đã chọn.');
       return;
@@ -80,25 +115,11 @@ export default function AiTryonPage() {
     setTryonError(null);
 
     try {
-      const garmentImage = await fetchGarmentImage(garment.thumbnail, garment.id);
-      const accessoryImages = await Promise.all(
-        selectedAccessories.map(async (accessoryId) => {
-          const accessory = ACCESSORIES.find((item) => item.id === accessoryId);
-          if (!accessory) {
-            throw new Error('Không tìm thấy phụ kiện đã chọn.');
-          }
-
-          return {
-            id: accessory.id,
-            file: await fetchTryOnAsset(accessory.thumbnail, accessory.id),
-          };
-        }),
-      );
       const result = await submitAiTryOn({
         personImage: userPhotoFile,
-        garmentImage,
-        garmentId: garment.id,
-        accessoryImages,
+        garmentProductId: garment.productId,
+        garmentVariantId: garment.defaultVariantId,
+        accessoryProductIds: selectedAccessories,
       });
 
       setTryonResult(result.resultImageUrl);
@@ -108,12 +129,12 @@ export default function AiTryonPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [userPhotoFile, selectedGarment, selectedAccessories]);
+  }, [garments, selectedAccessories, selectedGarment, userPhotoFile]);
 
   return (
     <main
       className={styles.page}
-      onPaste={(event) => {
+      onPaste={async (event) => {
         const clipboardItems = event.clipboardData?.items;
         const clipboardFiles = event.clipboardData?.files;
 
@@ -121,7 +142,8 @@ export default function AiTryonPage() {
         if (!pastedFile) return;
 
         event.preventDefault();
-        handlePastePhoto(pastedFile);
+        const convertedFile = await convertToSupportedFormat(pastedFile);
+        handlePastePhoto(convertedFile);
       }}
     >
       <motion.section
@@ -140,6 +162,12 @@ export default function AiTryonPage() {
           thử những thiết kế Áo Dài lộng lẫy nhất trước khi quyết định.
         </motion.p>
       </motion.section>
+
+      {catalogError ? (
+        <section className={styles.hero}>
+          <p className={styles.description}>{catalogError}</p>
+        </section>
+      ) : null}
 
       <motion.section
         className={styles.mainSection}
@@ -169,12 +197,14 @@ export default function AiTryonPage() {
           <ClothingPanel
             selectedCategory={selectedCategory}
             selectedGarment={selectedGarment}
+            garments={garments}
             onCategoryChange={setSelectedCategory}
             onSelectGarment={setSelectedGarment}
           />
 
           {/* Accessories selection */}
           <AccessoryPanel
+            accessories={accessories}
             selectedAccessories={selectedAccessories}
             onToggleAccessory={handleToggleAccessory}
           />
@@ -184,9 +214,9 @@ export default function AiTryonPage() {
         <motion.div variants={fadeUp}>
           <ResultPanel
             tryonResult={tryonResult}
-            selectedGarment={selectedGarment}
-            canTryOn={!!userPhotoFile && !!selectedGarment}
-            isProcessing={isProcessing}
+            selectedGarment={selectedGarment ? String(selectedGarment) : null}
+            canTryOn={!catalogLoading && !!userPhotoFile && !!selectedGarment}
+            isProcessing={catalogLoading || isProcessing}
             errorMessage={tryonError}
             onTryonClick={handleTryonClick}
           />
@@ -196,34 +226,19 @@ export default function AiTryonPage() {
   );
 }
 
-async function fetchGarmentImage(thumbnail: string, garmentId: string): Promise<File> {
-  return fetchTryOnAsset(thumbnail, garmentId);
-}
-
-async function fetchTryOnAsset(thumbnail: string, fileName: string): Promise<File> {
-  const response = await fetch(thumbnail);
-  if (!response.ok) {
-    throw new Error('Không thể tải ảnh đã chọn.');
-  }
-
-  const blob = await response.blob();
-  const extension = blob.type === 'image/png' ? 'png' : 'jpg';
-  return new File([blob], `${fileName}.${extension}`, {
-    type: blob.type || 'image/png',
-  });
+function isAllowedImage(file: File): boolean {
+  return file.type.startsWith('image/') && file.type !== 'image/gif';
 }
 
 function getPastedImageFile(
   items: DataTransferItemList | undefined,
   files: FileList | undefined,
 ): File | null {
-  const supportedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
-
   if (items) {
     for (const item of Array.from(items)) {
       if (item.kind !== 'file') continue;
       const file = item.getAsFile();
-      if (file && supportedTypes.has(file.type)) {
+      if (file && isAllowedImage(file)) {
         return file;
       }
     }
@@ -231,7 +246,7 @@ function getPastedImageFile(
 
   if (files) {
     for (const file of Array.from(files)) {
-      if (supportedTypes.has(file.type)) {
+      if (isAllowedImage(file)) {
         return file;
       }
     }

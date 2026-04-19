@@ -1,0 +1,498 @@
+/* --- Floating widget root (always rendered) --- */
+.widgetRoot {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  font-family: inherit;
+}
+
+/* --- Chat bubble trigger --- */
+.chatBubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #76110f 0%, #550807 100%);
+  box-shadow: 0 14px 32px rgba(68, 4, 4, 0.3);
+  color: #fff4dc;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chatBubbleIcon {
+  color: #ffd76a;
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* --- Compact chat window --- */
+.widgetWindow {
+  width: min(400px, calc(100vw - 32px));
+  height: min(560px, calc(100vh - 100px));
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgba(34, 7, 8, 0.22), 0 2px 8px rgba(34, 7, 8, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(255, 233, 205, 0.34), transparent 32%),
+    linear-gradient(180deg, #fbf4ea 0%, #f6ebde 100%);
+  transform-origin: bottom right;
+}
+
+/* --- Conversation header --- */
+.conversationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid rgba(119, 33, 32, 0.1);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menuButton {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #6d1517;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.conversationTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #5a1113;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.closeButton {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #6d1517;
+  font-size: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* --- Messages area --- */
+.messages {
+  padding: 12px 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.messageRow {
+  display: flex;
+}
+
+.messageRowUser {
+  justify-content: flex-end;
+}
+
+.messageBubble {
+  max-width: min(280px, 88%);
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(75, 22, 18, 0.07);
+  color: #4d1916;
+  white-space: pre-wrap;
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.messageRowUser .messageBubble {
+  background: linear-gradient(180deg, #7a1617 0%, #5c1012 100%);
+  color: #fff6f1;
+}
+
+.attachmentLink {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(109, 21, 23, 0.08);
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.attachmentLinkIcon {
+  flex-shrink: 0;
+}
+
+.attachmentLinkText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Product grid (compact horizontal cards) --- */
+.productGrid {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.productCard {
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(109, 21, 23, 0.05);
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.productImage {
+  width: 52px;
+  height: 52px;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.productInfo {
+  min-width: 0;
+}
+
+.productName {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.productMeta {
+  font-size: 12px;
+  color: rgba(77, 25, 22, 0.8);
+  margin-bottom: 3px;
+}
+
+.productRationale {
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(77, 25, 22, 0.84);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* --- Composer --- */
+.composer {
+  padding: 10px 14px 14px;
+  border-top: 1px solid rgba(119, 33, 32, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.composerCard {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: 1px solid rgba(109, 21, 23, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 6px 16px rgba(75, 22, 18, 0.05);
+  overflow: hidden;
+}
+
+.composerInput {
+  width: 100%;
+  min-height: 40px;
+  max-height: 100px;
+  padding: 10px 14px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #4d1916;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  line-height: 1.4;
+  overflow-y: auto;
+}
+
+.composerActions {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px 8px;
+}
+
+.actionCluster {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.newThreadButton,
+.tryOnButton,
+.sendButton,
+.attachButton {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.attachButton {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #6d1517;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.sendButton,
+.tryOnButton {
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #7a1617 0%, #5c1012 100%);
+  color: #fff7f2;
+  font-size: 13px;
+}
+
+.sendButton {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: transparent;
+  color: #6d1517;
+}
+
+.sendIcon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.composerInput::placeholder {
+  color: rgba(77, 25, 22, 0.56);
+}
+
+.pendingFiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pendingFile {
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(109, 21, 23, 0.08);
+  color: #5a1113;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* --- Thread drawer (slides over messages) --- */
+.threadDrawer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(112, 20, 24, 0.97);
+  color: #fff5ee;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 14px;
+  overflow-y: auto;
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.drawerTitle {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.newThreadButton {
+  padding: 8px 12px;
+  background: #fff5ee;
+  color: #6d1517;
+  font-size: 13px;
+}
+
+.threadList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.threadButton {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.07);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.threadButtonActive {
+  background: #fff5ee;
+  color: #6d1517;
+}
+
+.threadTitle {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.threadPreview {
+  display: block;
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.8;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.loadingState {
+  color: rgba(255, 245, 238, 0.8);
+  font-size: 14px;
+  text-align: center;
+  padding: 20px;
+}
+
+.previewOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(32, 12, 12, 0.7);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.previewImage {
+  max-width: min(92vw, 520px);
+  max-height: min(82vh, 720px);
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+  object-fit: contain;
+  background: #fff;
+}
+
+.previewClose {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #5a1113;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* --- Conversation wrapper (for drawer positioning) --- */
+.conversation {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* --- Mobile: full-screen widget --- */
+@media (max-width: 480px) {
+  .widgetRoot {
+    bottom: 0;
+    right: 0;
+  }
+
+  .widgetWindow {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .chatBubble {
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .chatBubbleLabel {
+    display: none;
+  }
+
+  .chatBubbleIcon {
+    font-size: 18px;
+  }
+}

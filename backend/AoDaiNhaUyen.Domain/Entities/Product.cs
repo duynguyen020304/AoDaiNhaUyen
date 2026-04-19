@@ -21,4 +21,9 @@ public sealed class Product
   public Category Category { get; set; } = null!;
   public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
   public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
+  public ICollection<ProductStyleProfile> StyleProfiles { get; set; } = new List<ProductStyleProfile>();
+  public ICollection<ProductScenario> Scenarios { get; set; } = new List<ProductScenario>();
+  public ICollection<ProductPairing> BasePairings { get; set; } = new List<ProductPairing>();
+  public ICollection<ProductPairing> PairedWith { get; set; } = new List<ProductPairing>();
+  public ICollection<ProductAiAsset> AiAssets { get; set; } = new List<ProductAiAsset>();
 }

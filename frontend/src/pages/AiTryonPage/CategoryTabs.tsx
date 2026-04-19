@@ -1,7 +1,11 @@
 import { motion } from 'framer-motion';
 import { fadeUp, staggerContainer } from '../../utils/motion';
-import type { GarmentCategory } from './data';
 import styles from './CategoryTabs.module.css';
+
+export interface GarmentCategory {
+  key: string;
+  label: string;
+}
 
 interface CategoryTabsProps {
   categories: GarmentCategory[];

@@ -1,5 +1,21 @@
 import { request } from './client';
 
+export interface AiTryOnCatalogItem {
+  productId: number;
+  defaultVariantId: number | null;
+  name: string;
+  productType: string;
+  categorySlug: string;
+  thumbnailUrl: string;
+  aiAssetUrl: string;
+  isFeatured: boolean;
+}
+
+export interface AiTryOnCatalogResponse {
+  garments: AiTryOnCatalogItem[];
+  accessories: AiTryOnCatalogItem[];
+}
+
 export interface AiTryOnResponse {
   resultImageUrl: string;
   mimeType: string;
@@ -7,28 +23,31 @@ export interface AiTryOnResponse {
 
 interface SubmitAiTryOnParams {
   personImage: File;
-  garmentImage: File;
-  garmentId: string;
-  accessoryImages?: Array<{
-    id: string;
-    file: File;
-  }>;
+  garmentProductId: number;
+  garmentVariantId?: number | null;
+  accessoryProductIds?: number[];
+}
+
+export function getAiTryOnCatalog(): Promise<AiTryOnCatalogResponse> {
+  return request<AiTryOnCatalogResponse>('/api/v1/ai-tryon/catalog');
 }
 
 export function submitAiTryOn({
   personImage,
-  garmentImage,
-  garmentId,
-  accessoryImages = [],
+  garmentProductId,
+  garmentVariantId,
+  accessoryProductIds = [],
 }: SubmitAiTryOnParams): Promise<AiTryOnResponse> {
   const formData = new FormData();
   formData.append('personImage', personImage);
-  formData.append('garmentImage', garmentImage);
-  formData.append('garmentId', garmentId);
+  formData.append('garmentProductId', String(garmentProductId));
 
-  accessoryImages.forEach((accessory) => {
-    formData.append('accessoryImages', accessory.file);
-    formData.append('accessoryIds', accessory.id);
+  if (typeof garmentVariantId === 'number') {
+    formData.append('garmentVariantId', String(garmentVariantId));
+  }
+
+  accessoryProductIds.forEach((productId) => {
+    formData.append('accessoryProductIds', String(productId));
   });
 
   return request<AiTryOnResponse>('/api/v1/ai-tryon', {

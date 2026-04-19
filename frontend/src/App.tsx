@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header/Header';
 import Footer from './components/Footer/Footer';
+import ChatWidget from './components/ChatWidget/ChatWidget';
 import HomePage from './pages/HomePage/HomePage';
 import CollectionPage from './pages/CollectionPage/CollectionPage';
 import AiTryonPage from './pages/AiTryonPage/AiTryonPage';
@@ -107,6 +108,7 @@ export default function App() {
         />
       ) : null}
       {!hideFooter && <Footer />}
+      <ChatWidget />
     </>
   );
 }
