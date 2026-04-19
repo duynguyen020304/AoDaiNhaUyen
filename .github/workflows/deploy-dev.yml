@@ -346,6 +346,7 @@ jobs:
           export GoogleCloud__ApiKey='${{ secrets.HK1_GCLOUD_API_KEY }}'
           export GoogleCloud__Location='${{ secrets.HK1_GCLOUD_LOCATION }}'
           export GoogleCloud__VirtualTryOnModel='${{ secrets.HK1_GCLOUD_MODEL }}'
+          export GoogleCloud__StylistTextModel='${{ secrets.HK1_GCLOUD_STYLIST_TEXT_MODEL }}'
           export GoogleCloud__TimeoutSeconds='${{ secrets.HK1_GCLOUD_TIMEOUT_SECONDS }}'
           export FrontendOrigins='${{ secrets.HK1_FRONTEND_ORIGINS }}'
           EOF
@@ -685,6 +686,7 @@ jobs:
           export GoogleCloud__ApiKey='${{ secrets.US1_GCLOUD_API_KEY }}'
           export GoogleCloud__Location='${{ secrets.US1_GCLOUD_LOCATION }}'
           export GoogleCloud__VirtualTryOnModel='${{ secrets.US1_GCLOUD_MODEL }}'
+          export GoogleCloud__StylistTextModel='${{ secrets.US1_GCLOUD_STYLIST_TEXT_MODEL }}'
           export GoogleCloud__TimeoutSeconds='${{ secrets.US1_GCLOUD_TIMEOUT_SECONDS }}'
           export FrontendOrigins='${{ secrets.US1_FRONTEND_ORIGINS }}'
           EOF
