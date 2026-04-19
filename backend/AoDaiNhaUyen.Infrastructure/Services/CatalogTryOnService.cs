@@ -184,6 +184,11 @@ public sealed class CatalogTryOnService(
   {
     var normalizedFileUrl = fileUrl.Trim();
 
+    if (uploadStoragePathResolver.TryGetAbsolutePathForRequestPath(normalizedFileUrl, out var localPath))
+    {
+      return await ReadLocalFileBytesAsync(localPath, cancellationToken);
+    }
+
     if (normalizedFileUrl.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
     {
       return await ReadLocalFileBytesAsync(new Uri(normalizedFileUrl, UriKind.Absolute).LocalPath, cancellationToken);
@@ -205,11 +210,6 @@ public sealed class CatalogTryOnService(
       using var response = await httpClient.GetAsync(absoluteUri, cancellationToken);
       response.EnsureSuccessStatusCode();
       return await response.Content.ReadAsByteArrayAsync(cancellationToken);
-    }
-
-    if (uploadStoragePathResolver.TryGetAbsolutePathForRequestPath(normalizedFileUrl, out var localPath))
-    {
-      return await ReadLocalFileBytesAsync(localPath, cancellationToken);
     }
 
     throw new FileNotFoundException("AI asset phải là đường dẫn tuyệt đối hoặc /upload/... hợp lệ.", normalizedFileUrl);
