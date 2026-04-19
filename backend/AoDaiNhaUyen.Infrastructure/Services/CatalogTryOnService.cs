@@ -182,17 +182,23 @@ public sealed class CatalogTryOnService(
 
   private async Task<byte[]> ReadAssetBytesAsync(string fileUrl, CancellationToken cancellationToken)
   {
-    if (Uri.TryCreate(fileUrl, UriKind.Absolute, out var absoluteUri))
-    {
-      if (absoluteUri.IsFile)
-      {
-        var filePath = absoluteUri.LocalPath;
-        if (!File.Exists(filePath))
-        {
-          throw new FileNotFoundException("Không tìm thấy AI asset của sản phẩm đã chọn.", filePath);
-        }
+    var normalizedFileUrl = fileUrl.Trim();
 
-        return await File.ReadAllBytesAsync(filePath, cancellationToken);
+    if (normalizedFileUrl.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+    {
+      return await ReadLocalFileBytesAsync(new Uri(normalizedFileUrl, UriKind.Absolute).LocalPath, cancellationToken);
+    }
+
+    if (Path.IsPathRooted(normalizedFileUrl))
+    {
+      return await ReadLocalFileBytesAsync(normalizedFileUrl, cancellationToken);
+    }
+
+    if (Uri.TryCreate(normalizedFileUrl, UriKind.Absolute, out var absoluteUri))
+    {
+      if (string.Equals(absoluteUri.Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
+      {
+        return await ReadLocalFileBytesAsync(absoluteUri.LocalPath, cancellationToken);
       }
 
       using var httpClient = httpClientFactory.CreateClient();
@@ -201,17 +207,22 @@ public sealed class CatalogTryOnService(
       return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }
 
-    if (uploadStoragePathResolver.TryGetAbsolutePathForRequestPath(fileUrl.Trim(), out var localPath))
+    if (uploadStoragePathResolver.TryGetAbsolutePathForRequestPath(normalizedFileUrl, out var localPath))
     {
-      if (!File.Exists(localPath))
-      {
-        throw new FileNotFoundException("Không tìm thấy AI asset của sản phẩm đã chọn.", localPath);
-      }
-
-      return await File.ReadAllBytesAsync(localPath, cancellationToken);
+      return await ReadLocalFileBytesAsync(localPath, cancellationToken);
     }
 
-    throw new FileNotFoundException("AI asset phải là đường dẫn tuyệt đối hoặc /upload/... hợp lệ.", fileUrl);
+    throw new FileNotFoundException("AI asset phải là đường dẫn tuyệt đối hoặc /upload/... hợp lệ.", normalizedFileUrl);
+  }
+
+  private static async Task<byte[]> ReadLocalFileBytesAsync(string filePath, CancellationToken cancellationToken)
+  {
+    if (!File.Exists(filePath))
+    {
+      throw new FileNotFoundException("Không tìm thấy AI asset của sản phẩm đã chọn.", filePath);
+    }
+
+    return await File.ReadAllBytesAsync(filePath, cancellationToken);
   }
 
   private static ProductAiAsset? SelectAiAsset(Product product, string assetKind, long? variantId = null)
