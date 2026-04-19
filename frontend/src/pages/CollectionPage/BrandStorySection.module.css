@@ -1,104 +1,146 @@
 .brand {
   position: relative;
   width: 100%;
-  padding: 120px 0 100px;
+  aspect-ratio: 1920 / 953;
   overflow: hidden;
+  height: fit-content;
   background: #160303;
 }
 
-/* ── Background texture ─────────────────────────── */
 .textureOverlay {
-  position: absolute;
-  inset: 0;
+  position: static;
+  left: 0;
+  top: 16.58%;
+  width: 99.95%;
+  height: 100%;
   pointer-events: none;
+  z-index: 1;
 }
 
 .textureOverlay img {
   width: 100%;
-  height: 100%;
+  height: 180.75%;
   object-fit: cover;
+  object-position: top center;
   opacity: 0.2;
 }
 
-/* ── Title ───────────────────────────────────────── */
-.title {
-  position: relative;
+.cloudDecor {
+  position: absolute;
+  left: 3%;
+  top: -20%;
+  z-index: 4;
+  width: 47.86%;
+  aspect-ratio: 737 / 194;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.vectorDecor {
+  position: absolute;
+  left: 32.03%;
+  top: -170.19%;
   z-index: 2;
+  width: 67.98%;
+  height: 246.1%;
+  pointer-events: none;
+}
+
+.title {
+  position: absolute;
+  left: 18.33%;
+  top: 12%;
+  z-index: 3;
+  width: 63.28%;
   font-family: "Italianno", cursive;
-  font-size: 152px;
-  line-height: 92px;
+  font-size: clamp(92px, 7.92vw, 152px);
+  line-height: 0.68;
   font-weight: 400;
   text-align: center;
-  color: transparent;
+  color: yellow;
   -webkit-background-clip: text;
   background-clip: text;
   text-shadow: 3px 4px 4px rgba(0, 0, 0, 0.25);
-  margin: 0 auto 60px;
+  margin: 0;
 }
 
-/* ── Two-column layout ──────────────────────────── */
 .columns {
-  position: relative;
-  z-index: 2;
+  position: absolute;
+  left: 12.55%;
+  top: 30%;
+  z-index: 3;
+  width: 74.9%;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 80px;
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 0 120px;
+  grid-template-columns: 1fr;
+  gap: 28px;
 }
 
 .paragraph {
+  width: 76.2%;
   font-family: "Inter", sans-serif;
-  font-size: 24px;
-  line-height: 1.5;
+  font-size: clamp(18px, 1.25vw, 24px);
+  line-height: 1.2;
   color: #ffffff;
   margin: 0;
 }
 
 .paragraphRight {
+  justify-self: end;
+  width: 72.8%;
   text-align: right;
-}
-
-/* ── Responsive ─────────────────────────────────── */
-@media (max-width: 1400px) {
-  .title {
-    font-size: 120px;
-    line-height: 80px;
-  }
-  .columns {
-    padding: 0 60px;
-    gap: 40px;
-  }
 }
 
 @media (max-width: 1100px) {
   .brand {
-    padding: 80px 0;
+    aspect-ratio: auto;
+    min-height: 760px;
   }
+
   .title {
+    left: 24px;
+    top: 18%;
+    width: calc(100% - 48px);
     font-size: 80px;
-    line-height: 60px;
+    line-height: 0.8;
   }
+
   .columns {
-    grid-template-columns: 1fr;
-    padding: 0 24px;
-    gap: 32px;
+    left: 24px;
+    top: 36%;
+    width: calc(100% - 48px);
+    gap: 24px;
   }
+
+  .paragraph,
   .paragraphRight {
+    width: 100%;
+    font-size: 20px;
     text-align: left;
   }
-  .paragraph {
-    font-size: 20px;
+
+  .cloudDecor {
+    width: 70%;
   }
 }
 
 @media (max-width: 680px) {
+  .brand {
+    min-height: 700px;
+  }
+
   .title {
     font-size: 56px;
-    line-height: 44px;
+    line-height: 0.9;
   }
-  .paragraph {
-    font-size: 16px;
+
+  .columns {
+    left: 16px;
+    top: 32%;
+    width: calc(100% - 32px);
+  }
+
+  .paragraph,
+  .paragraphRight {
+    font-size: 15px;
   }
 }

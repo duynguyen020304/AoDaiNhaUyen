@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
+import type { CSSProperties } from 'react';
 import styles from './GallerySection.module.css';
 import { cardReveal, fadeUp, listStagger, sectionReveal, viewportOnce } from '../../utils/motion';
-import { COLLECTIONS, GOLD_GRADIENT, IMG } from './data';
+import { COLLECTIONS, IMG } from './data';
 
 export default function GallerySection() {
   return (
@@ -17,20 +18,16 @@ export default function GallerySection() {
         <img src={IMG.galleryTexture} alt="" />
       </div>
 
-      {/* Rotated background pattern */}
-      <div className={styles.bgPattern}>
-        <img src={IMG.galleryPattern} alt="" />
-      </div>
-
       {/* Collection cards */}
       <motion.div
         className={styles.collections}
         variants={listStagger}
       >
-        {COLLECTIONS.map((col) => (
+        {COLLECTIONS.map((col, index) => (
           <motion.div
             key={col.number}
-            className={styles.collectionCard}
+            className={`${styles.collectionCard} ${styles[`collectionCard${index + 1}`]}`}
+            style={{ '--frame-height': col.frameHeight } as CSSProperties}
             variants={cardReveal}
           >
             {/* Product images */}
@@ -49,15 +46,25 @@ export default function GallerySection() {
             {/* Label overlay */}
             <div className={styles.labelOverlay}>
               <p className={styles.collectionNumber}>{col.number}</p>
-              <p className={styles.collectionLabel}>{col.label}</p>
-              <h3
-                className={styles.collectionTitle}
-                style={{ backgroundImage: GOLD_GRADIENT }}
-              >
-                {col.titleLines.map((line, j) => (
-                  <span key={j}>{line}</span>
-                ))}
-              </h3>
+              {col.textLayout === 'title-first' ? (
+                <>
+                  <h3 className={styles.collectionTitle}>
+                    {col.titleLines.map((line, j) => (
+                      <span key={j}>{line}</span>
+                    ))}
+                  </h3>
+                  <p className={styles.collectionLabel}>{col.label}</p>
+                </>
+              ) : (
+                <>
+                  <p className={styles.collectionLabel}>{col.label}</p>
+                  <h3 className={styles.collectionTitle}>
+                    {col.titleLines.map((line, j) => (
+                      <span key={j}>{line}</span>
+                    ))}
+                  </h3>
+                </>
+              )}
               <p className={styles.collectionQuote}>{col.quote}</p>
             </div>
           </motion.div>
