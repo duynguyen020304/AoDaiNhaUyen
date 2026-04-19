@@ -165,7 +165,8 @@
 }
 
 .accountLink,
-.logoutButton {
+.logoutButton,
+.stylistButton {
   height: 31px;
   border-radius: 999px;
   display: inline-flex;
@@ -185,6 +186,13 @@
   border: 1px solid rgba(255, 255, 255, 0.42);
   background: transparent;
   color: #ffffff;
+  cursor: pointer;
+}
+
+.stylistButton {
+  border: 1px solid rgba(255, 244, 220, 0.4);
+  background: rgba(255, 244, 220, 0.08);
+  color: #fff4dc;
   cursor: pointer;
 }
 

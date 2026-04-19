@@ -20,4 +20,5 @@ public sealed class ProductVariant
   public Product Product { get; set; } = null!;
   public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
   public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+  public ICollection<ProductAiAsset> AiAssets { get; set; } = new List<ProductAiAsset>();
 }

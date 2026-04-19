@@ -13,6 +13,10 @@ interface NavLinkConfig {
   matchPath: string;
 }
 
+interface HeaderProps {
+  onOpenChat: () => void;
+}
+
 const navLinks: NavLinkConfig[] = [
   { label: 'TRANG CHỦ', to: '/', matchPath: '/' },
   { label: 'BỘ SƯU TẬP', to: '/collection', matchPath: '/collection' },
@@ -50,7 +54,7 @@ const NAV_FALLBACK_CATEGORIES: HeaderCategory[] = [
 
 const DISMISSED_DROPDOWN_CLASS = 'headerDropdownDismissed';
 
-export default function Header() {
+export default function Header({ onOpenChat }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { status, user, logout } = useAuth();
@@ -204,6 +208,16 @@ export default function Header() {
             DANG NHAP
           </motion.a>
         )}
+        <motion.button
+          type="button"
+          className={styles.stylistButton}
+          onClick={onOpenChat}
+          variants={fadeUp}
+          whileHover={{ y: -1 }}
+          whileTap={{ scale: 0.97 }}
+        >
+          TƯ VẤN AI
+        </motion.button>
         <motion.a
           className={styles.cartLink}
           href="/cart"

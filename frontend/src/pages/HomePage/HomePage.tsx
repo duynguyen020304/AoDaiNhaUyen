@@ -8,7 +8,11 @@ import AccessorySection from '../../components/AccessorySection/AccessorySection
 import StoreSection from '../../components/StoreSection/StoreSection';
 import FeaturesStrip from '../../components/FeaturesStrip/FeaturesStrip';
 
-export default function HomePage() {
+interface HomePageProps {
+  onOpenChat: () => void;
+}
+
+export default function HomePage({ onOpenChat }: HomePageProps) {
   return (
     <main id="top" className={styles.home}>
       <HeroBlank />
@@ -19,6 +23,10 @@ export default function HomePage() {
       <AccessorySection />
       <StoreSection />
       <FeaturesStrip />
+      <button type="button" className={styles.aiConsultButton} onClick={onOpenChat}>
+        <span className={styles.aiConsultIcon}>✦</span>
+        <span>Tư vấn AI</span>
+      </button>
     </main>
   );
 }

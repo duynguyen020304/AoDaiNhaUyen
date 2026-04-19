@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header/Header';
 import Footer from './components/Footer/Footer';
+import ChatWidget from './components/ChatWidget/ChatWidget';
 import HomePage from './pages/HomePage/HomePage';
 import CollectionPage from './pages/CollectionPage/CollectionPage';
 import AiTryonPage from './pages/AiTryonPage/AiTryonPage';
@@ -22,6 +24,7 @@ import DataDeletionPage from './pages/DataDeletionPage/DataDeletionPage';
 import ProtectedRoute from './auth/ProtectedRoute';
 
 export default function App() {
+  const [chatOpen, setChatOpen] = useState(false);
   const { pathname } = useLocation();
   const hideHeader = pathname === '/login'
     || pathname === '/reset-password'
@@ -35,9 +38,9 @@ export default function App() {
 
   return (
     <>
-      {!hideHeader && <Header />}
+      {!hideHeader && <Header onOpenChat={() => setChatOpen(true)} />}
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<HomePage onOpenChat={() => setChatOpen(true)} />} />
         <Route path="/collection" element={<CollectionPage />} />
         <Route path="/ai-tryon" element={<AiTryonPage />} />
         <Route path="/products" element={<ProductsPage />} />
@@ -61,6 +64,7 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       {!hideFooter && <Footer />}
+      {!hideHeader && <ChatWidget isOpen={chatOpen} onClose={() => setChatOpen(false)} />}
     </>
   );
 }

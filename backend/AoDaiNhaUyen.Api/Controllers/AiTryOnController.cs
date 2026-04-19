@@ -8,11 +8,18 @@ namespace AoDaiNhaUyen.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/ai-tryon")]
-public sealed class AiTryOnController(IAiTryOnService aiTryOnService) : ControllerBase
+public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) : ControllerBase
 {
   private const long MaxImageBytes = 8 * 1024 * 1024;
   private const int MaxAccessoryImages = 3;
   private const long MaxRequestBytes = MaxImageBytes * (2 + MaxAccessoryImages);
+
+  [HttpGet("catalog")]
+  public async Task<IActionResult> GetCatalog(CancellationToken cancellationToken)
+  {
+    var result = await catalogTryOnService.GetCatalogAsync(cancellationToken);
+    return Ok(ApiResponseFactory.Success(result));
+  }
 
   [HttpPost]
   [RequestSizeLimit(MaxRequestBytes)]
@@ -20,11 +27,20 @@ public sealed class AiTryOnController(IAiTryOnService aiTryOnService) : Controll
     [FromForm] IFormFile? personImage,
     [FromForm] IFormFile? garmentImage,
     [FromForm] string? garmentId,
+    [FromForm] long? garmentProductId,
+    [FromForm] long? garmentVariantId,
     [FromForm] List<IFormFile>? accessoryImages,
     [FromForm] List<string>? accessoryIds,
+    [FromForm] List<long>? accessoryProductIds,
     CancellationToken cancellationToken)
   {
-    var validationError = Validate(personImage, garmentImage, garmentId, accessoryImages, accessoryIds);
+    var validationError = Validate(
+      personImage,
+      garmentImage,
+      garmentId,
+      garmentProductId,
+      accessoryImages,
+      accessoryIds);
     if (validationError is not null)
     {
       return BadRequest(ApiResponseFactory.Failure(
@@ -35,17 +51,34 @@ public sealed class AiTryOnController(IAiTryOnService aiTryOnService) : Controll
 
     try
     {
-      var result = await aiTryOnService.GenerateAsync(
-        new AiTryOnRequestDto(
-          garmentId!.Trim(),
+      var result = await catalogTryOnService.CreateAsync(
+        new CatalogAiTryOnRequestDto(
+          garmentId?.Trim(),
           await ReadFileAsync(personImage!, cancellationToken),
           personImage!.ContentType,
-          await ReadFileAsync(garmentImage!, cancellationToken),
-          garmentImage!.ContentType,
+          garmentProductId,
+          garmentVariantId,
+          accessoryProductIds ?? [],
+          garmentImage is null ? null : await ReadFileAsync(garmentImage, cancellationToken),
+          garmentImage?.ContentType,
           await ReadAccessoryImagesAsync(accessoryImages ?? [], accessoryIds ?? [], cancellationToken)),
         cancellationToken);
 
       return Ok(ApiResponseFactory.Success(result, "Tạo ảnh thử đồ thành công"));
+    }
+    catch (InvalidOperationException ex)
+    {
+      return BadRequest(ApiResponseFactory.Failure(
+        "Dữ liệu thử đồ không hợp lệ",
+        "invalid_tryon_selection",
+        ex.Message));
+    }
+    catch (FileNotFoundException ex)
+    {
+      return BadRequest(ApiResponseFactory.Failure(
+        "Không thể tải AI asset của sản phẩm đã chọn",
+        "missing_tryon_asset",
+        ex.Message));
     }
     catch (AiTryOnConfigurationException ex)
     {
@@ -67,6 +100,7 @@ public sealed class AiTryOnController(IAiTryOnService aiTryOnService) : Controll
     IFormFile? personImage,
     IFormFile? garmentImage,
     string? garmentId,
+    long? garmentProductId,
     IReadOnlyList<IFormFile>? accessoryImages,
     IReadOnlyList<string>? accessoryIds)
   {
@@ -75,12 +109,12 @@ public sealed class AiTryOnController(IAiTryOnService aiTryOnService) : Controll
       return ("invalid_image", "Person image is required.");
     }
 
-    if (garmentImage is null)
+    if (garmentImage is null && !garmentProductId.HasValue)
     {
-      return ("invalid_image", "Garment image is required.");
+      return ("invalid_image", "Garment image or garment product selection is required.");
     }
 
-    if (string.IsNullOrWhiteSpace(garmentId))
+    if (garmentImage is not null && string.IsNullOrWhiteSpace(garmentId) && !garmentProductId.HasValue)
     {
       return ("missing_garment", "Garment selection is required.");
     }
@@ -91,10 +125,13 @@ public sealed class AiTryOnController(IAiTryOnService aiTryOnService) : Controll
       return personError;
     }
 
-    var garmentError = ValidateImage(garmentImage, "Garment image");
-    if (garmentError is not null)
+    if (garmentImage is not null)
     {
-      return garmentError;
+      var garmentError = ValidateImage(garmentImage, "Garment image");
+      if (garmentError is not null)
+      {
+        return garmentError;
+      }
     }
 
     if ((accessoryImages?.Count ?? 0) > MaxAccessoryImages)

@@ -3,6 +3,7 @@ using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Domain.SeedData;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace AoDaiNhaUyen.Infrastructure.Data;
 
@@ -10,6 +11,8 @@ public sealed class SeedDataService(
   AppDbContext dbContext,
   IPasswordHasher passwordHasher) : ISeedDataService
 {
+  private const string CuratedTryOnRoot = "upload/tryon-curated";
+
   public async Task SeedAllAsync()
   {
     await dbContext.Database.MigrateAsync();
@@ -18,6 +21,9 @@ public sealed class SeedDataService(
     await SeedCustomersAsync();
     await SeedCategoriesAsync();
     await SeedProductsAsync();
+    await SeedStyleScenariosAsync();
+    await SeedProductStyleDataAsync();
+    await SeedProductAiAssetsAsync();
     await RemoveStaleCategoriesAsync();
   }
 
@@ -245,6 +251,179 @@ public sealed class SeedDataService(
     await dbContext.SaveChangesAsync();
   }
 
+  private async Task SeedStyleScenariosAsync()
+  {
+    var defaults = new[]
+    {
+      new { Slug = "giao-vien", Name = "Giáo viên", Description = "Trang phục nền nã, chỉn chu cho môi trường học đường." },
+      new { Slug = "le-tet", Name = "Lễ Tết", Description = "Trang phục nổi bật, tươi sáng cho dịp lễ và chụp hình." },
+      new { Slug = "du-tiec", Name = "Dự tiệc", Description = "Phối đồ sang trọng cho các sự kiện trang trọng." },
+      new { Slug = "chup-anh", Name = "Chụp ảnh", Description = "Trang phục có điểm nhấn để lên hình đẹp." }
+    };
+
+    foreach (var item in defaults)
+    {
+      var scenario = await dbContext.StyleScenarios.FirstOrDefaultAsync(x => x.Slug == item.Slug);
+      if (scenario is null)
+      {
+        dbContext.StyleScenarios.Add(new StyleScenario
+        {
+          Slug = item.Slug,
+          Name = item.Name,
+          Description = item.Description,
+          IsActive = true
+        });
+        continue;
+      }
+
+      scenario.Name = item.Name;
+      scenario.Description = item.Description;
+      scenario.IsActive = true;
+      scenario.UpdatedAt = DateTime.UtcNow;
+    }
+
+    await dbContext.SaveChangesAsync();
+  }
+
+  private async Task SeedProductStyleDataAsync()
+  {
+    var products = await dbContext.Products
+      .Include(product => product.StyleProfiles)
+      .Include(product => product.Scenarios)
+      .ToListAsync();
+
+    var scenarios = await dbContext.StyleScenarios.ToDictionaryAsync(item => item.Slug);
+
+    foreach (var product in products)
+    {
+      var profile = product.StyleProfiles.FirstOrDefault();
+      if (profile is null)
+      {
+        profile = new ProductStyleProfile
+        {
+          Product = product
+        };
+        product.StyleProfiles.Add(profile);
+      }
+
+      var (primaryColor, secondaryColor) = InferColorFamilies(product);
+      profile.Formality = InferFormality(product);
+      profile.Silhouette = product.ProductType == "ao_dai" ? "ao-dai-truyen-thong" : "accessory";
+      profile.PrimaryColorFamily = primaryColor;
+      profile.SecondaryColorFamily = secondaryColor;
+      profile.Notes = product.ProductType == "ao_dai"
+        ? "Ưu tiên tư vấn theo dịp sử dụng và phụ kiện đi kèm."
+        : "Dùng để hoàn thiện set áo dài trong chat stylist và try-on.";
+      profile.StyleKeywordsJsonb = JsonSerializer.Serialize(InferStyleKeywords(product));
+      profile.UpdatedAt = DateTime.UtcNow;
+
+      product.Scenarios.Clear();
+      foreach (var scenarioSeed in InferScenarioScores(product))
+      {
+        if (!scenarios.TryGetValue(scenarioSeed.Slug, out var scenario))
+        {
+          continue;
+        }
+
+        product.Scenarios.Add(new ProductScenario
+        {
+          Product = product,
+          Scenario = scenario,
+          Score = scenarioSeed.Score,
+          Notes = scenarioSeed.Notes,
+          UpdatedAt = DateTime.UtcNow
+        });
+      }
+    }
+
+    await dbContext.SaveChangesAsync();
+  }
+
+  private async Task SeedProductAiAssetsAsync()
+  {
+    var products = await dbContext.Products
+      .Include(product => product.Images)
+      .Include(product => product.Variants)
+      .Include(product => product.AiAssets)
+      .ToListAsync();
+
+    foreach (var product in products)
+    {
+      var primaryImageUrl = product.Images
+        .OrderBy(image => image.SortOrder)
+        .FirstOrDefault(image => image.IsPrimary)?.ImageUrl
+        ?? product.Images.OrderBy(image => image.SortOrder).FirstOrDefault()?.ImageUrl;
+
+      if (string.IsNullOrWhiteSpace(primaryImageUrl))
+      {
+        continue;
+      }
+
+      var assetKind = product.ProductType == "ao_dai" ? "tryon_garment" : "tryon_accessory";
+      var curatedAssetKind = product.ProductType == "ao_dai" ? "tryon_garment_curated" : "tryon_accessory_curated";
+      var defaultVariantId = product.ProductType == "ao_dai"
+        ? product.Variants.OrderByDescending(variant => variant.IsDefault).ThenBy(variant => variant.Id).Select(variant => (long?)variant.Id).FirstOrDefault()
+        : null;
+      var mimeType = ResolveMimeType(primaryImageUrl);
+
+      var curatedUrl = TryResolveCuratedAssetUrl(product);
+      if (!string.IsNullOrWhiteSpace(curatedUrl))
+      {
+        UpsertAiAsset(product, curatedAssetKind, curatedUrl, ResolveMimeType(curatedUrl), defaultVariantId);
+      }
+
+      UpsertAiAsset(product, assetKind, primaryImageUrl, mimeType, defaultVariantId);
+    }
+
+    await dbContext.SaveChangesAsync();
+  }
+
+  private static void UpsertAiAsset(
+    Product product,
+    string assetKind,
+    string fileUrl,
+    string mimeType,
+    long? defaultVariantId)
+  {
+    var existingAsset = product.AiAssets.FirstOrDefault(asset =>
+      asset.AssetKind == assetKind &&
+      asset.FileUrl == fileUrl);
+
+    if (existingAsset is null)
+    {
+      product.AiAssets.Add(new ProductAiAsset
+      {
+        VariantId = defaultVariantId,
+        AssetKind = assetKind,
+        FileUrl = fileUrl,
+        MimeType = mimeType,
+        IsActive = true
+      });
+      return;
+    }
+
+    existingAsset.VariantId = existingAsset.VariantId ?? defaultVariantId;
+    existingAsset.MimeType = mimeType;
+    existingAsset.IsActive = true;
+    existingAsset.UpdatedAt = DateTime.UtcNow;
+  }
+
+  private static string? TryResolveCuratedAssetUrl(Product product)
+  {
+    var categoryFolder = product.ProductType == "ao_dai" ? "garments" : "accessories";
+    foreach (var extension in new[] { ".png", ".webp", ".jpg", ".jpeg" })
+    {
+      var relativePath = Path.Combine(CuratedTryOnRoot, categoryFolder, $"{product.Slug}{extension}");
+      var absolutePath = Path.Combine(AppContext.BaseDirectory, relativePath);
+      if (File.Exists(absolutePath))
+      {
+        return $"/{relativePath.Replace("\\", "/")}";
+      }
+    }
+
+    return null;
+  }
+
   private async Task RemoveStaleProductsAsync()
   {
     var currentSlugs = DefaultProducts.Items.Select(x => x.Slug).ToHashSet();
@@ -324,5 +503,109 @@ public sealed class SeedDataService(
 
     var parent = await dbContext.Categories.FirstAsync(x => x.Id == category.Parent);
     return parent.Slug == "phu-kien" ? "phu_kien" : "ao_dai";
+  }
+
+  private static string[] InferStyleKeywords(Product product)
+  {
+    if (product.ProductType == "phu_kien")
+    {
+      return ["phu-kien", product.Category.Slug, "phoi-set", "ao-dai"];
+    }
+
+    return product.Category.Slug switch
+    {
+      "ao-dai-cach-tan" => ["cach-tan", "tre-trung", "hien-dai"],
+      "ao-dai-lua-tron" => ["toi-gian", "thanh-lich", "lua"],
+      "ao-dai-theu-hoa" => ["theu-hoa", "nu-tinh", "diem-nhan"],
+      _ => ["truyen-thong", "thanh-lich", "ao-dai"]
+    };
+  }
+
+  private static string InferFormality(Product product)
+  {
+    if (product.ProductType == "phu_kien")
+    {
+      return "medium";
+    }
+
+    return product.Category.Slug switch
+    {
+      "ao-dai-cach-tan" => "medium",
+      "ao-dai-lua-tron" => "medium",
+      "ao-dai-theu-hoa" => "high",
+      _ => "high"
+    };
+  }
+
+  private static (string Primary, string Secondary) InferColorFamilies(Product product)
+  {
+    var slug = product.Slug.ToLowerInvariant();
+    if (slug.Contains("hong"))
+    {
+      return ("pink", "gold");
+    }
+
+    if (slug.Contains("xanh"))
+    {
+      return ("blue", "white");
+    }
+
+    if (slug.Contains("do") || slug.Contains("node"))
+    {
+      return ("red", "gold");
+    }
+
+    return product.ProductType == "phu_kien"
+      ? ("gold", "ivory")
+      : ("ivory", "gold");
+  }
+
+  private static IReadOnlyList<(string Slug, decimal Score, string Notes)> InferScenarioScores(Product product)
+  {
+    if (product.ProductType == "phu_kien")
+    {
+      return
+      [
+        ("le-tet", 0.88m, "Phụ kiện tăng độ hoàn thiện cho set lễ Tết."),
+        ("chup-anh", 0.82m, "Phụ kiện giúp set lên hình có điểm nhấn.")
+      ];
+    }
+
+    return product.Category.Slug switch
+    {
+      "ao-dai-cach-tan" =>
+      [
+        ("chup-anh", 0.90m, "Phù hợp chụp ảnh và sự kiện trẻ trung."),
+        ("du-tiec", 0.78m, "Phối được cho các dịp dự tiệc bán trang trọng.")
+      ],
+      "ao-dai-lua-tron" =>
+      [
+        ("giao-vien", 0.92m, "Tối giản, nền nã và phù hợp môi trường học đường."),
+        ("le-tet", 0.74m, "Phù hợp lễ Tết khi phối thêm phụ kiện.")
+      ],
+      "ao-dai-theu-hoa" =>
+      [
+        ("du-tiec", 0.94m, "Thiết kế nổi bật phù hợp đi tiệc."),
+        ("chup-anh", 0.89m, "Lên hình đẹp nhờ chi tiết thêu.")
+      ],
+      _ =>
+      [
+        ("giao-vien", 0.80m, "Phù hợp những dịp cần sự chỉn chu."),
+        ("le-tet", 0.86m, "Trang phục nổi bật cho dịp truyền thống.")
+      ]
+    };
+  }
+
+  private static string ResolveMimeType(string fileUrl)
+  {
+    var extension = Path.GetExtension(fileUrl)?.ToLowerInvariant();
+    return extension switch
+    {
+      ".png" => "image/png",
+      ".jpg" => "image/jpeg",
+      ".jpeg" => "image/jpeg",
+      ".webp" => "image/webp",
+      _ => "application/octet-stream"
+    };
   }
 }
