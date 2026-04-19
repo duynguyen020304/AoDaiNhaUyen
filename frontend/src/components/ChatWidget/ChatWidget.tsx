@@ -5,12 +5,13 @@ import {
   executeChatTryOn,
   getChatThread,
   listChatThreads,
-  sendChatMessage,
+  streamChatMessage,
   type ChatMessage,
   type ChatThreadDetail,
   type ChatThreadSummary,
 } from '../../api/chat';
 import { resolveAssetUrl } from '../../api/client';
+import { useToast } from '../Toast/useToast';
 import styles from './ChatWidget.module.css';
 
 const easeOutQuart = [0.22, 1, 0.36, 1] as const;
@@ -25,8 +26,11 @@ export default function ChatWidget() {
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
+  const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const streamAbortControllerRef = useRef<AbortController | null>(null);
 
   const pendingFileEntries = useMemo(() => {
     return pendingFiles.map((file) => ({
@@ -88,7 +92,13 @@ export default function ChatWidget() {
     if (isOpen) {
       endRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [activeThread, isOpen]);
+  }, [activeThread, streamingMessage, isOpen]);
+
+  useEffect(() => {
+    return () => {
+      streamAbortControllerRef.current?.abort();
+    };
+  }, []);
 
   const latestTryOnPayload = useMemo(() => {
     return [...(activeThread?.messages ?? [])]
@@ -97,6 +107,8 @@ export default function ChatWidget() {
   }, [activeThread]);
 
   const handleCreateThread = async () => {
+    streamAbortControllerRef.current?.abort();
+    setStreamingMessage(null);
     setLoading(true);
     try {
       const thread = await createChatThread();
@@ -112,6 +124,8 @@ export default function ChatWidget() {
   };
 
   const handleSelectThread = async (threadId: number) => {
+    streamAbortControllerRef.current?.abort();
+    setStreamingMessage(null);
     setLoading(true);
     try {
       setActiveThread(await getChatThread(threadId));
@@ -126,17 +140,100 @@ export default function ChatWidget() {
       return;
     }
 
+    const capturedMessage = draft.trim();
+    const capturedFiles = [...pendingFiles];
     setSubmitting(true);
+
+    const userMessage: ChatMessage = {
+      id: -Date.now(),
+      role: 'user',
+      content: capturedMessage,
+      intent: null,
+      createdAt: new Date().toISOString(),
+      attachments: capturedFiles.map((f, i) => ({
+        id: -(i + 1),
+        kind: 'user_image',
+        fileUrl: URL.createObjectURL(f),
+        mimeType: f.type,
+        originalFileName: f.name,
+        createdAt: new Date().toISOString(),
+      })),
+      structuredPayload: null,
+    };
+
+    setActiveThread((current) =>
+      current ? { ...current, messages: [...current.messages, userMessage] } : current,
+    );
+    setDraft('');
+    setPendingFiles([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+
     try {
-      const thread = await sendChatMessage(activeThread.id, draft.trim(), pendingFiles);
-      setActiveThread(thread);
-      setThreads((current) => updateThreadSummary(current, thread));
-      setDraft('');
-      setPendingFiles([]);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      const streamAbortController = new AbortController();
+      streamAbortControllerRef.current = streamAbortController;
+      let assistantMessage: ChatMessage | null = null;
+      let accumulatedText = '';
+
+      for await (const event of streamChatMessage(activeThread.id, capturedMessage, capturedFiles, streamAbortController.signal)) {
+        switch (event.type) {
+          case 'created': {
+            assistantMessage = {
+              id: event.data.messageId,
+              role: 'assistant',
+              content: '',
+              intent: event.data.intent ?? null,
+              createdAt: event.data.createdAt,
+              attachments: event.data.attachments ?? [],
+              structuredPayload: event.data.structuredPayload ?? null,
+            };
+            setStreamingMessage(assistantMessage);
+            break;
+          }
+          case 'text_delta': {
+            accumulatedText += event.data.delta;
+            setStreamingMessage((current) =>
+              current ? { ...current, content: accumulatedText } : current,
+            );
+            break;
+          }
+          case 'text_done': {
+            const finalMessage: ChatMessage = {
+              id: event.data.messageId,
+              role: 'assistant',
+              content: event.data.fullText,
+              intent: assistantMessage?.intent ?? null,
+              createdAt: event.data.createdAt,
+              attachments: assistantMessage?.attachments ?? [],
+              structuredPayload: assistantMessage?.structuredPayload ?? null,
+            };
+            setStreamingMessage(null);
+            setActiveThread((current) => {
+              if (!current) return current;
+              const updated = { ...current, messages: [...current.messages, finalMessage], updatedAt: event.data.createdAt };
+              setThreads((t) => updateThreadSummary(t, updated));
+              return updated;
+            });
+            break;
+          }
+          case 'error': {
+            setStreamingMessage(null);
+            showToast(event.data.message, 'error');
+            break;
+          }
+          case 'done': {
+            break;
+          }
+        }
+      }
+    } catch (error) {
+      setStreamingMessage(null);
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        showToast('Không thể nhận phản hồi trực tiếp từ stylist AI.', 'error');
       }
     } finally {
+      streamAbortControllerRef.current = null;
       setSubmitting(false);
     }
   };
@@ -192,6 +289,9 @@ export default function ChatWidget() {
                 {activeThread?.messages.map((message) => (
                   <MessageCard key={message.id} message={message} onPreviewImage={setPreviewImage} />
                 ))}
+                {streamingMessage && (
+                  <MessageCard key="streaming" message={streamingMessage} onPreviewImage={setPreviewImage} streaming />
+                )}
                 <div ref={endRef} />
               </div>
 
@@ -347,14 +447,14 @@ export default function ChatWidget() {
 }
 
 function MessageCard(
-  { message, onPreviewImage }: { message: ChatMessage; onPreviewImage: (preview: { url: string; name: string }) => void },
+  { message, onPreviewImage, streaming }: { message: ChatMessage; onPreviewImage: (preview: { url: string; name: string }) => void; streaming?: boolean },
 ) {
   const isUser = message.role === 'user';
 
   return (
     <div className={`${styles.messageRow} ${isUser ? styles.messageRowUser : ''}`}>
       <div className={styles.messageBubble}>
-        <div>{message.content}</div>
+        <div className={streaming ? styles.streamingCursor : undefined}>{message.content}</div>
         {message.attachments.map((attachment) => {
           const imageUrl = resolveAssetUrl(attachment.fileUrl) ?? attachment.fileUrl;
           const fileName = attachment.originalFileName ?? 'Xem ảnh đính kèm';

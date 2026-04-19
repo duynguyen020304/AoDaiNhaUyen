@@ -28,6 +28,15 @@ public interface IStylistChatService
     IReadOnlyList<IncomingChatAttachmentDto> attachments,
     CancellationToken cancellationToken = default);
 
+  IAsyncEnumerable<SseChatEvent> AddMessageStreamAsync(
+    long threadId,
+    long? userId,
+    string? guestKey,
+    string message,
+    string? clientMessageId,
+    IReadOnlyList<IncomingChatAttachmentDto> attachments,
+    CancellationToken cancellationToken = default);
+
   Task<ChatMessageDto> ExecuteTryOnAsync(
     long threadId,
     long? userId,

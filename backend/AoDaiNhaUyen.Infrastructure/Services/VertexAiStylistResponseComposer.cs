@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -65,6 +66,71 @@ public sealed class VertexAiStylistResponseComposer(
     }
   }
 
+  public async IAsyncEnumerable<string> ComposeStreamAsync(
+    string userMessage,
+    string fallbackText,
+    string intent,
+    string? memorySummary,
+    ChatStructuredPayloadDto? structuredPayload,
+    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+  {
+    if (string.IsNullOrWhiteSpace(googleCloudOptions.ApiKey) || string.IsNullOrWhiteSpace(googleCloudOptions.StylistTextModel))
+    {
+      yield return fallbackText;
+      yield break;
+    }
+
+    var prompt = BuildPrompt(userMessage, fallbackText, intent, memorySummary, structuredPayload);
+    using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+    timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Max(googleCloudOptions.TimeoutSeconds, 1)));
+
+    using var response = await SendStreamRequestAsync(prompt, timeoutCts.Token, cancellationToken);
+    if (response is null)
+    {
+      yield return fallbackText;
+      yield break;
+    }
+
+    await using var stream = await response.Content.ReadAsStreamAsync(timeoutCts.Token);
+    using var reader = new StreamReader(stream);
+
+    var yieldedChunk = false;
+    while (true)
+    {
+      var readResult = await TryReadLineAsync(reader, timeoutCts.Token, cancellationToken);
+      if (readResult.Failed || readResult.Line is null)
+      {
+        break;
+      }
+
+      var line = readResult.Line;
+      if (string.IsNullOrWhiteSpace(line) || !line.StartsWith("data:", StringComparison.Ordinal))
+      {
+        continue;
+      }
+
+      var payload = line[5..].Trim();
+      if (string.IsNullOrWhiteSpace(payload) || string.Equals(payload, "[DONE]", StringComparison.OrdinalIgnoreCase))
+      {
+        continue;
+      }
+
+      var delta = TryExtractText(payload, trimResult: false);
+      if (string.IsNullOrWhiteSpace(delta))
+      {
+        continue;
+      }
+
+      yieldedChunk = true;
+      yield return delta;
+    }
+
+    if (!yieldedChunk)
+    {
+      yield return fallbackText;
+    }
+  }
+
   private string BuildEndpoint()
   {
     var model = Uri.EscapeDataString(googleCloudOptions.StylistTextModel);
@@ -76,6 +142,83 @@ public sealed class VertexAiStylistResponseComposer(
     }
 
     return $"https://aiplatform.googleapis.com/v1/publishers/google/models/{model}:generateContent";
+  }
+
+  private string BuildStreamEndpoint()
+  {
+    var model = Uri.EscapeDataString(googleCloudOptions.StylistTextModel);
+    if (!string.IsNullOrWhiteSpace(googleCloudOptions.ProjectId))
+    {
+      var projectId = Uri.EscapeDataString(googleCloudOptions.ProjectId);
+      var location = Uri.EscapeDataString(googleCloudOptions.Location);
+      return $"https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:streamGenerateContent?alt=sse";
+    }
+
+    return $"https://aiplatform.googleapis.com/v1/publishers/google/models/{model}:streamGenerateContent?alt=sse";
+  }
+
+  private async Task<HttpResponseMessage?> SendStreamRequestAsync(
+    string prompt,
+    CancellationToken requestCancellationToken,
+    CancellationToken callerCancellationToken)
+  {
+    try
+    {
+      using var request = new HttpRequestMessage(HttpMethod.Post, BuildStreamEndpoint())
+      {
+        Content = JsonContent.Create(new GeminiTextRequest(
+          [
+            new GeminiContent(
+              "user",
+              [new GeminiPart(prompt)])
+          ],
+          new GeminiGenerationConfig(0.35m, 0.9m, 32, 512),
+          [
+            new GeminiSafetySetting("HARM_CATEGORY_HARASSMENT", "BLOCK_MEDIUM_AND_ABOVE"),
+            new GeminiSafetySetting("HARM_CATEGORY_HATE_SPEECH", "BLOCK_MEDIUM_AND_ABOVE")
+          ]))
+      };
+      request.Headers.Add("x-goog-api-key", googleCloudOptions.ApiKey);
+
+      var response = await httpClient.SendAsync(
+        request,
+        HttpCompletionOption.ResponseHeadersRead,
+        requestCancellationToken);
+      if (response.IsSuccessStatusCode)
+      {
+        return response;
+      }
+
+      response.Dispose();
+      return null;
+    }
+    catch (OperationCanceledException) when (callerCancellationToken.IsCancellationRequested)
+    {
+      throw;
+    }
+    catch
+    {
+      return null;
+    }
+  }
+
+  private static async Task<ReadLineResult> TryReadLineAsync(
+    StreamReader reader,
+    CancellationToken requestCancellationToken,
+    CancellationToken callerCancellationToken)
+  {
+    try
+    {
+      return new ReadLineResult(await reader.ReadLineAsync(requestCancellationToken), false);
+    }
+    catch (OperationCanceledException) when (callerCancellationToken.IsCancellationRequested)
+    {
+      throw;
+    }
+    catch
+    {
+      return new ReadLineResult(null, true);
+    }
   }
 
   private static string BuildPrompt(
@@ -106,7 +249,7 @@ public sealed class VertexAiStylistResponseComposer(
     return builder.ToString();
   }
 
-  private static string? TryExtractText(string body)
+  private static string? TryExtractText(string body, bool trimResult = true)
   {
     if (string.IsNullOrWhiteSpace(body))
     {
@@ -139,7 +282,7 @@ public sealed class VertexAiStylistResponseComposer(
 
         if (!string.IsNullOrWhiteSpace(text))
         {
-          return text.Trim();
+          return trimResult ? text.Trim() : text;
         }
       }
     }
@@ -171,4 +314,6 @@ public sealed class VertexAiStylistResponseComposer(
   private sealed record GeminiSafetySetting(
     [property: JsonPropertyName("category")] string Category,
     [property: JsonPropertyName("threshold")] string Threshold);
+
+  private sealed record ReadLineResult(string? Line, bool Failed);
 }

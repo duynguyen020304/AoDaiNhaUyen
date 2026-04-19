@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -238,6 +239,94 @@ public sealed class StylistChatService(
     await dbContext.SaveChangesAsync(cancellationToken);
 
     return MapMessage(assistantMessage, [generatedAttachment]);
+  }
+
+  public async IAsyncEnumerable<SseChatEvent> AddMessageStreamAsync(
+    long threadId,
+    long? userId,
+    string? guestKey,
+    string message,
+    string? clientMessageId,
+    IReadOnlyList<IncomingChatAttachmentDto> attachments,
+    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+  {
+    await ClaimGuestThreadsAsync(userId, guestKey, cancellationToken);
+    var thread = await LoadOwnedThreadAsync(threadId, userId, guestKey, cancellationToken);
+    var memory = threadMemoryService.Read(thread.Memory);
+
+    var userMessage = new ChatMessage
+    {
+      ThreadId = thread.Id,
+      Role = UserRole,
+      Content = message.Trim(),
+      ClientMessageId = clientMessageId,
+      PromptVersion = PromptVersion,
+      FinishReason = "stop"
+    };
+    dbContext.ChatMessages.Add(userMessage);
+    await dbContext.SaveChangesAsync(cancellationToken);
+
+    var savedAttachments = await SaveIncomingAttachmentsAsync(thread.Id, userMessage.Id, attachments, cancellationToken);
+    threadMemoryService.ApplyUserTurn(memory, userMessage.Content, savedAttachments);
+
+    var classification = await intentClassifier.ClassifyAsync(
+      userMessage.Content,
+      savedAttachments.Select(MapAttachment).ToList(),
+      memory,
+      cancellationToken);
+
+    var referencedProductIds = await ResolveReferencedProductIdsAsync(userMessage.Content, memory, cancellationToken);
+    classification = classification with { ReferencedProductIds = referencedProductIds };
+    userMessage.Intent = classification.Intent;
+
+    var assistantTurn = await BuildAssistantTurnAsync(classification, memory, cancellationToken);
+
+    yield return new SseChatEvent.Created(
+      0,
+      AssistantRole,
+      "",
+      classification.Intent,
+      DateTime.UtcNow,
+      [],
+      assistantTurn.StructuredPayload);
+
+    var accumulatedText = new StringBuilder();
+
+    await foreach (var chunk in stylistResponseComposer.ComposeStreamAsync(
+      userMessage.Content,
+      assistantTurn.Content,
+      classification.Intent,
+      thread.Memory?.Summary,
+      assistantTurn.StructuredPayload,
+      cancellationToken).WithCancellation(cancellationToken))
+    {
+      accumulatedText.Append(chunk);
+      yield return new SseChatEvent.TextDelta(chunk);
+    }
+
+    var finalText = accumulatedText.Length > 0 ? accumulatedText.ToString() : assistantTurn.Content;
+    var assistantMessage = new ChatMessage
+    {
+      ThreadId = thread.Id,
+      Role = AssistantRole,
+      Content = finalText,
+      Intent = classification.Intent,
+      PromptVersion = PromptVersion,
+      FinishReason = "stop",
+      StructuredPayloadJsonb = assistantTurn.StructuredPayload is null
+        ? null
+        : JsonSerializer.Serialize(assistantTurn.StructuredPayload, JsonOptions)
+    };
+    dbContext.ChatMessages.Add(assistantMessage);
+    await dbContext.SaveChangesAsync(cancellationToken);
+
+    threadMemoryService.ApplyAssistantTurn(memory, classification, assistantTurn.StructuredPayload, null, null);
+    threadMemoryService.Persist(thread, memory, assistantMessage.Id);
+    thread.UpdatedAt = DateTime.UtcNow;
+    await dbContext.SaveChangesAsync(cancellationToken);
+
+    yield return new SseChatEvent.TextDone(finalText, assistantMessage.Id, assistantMessage.CreatedAt);
+    yield return new SseChatEvent.Done();
   }
 
   private async Task ClaimGuestThreadsAsync(long? userId, string? guestKey, CancellationToken cancellationToken)

@@ -496,3 +496,14 @@
     font-size: 18px;
   }
 }
+
+.streamingCursor::after {
+  content: '▊';
+  animation: blink 0.8s step-end infinite;
+  color: #76110f;
+  font-size: 14px;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
