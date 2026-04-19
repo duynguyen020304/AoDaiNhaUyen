@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { UserProfile } from '../../types/user';
 import { getUserProfile } from '../../api/user';
 import styles from './AccountInfo.module.css';
 
-export default function AccountInfo() {
-  const navigate = useNavigate();
+interface AccountInfoProps {
+  onEdit: () => void;
+}
+
+export default function AccountInfo({ onEdit }: AccountInfoProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export default function AccountInfo() {
         </div>
       </div>
 
-      <button type="button" className={styles.editButton} onClick={() => navigate('/account/profile/edit')}>
+      <button type="button" className={styles.editButton} onClick={onEdit}>
         CAP NHAT THONG TIN TAI KHOAN
       </button>
     </div>

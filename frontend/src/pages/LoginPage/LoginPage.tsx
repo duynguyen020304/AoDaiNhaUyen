@@ -30,7 +30,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
-  const redirectTo = location.state?.from || '/account/profile';
+  const redirectTo = location.state?.from || '/';
   const verified = query.get('verified');
   const autoLogin = query.get('autologin');
   const verificationReason = query.get('reason');
@@ -60,7 +60,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (verified === 'true' && autoLogin === 'true' && status === 'authenticated') {
-      navigate('/account/profile', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [autoLogin, navigate, status, verified]);
 
