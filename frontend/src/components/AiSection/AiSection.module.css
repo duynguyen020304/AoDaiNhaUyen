@@ -2,6 +2,7 @@
   position: relative;
   overflow: hidden;
   background: #181818;
+  max-height: 50vw;
 }
 
 .scene {
@@ -39,36 +40,53 @@
   pointer-events: none;
 }
 
-.fan {
+.fanLayer {
   position: absolute;
   z-index: 3;
-  left: 11%;
-  top: -7%;
-  width: 111.36%;
-  height: 119.67%;
-  max-width: none;
-  object-fit: fill;
-  transform: rotate(0deg);
-  transform-origin: 47% 47%;
+  inset: 0;
   pointer-events: none;
-  filter: drop-shadow(0 18px 16px rgba(0, 0, 0, 0.32));
-  transition:
-    left 520ms ease,
-    top 520ms ease,
-    width 520ms ease,
-    height 520ms ease,
-    transform 520ms ease,
-    filter 520ms ease;
+  contain: layout paint;
 }
 
-.scene:hover .fan,
-.scene:focus-within .fan {
-  left: 25.1%;
-  top: 57%;
-  width: 129.1%;
+.fan {
+  position: absolute;
+  display: block;
+  max-width: none;
+  object-fit: fill;
+  pointer-events: none;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  will-change: opacity, transform;
+}
+
+.fanDefault {
+  right: -36%;
+  width: 111.36%;
   height: 119.67%;
-  transform: rotate(-156deg);
-  filter: drop-shadow(0 24px 18px rgba(0, 0, 0, 0.36));
+  opacity: 1;
+  transition: opacity 220ms ease-out;
+  transform: rotate(-45deg);
+}
+
+.fanHover {
+  left: 33.96%;
+  top: 66%;
+  width: 111.36%;
+  height: 119.67%;
+  opacity: 0;
+  transform: translate3d(0, 0, 0) rotate(-156.07deg);
+  transform-origin: center center;
+  transition: opacity 220ms ease-out;
+}
+
+.scene:hover .fanDefault,
+.scene:focus-within .fanDefault {
+  opacity: 0;
+}
+
+.scene:hover .fanHover,
+.scene:focus-within .fanHover {
+  opacity: 1;
 }
 
 .cardCluster {
@@ -89,6 +107,8 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   background: rgba(255, 255, 255, 0.08);
   will-change: transform;
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  backface-visibility: hidden;
 }
 
 .sourceCard {
@@ -105,6 +125,16 @@
   width: 224px;
   height: 288px;
   transform: rotate(9deg);
+}
+
+.scene:hover .sourceCard,
+.scene:focus-within .sourceCard {
+  transform: translate3d(0, -6px, 0) rotate(-13deg);
+}
+
+.scene:hover .dressCard,
+.scene:focus-within .dressCard {
+  transform: translate3d(0, 5px, 0) rotate(10deg);
 }
 
 .plus {
@@ -412,18 +442,19 @@
   }
 
   .fan {
-    left: 11%;
-    top: -7%;
-    width: 111.36%;
     height: 119.67%;
   }
 
-  .scene:hover .fan,
-  .scene:focus-within .fan {
-    left: 25%;
-    top: 57%;
-    width: 129%;
-    height: 119.67%;
+  .fanDefault {
+    left: 7%;
+    top: -37.6%;
+    width: 111.36%;
+  }
+
+  .fanHover {
+    left: 33.96%;
+    top: 66%;
+    width: 111.36%;
   }
 
   .identity {
@@ -448,11 +479,19 @@
   }
 
   .fan {
+    height: 119.67%;
+  }
+
+  .fanDefault {
+    opacity: 0;
+  }
+
+  .fanHover {
     left: 16%;
     top: 52%;
     width: 170%;
-    height: 119.67%;
-    transform: rotate(-156deg);
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(-156deg);
   }
 
   .identity,
@@ -619,10 +658,13 @@
   }
 
   .fan {
+    height: 119.67%;
+  }
+
+  .fanHover {
     left: -8%;
     top: 60%;
     width: 235%;
-    height: 119.67%;
   }
 
   .sparkOne {
