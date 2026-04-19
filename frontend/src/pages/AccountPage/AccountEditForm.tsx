@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { UserProfile, UpdateProfilePayload } from '../../types/user';
 import { getUserProfile, updateProfile } from '../../api/user';
 import styles from './AccountEditForm.module.css';
 
-export default function AccountEditForm() {
-  const navigate = useNavigate();
+interface AccountEditFormProps {
+  onSaved: () => void;
+}
+
+export default function AccountEditForm({ onSaved }: AccountEditFormProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [form, setForm] = useState<UpdateProfilePayload>({
     fullName: '',
@@ -40,7 +42,7 @@ export default function AccountEditForm() {
     setError(null);
     try {
       await updateProfile(form);
-      navigate('/account/profile');
+      onSaved();
     } catch (value) {
       setError(value instanceof Error ? value.message : 'Không thể cập nhật tài khoản.');
     } finally {

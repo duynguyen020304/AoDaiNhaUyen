@@ -73,25 +73,6 @@
   padding: 0 24px;
 }
 
-.homeButton {
-  padding: 10px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1.5;
-  color: #680000;
-  background: transparent;
-  border: none;
-  text-align: left;
-  width: 100%;
-  transition: background 0.15s, border-color 0.15s;
-  font-weight: 600;
-}
-
-.homeButton:hover {
-  background: rgba(104, 0, 0, 0.06);
-}
-
 .navItem {
   padding: 10px 16px;
   border-radius: 8px;
@@ -164,8 +145,4 @@
     overflow-x: auto;
   }
 
-  .homeButton {
-    width: auto;
-    white-space: nowrap;
-  }
 }
