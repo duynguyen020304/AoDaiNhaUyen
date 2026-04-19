@@ -184,6 +184,17 @@ public sealed class CatalogTryOnService(
   {
     if (Uri.TryCreate(fileUrl, UriKind.Absolute, out var absoluteUri))
     {
+      if (absoluteUri.IsFile)
+      {
+        var filePath = absoluteUri.LocalPath;
+        if (!File.Exists(filePath))
+        {
+          throw new FileNotFoundException("Không tìm thấy AI asset của sản phẩm đã chọn.", filePath);
+        }
+
+        return await File.ReadAllBytesAsync(filePath, cancellationToken);
+      }
+
       using var httpClient = httpClientFactory.CreateClient();
       using var response = await httpClient.GetAsync(absoluteUri, cancellationToken);
       response.EnsureSuccessStatusCode();
