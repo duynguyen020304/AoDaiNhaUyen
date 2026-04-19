@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import styles from './AiSection.module.css';
 import { sectionReveal, viewportOnce } from '../../utils/motion';
 
@@ -49,7 +49,6 @@ const variants: AiVariant[] = [
 
 export default function AiSection() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const prefersReducedMotion = useReducedMotion();
   const activeVariant = variants[activeIndex];
 
   const selectPrevious = () => {
@@ -72,7 +71,10 @@ export default function AiSection() {
     >
       <div className={styles.scene}>
         <div className={styles.texture} aria-hidden="true" />
-        <img className={styles.fan} src="/assets/ai-figma-fan-default.svg" alt="" aria-hidden="true" />
+        <div className={styles.fanLayer} aria-hidden="true">
+          <img className={`${styles.fan} ${styles.fanDefault}`} src="/assets/ai-figma-fan-default.svg" alt="" />
+          <img className={`${styles.fan} ${styles.fanHover}`} src="/assets/ai-figma-fan-hover.svg" alt="" />
+        </div>
         <div className={styles.preload} aria-hidden="true">
           {variants.flatMap((variant) => [variant.sourceImage, variant.dressImage, variant.modelImage]).map((src) => (
             <img key={src} src={src} alt="" />
@@ -80,22 +82,18 @@ export default function AiSection() {
         </div>
 
         <div className={styles.cardCluster} aria-label="Ảnh nguồn và mẫu áo dài được AI phối thử">
-          <motion.img
+          <img
             key={`${activeVariant.id}-source`}
             className={`${styles.photoCard} ${styles.sourceCard}`}
             src={activeVariant.sourceImage}
             alt={`Ảnh chân dung của ${activeVariant.name}`}
-            animate={prefersReducedMotion ? undefined : { rotate: [-15, -12, -15], y: [0, -8, 0] }}
-            transition={{ duration: 5.8, repeat: Infinity, ease: 'easeInOut' }}
           />
           <span className={styles.plus} aria-hidden="true">+</span>
-          <motion.img
+          <img
             key={`${activeVariant.id}-dress`}
             className={`${styles.photoCard} ${styles.dressCard}`}
             src={activeVariant.dressImage}
             alt={`Mẫu áo dài dành cho ${activeVariant.name}`}
-            animate={prefersReducedMotion ? undefined : { rotate: [9, 12, 9], y: [0, 7, 0] }}
-            transition={{ duration: 5.4, repeat: Infinity, ease: 'easeInOut' }}
           />
           <span className={`${styles.toolBadge} ${styles.toolBadgeTop}`} aria-hidden="true">×</span>
           <span className={`${styles.toolBadge} ${styles.toolBadgeBottom}`} aria-hidden="true">↔</span>
