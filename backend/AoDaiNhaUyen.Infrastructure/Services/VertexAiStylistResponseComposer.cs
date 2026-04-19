@@ -71,7 +71,7 @@ public sealed class VertexAiStylistResponseComposer(
     if (!string.IsNullOrWhiteSpace(googleCloudOptions.ProjectId))
     {
       var projectId = Uri.EscapeDataString(googleCloudOptions.ProjectId);
-      var location = Uri.EscapeDataString(googleCloudOptions.StylistTextLocation);
+      var location = Uri.EscapeDataString(googleCloudOptions.Location);
       return $"https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
     }
 
