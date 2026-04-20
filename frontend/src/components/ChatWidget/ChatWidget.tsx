@@ -17,6 +17,7 @@ import { useToast } from '../Toast/useToast';
 import styles from './ChatWidget.module.css';
 
 const easeOutQuart = [0.22, 1, 0.36, 1] as const;
+const TRY_ON_LOADING_INTENT = '__tryon_loading__';
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,6 +30,7 @@ export default function ChatWidget() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
+  const [pendingTryOnByThread, setPendingTryOnByThread] = useState<Record<number, ChatMessage>>({});
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -102,11 +104,61 @@ export default function ChatWidget() {
     };
   }, []);
 
+  const activeMessages = useMemo(() => {
+    if (!activeThread) {
+      return [] as ChatMessage[];
+    }
+
+    const pendingTryOnMessage = pendingTryOnByThread[activeThread.id];
+    return pendingTryOnMessage
+      ? [...activeThread.messages, pendingTryOnMessage]
+      : activeThread.messages;
+  }, [activeThread, pendingTryOnByThread]);
+
   const latestTryOnPayload = useMemo(() => {
-    return [...(activeThread?.messages ?? [])]
+    return [...activeMessages]
       .reverse()
       .find((message) => message.structuredPayload?.canTryOn);
-  }, [activeThread]);
+  }, [activeMessages]);
+
+  const isTryOnPending = activeThread ? Boolean(pendingTryOnByThread[activeThread.id]) : false;
+
+  const updateThreadSummaryEntry = (threadId: number, preview: string | null, updatedAt: string) => {
+    setThreads((current) => current.map((thread) => thread.id === threadId
+      ? { ...thread, preview, updatedAt }
+      : thread));
+  };
+
+  const addPendingTryOnMessage = (threadId: number, message: ChatMessage) => {
+    setPendingTryOnByThread((current) => ({ ...current, [threadId]: message }));
+  };
+
+  const clearPendingTryOnMessage = (threadId: number) => {
+    setPendingTryOnByThread((current) => {
+      const next = { ...current };
+      delete next[threadId];
+      return next;
+    });
+  };
+
+  const isTryOnLoadingMessage = (message: ChatMessage) => message.intent === TRY_ON_LOADING_INTENT;
+
+  const renderMessages = activeMessages;
+
+  const canShowTryOnButton = latestTryOnPayload?.structuredPayload?.canTryOn && !isTryOnPending;
+
+  const canSendMessage = !submitting;
+
+  void canSendMessage;
+  void canShowTryOnButton;
+  void isTryOnLoadingMessage;
+  void renderMessages;
+  void clearPendingTryOnMessage;
+  void addPendingTryOnMessage;
+  void updateThreadSummaryEntry;
+  void isTryOnPending;
+  void latestTryOnPayload;
+  void activeMessages;
 
   const handleCreateThread = async () => {
     streamAbortControllerRef.current?.abort();
@@ -247,21 +299,42 @@ export default function ChatWidget() {
       return;
     }
 
-    setSubmitting(true);
+    const threadId = activeThread.id;
+    const placeholderId = -Date.now();
+    const placeholderMessage: ChatMessage = {
+      id: placeholderId,
+      role: 'assistant',
+      content: 'Ảnh thử đồ của bạn đang được tạo, hãy chờ một chút nhé.',
+      intent: TRY_ON_LOADING_INTENT,
+      createdAt: new Date().toISOString(),
+      attachments: [],
+      structuredPayload: null,
+    };
+
+    addPendingTryOnMessage(threadId, placeholderMessage);
+    updateThreadSummaryEntry(threadId, placeholderMessage.content, placeholderMessage.createdAt);
+
     try {
       const message = await executeChatTryOn(
-        activeThread.id,
+        threadId,
         latestTryOnPayload.structuredPayload.selectedGarmentProductId,
         latestTryOnPayload.structuredPayload.selectedAccessoryProductIds,
       );
-      setActiveThread((current) => current
-        ? { ...current, messages: [...current.messages, message], updatedAt: message.createdAt }
+      clearPendingTryOnMessage(threadId);
+      setActiveThread((current) => current?.id === threadId
+        ? {
+            ...current,
+            messages: [...current.messages, message],
+            updatedAt: message.createdAt,
+          }
         : current);
-      setThreads((current) => current.map((thread) => thread.id === activeThread.id
-        ? { ...thread, preview: message.content, updatedAt: message.createdAt }
-        : thread));
-    } finally {
-      setSubmitting(false);
+      updateThreadSummaryEntry(threadId, message.content, message.createdAt);
+    } catch {
+      clearPendingTryOnMessage(threadId);
+      const fallbackPreview = activeThread?.messages.at(-1)?.content ?? null;
+      const fallbackUpdatedAt = activeThread?.updatedAt ?? placeholderMessage.createdAt;
+      updateThreadSummaryEntry(threadId, fallbackPreview, fallbackUpdatedAt);
+      showToast('Không thể tạo ảnh thử đồ lúc này.', 'error');
     }
   };
 
@@ -290,7 +363,7 @@ export default function ChatWidget() {
               </header>
 
               <div className={styles.messages}>
-                {activeThread?.messages.map((message) => (
+                {renderMessages.map((message) => (
                   <MessageCard key={message.id} message={message} onPreviewImage={setPreviewImage} />
                 ))}
                 {streamingMessage && (
@@ -332,8 +405,8 @@ export default function ChatWidget() {
                       📎
                     </button>
                     <div className={styles.actionCluster}>
-                      {latestTryOnPayload?.structuredPayload?.canTryOn ? (
-                        <button type="button" className={styles.tryOnButton} disabled={submitting} onClick={handleTryOn}>
+                      {canShowTryOnButton ? (
+                        <button type="button" className={styles.tryOnButton} disabled={isTryOnPending} onClick={handleTryOn}>
                           Thử ngay
                         </button>
                       ) : null}
@@ -454,12 +527,14 @@ function MessageCard(
   { message, onPreviewImage, streaming }: { message: ChatMessage; onPreviewImage: (preview: { url: string; name: string }) => void; streaming?: boolean },
 ) {
   const isUser = message.role === 'user';
+  const isTryOnLoading = message.intent === TRY_ON_LOADING_INTENT;
   const productSections = getProductSections(message.structuredPayload);
 
   return (
     <div className={`${styles.messageRow} ${isUser ? styles.messageRowUser : ''}`}>
       <div className={styles.messageBubble}>
         <div className={streaming ? styles.streamingCursor : undefined}>{message.content}</div>
+        {isTryOnLoading ? <div className={styles.tryOnSpinner} aria-label="Đang tạo ảnh thử đồ" /> : null}
         {message.attachments.map((attachment) => {
           const imageUrl = resolveAssetUrl(attachment.fileUrl) ?? attachment.fileUrl;
           const fileName = attachment.originalFileName ?? 'Xem ảnh đính kèm';
