@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json;
 using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.Interfaces.Services;
@@ -14,6 +15,7 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
   private const string GuestCookieName = "stylist_guest";
   private const long MaxAttachmentBytes = 8 * 1024 * 1024;
   private const int MaxAttachments = 3;
+  private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
   [HttpGet]
   public async Task<IActionResult> List(CancellationToken cancellationToken)
@@ -77,6 +79,96 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     {
       return BadRequest(ApiResponseFactory.Failure("Không thể xử lý tin nhắn", "chat_failed", ex.Message));
     }
+  }
+
+  [HttpPost("{threadId:long}/messages/stream")]
+  [RequestSizeLimit(MaxAttachmentBytes * MaxAttachments)]
+  public async Task<IActionResult> AddMessageStream(
+    long threadId,
+    [FromForm] string? message,
+    [FromForm] string? clientMessageId,
+    [FromForm] List<IFormFile>? attachments,
+    CancellationToken cancellationToken)
+  {
+    if (string.IsNullOrWhiteSpace(message))
+    {
+      return BadRequest(ApiResponseFactory.Failure("Dữ liệu tin nhắn không hợp lệ", "missing_message", "Tin nhắn không được để trống."));
+    }
+
+    IReadOnlyList<IncomingChatAttachmentDto> normalizedAttachments;
+    try
+    {
+      normalizedAttachments = await NormalizeAttachmentsAsync(attachments ?? [], cancellationToken);
+    }
+    catch (InvalidOperationException ex)
+    {
+      return BadRequest(ApiResponseFactory.Failure("Dữ liệu tin nhắn không hợp lệ", "invalid_attachments", ex.Message));
+    }
+
+    Response.ContentType = "text/event-stream";
+    Response.Headers.Append("Cache-Control", "no-cache");
+    Response.Headers.Append("X-Accel-Buffering", "no");
+
+    try
+    {
+      await foreach (var sseEvent in stylistChatService.AddMessageStreamAsync(
+        threadId,
+        GetCurrentUserId(),
+        GetOrCreateGuestKey(),
+        message,
+        clientMessageId,
+        normalizedAttachments,
+        cancellationToken))
+      {
+        await WriteSseEventAsync(sseEvent, cancellationToken);
+      }
+
+      ClearGuestCookieIfClaimed();
+      return new EmptyResult();
+    }
+    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+    {
+      return new EmptyResult();
+    }
+    catch (InvalidOperationException ex)
+    {
+      if (!Response.HasStarted)
+      {
+        return BadRequest(ApiResponseFactory.Failure("Không thể xử lý tin nhắn", "chat_failed", ex.Message));
+      }
+
+      await WriteSseEventAsync(new SseChatEvent.StreamError("chat_failed", ex.Message), cancellationToken);
+      await WriteSseEventAsync(new SseChatEvent.Done(), cancellationToken);
+      return new EmptyResult();
+    }
+    catch (Exception ex)
+    {
+      if (!Response.HasStarted)
+      {
+        return StatusCode(500, ApiResponseFactory.Failure("Có lỗi xảy ra", "stream_failed", ex.Message));
+      }
+
+      await WriteSseEventAsync(new SseChatEvent.StreamError("stream_failed", ex.Message), cancellationToken);
+      await WriteSseEventAsync(new SseChatEvent.Done(), cancellationToken);
+      return new EmptyResult();
+    }
+  }
+
+  private async Task WriteSseEventAsync(SseChatEvent sseEvent, CancellationToken cancellationToken)
+  {
+    var eventType = sseEvent switch
+    {
+      SseChatEvent.Created => "created",
+      SseChatEvent.TextDelta => "text_delta",
+      SseChatEvent.TextDone => "text_done",
+      SseChatEvent.StreamError => "error",
+      SseChatEvent.Done => "done",
+      _ => "unknown"
+    };
+
+    var json = JsonSerializer.Serialize(sseEvent, sseEvent.GetType(), JsonOptions);
+    await Response.WriteAsync($"event: {eventType}\ndata: {json}\n\n", cancellationToken);
+    await Response.Body.FlushAsync(cancellationToken);
   }
 
   [HttpPost("{threadId:long}/try-on")]

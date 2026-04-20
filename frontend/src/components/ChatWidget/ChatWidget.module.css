@@ -38,8 +38,8 @@
 .widgetWindow {
   width: min(400px, calc(100vw - 32px));
   height: min(560px, calc(100vh - 100px));
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 18px 50px rgba(34, 7, 8, 0.22), 0 2px 8px rgba(34, 7, 8, 0.08);
@@ -353,7 +353,8 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px 14px;
-  overflow-y: auto;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .drawerHeader {
@@ -378,7 +379,9 @@
 .threadList {
   display: flex;
   flex-direction: column;
+  flex: 1;
   gap: 8px;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -462,7 +465,10 @@
   position: relative;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  flex: 1;
+  height: 100%;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -495,4 +501,15 @@
   .chatBubbleIcon {
     font-size: 18px;
   }
+}
+
+.streamingCursor::after {
+  content: '▊';
+  animation: blink 0.8s step-end infinite;
+  color: #76110f;
+  font-size: 14px;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
 }
