@@ -19,7 +19,7 @@
   z-index: 3;
   width: min(1133px, calc(100% - 48px));
   min-height: 69px;
-  margin: 112px auto 0;
+  margin: 2.5vw auto 0;
   padding: 10px 45px;
   display: flex;
   align-items: center;
@@ -73,6 +73,8 @@
   grid-template-columns: repeat(3, minmax(260px, 1fr));
   gap: 92px;
   align-items: end;
+  position: absolute;
+
 }
 
 .dressArticle {
@@ -102,7 +104,7 @@
   position: absolute;
   z-index: 3;
   left: 50%;
-  bottom: 22px;
+  bottom: -3%;
   transform: translateX(-50%);
   width: 86%;
   margin: 0;

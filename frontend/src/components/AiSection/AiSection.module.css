@@ -40,6 +40,24 @@
   pointer-events: none;
 }
 
+.orbitBackdrop {
+  position: absolute;
+  z-index: 2;
+  left: 47.76%;
+  top: -9.17%;
+  width: 69.27%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 320ms ease;
+}
+
+.scene:hover .orbitBackdrop,
+.scene:focus-within .orbitBackdrop {
+  opacity: 0.92;
+}
+
 .fanLayer {
   position: absolute;
   z-index: 3;
@@ -96,6 +114,27 @@
   top: 64px;
   width: 700px;
   height: 420px;
+}
+
+.aiBadgeCorner {
+  position: absolute;
+  z-index: 9;
+  left: 40%;
+  top: 10px;
+  width: 8vw;
+  display: block;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  clip-path: none;
+  pointer-events: none;
+}
+
+.aiBadgeCornerImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
 }
 
 .photoCard {
@@ -180,37 +219,74 @@
 .controls {
   position: absolute;
   z-index: 8;
-  left: 20%;
-  top: 50%;
+  left: 23%;
+  top: 46.76%;
+  width: 420px;
   display: flex;
   align-items: center;
-  gap: 3vw;
+  justify-content: space-between;
+  transform: translateX(-50%);
+}
+
+.slideDots {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  height: auto;
+  display: block;
+  transform: translateX(-50%);
+  pointer-events: none;
+  width: 25%;
 }
 
 .navButton {
-  width: 47px;
-  height: 47px;
+  width: 72px;
+  height: 42px;
   display: grid;
   place-items: center;
-  padding: 0;
+  padding: 0 16px;
   border: 0;
-  background: transparent;
+  border-radius: 0;
+  clip-path: polygon(8% 50%, 100% 0, 100% 100%);
+  background: linear-gradient(180deg, #f8df78 0%, #b9961e 100%);
   cursor: pointer;
+  color: #7a0d0c;
+  text-shadow: none;
+  transition: filter 180ms ease, opacity 180ms ease, transform 180ms ease;
 }
 
 .navButton span {
   display: block;
-  width: 0;
-  height: 0;
-  border-top: 12px solid transparent;
-  border-bottom: 12px solid transparent;
-  border-right: 20px solid #ffffff;
-  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.22));
+  line-height: 1;
 }
 
-.nextButton span {
-  border-right: 0;
-  border-left: 20px solid #ffffff;
+.navButton:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.navButton:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+  filter: grayscale(0.25);
+}
+
+.arrowLeft,
+.arrowRight {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.arrowLeft {
+  transform: translateX(12px);
+}
+
+.arrowRight {
+  transform: translateX(10px);
+}
+
+.nextButton {
+  clip-path: polygon(0 0, 92% 50%, 0 100%);
 }
 
 .navButton:focus-visible,
@@ -232,7 +308,7 @@
   margin: 0;
   width: max-content;
   max-width: 100%;
-  color: transparent;
+  color: rgb(230, 230, 0);
   background: linear-gradient(90deg, #ffd400 0%, #f6d948 56%, #e4c322 74%, #bea631 100%);
   background-clip: text;
   -webkit-background-clip: text;
@@ -287,9 +363,9 @@
 .identity {
   position: absolute;
   z-index: 8;
-  left: 1036px;
-  top: 155px;
-  width: 300px;
+  left: 60.05%;
+  top: 16.48%;
+  width: 14.43%;
   color: #ffffff;
   text-align: center;
   text-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
@@ -347,26 +423,26 @@
 }
 
 .sparkOne {
-  left: 984px;
-  top: 360px;
-  width: 44px;
-  height: 44px;
+  left: 55.16%;
+  top: 33.37%;
+  width: 2.66%;
+  height: 4.74%;
   transform: rotate(-12deg);
 }
 
 .sparkTwo {
-  right: 72px;
-  top: 24px;
-  width: 100px;
-  height: 100px;
+  left: 90.73%;
+  top: 9.81%;
+  width: 7.22%;
+  height: 12.84%;
   transform: rotate(34deg);
 }
 
 .sparkThree {
-  right: 120px;
-  top: 590px;
-  width: 70px;
-  height: 70px;
+  left: 85.1%;
+  top: 62.04%;
+  width: 3.81%;
+  height: 6.77%;
   transform: rotate(-93deg);
 }
 
@@ -402,7 +478,7 @@
 }
 
 .modelImageTaylor {
-  left: -92.15%;
+  right: -97%;
   top: -0.01%;
   width: 272.15%;
   height: 112.89%;
@@ -416,7 +492,7 @@
 }
 
 .modelImageKhanhVan {
-  left: 0;
+  left: 10%;
   top: -0.02%;
   width: 100%;
   height: 151.43%;
@@ -430,7 +506,7 @@
 }
 
 .modelImageMisthy {
-  left: 0;
+  left: 10%;
   top: -0.01%;
   width: 100%;
   height: 142.11%;
@@ -458,12 +534,19 @@
   }
 
   .identity {
-    left: 760px;
-    top: 126px;
+    left: 60%;
+    top: 16%;
+  }
+
+  .orbitBackdrop {
+    left: 48%;
+    top: -8%;
+    width: min(82vw, 1180px);
   }
 
   .cardCluster,
   .controls,
+  .slideDots,
   .copy,
   .sparkOne,
   .sparkTwo,
@@ -511,7 +594,15 @@
 
   .controls {
     left: 50%;
-    top: 390px;
+    top: 382px;
+    width: 340px;
+    transform: translateX(-50%) scale(0.88);
+    transform-origin: top center;
+  }
+
+  .slideDots {
+    left: 50%;
+    top: 350px;
     transform: translateX(-50%) scale(0.88);
     transform-origin: top center;
   }
@@ -570,6 +661,13 @@
     top: 900px;
     transform: scale(0.7) rotate(-93deg);
   }
+
+  .orbitBackdrop {
+    left: 50%;
+    top: 420px;
+    width: 680px;
+    transform: translateX(45%);
+  }
 }
 
 @media (max-width: 680px) {
@@ -584,7 +682,13 @@
   }
 
   .controls {
-    top: 270px;
+    top: 262px;
+    width: 268px;
+    transform: translateX(-50%) scale(0.72);
+  }
+
+  .slideDots {
+    top: 242px;
     transform: translateX(-50%) scale(0.72);
   }
 
@@ -679,5 +783,11 @@
   .sparkThree {
     top: 780px;
     right: 8%;
+  }
+
+  .orbitBackdrop {
+    top: 500px;
+    width: 440px;
+    transform: translateX(47%);
   }
 }

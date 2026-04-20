@@ -29,7 +29,7 @@ jobs:
           PUBLIC_BACKEND_DOMAIN=${{ secrets.HK1_PUBLIC_BACKEND_DOMAIN }} \
           VITE_API_BASE_URL=${{ secrets.HK1_VITE_API_BASE_URL }} \
           PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.HK1_PUBLIC_GOOGLE_CLIENT_ID }} \
-          PUBLIC_ZALO_CLIENT_ID=${{ secrets.HK1_PUBLIC_ZALO_CLIENT_ID }} \
+          PUBLIC_ZALO_APP_ID=${{ secrets.HK1_ZALO_OAUTH_APP_ID }} \
           bun run build
 
       - name: Upload Frontend Artifact
@@ -61,7 +61,7 @@ jobs:
           PUBLIC_BACKEND_DOMAIN=${{ secrets.US1_PUBLIC_BACKEND_DOMAIN }} \
           VITE_API_BASE_URL=${{ secrets.US1_VITE_API_BASE_URL }} \
           PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.US1_PUBLIC_GOOGLE_CLIENT_ID }} \
-          PUBLIC_ZALO_CLIENT_ID=${{ secrets.US1_PUBLIC_ZALO_CLIENT_ID }} \
+          PUBLIC_ZALO_APP_ID=${{ secrets.US1_ZALO_OAUTH_APP_ID }} \
           bun run build
 
       - name: Upload Frontend Artifact

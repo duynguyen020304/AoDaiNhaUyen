@@ -3,8 +3,8 @@
   overflow: hidden;
   color: #ffffff;
   background:
-    linear-gradient(180deg, rgba(114, 19, 17, 0.86) 0%, rgba(206, 4, 0, 0.86) 100%),
-    url("/assets/red-floral.png") center / cover no-repeat;
+    linear-gradient(180deg, rgba(114, 19, 17, 0.86) 0%, #ce0400db 100%),
+    url("/assets/red-floral reverse.png") center / cover no-repeat;
 }
 
 .red-texture::after {
