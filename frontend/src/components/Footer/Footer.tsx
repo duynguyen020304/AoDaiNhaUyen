@@ -24,7 +24,7 @@ export default function Footer() {
         </motion.section>
         <motion.section variants={fadeUp} whileHover={cardHover.hover} transition={{ duration: 0.24, ease: 'easeOut' }}>
           <h3>Liên Kết</h3>
-          <a href="/collection">Về MaryMy</a>
+          <a href="/collection">Về Nhã Uyên</a>
           <a href="#collection">Chính sách đổi trả</a>
           <a href="#collection">Hướng dẫn chọn size</a>
           <a href="#collection">Blog thời trang</a>
@@ -38,7 +38,7 @@ export default function Footer() {
           <h3>Liên Hệ</h3>
           <p>123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh</p>
           <p>1900 123 456</p>
-          <p>support@marymy.vn</p>
+          <p>support@nhauyen</p>
         </motion.section>
         <motion.section variants={fadeUp} whileHover={cardHover.hover} transition={{ duration: 0.24, ease: 'easeOut' }}>
           <h3>Đăng Ký Nhận Tin</h3>
