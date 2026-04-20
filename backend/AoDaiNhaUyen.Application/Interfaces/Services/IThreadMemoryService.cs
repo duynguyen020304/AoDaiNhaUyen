@@ -9,7 +9,6 @@ public interface IThreadMemoryService
 
   void ApplyUserTurn(
     ThreadMemoryStateDto memory,
-    string message,
     IReadOnlyList<ChatAttachment> attachments);
 
   void ApplyAssistantTurn(

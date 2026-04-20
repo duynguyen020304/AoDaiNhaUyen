@@ -10,9 +10,15 @@ public sealed class ThreadMemoryServiceTests
   private readonly ThreadMemoryService service = new();
 
   [Fact]
-  public void ApplyUserTurn_PromotesAllowedFactsOnly()
+  public void ApplyUserTurn_OnlyTracksLatestPersonAttachment()
   {
-    var memory = new ThreadMemoryStateDto();
+    var memory = new ThreadMemoryStateDto
+    {
+      Scenario = "du-tiec",
+      ColorFamily = "pink",
+      MaterialKeyword = "gấm",
+      BudgetCeiling = 2_500_000m
+    };
     var attachments = new List<ChatAttachment>
     {
       new ChatAttachment
@@ -24,14 +30,11 @@ public sealed class ThreadMemoryServiceTests
       }
     };
 
-    service.ApplyUserTurn(
-      memory,
-      "Mình cần áo dài đi dạy màu xanh, chất liệu lụa, ngân sách 2.5 triệu",
-      attachments);
+    service.ApplyUserTurn(memory, attachments);
 
-    Assert.Equal("giao-vien", memory.Scenario);
-    Assert.Equal("blue", memory.ColorFamily);
-    Assert.Equal("lụa", memory.MaterialKeyword);
+    Assert.Equal("du-tiec", memory.Scenario);
+    Assert.Equal("pink", memory.ColorFamily);
+    Assert.Equal("gấm", memory.MaterialKeyword);
     Assert.Equal(2_500_000m, memory.BudgetCeiling);
     Assert.Equal(12, memory.LatestPersonAttachmentId);
   }

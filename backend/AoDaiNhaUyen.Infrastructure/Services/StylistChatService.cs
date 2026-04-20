@@ -18,6 +18,7 @@ public sealed class StylistChatService(
   ICatalogStylingService catalogStylingService,
   ICatalogTryOnService catalogTryOnService,
   IStylistResponseComposer stylistResponseComposer,
+  IStylistFallbackTextService fallbackTextService,
   IUploadStoragePathResolver uploadStoragePathResolver) : IStylistChatService
 {
   private const string AssistantRole = "assistant";
@@ -61,7 +62,7 @@ public sealed class StylistChatService(
     {
       ThreadId = thread.Id,
       Role = AssistantRole,
-      Content = "Chào bạn, mình là stylist AI của Nhã Uyên. Bạn cần áo dài cho dịp nào, màu gì, hay muốn thử đồ ngay với ảnh của mình?",
+      Content = fallbackTextService.Pick("thread_welcome"),
       Intent = "clarification",
       PromptVersion = PromptVersion,
       FinishReason = "stop"
@@ -109,7 +110,7 @@ public sealed class StylistChatService(
     await dbContext.SaveChangesAsync(cancellationToken);
 
     var savedAttachments = await SaveIncomingAttachmentsAsync(thread.Id, userMessage.Id, attachments, cancellationToken);
-    threadMemoryService.ApplyUserTurn(memory, userMessage.Content, savedAttachments);
+    threadMemoryService.ApplyUserTurn(memory, savedAttachments);
 
     var classification = await intentClassifier.ClassifyAsync(
       userMessage.Content,
@@ -118,7 +119,7 @@ public sealed class StylistChatService(
       cancellationToken);
 
     var referencedProductIds = await ResolveReferencedProductIdsAsync(userMessage.Content, memory, cancellationToken);
-    classification = classification with { ReferencedProductIds = referencedProductIds };
+    classification = NormalizeClassification(classification with { ReferencedProductIds = referencedProductIds }, memory, savedAttachments.Count > 0);
     userMessage.Intent = classification.Intent;
 
     var assistantTurn = await BuildAssistantTurnAsync(classification, memory, cancellationToken);
@@ -207,7 +208,7 @@ public sealed class StylistChatService(
       [],
       []);
 
-    var fallbackContent = "Mình đã tạo ảnh thử đồ mới ngay trong cuộc trò chuyện. Nếu muốn, bạn có thể đổi mẫu hoặc thêm phụ kiện rồi thử lại tiếp.";
+    var fallbackContent = fallbackTextService.Pick("tryon_result");
     var assistantMessage = new ChatMessage
     {
       ThreadId = thread.Id,
@@ -267,7 +268,7 @@ public sealed class StylistChatService(
     await dbContext.SaveChangesAsync(cancellationToken);
 
     var savedAttachments = await SaveIncomingAttachmentsAsync(thread.Id, userMessage.Id, attachments, cancellationToken);
-    threadMemoryService.ApplyUserTurn(memory, userMessage.Content, savedAttachments);
+    threadMemoryService.ApplyUserTurn(memory, savedAttachments);
 
     var classification = await intentClassifier.ClassifyAsync(
       userMessage.Content,
@@ -276,7 +277,7 @@ public sealed class StylistChatService(
       cancellationToken);
 
     var referencedProductIds = await ResolveReferencedProductIdsAsync(userMessage.Content, memory, cancellationToken);
-    classification = classification with { ReferencedProductIds = referencedProductIds };
+    classification = NormalizeClassification(classification with { ReferencedProductIds = referencedProductIds }, memory, savedAttachments.Count > 0);
     userMessage.Intent = classification.Intent;
 
     var assistantTurn = await BuildAssistantTurnAsync(classification, memory, cancellationToken);
@@ -419,11 +420,38 @@ public sealed class StylistChatService(
       "tryon_prepare" or "tryon_execute" => await BuildTryOnTurnAsync(classification, memory, cancellationToken),
       "image_style_analysis" => await BuildImageAnalysisTurnAsync(classification, memory, cancellationToken),
       "out_of_scope" => new AssistantTurn(
-        "Mình đang tập trung hỗ trợ tư vấn áo dài, phối phụ kiện và thử đồ AI. Nếu bạn muốn, hãy cho mình biết dịp mặc hoặc tải ảnh lên để mình gợi ý đúng catalog.",
+        fallbackTextService.Pick("out_of_scope"),
         null),
       _ => new AssistantTurn(
-        "Để mình tư vấn đúng hơn, bạn cho mình biết dịp mặc, ngân sách dự kiến, và màu hoặc chất liệu bạn thích nhé.",
+        fallbackTextService.Pick("clarification"),
         null)
+    };
+  }
+
+  private static IntentClassificationDto NormalizeClassification(
+    IntentClassificationDto classification,
+    ThreadMemoryStateDto memory,
+    bool hasImageAttachments)
+  {
+    var hasPersonImage = hasImageAttachments || memory.LatestPersonAttachmentId.HasValue;
+    var hasGarmentReference = classification.ReferencedProductIds.Count > 0 || memory.SelectedGarmentProductId.HasValue || memory.ShortlistedProductIds.Count > 0;
+
+    var normalizedIntent = classification.Intent switch
+    {
+      "tryon_execute" when !hasGarmentReference => "clarification",
+      "tryon_execute" when !hasPersonImage => "tryon_prepare",
+      "tryon_prepare" when !hasGarmentReference => "clarification",
+      "product_comparison" when classification.ReferencedProductIds.Count < 2 => "clarification",
+      "image_style_analysis" when !hasImageAttachments => "clarification",
+      "catalog_lookup" or "outfit_recommendation" or "product_comparison" or "tryon_prepare" or "tryon_execute" or "image_style_analysis" or "clarification" or "out_of_scope" => classification.Intent,
+      _ => "clarification"
+    };
+
+    return classification with
+    {
+      Intent = normalizedIntent,
+      RequiresPersonImage = normalizedIntent is "tryon_prepare" or "tryon_execute" && !hasPersonImage,
+      HasImageAttachments = hasImageAttachments
     };
   }
 
@@ -452,7 +480,7 @@ public sealed class StylistChatService(
     if (products.Count == 0)
     {
       return new AssistantTurn(
-        "Mình chưa tìm thấy mẫu live nào khớp ngay với mô tả này. Bạn thử nói rõ hơn màu, chất liệu, hoặc dịp mặc để mình lọc lại chính xác hơn.",
+        fallbackTextService.Pick("catalog_lookup_empty"),
         null);
     }
 
@@ -486,7 +514,7 @@ public sealed class StylistChatService(
     if (products.Count == 0)
     {
       return new AssistantTurn(
-        "Mình chưa ghép được set phù hợp từ catalog hiện tại với các ràng buộc này. Bạn thử nới ngân sách hoặc đổi màu/chất liệu để mình tìm lại.",
+        fallbackTextService.Pick("recommendation_empty"),
         null);
     }
 
@@ -510,14 +538,14 @@ public sealed class StylistChatService(
     if (classification.ReferencedProductIds.Count < 2)
     {
       return new AssistantTurn(
-        "Để so sánh rõ, bạn hãy chỉ ra ít nhất hai mẫu, ví dụ “so sánh mẫu đầu tiên với mẫu thứ hai”.",
+        fallbackTextService.Pick("comparison_need_more_refs"),
         null);
     }
 
     var products = await catalogStylingService.CompareAsync(classification.ReferencedProductIds.Take(2).ToList(), cancellationToken);
     if (products.Count < 2)
     {
-      return new AssistantTurn("Mình chưa đủ dữ liệu để so sánh hai mẫu đó.", null);
+      return new AssistantTurn(fallbackTextService.Pick("comparison_insufficient_data"), null);
     }
 
     return new AssistantTurn(
@@ -547,7 +575,7 @@ public sealed class StylistChatService(
     if (selectedGarmentProductId == 0)
     {
       return new AssistantTurn(
-        "Mình cần biết chính xác mẫu áo dài nào để thử. Bạn có thể nhắn “thử cái đầu tiên” sau khi mình gợi ý, hoặc chọn trực tiếp trong thẻ sản phẩm.",
+        fallbackTextService.Pick("tryon_need_garment"),
         null);
     }
 
@@ -557,8 +585,8 @@ public sealed class StylistChatService(
 
     return new AssistantTurn(
       requiresPersonImage
-        ? "Mình đã giữ sẵn mẫu bạn muốn thử. Gửi cho mình một ảnh người mặc, sau đó bấm “Thử ngay” trong khung chat là được."
-        : "Mình đã sẵn sàng thử đồ với mẫu này. Bạn có thể bấm “Thử ngay” ngay trong khung chat hoặc thêm phụ kiện trước khi chạy lại.",
+        ? fallbackTextService.Pick("tryon_need_person_image")
+        : fallbackTextService.Pick("tryon_ready"),
       new ChatStructuredPayloadDto(
         "tryon_ready",
         classification.Scenario ?? memory.Scenario,
@@ -579,7 +607,7 @@ public sealed class StylistChatService(
     if (string.IsNullOrWhiteSpace(scenario))
     {
       return new AssistantTurn(
-        "Mình đã nhận ảnh của bạn. Để gợi ý đúng hơn, bạn cho mình biết đây là ảnh để đi dạy, đi tiệc, chụp ảnh hay dịp lễ Tết nhé.",
+        fallbackTextService.Pick("image_analysis_need_scenario"),
         null);
     }
 
