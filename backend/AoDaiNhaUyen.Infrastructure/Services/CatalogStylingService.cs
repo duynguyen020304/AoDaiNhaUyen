@@ -13,10 +13,11 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     decimal? budgetCeiling,
     string? colorFamily,
     string? materialKeyword,
+    string? productType,
     int limit,
     CancellationToken cancellationToken = default)
   {
-    var products = await LoadProductsAsync("ao_dai", cancellationToken);
+    var products = await LoadProductsAsync(productType ?? "ao_dai", cancellationToken);
 
     return products
       .Select(product => new
@@ -184,6 +185,7 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
       product.Id,
       product.Name,
       product.Category.Slug,
+      product.ProductType,
       variant?.Price ?? 0m,
       variant?.SalePrice,
       image,

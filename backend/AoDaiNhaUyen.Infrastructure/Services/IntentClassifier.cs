@@ -17,6 +17,8 @@ public sealed class IntentClassifier(
   [
     "catalog_lookup",
     "outfit_recommendation",
+    "accessory_recommendation",
+    "product_description",
     "product_comparison",
     "tryon_prepare",
     "tryon_execute",
@@ -38,12 +40,7 @@ public sealed class IntentClassifier(
   {
     var hasImageAttachments = attachments.Count > 0;
     var normalized = ChatTextUtils.Normalize(message);
-    var fallback = IntentClassificationDto.Clarification(
-      ExtractScenario(normalized) ?? memory.Scenario,
-      ChatTextUtils.TryExtractBudget(message) ?? memory.BudgetCeiling,
-      ExtractColorFamily(normalized) ?? memory.ColorFamily,
-      ExtractMaterialKeyword(normalized) ?? memory.MaterialKeyword,
-      hasImageAttachments: hasImageAttachments);
+    var fallback = BuildFallbackClassification(message, normalized, memory, hasImageAttachments);
 
     if (string.IsNullOrWhiteSpace(message))
     {
@@ -116,6 +113,7 @@ public sealed class IntentClassifier(
         budgetCeiling,
         colorFamily,
         materialKeyword,
+        NormalizeAllowed(planner.ProductType, ["ao_dai", "phu_kien"]),
         [],
         requiresPersonImage,
         hasImageAttachments);
@@ -144,12 +142,16 @@ public sealed class IntentClassifier(
     var builder = new StringBuilder();
     builder.AppendLine("Bạn là bộ lập kế hoạch intent cho stylist AI Ao Dai Nha Uyen.");
     builder.AppendLine("Phân loại duy nhất một intent và trích xuất slot chuẩn hoá từ tin nhắn hiện tại, attachment và memory.");
-    builder.AppendLine("Chỉ dùng các intent: catalog_lookup, outfit_recommendation, product_comparison, tryon_prepare, tryon_execute, image_style_analysis, clarification, out_of_scope.");
+    builder.AppendLine("Chỉ dùng các intent: catalog_lookup, outfit_recommendation, accessory_recommendation, product_description, product_comparison, tryon_prepare, tryon_execute, image_style_analysis, clarification, out_of_scope.");
     builder.AppendLine("Scenario chỉ được là: giao-vien, le-tet, du-tiec, chup-anh.");
     builder.AppendLine("ColorFamily chỉ được là: blue, pink, red, ivory.");
     builder.AppendLine("MaterialKeyword chỉ được là: lụa, gấm.");
     builder.AppendLine("Chọn clarification khi thiếu dữ kiện để hành động an toàn. Chọn out_of_scope cho đơn hàng, vận chuyển, đổi trả, hoàn tiền.");
     builder.AppendLine("Chọn image_style_analysis khi người dùng gửi ảnh để xin nhận xét/gợi ý style từ ảnh. Chọn tryon_prepare hoặc tryon_execute cho nhu cầu thử đồ.");
+    builder.AppendLine("Chọn product_description khi user hỏi mô tả, đặc tính, chi tiết, nhận xét hoặc nói rõ hơn về các sản phẩm đã được nhắc ở shortlist hiện tại.");
+    builder.AppendLine("Nếu user nói 'mẫu này', 'các mẫu này', '3 áo dài này', 'mấy mẫu trên' thì hiểu đó là follow-up dựa trên shortlist trong memory, không hỏi lại discovery trừ khi thật sự không có shortlist.");
+    builder.AppendLine("Nếu user hỏi 'đi cặp như thế nào', 'phối sao cho hợp', 'gợi ý set', 'mix cùng mẫu này', 'phối cùng áo dài này' và memory đã có áo dài đang shortlist hoặc selected garment, hãy ưu tiên outfit_recommendation để trả về combo áo dài + phụ kiện.");
+    builder.AppendLine("Chỉ dùng accessory_recommendation khi người dùng thực sự muốn xem phụ kiện riêng, không cần set hoàn chỉnh với áo dài.");
     builder.AppendLine("requiresPersonImage=true chỉ khi yêu cầu thử đồ nhưng chưa có ảnh người mặc mới hoặc trong memory.");
     builder.AppendLine("Trả về JSON duy nhất, không markdown.");
     builder.AppendLine();
@@ -233,6 +235,154 @@ public sealed class IntentClassifier(
     return null;
   }
 
+  private static string? DetectProductType(string message)
+  {
+    var normalized = ChatTextUtils.Normalize(message);
+    if (normalized.Contains("phu kien") || normalized.Contains("phụ kiện") || normalized.Contains("khan") || normalized.Contains("trang suc") || normalized.Contains("bong tai") || normalized.Contains("tui xach"))
+    {
+      return "phu_kien";
+    }
+
+    if (normalized.Contains("ao dai") || normalized.Contains("áo dài"))
+    {
+      return "ao_dai";
+    }
+
+    return null;
+  }
+
+  private static IntentClassificationDto BuildFallbackClassification(
+    string message,
+    string normalized,
+    ThreadMemoryStateDto memory,
+    bool hasImageAttachments)
+  {
+    var scenario = ExtractScenario(normalized) ?? memory.Scenario;
+    var budgetCeiling = ChatTextUtils.TryExtractBudget(message) ?? memory.BudgetCeiling;
+    var colorFamily = ExtractColorFamily(normalized) ?? memory.ColorFamily;
+    var materialKeyword = ExtractMaterialKeyword(normalized) ?? memory.MaterialKeyword;
+    var productType = DetectProductType(message);
+
+    if (IsOutOfScope(normalized))
+    {
+      return new IntentClassificationDto("out_of_scope", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, hasImageAttachments);
+    }
+
+    if (IsTryOnIntent(normalized))
+    {
+      return new IntentClassificationDto("tryon_execute", scenario, budgetCeiling, colorFamily, materialKeyword, "ao_dai", [], !memory.LatestPersonAttachmentId.HasValue, hasImageAttachments);
+    }
+
+    if (hasImageAttachments && IsImageAnalysisIntent(normalized))
+    {
+      return new IntentClassificationDto("image_style_analysis", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, true);
+    }
+
+    if (IsProductDescriptionIntent(normalized))
+    {
+      return new IntentClassificationDto("product_description", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, hasImageAttachments);
+    }
+
+    if (IsComparisonIntent(normalized))
+    {
+      return new IntentClassificationDto("product_comparison", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, hasImageAttachments);
+    }
+
+    if (IsSetCompletionIntent(normalized, memory))
+    {
+      return new IntentClassificationDto("outfit_recommendation", scenario, budgetCeiling, colorFamily, materialKeyword, "ao_dai", [], false, hasImageAttachments);
+    }
+
+    if (IsAccessoryOnlyIntent(normalized))
+    {
+      return new IntentClassificationDto("accessory_recommendation", scenario, budgetCeiling, colorFamily, materialKeyword, "phu_kien", [], false, hasImageAttachments);
+    }
+
+    if (IsCatalogLookupIntent(normalized))
+    {
+      return new IntentClassificationDto("catalog_lookup", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, hasImageAttachments);
+    }
+
+    if (IsRecommendationIntent(normalized))
+    {
+      return new IntentClassificationDto("outfit_recommendation", scenario, budgetCeiling, colorFamily, materialKeyword, productType ?? "ao_dai", [], false, hasImageAttachments);
+    }
+
+    return IntentClassificationDto.Clarification(
+      scenario,
+      budgetCeiling,
+      colorFamily,
+      materialKeyword,
+      productType,
+      hasImageAttachments: hasImageAttachments);
+  }
+
+  private static bool IsOutOfScope(string normalized) =>
+    normalized.Contains("giao hang") ||
+    normalized.Contains("van chuyen") ||
+    normalized.Contains("doi tra") ||
+    normalized.Contains("hoan tien");
+
+  private static bool IsTryOnIntent(string normalized) =>
+    normalized.Contains("thu do") ||
+    normalized.Contains("thu ngay") ||
+    normalized.Contains("thu luon") ||
+    normalized.Contains("uom thu");
+
+  private static bool IsImageAnalysisIntent(string normalized) =>
+    normalized.Contains("nhin anh") ||
+    normalized.Contains("xem anh") ||
+    normalized.Contains("nhan xet anh") ||
+    normalized.Contains("goi y style tu anh");
+
+  private static bool IsProductDescriptionIntent(string normalized) =>
+    normalized.Contains("chi tiet") ||
+    normalized.Contains("dac tinh") ||
+    normalized.Contains("mo ta") ||
+    normalized.Contains("noi ro hon") ||
+    normalized.Contains("nhan xet");
+
+  private static bool IsComparisonIntent(string normalized) =>
+    normalized.Contains("so sanh") ||
+    normalized.Contains("khac nhau") ||
+    normalized.Contains("nen chon mau nao");
+
+  private static bool IsSetCompletionIntent(string normalized, ThreadMemoryStateDto memory)
+  {
+    var hasGarmentContext = memory.SelectedGarmentProductId.HasValue || memory.ShortlistedProductIds.Count > 0 || memory.GarmentShortlistedProductIds.Count > 0;
+    if (!hasGarmentContext)
+    {
+      return false;
+    }
+
+    return normalized.Contains("di cap") ||
+      normalized.Contains("phoi sao") ||
+      normalized.Contains("phoi cung") ||
+      normalized.Contains("goi y set") ||
+      normalized.Contains("mix cung") ||
+      normalized.Contains("set hoan chinh") ||
+      normalized.Contains("nen di cung");
+  }
+
+  private static bool IsAccessoryOnlyIntent(string normalized) =>
+    normalized.Contains("phu kien nao") ||
+    normalized.Contains("co nhung phu kien") ||
+    normalized.Contains("shop co phu kien") ||
+    (normalized.Contains("phu kien") && !normalized.Contains("set"));
+
+  private static bool IsCatalogLookupIntent(string normalized) =>
+    normalized.Contains("co nhung") ||
+    normalized.Contains("dang co") ||
+    normalized.Contains("catalog") ||
+    normalized.Contains("san sang de lua chon") ||
+    normalized.Contains("mau nao");
+
+  private static bool IsRecommendationIntent(string normalized) =>
+    normalized.Contains("goi y") ||
+    normalized.Contains("tu van") ||
+    normalized.Contains("chon giup") ||
+    normalized.Contains("phoi do");
+
   private static string? TryExtractText(string body)
   {
     if (string.IsNullOrWhiteSpace(body))
@@ -284,6 +434,7 @@ public sealed class IntentClassifier(
     decimal? BudgetCeiling,
     string? ColorFamily,
     string? MaterialKeyword,
+    string? ProductType,
     bool? RequiresPersonImage);
 
   private sealed record GeminiTextRequest(

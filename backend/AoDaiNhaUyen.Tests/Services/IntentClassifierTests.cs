@@ -1,5 +1,7 @@
 using AoDaiNhaUyen.Application.DTOs;
+using AoDaiNhaUyen.Infrastructure.Configuration;
 using AoDaiNhaUyen.Infrastructure.Services;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace AoDaiNhaUyen.Tests.Services;
@@ -16,7 +18,7 @@ public sealed class IntentClassifierTests
                      "content": {
                        "parts": [
                          {
-                           "text": "{\"intent\":\"outfit_recommendation\",\"scenario\":\"giao-vien\",\"budgetCeiling\":3000000,\"colorFamily\":\"blue\",\"materialKeyword\":\"lụa\",\"requiresPersonImage\":false}"
+                           "text": "{\"intent\":\"outfit_recommendation\",\"scenario\":\"giao-vien\",\"budgetCeiling\":3000000,\"colorFamily\":\"blue\",\"materialKeyword\":\"lụa\",\"productType\":\"phu_kien\",\"requiresPersonImage\":false}"
                          }
                        ]
                      }
@@ -33,7 +35,59 @@ public sealed class IntentClassifierTests
     Assert.Equal("blue", result.ColorFamily);
     Assert.Equal("lụa", result.MaterialKeyword);
     Assert.Equal(3_000_000m, result.BudgetCeiling);
+    Assert.Equal("phu_kien", result.ProductType);
     Assert.False(result.RequiresPersonImage);
+  }
+
+  [Fact]
+  public void ParseResponse_SupportsAccessoryRecommendationIntent()
+  {
+    var body = """
+               {
+                 "candidates": [
+                   {
+                     "content": {
+                       "parts": [
+                         {
+                           "text": "{\"intent\":\"accessory_recommendation\",\"productType\":\"phu_kien\"}"
+                         }
+                       ]
+                     }
+                   }
+                 ]
+               }
+               """;
+
+    var result = IntentClassifier.ParseResponse(body, new ThreadMemoryStateDto(), false);
+
+    Assert.NotNull(result);
+    Assert.Equal("accessory_recommendation", result!.Intent);
+    Assert.Equal("phu_kien", result.ProductType);
+  }
+
+  [Fact]
+  public void ParseResponse_SupportsProductDescriptionIntent()
+  {
+    var body = """
+               {
+                 "candidates": [
+                   {
+                     "content": {
+                       "parts": [
+                         {
+                           "text": "{\"intent\":\"product_description\"}"
+                         }
+                       ]
+                     }
+                   }
+                 ]
+               }
+               """;
+
+    var result = IntentClassifier.ParseResponse(body, new ThreadMemoryStateDto(), false);
+
+    Assert.NotNull(result);
+    Assert.Equal("product_description", result!.Intent);
   }
 
   [Fact]
@@ -77,5 +131,37 @@ public sealed class IntentClassifierTests
     var result = IntentClassifier.ParseResponse(body, new ThreadMemoryStateDto(), false);
 
     Assert.Null(result);
+  }
+
+  [Fact]
+  public async Task ClassifyAsync_UsesFallbackSetCompletionIntent_ForPairingFollowUp()
+  {
+    var classifier = new IntentClassifier(
+      new HttpClient(new UnusedHttpMessageHandler()),
+      Options.Create(new GoogleCloudOptions()));
+
+    var memory = new ThreadMemoryStateDto
+    {
+      ShortlistedProductIds = new List<long> { 101, 102 },
+      GarmentShortlistedProductIds = new List<long> { 101, 102 },
+      SelectedGarmentProductId = 101
+    };
+
+    var result = await classifier.ClassifyAsync(
+      "vậy bạn nghĩ nó nên đi cặp như thế nào?",
+      [],
+      memory,
+      CancellationToken.None);
+
+    Assert.Equal("outfit_recommendation", result.Intent);
+    Assert.Equal("ao_dai", result.ProductType);
+  }
+
+  private sealed class UnusedHttpMessageHandler : HttpMessageHandler
+  {
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+      throw new NotSupportedException("No outbound call expected when fallback classification is used.");
+    }
   }
 }

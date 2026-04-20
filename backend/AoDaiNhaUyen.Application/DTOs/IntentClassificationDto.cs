@@ -6,6 +6,7 @@ public sealed record IntentClassificationDto(
   decimal? BudgetCeiling,
   string? ColorFamily,
   string? MaterialKeyword,
+  string? ProductType,
   IReadOnlyList<long> ReferencedProductIds,
   bool RequiresPersonImage,
   bool HasImageAttachments = false)
@@ -15,6 +16,7 @@ public sealed record IntentClassificationDto(
     decimal? budgetCeiling,
     string? colorFamily,
     string? materialKeyword,
+    string? productType = null,
     IReadOnlyList<long>? referencedProductIds = null,
     bool requiresPersonImage = false,
     bool hasImageAttachments = false) =>
@@ -24,6 +26,7 @@ public sealed record IntentClassificationDto(
       budgetCeiling,
       colorFamily,
       materialKeyword,
+      productType,
       referencedProductIds ?? [],
       requiresPersonImage,
       hasImageAttachments);

@@ -78,7 +78,18 @@ internal static partial class ChatTextUtils
       results.Add(shortlist[2]);
     }
 
-    return results.Distinct().ToList();
+    if (results.Count > 0)
+    {
+      return results.Distinct().ToList();
+    }
+
+    if (normalized.Contains("cac mau nay") || normalized.Contains("mau tren") || normalized.Contains("cac san pham tren") || normalized.Contains("may mau tren") || normalized.Contains("3 ao dai nay") || normalized.Contains("3 mau nay"))
+    {
+      var requestedCount = normalized.Contains("3 ") ? Math.Min(3, shortlist.Count) : shortlist.Count;
+      return shortlist.Take(requestedCount).ToList();
+    }
+
+    return [];
   }
 
   [GeneratedRegex(@"(?<amount>\d+(?:[\.,]\d+)?)\s*(?<unit>trieu|tr|nghin|k)?", RegexOptions.IgnoreCase)]

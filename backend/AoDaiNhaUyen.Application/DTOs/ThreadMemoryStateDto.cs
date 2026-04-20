@@ -7,6 +7,8 @@ public sealed class ThreadMemoryStateDto
   public string? ColorFamily { get; set; }
   public string? MaterialKeyword { get; set; }
   public List<long> ShortlistedProductIds { get; set; } = [];
+  public List<long> GarmentShortlistedProductIds { get; set; } = [];
+  public List<long> AccessoryShortlistedProductIds { get; set; } = [];
   public long? SelectedGarmentProductId { get; set; }
   public List<long> SelectedAccessoryProductIds { get; set; } = [];
   public long? LatestPersonAttachmentId { get; set; }

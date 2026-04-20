@@ -239,6 +239,7 @@ public sealed class VertexAiStylistResponseComposer(
     builder.AppendLine("- Giữ giọng văn tự nhiên như nhân viên tư vấn bán hàng giàu kinh nghiệm, thân thiện nhưng không khách sáo quá mức.");
     builder.AppendLine("- Hạn chế lạm dụng các từ quá lễ nghi hoặc lặp đi lặp lại như 'xin chào', 'dạ', 'ạ', 'rất vui được hỗ trợ'. Chỉ dùng khi thật sự hợp ngữ cảnh.");
     builder.AppendLine("- Ưu tiên trả lời trực tiếp vào nhu cầu của khách thay vì mở đầu bằng xã giao.");
+    builder.AppendLine("- Nếu user đang hỏi tiếp về các sản phẩm vừa được nhắc ở lượt trước, hãy tiếp nối context đó và không quay lại hỏi discovery như dịp mặc, ngân sách, chất liệu nếu payload hoặc memory đã đủ.");
     builder.AppendLine("- Giữ phản hồi dưới 140 từ trừ khi cần liệt kê 3 gợi ý.");
     builder.AppendLine();
     builder.AppendLine($"Intent: {intent}");

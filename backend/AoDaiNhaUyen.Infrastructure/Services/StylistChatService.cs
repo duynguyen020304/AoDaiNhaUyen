@@ -206,6 +206,8 @@ public sealed class StylistChatService(
       selectedGarment,
       accessoryProductIds.Count > 0 ? accessoryProductIds.ToList() : memory.SelectedAccessoryProductIds,
       [],
+      [],
+      [],
       []);
 
     var fallbackContent = fallbackTextService.Pick("tryon_result");
@@ -231,7 +233,7 @@ public sealed class StylistChatService(
     generatedAttachment.MessageId = assistantMessage.Id;
     threadMemoryService.ApplyAssistantTurn(
       memory,
-      new IntentClassificationDto("tryon_execute", memory.Scenario, memory.BudgetCeiling, memory.ColorFamily, memory.MaterialKeyword, [], false),
+      new IntentClassificationDto("tryon_execute", memory.Scenario, memory.BudgetCeiling, memory.ColorFamily, memory.MaterialKeyword, "ao_dai", [], false),
       structuredPayload,
       generatedAttachment.Id,
       assistantMessage.Id);
@@ -391,7 +393,7 @@ public sealed class StylistChatService(
   {
     var references = await catalogStylingService.ResolveProductReferencesAsync(
       message,
-      memory.ShortlistedProductIds,
+      memory.ShortlistedProductIds.Count > 0 ? memory.ShortlistedProductIds : memory.GarmentShortlistedProductIds,
       cancellationToken);
 
     if (references.Count > 0)
@@ -399,9 +401,16 @@ public sealed class StylistChatService(
       return references;
     }
 
-    if (memory.SelectedGarmentProductId.HasValue && ChatTextUtils.Normalize(message).Contains("bo vua roi"))
+    var normalized = ChatTextUtils.Normalize(message);
+    if (memory.SelectedGarmentProductId.HasValue && normalized.Contains("bo vua roi"))
     {
       return [memory.SelectedGarmentProductId.Value];
+    }
+
+    if (memory.ShortlistedProductIds.Count > 0 && (normalized.Contains("3 ao dai nay") || normalized.Contains("3 mau nay") || normalized.Contains("cac mau nay") || normalized.Contains("mau tren") || normalized.Contains("cac san pham tren") || normalized.Contains("may mau tren")))
+    {
+      var requestedCount = normalized.Contains("3 ") ? Math.Min(3, memory.ShortlistedProductIds.Count) : memory.ShortlistedProductIds.Count;
+      return memory.ShortlistedProductIds.Take(requestedCount).ToList();
     }
 
     return [];
@@ -416,6 +425,8 @@ public sealed class StylistChatService(
     {
       "catalog_lookup" => await BuildLookupTurnAsync(classification, memory, cancellationToken),
       "outfit_recommendation" => await BuildRecommendationTurnAsync(classification, memory, cancellationToken),
+      "accessory_recommendation" => await BuildAccessoryRecommendationTurnAsync(classification, memory, cancellationToken),
+      "product_description" => await BuildProductDescriptionTurnAsync(classification, memory, cancellationToken),
       "product_comparison" => await BuildComparisonTurnAsync(classification, cancellationToken),
       "tryon_prepare" or "tryon_execute" => await BuildTryOnTurnAsync(classification, memory, cancellationToken),
       "image_style_analysis" => await BuildImageAnalysisTurnAsync(classification, memory, cancellationToken),
@@ -443,7 +454,7 @@ public sealed class StylistChatService(
       "tryon_prepare" when !hasGarmentReference => "clarification",
       "product_comparison" when classification.ReferencedProductIds.Count < 2 => "clarification",
       "image_style_analysis" when !hasImageAttachments => "clarification",
-      "catalog_lookup" or "outfit_recommendation" or "product_comparison" or "tryon_prepare" or "tryon_execute" or "image_style_analysis" or "clarification" or "out_of_scope" => classification.Intent,
+      "catalog_lookup" or "outfit_recommendation" or "accessory_recommendation" or "product_description" or "product_comparison" or "tryon_prepare" or "tryon_execute" or "image_style_analysis" or "clarification" or "out_of_scope" => classification.Intent,
       _ => "clarification"
     };
 
@@ -465,7 +476,7 @@ public sealed class StylistChatService(
       classification.ColorFamily,
       classification.MaterialKeyword,
       classification.Scenario,
-      "ao dai"
+      classification.ProductType == "phu_kien" ? "phu kien" : "ao dai"
     }.Where(value => !string.IsNullOrWhiteSpace(value)));
 
     var products = await catalogStylingService.LookupAsync(
@@ -486,7 +497,7 @@ public sealed class StylistChatService(
 
     return new AssistantTurn(
       $"Mình đã lọc được {products.Count} mẫu đang có trong catalog. Bạn có thể xem từng mẫu bên dưới, hoặc nhắn “gợi ý set cho mình” để mình phối thành set hoàn chỉnh.",
-      new ChatStructuredPayloadDto(
+      BuildStructuredPayload(
         "catalog_results",
         classification.Scenario,
         false,
@@ -494,7 +505,8 @@ public sealed class StylistChatService(
         memory.SelectedGarmentProductId,
         memory.SelectedAccessoryProductIds,
         [],
-        products));
+        string.Equals(classification.ProductType, "phu_kien", StringComparison.OrdinalIgnoreCase) ? [] : products,
+        string.Equals(classification.ProductType, "phu_kien", StringComparison.OrdinalIgnoreCase) ? products : []));
   }
 
   private async Task<AssistantTurn> BuildRecommendationTurnAsync(
@@ -503,32 +515,135 @@ public sealed class StylistChatService(
     CancellationToken cancellationToken)
   {
     var scenario = classification.Scenario ?? memory.Scenario;
-    var products = await catalogStylingService.RecommendAsync(
+    var garmentProducts = await catalogStylingService.RecommendAsync(
       scenario,
       classification.BudgetCeiling ?? memory.BudgetCeiling,
       classification.ColorFamily ?? memory.ColorFamily,
       classification.MaterialKeyword ?? memory.MaterialKeyword,
+      "ao_dai",
       3,
       cancellationToken);
 
-    if (products.Count == 0)
+    if (garmentProducts.Count == 0)
     {
       return new AssistantTurn(
         fallbackTextService.Pick("recommendation_empty"),
         null);
     }
 
+    var selectedGarment = garmentProducts[0].ProductId;
+    var accessoryProducts = await catalogStylingService.RecommendAsync(
+      scenario,
+      classification.BudgetCeiling ?? memory.BudgetCeiling,
+      classification.ColorFamily ?? memory.ColorFamily,
+      classification.MaterialKeyword ?? memory.MaterialKeyword,
+      "phu_kien",
+      2,
+      cancellationToken);
+    var selectedAccessoryProductIds = accessoryProducts.Select(product => product.ProductId).ToList();
+    var combinedProducts = garmentProducts.Concat(accessoryProducts).ToList();
+
     return new AssistantTurn(
-      BuildRecommendationCopy(products, scenario),
-      new ChatStructuredPayloadDto(
+      BuildRecommendationCopy(garmentProducts, accessoryProducts, scenario),
+      BuildStructuredPayload(
         "recommendations",
         scenario,
         false,
         false,
-        products[0].ProductId,
-        [],
+        selectedGarment,
+        selectedAccessoryProductIds,
         memory.LatestPersonAttachmentId.HasValue ? [] : ["upload_person_image"],
-        products));
+        garmentProducts,
+        accessoryProducts,
+        combinedProducts));
+  }
+
+  private async Task<AssistantTurn> BuildAccessoryRecommendationTurnAsync(
+    IntentClassificationDto classification,
+    ThreadMemoryStateDto memory,
+    CancellationToken cancellationToken)
+  {
+    var scenario = classification.Scenario ?? memory.Scenario;
+    var accessoryProducts = await catalogStylingService.RecommendAsync(
+      scenario,
+      classification.BudgetCeiling ?? memory.BudgetCeiling,
+      classification.ColorFamily ?? memory.ColorFamily,
+      classification.MaterialKeyword ?? memory.MaterialKeyword,
+      "phu_kien",
+      3,
+      cancellationToken);
+
+    if (accessoryProducts.Count == 0)
+    {
+      return new AssistantTurn(
+        fallbackTextService.Pick("recommendation_empty"),
+        null);
+    }
+
+    var shouldBuildCombo = ShouldBuildAccessoryCombo(memory, classification);
+    var garmentProducts = shouldBuildCombo
+      ? await LoadComboGarmentProductsAsync(classification, memory, cancellationToken)
+      : [];
+    var selectedGarmentProductId = garmentProducts.FirstOrDefault()?.ProductId ?? memory.SelectedGarmentProductId;
+    var combinedProducts = garmentProducts.Concat(accessoryProducts).ToList();
+
+    return new AssistantTurn(
+      shouldBuildCombo
+        ? BuildRecommendationCopy(garmentProducts, accessoryProducts, scenario)
+        : "Mình chọn trước vài phụ kiện đang hợp với gu và bối cảnh bạn mô tả. Nếu bạn muốn, mình có thể phối tiếp theo mẫu áo dài bạn đang xem.",
+      BuildStructuredPayload(
+        "recommendations",
+        scenario,
+        false,
+        false,
+        selectedGarmentProductId,
+        accessoryProducts.Select(product => product.ProductId).ToList(),
+        memory.LatestPersonAttachmentId.HasValue ? [] : ["upload_person_image"],
+        garmentProducts,
+        accessoryProducts,
+        shouldBuildCombo ? combinedProducts : accessoryProducts));
+  }
+
+  private async Task<AssistantTurn> BuildProductDescriptionTurnAsync(
+    IntentClassificationDto classification,
+    ThreadMemoryStateDto memory,
+    CancellationToken cancellationToken)
+  {
+    var productIds = classification.ReferencedProductIds.Count > 0
+      ? classification.ReferencedProductIds
+      : memory.ShortlistedProductIds.Take(3).ToList();
+
+    if (productIds.Count == 0)
+    {
+      return new AssistantTurn(
+        fallbackTextService.Pick("clarification"),
+        null);
+    }
+
+    var products = await catalogStylingService.CompareAsync(productIds, cancellationToken);
+    if (products.Count == 0)
+    {
+      return new AssistantTurn(
+        fallbackTextService.Pick("clarification"),
+        null);
+    }
+
+    var description = string.Join(
+      "\n",
+      products.Select((product, index) => $"{index + 1}. {product.Name}: {product.Rationale}"));
+
+    return new AssistantTurn(
+      $"Mình tóm tắt nhanh đặc tính của các mẫu bạn đang hỏi:\n{description}",
+      BuildStructuredPayload(
+        "comparison",
+        classification.Scenario ?? memory.Scenario,
+        false,
+        false,
+        memory.SelectedGarmentProductId,
+        memory.SelectedAccessoryProductIds,
+        [],
+        products,
+        []));
   }
 
   private async Task<AssistantTurn> BuildComparisonTurnAsync(
@@ -550,7 +665,7 @@ public sealed class StylistChatService(
 
     return new AssistantTurn(
       $"Mẫu {products[0].Name} thiên về {products[0].Rationale}, còn {products[1].Name} thì {products[1].Rationale}. Nếu bạn muốn thử đồ trước, mình khuyên bắt đầu với {products[0].Name}.",
-      new ChatStructuredPayloadDto(
+      BuildStructuredPayload(
         "comparison",
         classification.Scenario,
         false,
@@ -558,7 +673,8 @@ public sealed class StylistChatService(
         null,
         [],
         [],
-        products));
+        products,
+        []));
   }
 
   private async Task<AssistantTurn> BuildTryOnTurnAsync(
@@ -587,7 +703,7 @@ public sealed class StylistChatService(
       requiresPersonImage
         ? fallbackTextService.Pick("tryon_need_person_image")
         : fallbackTextService.Pick("tryon_ready"),
-      new ChatStructuredPayloadDto(
+      BuildStructuredPayload(
         "tryon_ready",
         classification.Scenario ?? memory.Scenario,
         !requiresPersonImage,
@@ -595,7 +711,8 @@ public sealed class StylistChatService(
         selectedGarmentProductId,
         memory.SelectedAccessoryProductIds,
         pending,
-        products));
+        products,
+        []));
   }
 
   private async Task<AssistantTurn> BuildImageAnalysisTurnAsync(
@@ -616,12 +733,13 @@ public sealed class StylistChatService(
       memory.BudgetCeiling,
       memory.ColorFamily,
       memory.MaterialKeyword,
+      classification.ProductType,
       3,
       cancellationToken);
 
     return new AssistantTurn(
       $"Mình sẽ ưu tiên set hợp dịp {scenario.Replace('-', ' ')} và dễ lên ảnh. Dưới đây là {products.Count} mẫu mình chốt trước từ catalog live.",
-      new ChatStructuredPayloadDto(
+      BuildStructuredPayload(
         "image_guided_recommendations",
         scenario,
         false,
@@ -629,7 +747,8 @@ public sealed class StylistChatService(
         products.FirstOrDefault()?.ProductId,
         [],
         memory.LatestPersonAttachmentId.HasValue ? [] : ["upload_person_image"],
-        products));
+        products,
+        []));
   }
 
   private async Task<IReadOnlyList<ChatAttachment>> SaveIncomingAttachmentsAsync(
@@ -820,13 +939,89 @@ public sealed class StylistChatService(
     return firstUser.Length <= 48 ? firstUser : string.Concat(firstUser.AsSpan(0, 48), "...");
   }
 
-  private static string BuildRecommendationCopy(IReadOnlyList<ChatRecommendationItemDto> products, string? scenario)
+  private static string BuildRecommendationCopy(
+    IReadOnlyList<ChatRecommendationItemDto> garmentProducts,
+    IReadOnlyList<ChatRecommendationItemDto> accessoryProducts,
+    string? scenario)
   {
     var intro = string.IsNullOrWhiteSpace(scenario)
-      ? $"Mình chốt trước {products.Count} mẫu đang hợp nhất từ catalog live:"
-      : $"Với bối cảnh {scenario.Replace('-', ' ')}, mình chốt trước {products.Count} mẫu đang hợp nhất:";
-    var highlights = products.Select((product, index) => $"{index + 1}. {product.Name}: {product.Rationale}");
-    return $"{intro}\n{string.Join("\n", highlights)}";
+      ? "Mình phối sẵn một set hoàn chỉnh từ catalog live:"
+      : $"Với bối cảnh {scenario.Replace('-', ' ')}, mình phối sẵn một set hoàn chỉnh:";
+    var garmentHighlights = garmentProducts.Select((product, index) => $"{index + 1}. {product.Name}: {product.Rationale}");
+    var accessoryHighlights = accessoryProducts.Select((product, index) => $"{index + 1}. {product.Name}: {product.Rationale}");
+    var sections = new List<string> { intro };
+
+    if (garmentProducts.Count > 0)
+    {
+      sections.Add($"Áo dài gợi ý:\n{string.Join("\n", garmentHighlights)}");
+    }
+
+    if (accessoryProducts.Count > 0)
+    {
+      sections.Add($"Phụ kiện đi kèm:\n{string.Join("\n", accessoryHighlights)}");
+    }
+
+    return string.Join("\n", sections);
+  }
+
+  private static ChatStructuredPayloadDto BuildStructuredPayload(
+    string kind,
+    string? scenario,
+    bool canTryOn,
+    bool requiresPersonImage,
+    long? selectedGarmentProductId,
+    IReadOnlyList<long> selectedAccessoryProductIds,
+    IReadOnlyList<string> pendingTryOnRequirements,
+    IReadOnlyList<ChatRecommendationItemDto> garmentProducts,
+    IReadOnlyList<ChatRecommendationItemDto> accessoryProducts,
+    IReadOnlyList<ChatRecommendationItemDto>? legacyProducts = null)
+  {
+    return new ChatStructuredPayloadDto(
+      kind,
+      scenario,
+      canTryOn,
+      requiresPersonImage,
+      selectedGarmentProductId,
+      selectedAccessoryProductIds,
+      pendingTryOnRequirements,
+      legacyProducts ?? garmentProducts.Concat(accessoryProducts).ToList(),
+      garmentProducts,
+      accessoryProducts);
+  }
+
+  private static bool ShouldBuildAccessoryCombo(ThreadMemoryStateDto memory, IntentClassificationDto classification)
+  {
+    var hasGarmentContext = memory.SelectedGarmentProductId.HasValue || memory.ShortlistedProductIds.Count > 0 || memory.GarmentShortlistedProductIds.Count > 0;
+    return hasGarmentContext;
+  }
+
+  private async Task<IReadOnlyList<ChatRecommendationItemDto>> LoadComboGarmentProductsAsync(
+    IntentClassificationDto classification,
+    ThreadMemoryStateDto memory,
+    CancellationToken cancellationToken)
+  {
+    var garmentIds = memory.GarmentShortlistedProductIds.Count > 0
+      ? memory.GarmentShortlistedProductIds
+      : memory.ShortlistedProductIds;
+
+    if (memory.SelectedGarmentProductId.HasValue)
+    {
+      garmentIds = [memory.SelectedGarmentProductId.Value, .. garmentIds.Where(id => id != memory.SelectedGarmentProductId.Value)];
+    }
+
+    if (garmentIds.Count > 0)
+    {
+      return await catalogStylingService.CompareAsync(garmentIds.Take(3).ToList(), cancellationToken);
+    }
+
+    return await catalogStylingService.RecommendAsync(
+      classification.Scenario ?? memory.Scenario,
+      classification.BudgetCeiling ?? memory.BudgetCeiling,
+      classification.ColorFamily ?? memory.ColorFamily,
+      classification.MaterialKeyword ?? memory.MaterialKeyword,
+      "ao_dai",
+      3,
+      cancellationToken);
   }
 
   private sealed record AssistantTurn(string Content, ChatStructuredPayloadDto? StructuredPayload);

@@ -26,6 +26,8 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       ColorFamily = facts.ColorFamily,
       MaterialKeyword = facts.MaterialKeyword,
       ShortlistedProductIds = refs.LastShortlistProductIds ?? [],
+      GarmentShortlistedProductIds = refs.LastGarmentShortlistProductIds ?? [],
+      AccessoryShortlistedProductIds = refs.LastAccessoryShortlistProductIds ?? [],
       SelectedGarmentProductId = facts.SelectedGarmentProductId,
       SelectedAccessoryProductIds = facts.SelectedAccessoryProductIds ?? [],
       LatestPersonAttachmentId = facts.LatestPersonAttachmentId,
@@ -75,7 +77,38 @@ public sealed class ThreadMemoryService : IThreadMemoryService
 
     if (structuredPayload is not null)
     {
-      memory.ShortlistedProductIds = structuredPayload.Products.Select(product => product.ProductId).Distinct().ToList();
+      var garmentProducts = (structuredPayload.GarmentProducts ?? [])
+        .Where(product => string.Equals(product.ProductType, "ao_dai", StringComparison.OrdinalIgnoreCase))
+        .ToList();
+      var accessoryProducts = (structuredPayload.AccessoryProducts ?? [])
+        .Where(product => string.Equals(product.ProductType, "phu_kien", StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+      if (garmentProducts.Count == 0 && accessoryProducts.Count == 0 && structuredPayload.Products.Count > 0)
+      {
+        garmentProducts = structuredPayload.Products
+          .Where(product => string.Equals(product.ProductType, "ao_dai", StringComparison.OrdinalIgnoreCase))
+          .ToList();
+        accessoryProducts = structuredPayload.Products
+          .Where(product => string.Equals(product.ProductType, "phu_kien", StringComparison.OrdinalIgnoreCase))
+          .ToList();
+      }
+
+      if (garmentProducts.Count > 0)
+      {
+        memory.GarmentShortlistedProductIds = garmentProducts.Select(product => product.ProductId).Distinct().ToList();
+        memory.ShortlistedProductIds = [.. memory.GarmentShortlistedProductIds];
+      }
+      else if (structuredPayload.Products.Count > 0 && accessoryProducts.Count == 0)
+      {
+        memory.ShortlistedProductIds = structuredPayload.Products.Select(product => product.ProductId).Distinct().ToList();
+      }
+
+      if (accessoryProducts.Count > 0)
+      {
+        memory.AccessoryShortlistedProductIds = accessoryProducts.Select(product => product.ProductId).Distinct().ToList();
+      }
+
       memory.SelectedGarmentProductId = structuredPayload.SelectedGarmentProductId ?? memory.SelectedGarmentProductId;
       memory.SelectedAccessoryProductIds = structuredPayload.SelectedAccessoryProductIds.Distinct().ToList();
       memory.PendingTryOnRequirements = structuredPayload.PendingTryOnRequirements.Distinct().ToList();
@@ -118,7 +151,9 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     }, JsonOptions);
     thread.Memory.ResolvedRefsJsonb = JsonSerializer.Serialize(new StoredRefs
     {
-      LastShortlistProductIds = memory.ShortlistedProductIds
+      LastShortlistProductIds = memory.ShortlistedProductIds,
+      LastGarmentShortlistProductIds = memory.GarmentShortlistedProductIds,
+      LastAccessoryShortlistProductIds = memory.AccessoryShortlistedProductIds
     }, JsonOptions);
     thread.Memory.LastMessageId = lastMessageId;
     thread.Memory.UpdatedAt = DateTime.UtcNow;
@@ -186,5 +221,7 @@ public sealed class ThreadMemoryService : IThreadMemoryService
   private sealed class StoredRefs
   {
     public List<long>? LastShortlistProductIds { get; set; }
+    public List<long>? LastGarmentShortlistProductIds { get; set; }
+    public List<long>? LastAccessoryShortlistProductIds { get; set; }
   }
 }

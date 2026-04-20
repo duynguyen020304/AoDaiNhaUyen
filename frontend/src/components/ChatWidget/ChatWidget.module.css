@@ -164,6 +164,27 @@
 }
 
 /* --- Product grid (compact horizontal cards) --- */
+.productSections {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.productSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.productSectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(90, 17, 19, 0.72);
+}
+
 .productGrid {
   margin-top: 10px;
   display: flex;

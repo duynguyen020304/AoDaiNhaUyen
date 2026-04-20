@@ -53,6 +53,8 @@ public sealed class ThreadMemoryServiceTests
       ColorFamily = "red",
       MaterialKeyword = "gấm",
       ShortlistedProductIds = new List<long> { 11, 12 },
+      GarmentShortlistedProductIds = new List<long> { 11, 12 },
+      AccessoryShortlistedProductIds = new List<long> { 31, 32 },
       SelectedGarmentProductId = 11,
       SelectedAccessoryProductIds = new List<long> { 31 },
       PendingTryOnRequirements = new List<string> { "upload_person_image" }
@@ -66,8 +68,42 @@ public sealed class ThreadMemoryServiceTests
     Assert.Equal("red", loaded.ColorFamily);
     Assert.Equal("gấm", loaded.MaterialKeyword);
     Assert.Equal(new long[] { 11, 12 }, loaded.ShortlistedProductIds);
+    Assert.Equal(new long[] { 11, 12 }, loaded.GarmentShortlistedProductIds);
+    Assert.Equal(new long[] { 31, 32 }, loaded.AccessoryShortlistedProductIds);
     Assert.Equal(11, loaded.SelectedGarmentProductId);
     Assert.Equal(new long[] { 31 }, loaded.SelectedAccessoryProductIds);
     Assert.Equal(new[] { "upload_person_image" }, loaded.PendingTryOnRequirements);
+  }
+
+  [Fact]
+  public void ApplyAssistantTurn_PreservesGarmentShortlist_WhenPayloadOnlyContainsAccessories()
+  {
+    var memory = new ThreadMemoryStateDto
+    {
+      ShortlistedProductIds = new List<long> { 101, 102 },
+      GarmentShortlistedProductIds = new List<long> { 101, 102 },
+      SelectedGarmentProductId = 101
+    };
+
+    service.ApplyAssistantTurn(
+      memory,
+      new IntentClassificationDto("accessory_recommendation", null, null, null, null, "phu_kien", [], false),
+      new ChatStructuredPayloadDto(
+        "recommendations",
+        null,
+        false,
+        false,
+        101,
+        [201],
+        [],
+        [new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200_000m, null, null, null, "Đi kèm nhẹ nhàng.")],
+        [],
+        [new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200_000m, null, null, null, "Đi kèm nhẹ nhàng.")]),
+      null,
+      null);
+
+    Assert.Equal(new long[] { 101, 102 }, memory.ShortlistedProductIds);
+    Assert.Equal(new long[] { 101, 102 }, memory.GarmentShortlistedProductIds);
+    Assert.Equal(new long[] { 201 }, memory.AccessoryShortlistedProductIds);
   }
 }

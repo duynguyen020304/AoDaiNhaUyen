@@ -7,6 +7,8 @@ import {
   listChatThreads,
   streamChatMessage,
   type ChatMessage,
+  type ChatRecommendationItem,
+  type ChatStructuredPayload,
   type ChatThreadDetail,
   type ChatThreadSummary,
 } from '../../api/chat';
@@ -450,6 +452,7 @@ function MessageCard(
   { message, onPreviewImage, streaming }: { message: ChatMessage; onPreviewImage: (preview: { url: string; name: string }) => void; streaming?: boolean },
 ) {
   const isUser = message.role === 'user';
+  const productSections = getProductSections(message.structuredPayload);
 
   return (
     <div className={`${styles.messageRow} ${isUser ? styles.messageRowUser : ''}`}>
@@ -475,23 +478,15 @@ function MessageCard(
 
           return null;
         })}
-        {message.structuredPayload?.products.length ? (
-          <div className={styles.productGrid}>
-            {message.structuredPayload.products.map((product) => (
-              <div key={product.productId} className={styles.productCard}>
-                {product.primaryImageUrl ? (
-                  <img
-                    className={styles.productImage}
-                    src={resolveAssetUrl(product.primaryImageUrl) ?? product.primaryImageUrl}
-                    alt={product.name}
-                  />
-                ) : null}
-                <div className={styles.productInfo}>
-                  <div className={styles.productName}>{product.name}</div>
-                  <div className={styles.productMeta}>
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(product.salePrice ?? product.price)}
-                  </div>
-                  <div className={styles.productRationale}>{product.rationale}</div>
+        {productSections.length ? (
+          <div className={styles.productSections}>
+            {productSections.map((section) => (
+              <div key={section.key} className={styles.productSection}>
+                <div className={styles.productSectionTitle}>{section.title}</div>
+                <div className={styles.productGrid}>
+                  {section.products.map((product) => (
+                    <ProductCard key={`${section.key}-${product.productId}`} product={product} />
+                  ))}
                 </div>
               </div>
             ))}
@@ -500,6 +495,60 @@ function MessageCard(
       </div>
     </div>
   );
+}
+
+function ProductCard({ product }: { product: ChatRecommendationItem }) {
+  return (
+    <div className={styles.productCard}>
+      {product.primaryImageUrl ? (
+        <img
+          className={styles.productImage}
+          src={resolveAssetUrl(product.primaryImageUrl) ?? product.primaryImageUrl}
+          alt={product.name}
+        />
+      ) : null}
+      <div className={styles.productInfo}>
+        <div className={styles.productName}>{product.name}</div>
+        <div className={styles.productMeta}>
+          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(product.salePrice ?? product.price)}
+        </div>
+        <div className={styles.productRationale}>{product.rationale}</div>
+      </div>
+    </div>
+  );
+}
+
+function getProductSections(payload: ChatStructuredPayload | null): Array<{ key: string; title: string; products: ChatRecommendationItem[] }> {
+  if (!payload) {
+    return [];
+  }
+
+  const garmentProducts = payload.garmentProducts?.length
+    ? payload.garmentProducts
+    : payload.products.filter((product) => product.productType === 'ao_dai');
+  const accessoryProducts = payload.accessoryProducts?.length
+    ? payload.accessoryProducts
+    : payload.products.filter((product) => product.productType === 'phu_kien');
+
+  const sections: Array<{ key: string; title: string; products: ChatRecommendationItem[] }> = [];
+
+  if (garmentProducts.length) {
+    sections.push({ key: 'garments', title: 'Áo dài gợi ý', products: garmentProducts });
+  }
+
+  if (accessoryProducts.length) {
+    sections.push({ key: 'accessories', title: 'Phụ kiện đi kèm', products: accessoryProducts });
+  }
+
+  if (sections.length > 0) {
+    return sections;
+  }
+
+  if (payload.products.length) {
+    return [{ key: 'legacy', title: 'Sản phẩm gợi ý', products: payload.products }];
+  }
+
+  return [];
 }
 
 function updateThreadSummary(current: ChatThreadSummary[], thread: ChatThreadDetail): ChatThreadSummary[] {
