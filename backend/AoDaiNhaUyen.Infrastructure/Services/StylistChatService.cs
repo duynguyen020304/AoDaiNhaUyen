@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -111,24 +110,33 @@ public sealed class StylistChatService(
 
     var savedAttachments = await SaveIncomingAttachmentsAsync(thread.Id, userMessage.Id, attachments, cancellationToken);
     threadMemoryService.ApplyUserTurn(memory, savedAttachments);
+    threadMemoryService.ApplyUserConversationTurn(memory, userMessage.Content);
+    var previousAssistantMessage = memory.RecentAssistantMessages.LastOrDefault();
+    var previousUserMessage = memory.RecentUserMessages.Count > 1
+      ? memory.RecentUserMessages[^2]
+      : null;
 
     var classification = await intentClassifier.ClassifyAsync(
       userMessage.Content,
       savedAttachments.Select(MapAttachment).ToList(),
       memory,
+      previousUserMessage,
+      previousAssistantMessage,
       cancellationToken);
 
     var referencedProductIds = await ResolveReferencedProductIdsAsync(userMessage.Content, memory, cancellationToken);
     classification = NormalizeClassification(classification with { ReferencedProductIds = referencedProductIds }, memory, savedAttachments.Count > 0);
     userMessage.Intent = classification.Intent;
 
-    var assistantTurn = await BuildAssistantTurnAsync(classification, memory, cancellationToken);
+    var assistantTurn = await BuildAssistantTurnAsync(userMessage.Content, classification, memory, cancellationToken);
     var composedContent = await stylistResponseComposer.ComposeAsync(
       userMessage.Content,
       assistantTurn.Content,
       classification.Intent,
       thread.Memory?.Summary,
       assistantTurn.StructuredPayload,
+      previousUserMessage,
+      previousAssistantMessage,
       cancellationToken);
     var assistantMessage = new ChatMessage
     {
@@ -221,6 +229,8 @@ public sealed class StylistChatService(
         "tryon_execute",
         thread.Memory?.Summary,
         structuredPayload,
+        memory.RecentUserMessages.LastOrDefault(),
+        memory.RecentAssistantMessages.LastOrDefault(),
         cancellationToken),
       Intent = "tryon_execute",
       PromptVersion = PromptVersion,
@@ -236,7 +246,8 @@ public sealed class StylistChatService(
       new IntentClassificationDto("tryon_execute", memory.Scenario, memory.BudgetCeiling, memory.ColorFamily, memory.MaterialKeyword, "ao_dai", [], false),
       structuredPayload,
       generatedAttachment.Id,
-      assistantMessage.Id);
+      assistantMessage.Id,
+      assistantMessage.Content);
     threadMemoryService.Persist(thread, memory, assistantMessage.Id);
     thread.UpdatedAt = DateTime.UtcNow;
     await dbContext.SaveChangesAsync(cancellationToken);
@@ -271,18 +282,25 @@ public sealed class StylistChatService(
 
     var savedAttachments = await SaveIncomingAttachmentsAsync(thread.Id, userMessage.Id, attachments, cancellationToken);
     threadMemoryService.ApplyUserTurn(memory, savedAttachments);
+    threadMemoryService.ApplyUserConversationTurn(memory, userMessage.Content);
+    var previousAssistantMessage = memory.RecentAssistantMessages.LastOrDefault();
+    var previousUserMessage = memory.RecentUserMessages.Count > 1
+      ? memory.RecentUserMessages[^2]
+      : null;
 
     var classification = await intentClassifier.ClassifyAsync(
       userMessage.Content,
       savedAttachments.Select(MapAttachment).ToList(),
       memory,
+      previousUserMessage,
+      previousAssistantMessage,
       cancellationToken);
 
     var referencedProductIds = await ResolveReferencedProductIdsAsync(userMessage.Content, memory, cancellationToken);
     classification = NormalizeClassification(classification with { ReferencedProductIds = referencedProductIds }, memory, savedAttachments.Count > 0);
     userMessage.Intent = classification.Intent;
 
-    var assistantTurn = await BuildAssistantTurnAsync(classification, memory, cancellationToken);
+    var assistantTurn = await BuildAssistantTurnAsync(userMessage.Content, classification, memory, cancellationToken);
 
     yield return new SseChatEvent.Created(
       0,
@@ -301,6 +319,8 @@ public sealed class StylistChatService(
       classification.Intent,
       thread.Memory?.Summary,
       assistantTurn.StructuredPayload,
+      previousUserMessage,
+      previousAssistantMessage,
       cancellationToken).WithCancellation(cancellationToken))
     {
       accumulatedText.Append(chunk);
@@ -417,14 +437,15 @@ public sealed class StylistChatService(
   }
 
   private async Task<AssistantTurn> BuildAssistantTurnAsync(
+    string userMessage,
     IntentClassificationDto classification,
     ThreadMemoryStateDto memory,
     CancellationToken cancellationToken)
   {
     return classification.Intent switch
     {
-      "catalog_lookup" => await BuildLookupTurnAsync(classification, memory, cancellationToken),
-      "outfit_recommendation" => await BuildRecommendationTurnAsync(classification, memory, cancellationToken),
+      "catalog_lookup" => await BuildLookupTurnAsync(userMessage, classification, memory, cancellationToken),
+      "outfit_recommendation" => await BuildRecommendationTurnAsync(userMessage, classification, memory, cancellationToken),
       "accessory_recommendation" => await BuildAccessoryRecommendationTurnAsync(classification, memory, cancellationToken),
       "product_description" => await BuildProductDescriptionTurnAsync(classification, memory, cancellationToken),
       "product_comparison" => await BuildComparisonTurnAsync(classification, cancellationToken),
@@ -467,6 +488,7 @@ public sealed class StylistChatService(
   }
 
   private async Task<AssistantTurn> BuildLookupTurnAsync(
+    string userMessage,
     IntentClassificationDto classification,
     ThreadMemoryStateDto memory,
     CancellationToken cancellationToken)
@@ -487,6 +509,8 @@ public sealed class StylistChatService(
       classification.MaterialKeyword,
       4,
       cancellationToken);
+
+    products = SelectProducts(products, memory, ShouldPreferUnseenAlternatives(userMessage, classification, memory), 4);
 
     if (products.Count == 0)
     {
@@ -510,36 +534,45 @@ public sealed class StylistChatService(
   }
 
   private async Task<AssistantTurn> BuildRecommendationTurnAsync(
+    string userMessage,
     IntentClassificationDto classification,
     ThreadMemoryStateDto memory,
     CancellationToken cancellationToken)
   {
     var scenario = classification.Scenario ?? memory.Scenario;
-    var garmentProducts = await catalogStylingService.RecommendAsync(
+    var preferUnseenAlternatives = ShouldPreferUnseenAlternatives(userMessage, classification, memory);
+
+    var garmentLimit = 3;
+    var garmentProducts = SelectProducts(await catalogStylingService.RecommendAsync(
       scenario,
       classification.BudgetCeiling ?? memory.BudgetCeiling,
       classification.ColorFamily ?? memory.ColorFamily,
       classification.MaterialKeyword ?? memory.MaterialKeyword,
       "ao_dai",
-      3,
-      cancellationToken);
+      preferUnseenAlternatives ? Math.Max(garmentLimit * 3, garmentLimit + memory.ShownProductIds.Count) : garmentLimit,
+      null,
+      cancellationToken), memory, preferUnseenAlternatives, garmentLimit);
 
     if (garmentProducts.Count == 0)
     {
       return new AssistantTurn(
-        fallbackTextService.Pick("recommendation_empty"),
+        preferUnseenAlternatives
+          ? BuildExhaustedRecommendationCopy(scenario)
+          : fallbackTextService.Pick("recommendation_empty"),
         null);
     }
 
     var selectedGarment = garmentProducts[0].ProductId;
-    var accessoryProducts = await catalogStylingService.RecommendAsync(
+    var accessoryLimit = 2;
+    var accessoryProducts = SelectProducts(await catalogStylingService.RecommendAsync(
       scenario,
       classification.BudgetCeiling ?? memory.BudgetCeiling,
       classification.ColorFamily ?? memory.ColorFamily,
       classification.MaterialKeyword ?? memory.MaterialKeyword,
       "phu_kien",
-      2,
-      cancellationToken);
+      preferUnseenAlternatives ? Math.Max(accessoryLimit * 3, accessoryLimit + memory.ShownProductIds.Count) : accessoryLimit,
+      null,
+      cancellationToken), memory, preferUnseenAlternatives, accessoryLimit);
     var selectedAccessoryProductIds = accessoryProducts.Select(product => product.ProductId).ToList();
     var combinedProducts = garmentProducts.Concat(accessoryProducts).ToList();
 
@@ -571,6 +604,7 @@ public sealed class StylistChatService(
       classification.MaterialKeyword ?? memory.MaterialKeyword,
       "phu_kien",
       3,
+      null,
       cancellationToken);
 
     if (accessoryProducts.Count == 0)
@@ -735,6 +769,7 @@ public sealed class StylistChatService(
       memory.MaterialKeyword,
       classification.ProductType,
       3,
+      null,
       cancellationToken);
 
     return new AssistantTurn(
@@ -964,6 +999,72 @@ public sealed class StylistChatService(
     return string.Join("\n", sections);
   }
 
+  private static bool ShouldPreferUnseenAlternatives(string userMessage, IntentClassificationDto classification, ThreadMemoryStateDto memory)
+  {
+    if (memory.ShownProductIds.Count == 0)
+    {
+      return false;
+    }
+
+    if (classification.ReferencedProductIds.Count > 0)
+    {
+      return false;
+    }
+
+    var normalizedMessage = ChatTextUtils.Normalize(userMessage);
+    if (RequestsDifferentOptions(normalizedMessage))
+    {
+      return true;
+    }
+
+    if (memory.SelectedGarmentProductId.HasValue)
+    {
+      return false;
+    }
+
+    return classification.Intent is "outfit_recommendation" or "catalog_lookup" or "image_style_analysis";
+  }
+
+  private static bool RequestsDifferentOptions(string normalizedMessage)
+  {
+    return normalizedMessage.Contains("khac")
+      || normalizedMessage.Contains("khong thich")
+      || normalizedMessage.Contains("ko thich")
+      || normalizedMessage.Contains("k thich")
+      || normalizedMessage.Contains("khong ung")
+      || normalizedMessage.Contains("ko ung")
+      || normalizedMessage.Contains("khong hop")
+      || normalizedMessage.Contains("ko hop")
+      || normalizedMessage.Contains("mau khac")
+      || normalizedMessage.Contains("bo khac")
+      || normalizedMessage.Contains("goi y khac")
+      || normalizedMessage.Contains("them vai mau nua")
+      || normalizedMessage.Contains("them mau nua");
+  }
+
+  private static IReadOnlyList<ChatRecommendationItemDto> SelectProducts(
+    IReadOnlyList<ChatRecommendationItemDto> products,
+    ThreadMemoryStateDto memory,
+    bool preferUnseenAlternatives,
+    int limit)
+  {
+    if (!preferUnseenAlternatives || memory.ShownProductIds.Count == 0)
+    {
+      return products.Take(limit).ToList();
+    }
+
+    var shownProductIds = memory.ShownProductIds.ToHashSet();
+    var unseen = products.Where(product => !shownProductIds.Contains(product.ProductId));
+    var seen = products.Where(product => shownProductIds.Contains(product.ProductId));
+    return unseen.Concat(seen).Take(limit).ToList();
+  }
+
+  private static string BuildExhaustedRecommendationCopy(string? scenario)
+  {
+    var scenarioLabel = string.IsNullOrWhiteSpace(scenario) ? "nhu cầu hiện tại" : scenario.Replace('-', ' ');
+    return $"Mình đã đi hết các mẫu áo dài chưa lặp lại cho bối cảnh {scenarioLabel}. Nếu bạn muốn, mình có thể chuyển sang hướng màu khác, khoảng giá khác hoặc phối lại phụ kiện trên các mẫu đã xem.";
+  }
+
   private static ChatStructuredPayloadDto BuildStructuredPayload(
     string kind,
     string? scenario,
@@ -1021,6 +1122,7 @@ public sealed class StylistChatService(
       classification.MaterialKeyword ?? memory.MaterialKeyword,
       "ao_dai",
       3,
+      null,
       cancellationToken);
   }
 

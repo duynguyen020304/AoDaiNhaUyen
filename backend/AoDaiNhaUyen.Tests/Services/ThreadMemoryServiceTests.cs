@@ -70,9 +70,41 @@ public sealed class ThreadMemoryServiceTests
     Assert.Equal(new long[] { 11, 12 }, loaded.ShortlistedProductIds);
     Assert.Equal(new long[] { 11, 12 }, loaded.GarmentShortlistedProductIds);
     Assert.Equal(new long[] { 31, 32 }, loaded.AccessoryShortlistedProductIds);
+    Assert.Empty(loaded.ShownProductIds);
     Assert.Equal(11, loaded.SelectedGarmentProductId);
     Assert.Equal(new long[] { 31 }, loaded.SelectedAccessoryProductIds);
     Assert.Equal(new[] { "upload_person_image" }, loaded.PendingTryOnRequirements);
+  }
+
+  [Fact]
+  public void ApplyAssistantTurn_AccumulatesShownProductIds()
+  {
+    var memory = new ThreadMemoryStateDto
+    {
+      ShownProductIds = new List<long> { 1, 2 }
+    };
+
+    service.ApplyAssistantTurn(
+      memory,
+      new IntentClassificationDto("outfit_recommendation", null, null, null, null, "ao_dai", [], false),
+      new ChatStructuredPayloadDto(
+        "recommendations",
+        null,
+        false,
+        false,
+        101,
+        [201],
+        [],
+        [new ChatRecommendationItemDto(101, "Áo dài A", "ao-dai", "ao_dai", 1200000m, null, null, null, "Phù hợp.")],
+        [new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Đi kèm.")],
+        [
+          new ChatRecommendationItemDto(101, "Áo dài A", "ao-dai", "ao_dai", 1200000m, null, null, null, "Phù hợp."),
+          new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Đi kèm.")
+        ]),
+      null,
+      null);
+
+    Assert.Equal(new long[] { 1, 2, 101, 201 }, memory.ShownProductIds);
   }
 
   [Fact]

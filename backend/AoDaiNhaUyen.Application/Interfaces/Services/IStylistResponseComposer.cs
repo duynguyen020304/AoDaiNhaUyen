@@ -10,6 +10,8 @@ public interface IStylistResponseComposer
     string intent,
     string? memorySummary,
     ChatStructuredPayloadDto? structuredPayload,
+    string? previousUserMessage = null,
+    string? previousAssistantMessage = null,
     CancellationToken cancellationToken = default);
 
   Task<string> ComposeAsync(
@@ -18,5 +20,7 @@ public interface IStylistResponseComposer
     string intent,
     string? memorySummary,
     ChatStructuredPayloadDto? structuredPayload,
+    string? previousUserMessage = null,
+    string? previousAssistantMessage = null,
     CancellationToken cancellationToken = default);
 }

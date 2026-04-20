@@ -15,11 +15,14 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     string? materialKeyword,
     string? productType,
     int limit,
+    IReadOnlyList<long>? excludeProductIds = null,
     CancellationToken cancellationToken = default)
   {
+    var excludedIds = excludeProductIds?.Count > 0 ? excludeProductIds.ToHashSet() : null;
     var products = await LoadProductsAsync(productType ?? "ao_dai", cancellationToken);
 
     return products
+      .Where(product => excludedIds is null || !excludedIds.Contains(product.Id))
       .Select(product => new
       {
         Product = product,

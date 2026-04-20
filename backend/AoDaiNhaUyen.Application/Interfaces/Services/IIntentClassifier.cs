@@ -8,5 +8,7 @@ public interface IIntentClassifier
     string message,
     IReadOnlyList<ChatAttachmentDto> attachments,
     ThreadMemoryStateDto memory,
+    string? previousUserMessage = null,
+    string? previousAssistantMessage = null,
     CancellationToken cancellationToken = default);
 }

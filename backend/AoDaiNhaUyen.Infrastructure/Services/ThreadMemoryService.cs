@@ -28,12 +28,17 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       ShortlistedProductIds = refs.LastShortlistProductIds ?? [],
       GarmentShortlistedProductIds = refs.LastGarmentShortlistProductIds ?? [],
       AccessoryShortlistedProductIds = refs.LastAccessoryShortlistProductIds ?? [],
+      ShownProductIds = refs.ShownProductIds ?? [],
       SelectedGarmentProductId = facts.SelectedGarmentProductId,
       SelectedAccessoryProductIds = facts.SelectedAccessoryProductIds ?? [],
       LatestPersonAttachmentId = facts.LatestPersonAttachmentId,
       LatestTryOnResultAttachmentId = facts.LatestTryOnResultAttachmentId,
       LatestTryOnResultMessageId = facts.LatestTryOnResultMessageId,
-      PendingTryOnRequirements = facts.PendingTryOnRequirements ?? []
+      PendingTryOnRequirements = facts.PendingTryOnRequirements ?? [],
+      RecentUserMessages = facts.RecentUserMessages ?? [],
+      RecentAssistantMessages = facts.RecentAssistantMessages ?? [],
+      UserConversationSummary = facts.UserConversationSummary,
+      AssistantConversationSummary = facts.AssistantConversationSummary
     };
   }
 
@@ -48,12 +53,28 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     }
   }
 
+  public void ApplyUserConversationTurn(ThreadMemoryStateDto memory, string userMessage)
+  {
+    if (string.IsNullOrWhiteSpace(userMessage))
+    {
+      return;
+    }
+
+    memory.RecentUserMessages.Add(userMessage.Trim());
+    if (memory.RecentUserMessages.Count > 10)
+    {
+      memory.UserConversationSummary = AppendSummary(memory.UserConversationSummary, memory.RecentUserMessages.Take(10).ToList());
+      memory.RecentUserMessages = memory.RecentUserMessages.Skip(10).ToList();
+    }
+  }
+
   public void ApplyAssistantTurn(
     ThreadMemoryStateDto memory,
     IntentClassificationDto classification,
     ChatStructuredPayloadDto? structuredPayload,
     long? tryOnResultAttachmentId,
-    long? tryOnResultMessageId)
+    long? tryOnResultMessageId,
+    string? assistantMessage = null)
   {
     if (!string.IsNullOrWhiteSpace(classification.Scenario))
     {
@@ -109,6 +130,16 @@ public sealed class ThreadMemoryService : IThreadMemoryService
         memory.AccessoryShortlistedProductIds = accessoryProducts.Select(product => product.ProductId).Distinct().ToList();
       }
 
+      var shownIds = structuredPayload.Products
+        .Concat(structuredPayload.GarmentProducts ?? [])
+        .Concat(structuredPayload.AccessoryProducts ?? [])
+        .Select(product => product.ProductId)
+        .Distinct();
+      memory.ShownProductIds = memory.ShownProductIds
+        .Concat(shownIds)
+        .Distinct()
+        .ToList();
+
       memory.SelectedGarmentProductId = structuredPayload.SelectedGarmentProductId ?? memory.SelectedGarmentProductId;
       memory.SelectedAccessoryProductIds = structuredPayload.SelectedAccessoryProductIds.Distinct().ToList();
       memory.PendingTryOnRequirements = structuredPayload.PendingTryOnRequirements.Distinct().ToList();
@@ -122,6 +153,16 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     if (tryOnResultMessageId.HasValue)
     {
       memory.LatestTryOnResultMessageId = tryOnResultMessageId.Value;
+    }
+
+    if (!string.IsNullOrWhiteSpace(assistantMessage))
+    {
+      memory.RecentAssistantMessages.Add(assistantMessage.Trim());
+      if (memory.RecentAssistantMessages.Count > 10)
+      {
+        memory.AssistantConversationSummary = AppendSummary(memory.AssistantConversationSummary, memory.RecentAssistantMessages.Take(10).ToList());
+        memory.RecentAssistantMessages = memory.RecentAssistantMessages.Skip(10).ToList();
+      }
     }
   }
 
@@ -147,13 +188,18 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       LatestPersonAttachmentId = memory.LatestPersonAttachmentId,
       LatestTryOnResultAttachmentId = memory.LatestTryOnResultAttachmentId,
       LatestTryOnResultMessageId = memory.LatestTryOnResultMessageId,
-      PendingTryOnRequirements = memory.PendingTryOnRequirements
+      PendingTryOnRequirements = memory.PendingTryOnRequirements,
+      RecentUserMessages = memory.RecentUserMessages,
+      RecentAssistantMessages = memory.RecentAssistantMessages,
+      UserConversationSummary = memory.UserConversationSummary,
+      AssistantConversationSummary = memory.AssistantConversationSummary
     }, JsonOptions);
     thread.Memory.ResolvedRefsJsonb = JsonSerializer.Serialize(new StoredRefs
     {
       LastShortlistProductIds = memory.ShortlistedProductIds,
       LastGarmentShortlistProductIds = memory.GarmentShortlistedProductIds,
-      LastAccessoryShortlistProductIds = memory.AccessoryShortlistedProductIds
+      LastAccessoryShortlistProductIds = memory.AccessoryShortlistedProductIds,
+      ShownProductIds = memory.ShownProductIds
     }, JsonOptions);
     thread.Memory.LastMessageId = lastMessageId;
     thread.Memory.UpdatedAt = DateTime.UtcNow;
@@ -187,6 +233,14 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       : string.Join("; ", parts);
   }
 
+  private static string AppendSummary(string? existingSummary, IReadOnlyList<string> messages)
+  {
+    var summary = string.Join("\n", messages.Select((message, index) => $"{index + 1}. {message}"));
+    return string.IsNullOrWhiteSpace(existingSummary)
+      ? summary
+      : string.Concat(existingSummary, "\n", summary);
+  }
+
   private static T? Deserialize<T>(string? json)
   {
     if (string.IsNullOrWhiteSpace(json))
@@ -216,6 +270,10 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     public long? LatestTryOnResultAttachmentId { get; set; }
     public long? LatestTryOnResultMessageId { get; set; }
     public List<string>? PendingTryOnRequirements { get; set; }
+    public List<string>? RecentUserMessages { get; set; }
+    public List<string>? RecentAssistantMessages { get; set; }
+    public string? UserConversationSummary { get; set; }
+    public string? AssistantConversationSummary { get; set; }
   }
 
   private sealed class StoredRefs
@@ -223,5 +281,6 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     public List<long>? LastShortlistProductIds { get; set; }
     public List<long>? LastGarmentShortlistProductIds { get; set; }
     public List<long>? LastAccessoryShortlistProductIds { get; set; }
+    public List<long>? ShownProductIds { get; set; }
   }
 }

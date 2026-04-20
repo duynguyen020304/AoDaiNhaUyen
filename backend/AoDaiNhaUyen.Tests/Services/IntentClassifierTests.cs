@@ -151,6 +151,8 @@ public sealed class IntentClassifierTests
       "vậy bạn nghĩ nó nên đi cặp như thế nào?",
       [],
       memory,
+      null,
+      null,
       CancellationToken.None);
 
     Assert.Equal("outfit_recommendation", result.Intent);

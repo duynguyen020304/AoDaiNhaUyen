@@ -11,6 +11,7 @@ public interface ICatalogStylingService
     string? materialKeyword,
     string? productType,
     int limit,
+    IReadOnlyList<long>? excludeProductIds = null,
     CancellationToken cancellationToken = default);
 
   Task<IReadOnlyList<ChatRecommendationItemDto>> LookupAsync(

@@ -36,6 +36,8 @@ public sealed class IntentClassifier(
     string message,
     IReadOnlyList<ChatAttachmentDto> attachments,
     ThreadMemoryStateDto memory,
+    string? previousUserMessage = null,
+    string? previousAssistantMessage = null,
     CancellationToken cancellationToken = default)
   {
     var hasImageAttachments = attachments.Count > 0;
@@ -60,7 +62,7 @@ public sealed class IntentClassifier(
       using var request = new HttpRequestMessage(HttpMethod.Post, BuildEndpoint())
       {
         Content = JsonContent.Create(new GeminiTextRequest(
-          [new GeminiContent("user", [new GeminiPart(BuildPrompt(message, attachments, memory))])],
+          [new GeminiContent("user", [new GeminiPart(BuildPrompt(message, attachments, memory, previousUserMessage, previousAssistantMessage))])],
           new GeminiGenerationConfig(0.1m, 0.8m, 32, 512),
           [
             new GeminiSafetySetting("HARM_CATEGORY_HARASSMENT", "BLOCK_MEDIUM_AND_ABOVE"),
@@ -137,7 +139,12 @@ public sealed class IntentClassifier(
     return $"https://aiplatform.googleapis.com/v1/publishers/google/models/{model}:generateContent";
   }
 
-  private static string BuildPrompt(string message, IReadOnlyList<ChatAttachmentDto> attachments, ThreadMemoryStateDto memory)
+  private static string BuildPrompt(
+    string message,
+    IReadOnlyList<ChatAttachmentDto> attachments,
+    ThreadMemoryStateDto memory,
+    string? previousUserMessage,
+    string? previousAssistantMessage)
   {
     var builder = new StringBuilder();
     builder.AppendLine("Bạn là bộ lập kế hoạch intent cho stylist AI Ao Dai Nha Uyen.");
@@ -164,6 +171,13 @@ public sealed class IntentClassifier(
     builder.AppendLine($"Memory has person image: {memory.LatestPersonAttachmentId.HasValue}");
     builder.AppendLine($"Memory selected garment product id: {(memory.SelectedGarmentProductId?.ToString() ?? "none")}");
     builder.AppendLine($"Memory shortlisted product ids: {(memory.ShortlistedProductIds.Count == 0 ? "none" : string.Join(", ", memory.ShortlistedProductIds))}");
+    builder.AppendLine($"User conversation summary: {memory.UserConversationSummary ?? "none"}");
+    builder.AppendLine($"Assistant conversation summary: {memory.AssistantConversationSummary ?? "none"}");
+    builder.AppendLine($"Recent user messages: {(memory.RecentUserMessages.Count == 0 ? "none" : string.Join(" || ", memory.RecentUserMessages))}");
+    builder.AppendLine($"Recent assistant messages: {(memory.RecentAssistantMessages.Count == 0 ? "none" : string.Join(" || ", memory.RecentAssistantMessages))}");
+    builder.AppendLine($"Previous user message: {previousUserMessage ?? "none"}");
+    builder.AppendLine($"Previous assistant message: {previousAssistantMessage ?? "none"}");
+    builder.AppendLine("Ưu tiên conversation summary và recent messages hơn memory summary khi đây là follow-up dài hoặc kéo dài nhiều lượt.");
     return builder.ToString();
   }
 

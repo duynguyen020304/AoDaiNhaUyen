@@ -177,10 +177,12 @@ export default function ChatWidget() {
       streamAbortControllerRef.current = streamAbortController;
       let assistantMessage: ChatMessage | null = null;
       let accumulatedText = '';
+      let bufferedStructuredPayload: ChatStructuredPayload | null = null;
 
       for await (const event of streamChatMessage(activeThread.id, capturedMessage, capturedFiles, streamAbortController.signal)) {
         switch (event.type) {
           case 'created': {
+            bufferedStructuredPayload = event.data.structuredPayload ?? null;
             assistantMessage = {
               id: event.data.messageId,
               role: 'assistant',
@@ -188,7 +190,7 @@ export default function ChatWidget() {
               intent: event.data.intent ?? null,
               createdAt: event.data.createdAt,
               attachments: event.data.attachments ?? [],
-              structuredPayload: event.data.structuredPayload ?? null,
+              structuredPayload: null,
             };
             setStreamingMessage(assistantMessage);
             break;
@@ -208,7 +210,7 @@ export default function ChatWidget() {
               intent: assistantMessage?.intent ?? null,
               createdAt: event.data.createdAt,
               attachments: assistantMessage?.attachments ?? [],
-              structuredPayload: assistantMessage?.structuredPayload ?? null,
+              structuredPayload: bufferedStructuredPayload,
             };
             setStreamingMessage(null);
             setActiveThread((current) => {

@@ -22,6 +22,8 @@ public sealed class VertexAiStylistResponseComposer(
     string intent,
     string? memorySummary,
     ChatStructuredPayloadDto? structuredPayload,
+    string? previousUserMessage = null,
+    string? previousAssistantMessage = null,
     CancellationToken cancellationToken = default)
   {
     if (string.IsNullOrWhiteSpace(googleCloudOptions.ApiKey) || string.IsNullOrWhiteSpace(googleCloudOptions.StylistTextModel))
@@ -29,7 +31,7 @@ public sealed class VertexAiStylistResponseComposer(
       return fallbackText;
     }
 
-    var prompt = BuildPrompt(userMessage, fallbackText, intent, memorySummary, structuredPayload);
+    var prompt = BuildPrompt(userMessage, fallbackText, intent, memorySummary, structuredPayload, previousUserMessage, previousAssistantMessage);
     using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
     timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Max(googleCloudOptions.TimeoutSeconds, 1)));
 
@@ -72,6 +74,8 @@ public sealed class VertexAiStylistResponseComposer(
     string intent,
     string? memorySummary,
     ChatStructuredPayloadDto? structuredPayload,
+    string? previousUserMessage = null,
+    string? previousAssistantMessage = null,
     [EnumeratorCancellation] CancellationToken cancellationToken = default)
   {
     if (string.IsNullOrWhiteSpace(googleCloudOptions.ApiKey) || string.IsNullOrWhiteSpace(googleCloudOptions.StylistTextModel))
@@ -80,7 +84,7 @@ public sealed class VertexAiStylistResponseComposer(
       yield break;
     }
 
-    var prompt = BuildPrompt(userMessage, fallbackText, intent, memorySummary, structuredPayload);
+    var prompt = BuildPrompt(userMessage, fallbackText, intent, memorySummary, structuredPayload, previousUserMessage, previousAssistantMessage);
     using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
     timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Max(googleCloudOptions.TimeoutSeconds, 1)));
 
@@ -226,7 +230,9 @@ public sealed class VertexAiStylistResponseComposer(
     string fallbackText,
     string intent,
     string? memorySummary,
-    ChatStructuredPayloadDto? structuredPayload)
+    ChatStructuredPayloadDto? structuredPayload,
+    string? previousUserMessage,
+    string? previousAssistantMessage)
   {
     var builder = new StringBuilder();
     builder.AppendLine("Bạn là stylist AI của Ao Dai Nha Uyen.");
@@ -244,6 +250,9 @@ public sealed class VertexAiStylistResponseComposer(
     builder.AppendLine();
     builder.AppendLine($"Intent: {intent}");
     builder.AppendLine($"Memory summary: {memorySummary ?? "none"}");
+    builder.AppendLine($"Previous user message: {previousUserMessage ?? "none"}");
+    builder.AppendLine($"Previous assistant message: {previousAssistantMessage ?? "none"}");
+    builder.AppendLine("Nếu đoạn chat đã dài, hãy ưu tiên bám theo conversation summary và previous-turn context trước, memory summary chỉ là ngữ cảnh phụ.");
     builder.AppendLine($"User message: {userMessage}");
     builder.AppendLine($"Deterministic fallback: {fallbackText}");
     builder.AppendLine("Structured payload:");

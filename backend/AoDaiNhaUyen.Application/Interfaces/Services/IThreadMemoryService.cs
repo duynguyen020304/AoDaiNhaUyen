@@ -11,12 +11,17 @@ public interface IThreadMemoryService
     ThreadMemoryStateDto memory,
     IReadOnlyList<ChatAttachment> attachments);
 
+  void ApplyUserConversationTurn(
+    ThreadMemoryStateDto memory,
+    string userMessage);
+
   void ApplyAssistantTurn(
     ThreadMemoryStateDto memory,
     IntentClassificationDto classification,
     ChatStructuredPayloadDto? structuredPayload,
     long? tryOnResultAttachmentId,
-    long? tryOnResultMessageId);
+    long? tryOnResultMessageId,
+    string? assistantMessage = null);
 
   void Persist(
     ChatThread thread,
