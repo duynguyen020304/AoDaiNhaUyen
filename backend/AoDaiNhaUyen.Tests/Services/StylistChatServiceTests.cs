@@ -30,6 +30,7 @@ public sealed class StylistChatServiceTests
       new StubCatalogStylingService(),
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
       new TestUploadStoragePathResolver());
 
     var result = await service.AddMessageAsync(
@@ -78,6 +79,7 @@ public sealed class StylistChatServiceTests
       new StubCatalogStylingService(),
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
       new TestUploadStoragePathResolver(uploadRoot.Path));
 
     var threadDetail = await service.AddMessageAsync(
@@ -146,6 +148,7 @@ public sealed class StylistChatServiceTests
       new StubCatalogStylingService(),
       new StubCatalogTryOnService(new AiTryOnResultDto("data:image/png;base64,AQIDBA==", "image/png")),
       new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
       new TestUploadStoragePathResolver(uploadRoot.Path));
 
     var message = await service.ExecuteTryOnAsync(
@@ -193,6 +196,7 @@ public sealed class StylistChatServiceTests
       new StubCatalogStylingService(),
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(["Xin chào ", "bạn nhé"]),
+      new StubFallbackTextService(),
       new TestUploadStoragePathResolver());
 
     var events = await service.AddMessageStreamAsync(
@@ -255,6 +259,7 @@ public sealed class StylistChatServiceTests
       new StubCatalogStylingService(),
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(["Đã nhận ảnh của bạn"]),
+      new StubFallbackTextService(),
       new TestUploadStoragePathResolver(uploadRoot.Path));
 
     var events = await service.AddMessageStreamAsync(
@@ -295,6 +300,7 @@ public sealed class StylistChatServiceTests
       new StubCatalogStylingService(),
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(shouldFallback: true),
+      new StubFallbackTextService(),
       new TestUploadStoragePathResolver());
 
     var events = await service.AddMessageStreamAsync(
@@ -310,7 +316,7 @@ public sealed class StylistChatServiceTests
     var textDone = Assert.IsType<SseChatEvent.TextDone>(events[2]);
     var assistantMessage = await dbContext.ChatMessages.SingleAsync(message => message.Role == "assistant");
 
-    Assert.Equal("Để mình tư vấn đúng hơn, bạn cho mình biết dịp mặc, ngân sách dự kiến, và màu hoặc chất liệu bạn thích nhé.", textDelta.Delta);
+    Assert.Equal("fallback:clarification", textDelta.Delta);
     Assert.Equal(textDelta.Delta, textDone.FullText);
     Assert.Equal(textDone.FullText, assistantMessage.Content);
   }
@@ -325,21 +331,90 @@ public sealed class StylistChatServiceTests
 
   private sealed class StubIntentClassifier : IIntentClassifier
   {
-    public Task<IntentClassificationDto> ClassifyAsync(
-      string message,
-      IReadOnlyList<ChatAttachmentDto> attachments,
-      ThreadMemoryStateDto memory,
-      CancellationToken cancellationToken = default)
+    private readonly IntentClassificationDto result;
+
+    public StubIntentClassifier(IntentClassificationDto? result = null)
     {
-      return Task.FromResult(new IntentClassificationDto(
+      this.result = result ?? new IntentClassificationDto(
         "clarification",
         "giao-vien",
         null,
         "blue",
         "lụa",
         [],
-        false));
+        false,
+        false);
     }
+
+    public Task<IntentClassificationDto> ClassifyAsync(
+      string message,
+      IReadOnlyList<ChatAttachmentDto> attachments,
+      ThreadMemoryStateDto memory,
+      CancellationToken cancellationToken = default)
+    {
+      return Task.FromResult(this.result with { HasImageAttachments = attachments.Count > 0 });
+    }
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_DowngradesImageAnalysisWithoutAttachments_ToClarification()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web"
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("image_style_analysis", null, null, null, null, [], false, false)),
+      new ThreadMemoryService(),
+      new StubCatalogStylingService(),
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver());
+
+    var result = await service.AddMessageAsync(thread.Id, 1, null, "Nhìn ảnh này giúp mình", "client-2", [], CancellationToken.None);
+
+    Assert.Equal("clarification", result.Messages.Last().Intent);
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_DowngradesTryOnExecuteWithoutGarment_ToClarification()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web"
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("tryon_execute", null, null, null, null, [], false, false)),
+      new ThreadMemoryService(),
+      new StubCatalogStylingService(),
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver());
+
+    var result = await service.AddMessageAsync(thread.Id, 1, null, "Thử luôn cho mình", "client-3", [], CancellationToken.None);
+
+    Assert.Equal("clarification", result.Messages.Last().Intent);
+  }
+
+  private sealed class StubFallbackTextService : IStylistFallbackTextService
+  {
+    public string Pick(string theme) => $"fallback:{theme}";
   }
 
   private sealed class StubCatalogStylingService : ICatalogStylingService

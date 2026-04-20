@@ -37,56 +37,8 @@ public sealed class ThreadMemoryService : IThreadMemoryService
 
   public void ApplyUserTurn(
     ThreadMemoryStateDto memory,
-    string message,
     IReadOnlyList<ChatAttachment> attachments)
   {
-    var normalized = ChatTextUtils.Normalize(message);
-
-    if (normalized.Contains("giao vien") || normalized.Contains("di day"))
-    {
-      memory.Scenario = "giao-vien";
-    }
-    else if (normalized.Contains("tet"))
-    {
-      memory.Scenario = "le-tet";
-    }
-    else if (normalized.Contains("tiec"))
-    {
-      memory.Scenario = "du-tiec";
-    }
-    else if (normalized.Contains("chup anh"))
-    {
-      memory.Scenario = "chup-anh";
-    }
-
-    memory.BudgetCeiling = ChatTextUtils.TryExtractBudget(message) ?? memory.BudgetCeiling;
-
-    if (normalized.Contains("xanh"))
-    {
-      memory.ColorFamily = "blue";
-    }
-    else if (normalized.Contains("hong"))
-    {
-      memory.ColorFamily = "pink";
-    }
-    else if (normalized.Contains("do"))
-    {
-      memory.ColorFamily = "red";
-    }
-    else if (normalized.Contains("trang") || normalized.Contains("kem"))
-    {
-      memory.ColorFamily = "ivory";
-    }
-
-    if (normalized.Contains("lua"))
-    {
-      memory.MaterialKeyword = "lụa";
-    }
-    else if (normalized.Contains("gam"))
-    {
-      memory.MaterialKeyword = "gấm";
-    }
-
     var latestPersonImage = attachments.LastOrDefault(attachment => attachment.Kind == "user_image");
     if (latestPersonImage is not null)
     {

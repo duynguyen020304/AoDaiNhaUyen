@@ -6,52 +6,76 @@ namespace AoDaiNhaUyen.Tests.Services;
 
 public sealed class IntentClassifierTests
 {
-  private readonly IntentClassifier classifier = new();
-
   [Fact]
-  public async Task ClassifyAsync_ReturnsOutfitRecommendation_ForStylingRequest()
+  public void ParseResponse_ReturnsNormalizedPlannerResult()
   {
-    var memory = new ThreadMemoryStateDto();
+    var body = """
+               {
+                 "candidates": [
+                   {
+                     "content": {
+                       "parts": [
+                         {
+                           "text": "{\"intent\":\"outfit_recommendation\",\"scenario\":\"giao-vien\",\"budgetCeiling\":3000000,\"colorFamily\":\"blue\",\"materialKeyword\":\"lụa\",\"requiresPersonImage\":false}"
+                         }
+                       ]
+                     }
+                   }
+                 ]
+               }
+               """;
 
-    var result = await classifier.ClassifyAsync(
-      "Gợi ý cho mình một bộ áo dài đi dạy màu xanh, dưới 3 triệu",
-      [],
-      memory);
+    var result = IntentClassifier.ParseResponse(body, new ThreadMemoryStateDto(), false);
 
-    Assert.Equal("outfit_recommendation", result.Intent);
+    Assert.NotNull(result);
+    Assert.Equal("outfit_recommendation", result!.Intent);
     Assert.Equal("giao-vien", result.Scenario);
     Assert.Equal("blue", result.ColorFamily);
+    Assert.Equal("lụa", result.MaterialKeyword);
     Assert.Equal(3_000_000m, result.BudgetCeiling);
+    Assert.False(result.RequiresPersonImage);
   }
 
   [Fact]
-  public async Task ClassifyAsync_ReturnsTryOnPrepare_WhenImageIsMissing()
+  public void ParseResponse_FallsBackToClarificationForInvalidIntentValues()
   {
-    var memory = new ThreadMemoryStateDto();
+    var body = """
+               {
+                 "candidates": [
+                   {
+                     "content": {
+                       "parts": [
+                         {
+                           "text": "{\"intent\":\"made_up\",\"scenario\":\"unknown\",\"colorFamily\":\"green\"}"
+                         }
+                       ]
+                     }
+                   }
+                 ]
+               }
+               """;
 
-    var result = await classifier.ClassifyAsync(
-      "Thử cái đầu tiên cho mình",
-      [],
-      memory);
-
-    Assert.Equal("tryon_prepare", result.Intent);
-    Assert.True(result.RequiresPersonImage);
-  }
-
-  [Fact]
-  public async Task ClassifyAsync_ReturnsTryOnExecute_WhenThreadAlreadyHasPersonImage()
-  {
     var memory = new ThreadMemoryStateDto
     {
-      LatestPersonAttachmentId = 42
+      Scenario = "le-tet",
+      ColorFamily = "red"
     };
 
-    var result = await classifier.ClassifyAsync(
-      "Thử bộ vừa rồi nhé",
-      [],
-      memory);
+    var result = IntentClassifier.ParseResponse(body, memory, false);
 
-    Assert.Equal("tryon_execute", result.Intent);
-    Assert.False(result.RequiresPersonImage);
+    Assert.NotNull(result);
+    Assert.Equal("clarification", result!.Intent);
+    Assert.Equal("le-tet", result.Scenario);
+    Assert.Equal("red", result.ColorFamily);
+  }
+
+  [Fact]
+  public void ParseResponse_ReturnsNullForInvalidJson()
+  {
+    var body = "{";
+
+    var result = IntentClassifier.ParseResponse(body, new ThreadMemoryStateDto(), false);
+
+    Assert.Null(result);
   }
 }

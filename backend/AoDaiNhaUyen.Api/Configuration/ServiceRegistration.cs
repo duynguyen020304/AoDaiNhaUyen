@@ -123,8 +123,12 @@ public static class ServiceRegistration
     services.AddScoped<IAuthService, AuthService>();
     services.AddScoped<ICatalogStylingService, CatalogStylingService>();
     services.AddScoped<ICatalogTryOnService, CatalogTryOnService>();
-    services.AddScoped<IIntentClassifier, IntentClassifier>();
+    services.AddHttpClient<IIntentClassifier, IntentClassifier>(httpClient =>
+    {
+      httpClient.Timeout = Timeout.InfiniteTimeSpan;
+    });
     services.AddScoped<IThreadMemoryService, ThreadMemoryService>();
+    services.AddScoped<IStylistFallbackTextService, StylistFallbackTextService>();
     services.AddScoped<IStylistChatService, StylistChatService>();
     services.AddHttpClient<IStylistResponseComposer, VertexAiStylistResponseComposer>(httpClient =>
     {
