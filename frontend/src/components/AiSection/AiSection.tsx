@@ -50,13 +50,15 @@ const variants: AiVariant[] = [
 export default function AiSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeVariant = variants[activeIndex];
+  const isFirstSlide = activeIndex === 0;
+  const isLastSlide = activeIndex === variants.length - 1;
 
   const selectPrevious = () => {
-    setActiveIndex((current) => (current === 0 ? variants.length - 1 : current - 1));
+    setActiveIndex((current) => (current === 0 ? current : current - 1));
   };
 
   const selectNext = () => {
-    setActiveIndex((current) => (current + 1) % variants.length);
+    setActiveIndex((current) => (current === variants.length - 1 ? current : current + 1));
   };
 
   return (
@@ -71,6 +73,12 @@ export default function AiSection() {
     >
       <div className={styles.scene}>
         <div className={styles.texture} aria-hidden="true" />
+        <img
+          className={styles.orbitBackdrop}
+          src="/assets/ai-figma-node-3785-8906.png"
+          alt=""
+          aria-hidden="true"
+        />
         <div className={styles.fanLayer} aria-hidden="true">
           <img className={`${styles.fan} ${styles.fanDefault}`} src="/assets/ai-figma-fan-default.svg" alt="" />
           <img className={`${styles.fan} ${styles.fanHover}`} src="/assets/ai-figma-fan-hover.svg" alt="" />
@@ -82,6 +90,9 @@ export default function AiSection() {
         </div>
 
         <div className={styles.cardCluster} aria-label="Ảnh nguồn và mẫu áo dài được AI phối thử">
+          <div className={styles.aiBadgeCorner} aria-hidden="true">
+            <img className={styles.aiBadgeCornerImage} src="/assets/AI-badge.png" alt="" aria-hidden="true" />
+          </div>
           <img
             key={`${activeVariant.id}-source`}
             className={`${styles.photoCard} ${styles.sourceCard}`}
@@ -100,11 +111,22 @@ export default function AiSection() {
         </div>
 
         <div className={styles.controls} aria-label="Chọn mẫu AI">
-          <button type="button" className={styles.navButton} onClick={selectPrevious} aria-label="Mẫu trước">
-            <span aria-hidden="true" />
+          <button
+            type="button"
+            className={styles.navButton}
+            onClick={selectPrevious}
+            aria-label="Mẫu trước"
+            disabled={isFirstSlide}
+          >
           </button>
-          <button type="button" className={`${styles.navButton} ${styles.nextButton}`} onClick={selectNext} aria-label="Mẫu tiếp theo">
-            <span aria-hidden="true" />
+          <img className={styles.slideDots} src="/assets/polygon.png" alt="" aria-hidden="true" />
+          <button
+            type="button"
+            className={`${styles.navButton} ${styles.nextButton}`}
+            onClick={selectNext}
+            aria-label="Mẫu tiếp theo"
+            disabled={isLastSlide}
+          >
           </button>
         </div>
 
