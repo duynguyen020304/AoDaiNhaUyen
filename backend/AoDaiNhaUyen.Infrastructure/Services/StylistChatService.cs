@@ -131,7 +131,8 @@ public sealed class StylistChatService(
     classification = NormalizeClassification(classification with { ReferencedProductIds = referencedProductIds }, memory, savedAttachments.Count > 0);
     userMessage.Intent = classification.Intent;
 
-    var assistantTurn = await BuildAssistantTurnAsync(userMessage.Content, classification, memory, cancellationToken);
+    var assistantTurn = await BuildAssistantTurnAsync(userMessage.Content, classification, memory, [.. thread.Attachments], savedAttachments, cancellationToken);
+    var imageCatalogText = BuildImageCatalogText(memory);
     var composedContent = await stylistResponseComposer.ComposeAsync(
       userMessage.Content,
       assistantTurn.Content,
@@ -140,6 +141,8 @@ public sealed class StylistChatService(
       assistantTurn.StructuredPayload,
       previousUserMessage,
       previousAssistantMessage,
+      assistantTurn.ReferencedImages,
+      imageCatalogText,
       cancellationToken);
     var assistantMessage = new ChatMessage
     {
@@ -234,6 +237,8 @@ public sealed class StylistChatService(
         structuredPayload,
         memory.RecentUserMessages.LastOrDefault(),
         memory.RecentAssistantMessages.LastOrDefault(),
+        null,
+        null,
         cancellationToken),
       Intent = "tryon_execute",
       PromptVersion = PromptVersion,
@@ -303,7 +308,8 @@ public sealed class StylistChatService(
     classification = NormalizeClassification(classification with { ReferencedProductIds = referencedProductIds }, memory, savedAttachments.Count > 0);
     userMessage.Intent = classification.Intent;
 
-    var assistantTurn = await BuildAssistantTurnAsync(userMessage.Content, classification, memory, cancellationToken);
+    var assistantTurn = await BuildAssistantTurnAsync(userMessage.Content, classification, memory, [.. thread.Attachments], savedAttachments, cancellationToken);
+    var imageCatalogText = BuildImageCatalogText(memory);
 
     yield return new SseChatEvent.Created(
       0,
@@ -324,6 +330,8 @@ public sealed class StylistChatService(
       assistantTurn.StructuredPayload,
       previousUserMessage,
       previousAssistantMessage,
+      assistantTurn.ReferencedImages,
+      imageCatalogText,
       cancellationToken).WithCancellation(cancellationToken))
     {
       accumulatedText.Append(chunk);
@@ -443,6 +451,8 @@ public sealed class StylistChatService(
     string userMessage,
     IntentClassificationDto classification,
     ThreadMemoryStateDto memory,
+    IReadOnlyList<ChatAttachment> threadAttachments,
+    IReadOnlyList<ChatAttachment> currentTurnAttachments,
     CancellationToken cancellationToken)
   {
     return classification.Intent switch
@@ -453,7 +463,7 @@ public sealed class StylistChatService(
       "product_description" => await BuildProductDescriptionTurnAsync(classification, memory, cancellationToken),
       "product_comparison" => await BuildComparisonTurnAsync(classification, cancellationToken),
       "tryon_prepare" or "tryon_execute" => await BuildTryOnTurnAsync(classification, memory, cancellationToken),
-      "image_style_analysis" => await BuildImageAnalysisTurnAsync(classification, memory, cancellationToken),
+      "image_style_analysis" => await BuildImageAnalysisTurnAsync(userMessage, classification, memory, threadAttachments, currentTurnAttachments, cancellationToken),
       "out_of_scope" => new AssistantTurn(
         fallbackTextService.Pick("out_of_scope"),
         null),
@@ -477,7 +487,7 @@ public sealed class StylistChatService(
       "tryon_execute" when !hasPersonImage => "tryon_prepare",
       "tryon_prepare" when !hasGarmentReference => "clarification",
       "product_comparison" when classification.ReferencedProductIds.Count < 2 => "clarification",
-      "image_style_analysis" when !hasImageAttachments => "clarification",
+      "image_style_analysis" when !hasImageAttachments && memory.ImageCatalog.Count == 0 => "clarification",
       "catalog_lookup" or "outfit_recommendation" or "accessory_recommendation" or "product_description" or "product_comparison" or "tryon_prepare" or "tryon_execute" or "image_style_analysis" or "clarification" or "out_of_scope" => classification.Intent,
       _ => "clarification"
     };
@@ -801,11 +811,29 @@ public sealed class StylistChatService(
   }
 
   private async Task<AssistantTurn> BuildImageAnalysisTurnAsync(
+    string userMessage,
     IntentClassificationDto classification,
     ThreadMemoryStateDto memory,
+    IReadOnlyList<ChatAttachment> threadAttachments,
+    IReadOnlyList<ChatAttachment> currentTurnAttachments,
     CancellationToken cancellationToken)
   {
+    var referencedImages = await ResolveReferencedImagesAsync(
+      userMessage, memory, threadAttachments, currentTurnAttachments, cancellationToken);
+
     var scenario = classification.Scenario ?? memory.Scenario;
+
+    // If we have images to analyze, return with image references for the composer
+    if (referencedImages.Count > 0)
+    {
+      var fallback = scenario is not null
+        ? $"Mình xem ảnh bạn gửi rồi nha. Mình sẽ ưu tiên set hợp dịp {scenario.Replace('-', ' ')} và dễ lên ảnh."
+        : "Mình xem ảnh của bạn rồi nha.";
+
+      return new AssistantTurn(fallback, null, referencedImages);
+    }
+
+    // No images available — fall back to scenario-based recommendations
     if (string.IsNullOrWhiteSpace(scenario))
     {
       return new AssistantTurn(
@@ -1279,5 +1307,113 @@ public sealed class StylistChatService(
       cancellationToken);
   }
 
-  private sealed record AssistantTurn(string Content, ChatStructuredPayloadDto? StructuredPayload);
+  private static string? BuildImageCatalogText(ThreadMemoryStateDto memory)
+  {
+    return memory.ImageCatalog.Count == 0
+      ? null
+      : string.Join(", ", memory.ImageCatalog.Select(e => $"{e.Label} ({e.Kind})"));
+  }
+
+  private async Task<IReadOnlyList<ImageReferenceDto>> ResolveReferencedImagesAsync(
+    string userMessage,
+    ThreadMemoryStateDto memory,
+    IReadOnlyList<ChatAttachment> threadAttachments,
+    IReadOnlyList<ChatAttachment>? currentTurnAttachments,
+    CancellationToken cancellationToken)
+  {
+    var result = new List<ImageReferenceDto>();
+    var normalized = ChatTextUtils.Normalize(userMessage);
+
+    // If current turn has image attachments, include those first
+    if (currentTurnAttachments is not null)
+    {
+      foreach (var attachment in currentTurnAttachments.Where(a => a.Kind is "user_image" or "tryon_result"))
+      {
+        var entry = memory.ImageCatalog.FirstOrDefault(e => e.AttachmentId == attachment.Id);
+        var bytes = await ReadStoredAttachmentBytesAsync(attachment.FileUrl, cancellationToken);
+        result.Add(new ImageReferenceDto(
+          attachment.Id,
+          entry?.Label ?? $"Ảnh {attachment.Id}",
+          attachment.Kind,
+          attachment.MimeType,
+          bytes));
+      }
+
+      if (result.Count > 0)
+      {
+        return result;
+      }
+    }
+
+    // Resolve from catalog based on user message references
+    var catalog = memory.ImageCatalog;
+    if (catalog.Count == 0)
+    {
+      return result;
+    }
+
+    IEnumerable<ImageCatalogEntry> matched;
+
+    if (normalized.Contains("anh dau tien") || normalized.Contains("anh 1") || normalized.Contains("anh thu 1"))
+    {
+      matched = [catalog.First()];
+    }
+    else if (normalized.Contains("anh cuoi") || normalized.Contains("anh vua tao") || normalized.Contains("anh vua gui") || normalized.Contains("anh moi"))
+    {
+      matched = [catalog.Last()];
+    }
+    else if (TryExtractImageIndex(normalized, out var index) && index > 0 && index <= catalog.Count)
+    {
+      matched = [catalog[index - 1]];
+    }
+    else if (normalized.Contains("anh thu do") || normalized.Contains("ket qua thu do"))
+    {
+      matched = catalog.Where(e => e.Kind == "tryon_result").TakeLast(1);
+    }
+    else
+    {
+      // No specific reference — use the most recent image
+      matched = [catalog.Last()];
+    }
+
+    foreach (var entry in matched)
+    {
+      var attachment = threadAttachments.FirstOrDefault(a => a.Id == entry.AttachmentId);
+      if (attachment is null)
+      {
+        continue;
+      }
+
+      var bytes = await ReadStoredAttachmentBytesAsync(attachment.FileUrl, cancellationToken);
+      result.Add(new ImageReferenceDto(attachment.Id, entry.Label, entry.Kind, attachment.MimeType, bytes));
+    }
+
+    return result;
+  }
+
+  private static bool TryExtractImageIndex(string normalized, out int index)
+  {
+    index = 0;
+    var patterns = new[] { "anh thu ", "anh so ", "anh " };
+    foreach (var pattern in patterns)
+    {
+      var pos = normalized.IndexOf(pattern, StringComparison.Ordinal);
+      if (pos < 0)
+      {
+        continue;
+      }
+
+      var afterPattern = normalized[(pos + pattern.Length)..];
+      var digits = new string(afterPattern.TakeWhile(char.IsDigit).ToArray());
+      if (int.TryParse(digits, out var num) && num > 0)
+      {
+        index = num;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private sealed record AssistantTurn(string Content, ChatStructuredPayloadDto? StructuredPayload, IReadOnlyList<ImageReferenceDto>? ReferencedImages = null);
 }

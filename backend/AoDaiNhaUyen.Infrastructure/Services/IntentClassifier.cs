@@ -154,7 +154,7 @@ public sealed class IntentClassifier(
     builder.AppendLine("ColorFamily chỉ được là: blue, pink, red, ivory.");
     builder.AppendLine("MaterialKeyword chỉ được là: lụa, gấm.");
     builder.AppendLine("Chọn clarification khi thiếu dữ kiện để hành động an toàn. Chọn out_of_scope cho đơn hàng, vận chuyển, đổi trả, hoàn tiền.");
-    builder.AppendLine("Chọn image_style_analysis khi người dùng gửi ảnh để xin nhận xét/gợi ý style từ ảnh. Chọn tryon_prepare hoặc tryon_execute cho nhu cầu thử đồ.");
+    builder.AppendLine("Chọn image_style_analysis khi người dùng gửi ảnh để xin nhận xét/gợi ý style từ ảnh, hoặc khi người dùng hỏi về/thảo luận ảnh đã gửi trước đó (ví dụ: 'ảnh vừa tạo có đẹp không', 'ảnh đầu tiên', 'nhận xét ảnh'). Chọn tryon_prepare hoặc tryon_execute cho nhu cầu thử đồ.");
     builder.AppendLine("Chọn product_description khi user hỏi mô tả, đặc tính, chi tiết, nhận xét hoặc nói rõ hơn về các sản phẩm đã được nhắc ở shortlist hiện tại.");
     builder.AppendLine("Nếu user nói 'mẫu này', 'các mẫu này', '3 áo dài này', 'mấy mẫu trên' thì hiểu đó là follow-up dựa trên shortlist trong memory, không hỏi lại discovery trừ khi thật sự không có shortlist.");
     builder.AppendLine("Nếu user hỏi 'đi cặp như thế nào', 'phối sao cho hợp', 'gợi ý set', 'mix cùng mẫu này', 'phối cùng áo dài này' và memory đã có áo dài đang shortlist hoặc selected garment, hãy ưu tiên outfit_recommendation để trả về combo áo dài + phụ kiện.");
@@ -169,6 +169,7 @@ public sealed class IntentClassifier(
     builder.AppendLine($"Memory color: {memory.ColorFamily ?? "none"}");
     builder.AppendLine($"Memory material: {memory.MaterialKeyword ?? "none"}");
     builder.AppendLine($"Memory has person image: {memory.LatestPersonAttachmentId.HasValue}");
+    builder.AppendLine($"Memory image catalog: {(memory.ImageCatalog.Count == 0 ? "none" : string.Join(", ", memory.ImageCatalog.Select(e => $"{e.Label} ({e.Kind})")))}");
     builder.AppendLine($"Memory selected garment product id: {(memory.SelectedGarmentProductId?.ToString() ?? "none")}");
     builder.AppendLine($"Memory shortlisted product ids: {(memory.ShortlistedProductIds.Count == 0 ? "none" : string.Join(", ", memory.ShortlistedProductIds))}");
     builder.AppendLine($"User conversation summary: {memory.UserConversationSummary ?? "none"}");
@@ -401,6 +402,11 @@ public sealed class IntentClassifier(
       return new IntentClassificationDto("out_of_scope", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, hasImageAttachments);
     }
 
+    if (IsImageReferenceFollowUp(normalized) && (hasImageAttachments || memory.ImageCatalog.Count > 0))
+    {
+      return new IntentClassificationDto("image_style_analysis", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, hasImageAttachments || memory.ImageCatalog.Count > 0);
+    }
+
     if (IsTryOnIntent(normalized))
     {
       return new IntentClassificationDto("tryon_execute", scenario, budgetCeiling, colorFamily, materialKeyword, "ao_dai", [], !memory.LatestPersonAttachmentId.HasValue, hasImageAttachments);
@@ -467,6 +473,23 @@ public sealed class IntentClassifier(
     normalized.Contains("xem anh") ||
     normalized.Contains("nhan xet anh") ||
     normalized.Contains("goi y style tu anh");
+
+  private static bool IsImageReferenceFollowUp(string normalized) =>
+    normalized.Contains("anh dau tien") ||
+    normalized.Contains("anh cuoi") ||
+    normalized.Contains("anh vua tao") ||
+    normalized.Contains("anh vua gui") ||
+    normalized.Contains("anh thu") ||
+    normalized.Contains("anh nay") ||
+    normalized.Contains("anh do") ||
+    normalized.Contains("cai anh") ||
+    normalized.Contains("nhin anh") ||
+    normalized.Contains("xem anh") ||
+    normalized.Contains("nhan xet anh") ||
+    normalized.Contains("anh co dep") ||
+    normalized.Contains("dep khong") && normalized.Contains("anh") ||
+    normalized.Contains("anh thu do") ||
+    normalized.Contains("ket qua thu do");
 
   private static bool IsProductDescriptionIntent(string normalized) =>
     normalized.Contains("chi tiet") ||

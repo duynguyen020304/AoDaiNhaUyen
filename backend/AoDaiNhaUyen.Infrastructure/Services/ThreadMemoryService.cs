@@ -46,7 +46,8 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       RecentUserMessages = facts.RecentUserMessages ?? [],
       RecentAssistantMessages = facts.RecentAssistantMessages ?? [],
       UserConversationSummary = facts.UserConversationSummary,
-      AssistantConversationSummary = facts.AssistantConversationSummary
+      AssistantConversationSummary = facts.AssistantConversationSummary,
+      ImageCatalog = facts.ImageCatalog ?? []
     };
   }
 
@@ -59,6 +60,15 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     {
       memory.LatestPersonAttachmentId = latestPersonImage.Id;
     }
+
+    foreach (var attachment in attachments.Where(a => a.Kind is "user_image" or "tryon_result"))
+    {
+      var label = $"Ảnh {memory.ImageCatalog.Count + 1}";
+      var description = attachment.Kind == "user_image" ? "ảnh người mặc" : "kết quả thử đồ";
+      memory.ImageCatalog.Add(new ImageCatalogEntry(attachment.Id, attachment.Kind, label, description));
+    }
+
+    TrimImageCatalog(memory);
   }
 
   public void ApplyUserConversationTurn(ThreadMemoryStateDto memory, string userMessage)
@@ -224,6 +234,10 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     if (tryOnResultAttachmentId.HasValue)
     {
       memory.LatestTryOnResultAttachmentId = tryOnResultAttachmentId.Value;
+      var label = $"Ảnh {memory.ImageCatalog.Count + 1}";
+      memory.ImageCatalog.Add(new ImageCatalogEntry(
+          tryOnResultAttachmentId.Value, "tryon_result", label, "kết quả thử đồ"));
+      TrimImageCatalog(memory);
     }
 
     if (tryOnResultMessageId.HasValue)
@@ -271,7 +285,8 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       RecentUserMessages = memory.RecentUserMessages,
       RecentAssistantMessages = memory.RecentAssistantMessages,
       UserConversationSummary = memory.UserConversationSummary,
-      AssistantConversationSummary = memory.AssistantConversationSummary
+      AssistantConversationSummary = memory.AssistantConversationSummary,
+      ImageCatalog = memory.ImageCatalog
     }, JsonOptions);
     thread.Memory.ResolvedRefsJsonb = JsonSerializer.Serialize(new StoredRefs
     {
@@ -287,6 +302,21 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     }, JsonOptions);
     thread.Memory.LastMessageId = lastMessageId;
     thread.Memory.UpdatedAt = DateTime.UtcNow;
+  }
+
+  private static void TrimImageCatalog(ThreadMemoryStateDto memory)
+  {
+    const int maxEntries = 10;
+    if (memory.ImageCatalog.Count <= maxEntries)
+    {
+      return;
+    }
+
+    memory.ImageCatalog = memory.ImageCatalog.TakeLast(maxEntries).ToList();
+    for (var i = 0; i < memory.ImageCatalog.Count; i++)
+    {
+      memory.ImageCatalog[i] = memory.ImageCatalog[i] with { Label = $"Ảnh {i + 1}" };
+    }
   }
 
   private static string BuildSummary(ThreadMemoryStateDto memory)
@@ -395,6 +425,7 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     public List<string>? RecentAssistantMessages { get; set; }
     public string? UserConversationSummary { get; set; }
     public string? AssistantConversationSummary { get; set; }
+    public List<ImageCatalogEntry>? ImageCatalog { get; set; }
   }
 
   private sealed class StoredRefs

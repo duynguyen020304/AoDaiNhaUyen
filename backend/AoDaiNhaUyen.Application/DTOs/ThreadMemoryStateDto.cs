@@ -1,7 +1,14 @@
 namespace AoDaiNhaUyen.Application.DTOs;
 
+public sealed record ImageCatalogEntry(
+    long AttachmentId,
+    string Kind,
+    string Label,
+    string? Description);
+
 public sealed class ThreadMemoryStateDto
 {
+  public List<ImageCatalogEntry> ImageCatalog { get; set; } = [];
   public string? Scenario { get; set; }
   public decimal? BudgetCeiling { get; set; }
   public string? ColorFamily { get; set; }
