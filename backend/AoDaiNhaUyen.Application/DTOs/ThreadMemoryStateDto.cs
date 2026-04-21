@@ -6,10 +6,18 @@ public sealed class ThreadMemoryStateDto
   public decimal? BudgetCeiling { get; set; }
   public string? ColorFamily { get; set; }
   public string? MaterialKeyword { get; set; }
+  public string? ConversationStage { get; set; }
+  public string? LastUserRequestType { get; set; }
   public List<long> ShortlistedProductIds { get; set; } = [];
   public List<long> GarmentShortlistedProductIds { get; set; } = [];
   public List<long> AccessoryShortlistedProductIds { get; set; } = [];
   public List<long> ShownProductIds { get; set; } = [];
+  public List<long> ShownGarmentProductIds { get; set; } = [];
+  public List<long> ShownAccessoryProductIds { get; set; } = [];
+  public List<string> ShownOutfitSignatures { get; set; } = [];
+  public List<long> RejectedProductIds { get; set; } = [];
+  public List<long> LikedProductIds { get; set; } = [];
+  public string? LastRecommendationStrategy { get; set; }
   public long? SelectedGarmentProductId { get; set; }
   public List<long> SelectedAccessoryProductIds { get; set; } = [];
   public long? LatestPersonAttachmentId { get; set; }

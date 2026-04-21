@@ -4,6 +4,7 @@ using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using AoDaiNhaUyen.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace AoDaiNhaUyen.Tests.Services;
@@ -31,7 +32,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(
       thread.Id,
@@ -56,6 +58,9 @@ public sealed class StylistChatServiceTests
     Assert.Equal(lastAssistantMessage.Id, storedThread.Memory!.LastMessageId);
     Assert.True(storedThread.Memory.LastMessageId > 0);
     Assert.Equal(2, result.Messages.Count);
+
+    var storedMemory = new ThreadMemoryService().Read(storedThread.Memory);
+    Assert.Contains(lastAssistantMessage.Content, storedMemory.RecentAssistantMessages);
   }
 
   [Fact]
@@ -100,7 +105,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(
       thread.Id,
@@ -116,6 +122,8 @@ public sealed class StylistChatServiceTests
     Assert.Equal([203, 202], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
     Assert.DoesNotContain(101, payload.GarmentProducts!.Select(product => product.ProductId));
     Assert.DoesNotContain(201, payload.AccessoryProducts!.Select(product => product.ProductId));
+    Assert.Contains("Look 1", result.Messages.Last().Content);
+    Assert.Contains("Khác biệt:", result.Messages.Last().Content);
     Assert.All(stylingService.RecommendExcludedProductIds, ids => Assert.Empty(ids));
   }
 
@@ -159,7 +167,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(
       thread.Id,
@@ -202,7 +211,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(
       thread.Id,
@@ -216,6 +226,8 @@ public sealed class StylistChatServiceTests
     var payload = result.Messages.Last().StructuredPayload!;
     Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
     Assert.Equal([201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+    Assert.Contains("Look 1", result.Messages.Last().Content);
+    Assert.Contains("Khác biệt:", result.Messages.Last().Content);
     Assert.NotNull(payload);
   }
 
@@ -252,7 +264,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(
       thread.Id,
@@ -290,7 +303,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver(uploadRoot.Path));
+      new TestUploadStoragePathResolver(uploadRoot.Path),
+      NullLogger<StylistChatService>.Instance);
 
     var threadDetail = await service.AddMessageAsync(
       thread.Id,
@@ -359,7 +373,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(new AiTryOnResultDto("data:image/png;base64,AQIDBA==", "image/png")),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver(uploadRoot.Path));
+      new TestUploadStoragePathResolver(uploadRoot.Path),
+      NullLogger<StylistChatService>.Instance);
 
     var message = await service.ExecuteTryOnAsync(
       thread.Id,
@@ -407,7 +422,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(["Xin chào ", "bạn nhé"]),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var events = await service.AddMessageStreamAsync(
       thread.Id,
@@ -470,7 +486,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(["Đã nhận ảnh của bạn"]),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver(uploadRoot.Path));
+      new TestUploadStoragePathResolver(uploadRoot.Path),
+      NullLogger<StylistChatService>.Instance);
 
     var events = await service.AddMessageStreamAsync(
       thread.Id,
@@ -511,7 +528,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(shouldFallback: true),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var events = await service.AddMessageStreamAsync(
       thread.Id,
@@ -590,7 +608,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(thread.Id, 1, null, "Nhìn ảnh này giúp mình", "client-2", [], CancellationToken.None);
 
@@ -618,7 +637,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(thread.Id, 1, null, "Thử luôn cho mình", "client-3", [], CancellationToken.None);
 
@@ -647,7 +667,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(thread.Id, 1, null, "Gợi ý set cho mình", "client-4", [], CancellationToken.None);
 
@@ -681,7 +702,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(thread.Id, 1, null, "Phối cho mình một set hoàn chỉnh", "client-5", [], CancellationToken.None);
 
@@ -720,7 +742,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(thread.Id, 1, null, "vậy bạn nghĩ nó nên đi cặp như thế nào?", "client-5b", [], CancellationToken.None);
 
@@ -757,7 +780,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(thread.Id, 1, null, "miêu tả đặc tính của 3 áo dài này", "client-6", [], CancellationToken.None);
 

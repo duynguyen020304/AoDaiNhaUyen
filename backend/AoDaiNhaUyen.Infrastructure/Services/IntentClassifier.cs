@@ -252,7 +252,7 @@ public sealed class IntentClassifier(
   private static string? DetectProductType(string message)
   {
     var normalized = ChatTextUtils.Normalize(message);
-    if (normalized.Contains("phu kien") || normalized.Contains("phụ kiện") || normalized.Contains("khan") || normalized.Contains("trang suc") || normalized.Contains("bong tai") || normalized.Contains("tui xach"))
+    if (normalized.Contains("phu kien") || normalized.Contains("phụ kiện") || normalized.Contains("khan") || normalized.Contains("trang suc") || normalized.Contains("bong tai") || normalized.Contains("tui xach") || normalized.Contains("tui sach") || normalized.Contains("tram cai") || normalized.Contains("quat") || normalized.Contains("guoc") || normalized.Contains("giay"))
     {
       return "phu_kien";
     }
@@ -264,6 +264,125 @@ public sealed class IntentClassifier(
 
     return null;
   }
+
+  private static bool HasSpecificAccessoryKeywords(string normalized) =>
+    normalized.Contains("tui xach") ||
+    normalized.Contains("tui sach") ||
+    normalized.Contains("tram cai") ||
+    normalized.Contains("quat") ||
+    normalized.Contains("guoc") ||
+    normalized.Contains("giay") ||
+    normalized.Contains("kep toc");
+
+  private static bool HasSpecificAoDaiKeywords(string normalized) =>
+    normalized.Contains("theu") ||
+    normalized.Contains("hoa sen") ||
+    normalized.Contains("truyen thong") ||
+    normalized.Contains("cach tan") ||
+    normalized.Contains("lua tron") ||
+    normalized.Contains("gam theu");
+
+  private static bool IsAccessoryOnlyIntent(string normalized) =>
+    normalized.Contains("phu kien nao") ||
+    normalized.Contains("co nhung phu kien") ||
+    normalized.Contains("shop co phu kien") ||
+    (normalized.Contains("phu kien") && !normalized.Contains("set")) ||
+    HasSpecificAccessoryKeywords(normalized);
+
+  private static bool IsCatalogLookupIntent(string normalized) =>
+    normalized.Contains("co nhung") ||
+    normalized.Contains("dang co") ||
+    normalized.Contains("catalog") ||
+    normalized.Contains("san sang de lua chon") ||
+    normalized.Contains("mau nao") ||
+    normalized.Contains("cho toi xem") ||
+    normalized.Contains("can tim") ||
+    normalized.Contains("muon tim") ||
+    HasSpecificAccessoryKeywords(normalized) ||
+    HasSpecificAoDaiKeywords(normalized);
+
+  private static bool IsRecommendationIntent(string normalized) =>
+    normalized.Contains("goi y") ||
+    normalized.Contains("tu van") ||
+    normalized.Contains("chon giup") ||
+    normalized.Contains("phoi do") ||
+    (normalized.Contains("ao dai") && (normalized.Contains("can") || normalized.Contains("muon") || normalized.Contains("tim"))) ||
+    (HasSpecificAccessoryKeywords(normalized) && (normalized.Contains("dep") || normalized.Contains("hop") || normalized.Contains("goi y") || normalized.Contains("can")));
+
+  private static string? TryExtractText(string body)
+  {
+    if (string.IsNullOrWhiteSpace(body))
+    {
+      return null;
+    }
+
+    try
+    {
+      using var document = JsonDocument.Parse(body);
+      if (!document.RootElement.TryGetProperty("candidates", out var candidates) || candidates.ValueKind != JsonValueKind.Array)
+      {
+        return null;
+      }
+
+      foreach (var candidate in candidates.EnumerateArray())
+      {
+        if (!candidate.TryGetProperty("content", out var content) ||
+            !content.TryGetProperty("parts", out var parts) ||
+            parts.ValueKind != JsonValueKind.Array)
+        {
+          continue;
+        }
+
+        var text = string.Join(
+          string.Empty,
+          parts.EnumerateArray()
+            .Where(part => part.TryGetProperty("text", out _))
+            .Select(part => part.GetProperty("text").GetString())
+            .Where(value => !string.IsNullOrWhiteSpace(value)));
+
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+          return text.Trim();
+        }
+      }
+    }
+    catch (JsonException)
+    {
+      return null;
+    }
+
+    return null;
+  }
+
+  private sealed record PlannerOutput(
+    string? Intent,
+    string? Scenario,
+    decimal? BudgetCeiling,
+    string? ColorFamily,
+    string? MaterialKeyword,
+    string? ProductType,
+    bool? RequiresPersonImage);
+
+  private sealed record GeminiTextRequest(
+    [property: JsonPropertyName("contents")] IReadOnlyList<GeminiContent> Contents,
+    [property: JsonPropertyName("generationConfig")] GeminiGenerationConfig GenerationConfig,
+    [property: JsonPropertyName("safetySettings")] IReadOnlyList<GeminiSafetySetting> SafetySettings);
+
+  private sealed record GeminiContent(
+    [property: JsonPropertyName("role")] string Role,
+    [property: JsonPropertyName("parts")] IReadOnlyList<GeminiPart> Parts);
+
+  private sealed record GeminiPart([property: JsonPropertyName("text")] string Text);
+
+  private sealed record GeminiGenerationConfig(
+    [property: JsonPropertyName("temperature")] decimal Temperature,
+    [property: JsonPropertyName("topP")] decimal TopP,
+    [property: JsonPropertyName("topK")] int TopK,
+    [property: JsonPropertyName("maxOutputTokens")] int MaxOutputTokens);
+
+  private sealed record GeminiSafetySetting(
+    [property: JsonPropertyName("category")] string Category,
+    [property: JsonPropertyName("threshold")] string Threshold);
 
   private static IntentClassificationDto BuildFallbackClassification(
     string message,
@@ -377,99 +496,5 @@ public sealed class IntentClassifier(
       normalized.Contains("set hoan chinh") ||
       normalized.Contains("nen di cung");
   }
-
-  private static bool IsAccessoryOnlyIntent(string normalized) =>
-    normalized.Contains("phu kien nao") ||
-    normalized.Contains("co nhung phu kien") ||
-    normalized.Contains("shop co phu kien") ||
-    (normalized.Contains("phu kien") && !normalized.Contains("set"));
-
-  private static bool IsCatalogLookupIntent(string normalized) =>
-    normalized.Contains("co nhung") ||
-    normalized.Contains("dang co") ||
-    normalized.Contains("catalog") ||
-    normalized.Contains("san sang de lua chon") ||
-    normalized.Contains("mau nao");
-
-  private static bool IsRecommendationIntent(string normalized) =>
-    normalized.Contains("goi y") ||
-    normalized.Contains("tu van") ||
-    normalized.Contains("chon giup") ||
-    normalized.Contains("phoi do");
-
-  private static string? TryExtractText(string body)
-  {
-    if (string.IsNullOrWhiteSpace(body))
-    {
-      return null;
-    }
-
-    try
-    {
-      using var document = JsonDocument.Parse(body);
-      if (!document.RootElement.TryGetProperty("candidates", out var candidates) || candidates.ValueKind != JsonValueKind.Array)
-      {
-        return null;
-      }
-
-      foreach (var candidate in candidates.EnumerateArray())
-      {
-        if (!candidate.TryGetProperty("content", out var content) ||
-            !content.TryGetProperty("parts", out var parts) ||
-            parts.ValueKind != JsonValueKind.Array)
-        {
-          continue;
-        }
-
-        var text = string.Join(
-          string.Empty,
-          parts.EnumerateArray()
-            .Where(part => part.TryGetProperty("text", out _))
-            .Select(part => part.GetProperty("text").GetString())
-            .Where(value => !string.IsNullOrWhiteSpace(value)));
-
-        if (!string.IsNullOrWhiteSpace(text))
-        {
-          return text.Trim();
-        }
-      }
-    }
-    catch (JsonException)
-    {
-      return null;
-    }
-
-    return null;
-  }
-
-  private sealed record PlannerOutput(
-    string? Intent,
-    string? Scenario,
-    decimal? BudgetCeiling,
-    string? ColorFamily,
-    string? MaterialKeyword,
-    string? ProductType,
-    bool? RequiresPersonImage);
-
-  private sealed record GeminiTextRequest(
-    [property: JsonPropertyName("contents")] IReadOnlyList<GeminiContent> Contents,
-    [property: JsonPropertyName("generationConfig")] GeminiGenerationConfig GenerationConfig,
-    [property: JsonPropertyName("safetySettings")] IReadOnlyList<GeminiSafetySetting> SafetySettings);
-
-  private sealed record GeminiContent(
-    [property: JsonPropertyName("role")] string Role,
-    [property: JsonPropertyName("parts")] IReadOnlyList<GeminiPart> Parts);
-
-  private sealed record GeminiPart([property: JsonPropertyName("text")] string Text);
-
-  private sealed record GeminiGenerationConfig(
-    [property: JsonPropertyName("temperature")] decimal Temperature,
-    [property: JsonPropertyName("topP")] decimal TopP,
-    [property: JsonPropertyName("topK")] int TopK,
-    [property: JsonPropertyName("maxOutputTokens")] int MaxOutputTokens);
-
-  private sealed record GeminiSafetySetting(
-    [property: JsonPropertyName("category")] string Category,
-    [property: JsonPropertyName("threshold")] string Threshold);
 
 }

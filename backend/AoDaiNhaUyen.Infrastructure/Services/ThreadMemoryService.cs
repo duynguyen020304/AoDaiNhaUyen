@@ -25,10 +25,18 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       BudgetCeiling = facts.BudgetCeiling,
       ColorFamily = facts.ColorFamily,
       MaterialKeyword = facts.MaterialKeyword,
+      ConversationStage = facts.ConversationStage,
+      LastUserRequestType = facts.LastUserRequestType,
       ShortlistedProductIds = refs.LastShortlistProductIds ?? [],
       GarmentShortlistedProductIds = refs.LastGarmentShortlistProductIds ?? [],
       AccessoryShortlistedProductIds = refs.LastAccessoryShortlistProductIds ?? [],
       ShownProductIds = refs.ShownProductIds ?? [],
+      ShownGarmentProductIds = refs.ShownGarmentProductIds ?? [],
+      ShownAccessoryProductIds = refs.ShownAccessoryProductIds ?? [],
+      ShownOutfitSignatures = refs.ShownOutfitSignatures ?? [],
+      RejectedProductIds = refs.RejectedProductIds ?? [],
+      LikedProductIds = refs.LikedProductIds ?? [],
+      LastRecommendationStrategy = facts.LastRecommendationStrategy,
       SelectedGarmentProductId = facts.SelectedGarmentProductId,
       SelectedAccessoryProductIds = facts.SelectedAccessoryProductIds ?? [],
       LatestPersonAttachmentId = facts.LatestPersonAttachmentId,
@@ -58,6 +66,38 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     if (string.IsNullOrWhiteSpace(userMessage))
     {
       return;
+    }
+
+    var normalizedMessage = ChatTextUtils.Normalize(userMessage);
+    memory.LastUserRequestType = DetectUserRequestType(normalizedMessage);
+
+    if (normalizedMessage.Contains("khong thich")
+        || normalizedMessage.Contains("ko thich")
+        || normalizedMessage.Contains("k thich")
+        || normalizedMessage.Contains("khong ung")
+        || normalizedMessage.Contains("ko ung")
+        || normalizedMessage.Contains("khong hop")
+        || normalizedMessage.Contains("ko hop"))
+    {
+      memory.RejectedProductIds = memory.RejectedProductIds
+        .Concat(memory.GarmentShortlistedProductIds)
+        .Concat(memory.AccessoryShortlistedProductIds)
+        .Distinct()
+        .ToList();
+      memory.ConversationStage = "refine";
+    }
+    else if (normalizedMessage.Contains("thich") || normalizedMessage.Contains("ung") || normalizedMessage.Contains("chon mau nay") || normalizedMessage.Contains("lay mau nay"))
+    {
+      memory.LikedProductIds = memory.LikedProductIds
+        .Concat(memory.GarmentShortlistedProductIds)
+        .Concat(memory.AccessoryShortlistedProductIds)
+        .Distinct()
+        .ToList();
+      memory.ConversationStage = "decide";
+    }
+    else if (memory.LastUserRequestType == "alternative_request")
+    {
+      memory.ConversationStage = "refine";
     }
 
     memory.RecentUserMessages.Add(userMessage.Trim());
@@ -119,6 +159,10 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       {
         memory.GarmentShortlistedProductIds = garmentProducts.Select(product => product.ProductId).Distinct().ToList();
         memory.ShortlistedProductIds = [.. memory.GarmentShortlistedProductIds];
+        memory.ShownGarmentProductIds = memory.ShownGarmentProductIds
+          .Concat(memory.GarmentShortlistedProductIds)
+          .Distinct()
+          .ToList();
       }
       else if (structuredPayload.Products.Count > 0 && accessoryProducts.Count == 0)
       {
@@ -128,8 +172,13 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       if (accessoryProducts.Count > 0)
       {
         memory.AccessoryShortlistedProductIds = accessoryProducts.Select(product => product.ProductId).Distinct().ToList();
+        memory.ShownAccessoryProductIds = memory.ShownAccessoryProductIds
+          .Concat(memory.AccessoryShortlistedProductIds)
+          .Distinct()
+          .ToList();
       }
 
+      var hadShownProducts = memory.ShownProductIds.Count > 0;
       var shownIds = structuredPayload.Products
         .Concat(structuredPayload.GarmentProducts ?? [])
         .Concat(structuredPayload.AccessoryProducts ?? [])
@@ -143,6 +192,33 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       memory.SelectedGarmentProductId = structuredPayload.SelectedGarmentProductId ?? memory.SelectedGarmentProductId;
       memory.SelectedAccessoryProductIds = structuredPayload.SelectedAccessoryProductIds.Distinct().ToList();
       memory.PendingTryOnRequirements = structuredPayload.PendingTryOnRequirements.Distinct().ToList();
+      memory.LastRecommendationStrategy = classification.Intent is "outfit_recommendation" or "catalog_lookup" or "image_style_analysis"
+        ? (hadShownProducts ? "novelty_first" : "relevance_first")
+        : memory.LastRecommendationStrategy;
+
+      if (classification.Intent is "outfit_recommendation" or "catalog_lookup" or "image_style_analysis")
+      {
+        memory.LastUserRequestType ??= hadShownProducts ? "alternative_request" : "discovery_request";
+      }
+      memory.ConversationStage = classification.Intent switch
+      {
+        "product_comparison" => "compare",
+        "tryon_prepare" or "tryon_execute" => "decide",
+        "outfit_recommendation" or "catalog_lookup" or "accessory_recommendation" => memory.LastRecommendationStrategy == "novelty_first" ? "refine" : "discovery",
+        _ => memory.ConversationStage
+      };
+
+      if ((structuredPayload.GarmentProducts?.Count > 0 || structuredPayload.AccessoryProducts?.Count > 0) && structuredPayload.SelectedGarmentProductId.HasValue)
+      {
+        var signature = BuildOutfitSignature(structuredPayload.SelectedGarmentProductId.Value, structuredPayload.SelectedAccessoryProductIds);
+        if (!string.IsNullOrWhiteSpace(signature))
+        {
+          memory.ShownOutfitSignatures = memory.ShownOutfitSignatures
+            .Concat([signature])
+            .Distinct()
+            .ToList();
+        }
+      }
     }
 
     if (tryOnResultAttachmentId.HasValue)
@@ -183,6 +259,9 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       BudgetCeiling = memory.BudgetCeiling,
       ColorFamily = memory.ColorFamily,
       MaterialKeyword = memory.MaterialKeyword,
+      ConversationStage = memory.ConversationStage,
+      LastUserRequestType = memory.LastUserRequestType,
+      LastRecommendationStrategy = memory.LastRecommendationStrategy,
       SelectedGarmentProductId = memory.SelectedGarmentProductId,
       SelectedAccessoryProductIds = memory.SelectedAccessoryProductIds,
       LatestPersonAttachmentId = memory.LatestPersonAttachmentId,
@@ -199,7 +278,12 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       LastShortlistProductIds = memory.ShortlistedProductIds,
       LastGarmentShortlistProductIds = memory.GarmentShortlistedProductIds,
       LastAccessoryShortlistProductIds = memory.AccessoryShortlistedProductIds,
-      ShownProductIds = memory.ShownProductIds
+      ShownProductIds = memory.ShownProductIds,
+      ShownGarmentProductIds = memory.ShownGarmentProductIds,
+      ShownAccessoryProductIds = memory.ShownAccessoryProductIds,
+      ShownOutfitSignatures = memory.ShownOutfitSignatures,
+      RejectedProductIds = memory.RejectedProductIds,
+      LikedProductIds = memory.LikedProductIds
     }, JsonOptions);
     thread.Memory.LastMessageId = lastMessageId;
     thread.Memory.UpdatedAt = DateTime.UtcNow;
@@ -241,6 +325,15 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       : string.Concat(existingSummary, "\n", summary);
   }
 
+  private static string? BuildOutfitSignature(long selectedGarmentProductId, IReadOnlyList<long> selectedAccessoryProductIds)
+  {
+    var accessoryIds = selectedAccessoryProductIds
+      .Distinct()
+      .OrderBy(id => id)
+      .ToArray();
+    return $"{selectedGarmentProductId}:{string.Join('-', accessoryIds)}";
+  }
+
   private static T? Deserialize<T>(string? json)
   {
     if (string.IsNullOrWhiteSpace(json))
@@ -258,12 +351,40 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     }
   }
 
+  private static string DetectUserRequestType(string normalizedMessage)
+  {
+    if (normalizedMessage.Contains("khac") || normalizedMessage.Contains("them mau nua") || normalizedMessage.Contains("them vai mau nua"))
+    {
+      return "alternative_request";
+    }
+
+    if (normalizedMessage.Contains("so sanh") || normalizedMessage.Contains("chon mau nao"))
+    {
+      return "comparison_request";
+    }
+
+    if (normalizedMessage.Contains("thu do") || normalizedMessage.Contains("thu ngay") || normalizedMessage.Contains("thu luon"))
+    {
+      return "tryon_request";
+    }
+
+    if (normalizedMessage.Contains("thich") || normalizedMessage.Contains("ung") || normalizedMessage.Contains("chon mau nay") || normalizedMessage.Contains("lay mau nay"))
+    {
+      return "selection_feedback";
+    }
+
+    return "discovery_request";
+  }
+
   private sealed class StoredFacts
   {
     public string? Scenario { get; set; }
     public decimal? BudgetCeiling { get; set; }
     public string? ColorFamily { get; set; }
     public string? MaterialKeyword { get; set; }
+    public string? ConversationStage { get; set; }
+    public string? LastUserRequestType { get; set; }
+    public string? LastRecommendationStrategy { get; set; }
     public long? SelectedGarmentProductId { get; set; }
     public List<long>? SelectedAccessoryProductIds { get; set; }
     public long? LatestPersonAttachmentId { get; set; }
@@ -282,5 +403,10 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     public List<long>? LastGarmentShortlistProductIds { get; set; }
     public List<long>? LastAccessoryShortlistProductIds { get; set; }
     public List<long>? ShownProductIds { get; set; }
+    public List<long>? ShownGarmentProductIds { get; set; }
+    public List<long>? ShownAccessoryProductIds { get; set; }
+    public List<string>? ShownOutfitSignatures { get; set; }
+    public List<long>? RejectedProductIds { get; set; }
+    public List<long>? LikedProductIds { get; set; }
   }
 }

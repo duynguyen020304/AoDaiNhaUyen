@@ -138,4 +138,96 @@ public sealed class ThreadMemoryServiceTests
     Assert.Equal(new long[] { 101, 102 }, memory.GarmentShortlistedProductIds);
     Assert.Equal(new long[] { 201 }, memory.AccessoryShortlistedProductIds);
   }
+
+  [Fact]
+  public void ApplyUserConversationTurn_MarksAlternativeRequestAsRefineStage()
+  {
+    var memory = new ThreadMemoryStateDto
+    {
+      RecentUserMessages = new List<string>()
+    };
+
+    service.ApplyUserConversationTurn(memory, "Cho mình bộ khác đi");
+
+    Assert.Equal("alternative_request", memory.LastUserRequestType);
+    Assert.Equal("refine", memory.ConversationStage);
+    Assert.Contains("Cho mình bộ khác đi", memory.RecentUserMessages);
+  }
+
+  [Fact]
+  public void ApplyUserConversationTurn_MarksLikedProductsAsDecisionStage()
+  {
+    var memory = new ThreadMemoryStateDto
+    {
+      GarmentShortlistedProductIds = new List<long> { 101, 102 },
+      AccessoryShortlistedProductIds = new List<long> { 201 }
+    };
+
+    service.ApplyUserConversationTurn(memory, "Mình thích mẫu này, lấy mẫu này nhé");
+
+    Assert.Equal("selection_feedback", memory.LastUserRequestType);
+    Assert.Equal("decide", memory.ConversationStage);
+    Assert.Equal(new long[] { 101, 102, 201 }, memory.LikedProductIds);
+  }
+
+  [Fact]
+  public void Persist_RoundTripsExtendedTurnState()
+  {
+    var thread = new ChatThread { Id = 9 };
+    var state = new ThreadMemoryStateDto
+    {
+      Scenario = "giao-vien",
+      ConversationStage = "refine",
+      LastUserRequestType = "alternative_request",
+      ShownProductIds = new List<long> { 101, 201 },
+      ShownGarmentProductIds = new List<long> { 101 },
+      ShownAccessoryProductIds = new List<long> { 201 },
+      LikedProductIds = new List<long> { 101 }
+    };
+
+    service.Persist(thread, state, 33);
+    var loaded = service.Read(thread.Memory);
+
+    Assert.Equal("refine", loaded.ConversationStage);
+    Assert.Equal("alternative_request", loaded.LastUserRequestType);
+    Assert.Equal(new long[] { 101, 201 }, loaded.ShownProductIds);
+    Assert.Equal(new long[] { 101 }, loaded.ShownGarmentProductIds);
+    Assert.Equal(new long[] { 201 }, loaded.ShownAccessoryProductIds);
+    Assert.Equal(new long[] { 101 }, loaded.LikedProductIds);
+  }
+
+  [Fact]
+  public void ApplyAssistantTurn_TracksShownGarmentsAccessories_AndConversationStage()
+  {
+    var memory = new ThreadMemoryStateDto();
+
+    service.ApplyAssistantTurn(
+      memory,
+      new IntentClassificationDto("outfit_recommendation", "le-tet", null, null, null, "ao_dai", [], false),
+      new ChatStructuredPayloadDto(
+        "recommendations",
+        "le-tet",
+        false,
+        false,
+        101,
+        [201],
+        [],
+        [
+          new ChatRecommendationItemDto(101, "Áo dài A", "ao-dai", "ao_dai", 1_200_000m, null, null, null, "Phù hợp."),
+          new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200_000m, null, null, null, "Đi kèm.")
+        ],
+        [
+          new ChatRecommendationItemDto(101, "Áo dài A", "ao-dai", "ao_dai", 1_200_000m, null, null, null, "Phù hợp.")
+        ],
+        [
+          new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200_000m, null, null, null, "Đi kèm.")
+        ]),
+      null,
+      null);
+
+    Assert.Equal(new long[] { 101 }, memory.ShownGarmentProductIds);
+    Assert.Equal(new long[] { 201 }, memory.ShownAccessoryProductIds);
+    Assert.Equal("relevance_first", memory.LastRecommendationStrategy);
+    Assert.Equal("discovery", memory.ConversationStage);
+  }
 }

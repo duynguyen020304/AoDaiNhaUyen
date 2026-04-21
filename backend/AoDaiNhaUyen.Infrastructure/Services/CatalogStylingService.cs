@@ -26,14 +26,16 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
       .Select(product => new
       {
         Product = product,
-        Score = ScoreProduct(product, scenario, budgetCeiling, colorFamily, materialKeyword)
+        Score = ScoreProduct(product, scenario, budgetCeiling, colorFamily, materialKeyword),
+        CoverageBoost = CalculateCoverageBoost(product)
       })
       .Where(item => item.Score > 0)
-      .OrderByDescending(item => item.Score)
+      .OrderByDescending(item => item.Score + item.CoverageBoost)
+      .ThenByDescending(item => GetAvailableStock(item.Product))
       .ThenByDescending(item => item.Product.IsFeatured)
       .ThenBy(item => item.Product.Name)
       .Take(limit)
-      .Select(item => MapProduct(item.Product, BuildRationale(item.Product, scenario, budgetCeiling, colorFamily, materialKeyword)))
+      .Select(item => MapProduct(item.Product, BuildRationale(item.Product, scenario, budgetCeiling, colorFamily, materialKeyword, item.CoverageBoost)))
       .ToList();
   }
 
@@ -52,18 +54,21 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     return products
       .Where(product =>
       {
-        var haystack = ChatTextUtils.Normalize($"{product.Name} {product.Slug} {product.Category.Slug}");
-        return haystack.Contains(normalizedQuery);
+        var haystack = BuildLookupHaystack(product);
+        return haystack.Contains(normalizedQuery) || QueryMatchesExpandedTerms(normalizedQuery, haystack);
       })
       .Select(product => new
       {
         Product = product,
-        Score = ScoreProduct(product, scenario, budgetCeiling, colorFamily, materialKeyword) + 1.5m
+        Score = ScoreProduct(product, scenario, budgetCeiling, colorFamily, materialKeyword) + 1.5m,
+        CoverageBoost = CalculateCoverageBoost(product)
       })
-      .OrderByDescending(item => item.Score)
+      .OrderByDescending(item => item.Score + item.CoverageBoost)
+      .ThenByDescending(item => GetAvailableStock(item.Product))
+      .ThenByDescending(item => item.Product.IsFeatured)
       .ThenBy(item => item.Product.Name)
       .Take(limit)
-      .Select(item => MapProduct(item.Product, "Khớp trực tiếp với mô tả hiện tại trong catalog live."))
+      .Select(item => MapProduct(item.Product, item.CoverageBoost > 0 ? "Khớp trực tiếp với mô tả hiện tại trong catalog live và giúp mở rộng lựa chọn ít trùng hơn." : "Khớp trực tiếp với mô tả hiện tại trong catalog live."))
       .ToList();
   }
 
@@ -115,6 +120,35 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
       .ToList();
   }
 
+  private static string BuildLookupHaystack(Product product)
+  {
+    return ChatTextUtils.Normalize(string.Join(' ', new[]
+    {
+      product.Name,
+      product.Slug,
+      product.Category.Slug,
+      product.Category.Name,
+      product.ShortDescription,
+      product.Description,
+      product.Material,
+      product.ProductType,
+      product.StyleProfiles.FirstOrDefault()?.Notes
+    }.Where(value => !string.IsNullOrWhiteSpace(value))));
+  }
+
+  private static bool QueryMatchesExpandedTerms(string normalizedQuery, string haystack)
+  {
+    var expandedTerms = normalizedQuery switch
+    {
+      var query when query.Contains("tui xach") => new[] { normalizedQuery.Replace("tui xach", "tui sach") },
+      var query when query.Contains("tui sach") => new[] { normalizedQuery.Replace("tui sach", "tui xach") },
+      var query when query.Contains("theu hoa sen") => new[] { normalizedQuery.Replace("theu hoa sen", "hoa sen") },
+      _ => Array.Empty<string>()
+    };
+
+    return expandedTerms.Any(haystack.Contains);
+  }
+
   private async Task<List<Product>> LoadProductsAsync(string? productType, CancellationToken cancellationToken)
   {
     var query = dbContext.Products
@@ -146,6 +180,16 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     var profile = product.StyleProfiles.FirstOrDefault();
     var variant = product.Variants.OrderByDescending(item => item.IsDefault).ThenBy(item => item.Id).FirstOrDefault();
 
+    if (variant is not null && variant.Status != "active")
+    {
+      return 0m;
+    }
+
+    if (variant is not null && variant.StockQty > 0)
+    {
+      score += 0.2m;
+    }
+
     if (!string.IsNullOrWhiteSpace(scenario))
     {
       score += (product.Scenarios.FirstOrDefault(item => item.Scenario.Slug == scenario)?.Score ?? 0m) * 2m;
@@ -168,11 +212,6 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     if (budgetCeiling.HasValue && variant is not null)
     {
       score += variant.Price <= budgetCeiling.Value ? 1.1m : -0.75m;
-    }
-
-    if (product.IsFeatured)
-    {
-      score += 0.3m;
     }
 
     return score;
@@ -201,7 +240,8 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     string? scenario,
     decimal? budgetCeiling,
     string? colorFamily,
-    string? materialKeyword)
+    string? materialKeyword,
+    decimal coverageBoost)
   {
     var reasons = new List<string>();
     var profile = product.StyleProfiles.FirstOrDefault();
@@ -229,9 +269,63 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
       reasons.Add("nằm trong ngân sách");
     }
 
+    if (variant is not null && variant.StockQty > 0)
+    {
+      reasons.Add("còn sẵn để chốt nhanh");
+    }
+
+    if (coverageBoost > 0)
+    {
+      reasons.Add("là lựa chọn đáng thử nếu bạn muốn đổi sang một mood ít trùng hơn");
+    }
+
     return reasons.Count == 0
       ? "Đây là mẫu nổi bật và còn hàng trong catalog."
       : $"Điểm mạnh: {string.Join(", ", reasons)}.";
+  }
+
+  private static decimal CalculateCoverageBoost(Product product)
+  {
+    var profile = product.StyleProfiles.FirstOrDefault();
+    var scenarioCount = product.Scenarios.Count;
+    var hasSecondaryColor = !string.IsNullOrWhiteSpace(profile?.SecondaryColorFamily);
+    var silhouette = profile?.Silhouette;
+    var stock = GetAvailableStock(product);
+
+    var boost = 0m;
+    if (!product.IsFeatured)
+    {
+      boost += 0.15m;
+    }
+
+    if (scenarioCount <= 1)
+    {
+      boost += 0.1m;
+    }
+
+    if (hasSecondaryColor)
+    {
+      boost += 0.05m;
+    }
+
+    if (!string.IsNullOrWhiteSpace(silhouette))
+    {
+      boost += 0.05m;
+    }
+
+    if (stock > 0 && stock <= 3)
+    {
+      boost -= 0.05m;
+    }
+
+    return boost;
+  }
+
+  private static int GetAvailableStock(Product product)
+  {
+    return product.Variants
+      .Where(item => item.Status == "active")
+      .Sum(item => item.StockQty);
   }
 
   private static string BuildComparisonRationale(Product product)

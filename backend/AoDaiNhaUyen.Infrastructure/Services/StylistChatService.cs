@@ -7,6 +7,7 @@ using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
@@ -18,11 +19,13 @@ public sealed class StylistChatService(
   ICatalogTryOnService catalogTryOnService,
   IStylistResponseComposer stylistResponseComposer,
   IStylistFallbackTextService fallbackTextService,
-  IUploadStoragePathResolver uploadStoragePathResolver) : IStylistChatService
+  IUploadStoragePathResolver uploadStoragePathResolver,
+  ILogger<StylistChatService> logger) : IStylistChatService
 {
   private const string AssistantRole = "assistant";
   private const string UserRole = "user";
   private const string PromptVersion = "deterministic-stylist-v1";
+  private const int RecommendationLookCount = 3;
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
   public async Task<IReadOnlyList<ChatThreadSummaryDto>> ListThreadsAsync(
@@ -153,7 +156,7 @@ public sealed class StylistChatService(
     dbContext.ChatMessages.Add(assistantMessage);
     await dbContext.SaveChangesAsync(cancellationToken);
 
-    threadMemoryService.ApplyAssistantTurn(memory, classification, assistantTurn.StructuredPayload, null, null);
+    threadMemoryService.ApplyAssistantTurn(memory, classification, assistantTurn.StructuredPayload, null, null, assistantMessage.Content);
     threadMemoryService.Persist(thread, memory, assistantMessage.Id);
     thread.UpdatedAt = DateTime.UtcNow;
     await dbContext.SaveChangesAsync(cancellationToken);
@@ -343,7 +346,7 @@ public sealed class StylistChatService(
     dbContext.ChatMessages.Add(assistantMessage);
     await dbContext.SaveChangesAsync(cancellationToken);
 
-    threadMemoryService.ApplyAssistantTurn(memory, classification, assistantTurn.StructuredPayload, null, null);
+    threadMemoryService.ApplyAssistantTurn(memory, classification, assistantTurn.StructuredPayload, null, null, assistantMessage.Content);
     threadMemoryService.Persist(thread, memory, assistantMessage.Id);
     thread.UpdatedAt = DateTime.UtcNow;
     await dbContext.SaveChangesAsync(cancellationToken);
@@ -446,7 +449,7 @@ public sealed class StylistChatService(
     {
       "catalog_lookup" => await BuildLookupTurnAsync(userMessage, classification, memory, cancellationToken),
       "outfit_recommendation" => await BuildRecommendationTurnAsync(userMessage, classification, memory, cancellationToken),
-      "accessory_recommendation" => await BuildAccessoryRecommendationTurnAsync(classification, memory, cancellationToken),
+      "accessory_recommendation" => await BuildAccessoryRecommendationTurnAsync(userMessage, classification, memory, cancellationToken),
       "product_description" => await BuildProductDescriptionTurnAsync(classification, memory, cancellationToken),
       "product_comparison" => await BuildComparisonTurnAsync(classification, cancellationToken),
       "tryon_prepare" or "tryon_execute" => await BuildTryOnTurnAsync(classification, memory, cancellationToken),
@@ -493,13 +496,15 @@ public sealed class StylistChatService(
     ThreadMemoryStateDto memory,
     CancellationToken cancellationToken)
   {
-    var query = string.Join(' ', new[]
-    {
-      classification.ColorFamily,
-      classification.MaterialKeyword,
-      classification.Scenario,
-      classification.ProductType == "phu_kien" ? "phu kien" : "ao dai"
-    }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    var query = string.IsNullOrWhiteSpace(userMessage)
+      ? string.Join(' ', new[]
+      {
+        classification.ColorFamily,
+        classification.MaterialKeyword,
+        classification.Scenario,
+        classification.ProductType == "phu_kien" ? "phu kien" : "ao dai"
+      }.Where(value => !string.IsNullOrWhiteSpace(value)))
+      : userMessage;
 
     var products = await catalogStylingService.LookupAsync(
       query,
@@ -541,20 +546,31 @@ public sealed class StylistChatService(
   {
     var scenario = classification.Scenario ?? memory.Scenario;
     var preferUnseenAlternatives = ShouldPreferUnseenAlternatives(userMessage, classification, memory);
+    var rejectedProductIds = memory.RejectedProductIds.Count > 0 ? memory.RejectedProductIds : [];
+    var garmentFetchLimit = preferUnseenAlternatives
+      ? Math.Max(RecommendationLookCount * 4, RecommendationLookCount + memory.ShownProductIds.Count + rejectedProductIds.Count)
+      : RecommendationLookCount;
 
-    var garmentLimit = 3;
-    var garmentProducts = SelectProducts(await catalogStylingService.RecommendAsync(
+    var garmentCandidates = await catalogStylingService.RecommendAsync(
       scenario,
       classification.BudgetCeiling ?? memory.BudgetCeiling,
       classification.ColorFamily ?? memory.ColorFamily,
       classification.MaterialKeyword ?? memory.MaterialKeyword,
       "ao_dai",
-      preferUnseenAlternatives ? Math.Max(garmentLimit * 3, garmentLimit + memory.ShownProductIds.Count) : garmentLimit,
-      null,
-      cancellationToken), memory, preferUnseenAlternatives, garmentLimit);
+      garmentFetchLimit,
+      rejectedProductIds,
+      cancellationToken);
+    var garmentProducts = SelectProducts(garmentCandidates, memory, preferUnseenAlternatives, RecommendationLookCount);
 
     if (garmentProducts.Count == 0)
     {
+      logger.LogInformation(
+        "Chat recommendations exhausted for scenario {Scenario}. preferUnseen={PreferUnseen} shownCount={ShownCount} rejectedCount={RejectedCount}",
+        scenario,
+        preferUnseenAlternatives,
+        memory.ShownProductIds.Count,
+        rejectedProductIds.Count);
+
       return new AssistantTurn(
         preferUnseenAlternatives
           ? BuildExhaustedRecommendationCopy(scenario)
@@ -563,21 +579,39 @@ public sealed class StylistChatService(
     }
 
     var selectedGarment = garmentProducts[0].ProductId;
-    var accessoryLimit = 2;
-    var accessoryProducts = SelectProducts(await catalogStylingService.RecommendAsync(
+    var accessoryFetchLimit = Math.Max(RecommendationLookCount * 3, RecommendationLookCount + memory.ShownProductIds.Count + rejectedProductIds.Count);
+    var accessoryCandidates = await catalogStylingService.RecommendAsync(
       scenario,
       classification.BudgetCeiling ?? memory.BudgetCeiling,
       classification.ColorFamily ?? memory.ColorFamily,
       classification.MaterialKeyword ?? memory.MaterialKeyword,
       "phu_kien",
-      preferUnseenAlternatives ? Math.Max(accessoryLimit * 3, accessoryLimit + memory.ShownProductIds.Count) : accessoryLimit,
-      null,
-      cancellationToken), memory, preferUnseenAlternatives, accessoryLimit);
+      accessoryFetchLimit,
+      rejectedProductIds,
+      cancellationToken);
+    var accessoryProducts = SelectProducts(
+      accessoryCandidates,
+      memory,
+      preferUnseenAlternatives || memory.AccessoryShortlistedProductIds.Count > 0,
+      RecommendationLookCount - 1,
+      memory.AccessoryShortlistedProductIds,
+      BuildOutfitSignatureSet(memory),
+      selectedGarment,
+      allowSeenFallback: true);
+
     var selectedAccessoryProductIds = accessoryProducts.Select(product => product.ProductId).ToList();
     var combinedProducts = garmentProducts.Concat(accessoryProducts).ToList();
+    var recommendationCopy = BuildRecommendationCopy(garmentProducts, accessoryProducts, scenario, preferUnseenAlternatives);
+
+    logger.LogInformation(
+      "Chat recommendations selected for scenario {Scenario}. strategy={Strategy} garments={GarmentIds} accessories={AccessoryIds}",
+      scenario,
+      preferUnseenAlternatives ? "novelty_first" : "relevance_first",
+      string.Join(",", garmentProducts.Select(product => product.ProductId)),
+      string.Join(",", accessoryProducts.Select(product => product.ProductId)));
 
     return new AssistantTurn(
-      BuildRecommendationCopy(garmentProducts, accessoryProducts, scenario),
+      recommendationCopy,
       BuildStructuredPayload(
         "recommendations",
         scenario,
@@ -592,20 +626,37 @@ public sealed class StylistChatService(
   }
 
   private async Task<AssistantTurn> BuildAccessoryRecommendationTurnAsync(
+    string userMessage,
     IntentClassificationDto classification,
     ThreadMemoryStateDto memory,
     CancellationToken cancellationToken)
   {
     var scenario = classification.Scenario ?? memory.Scenario;
-    var accessoryProducts = await catalogStylingService.RecommendAsync(
-      scenario,
-      classification.BudgetCeiling ?? memory.BudgetCeiling,
-      classification.ColorFamily ?? memory.ColorFamily,
-      classification.MaterialKeyword ?? memory.MaterialKeyword,
-      "phu_kien",
-      3,
-      null,
-      cancellationToken);
+    var rawAccessoryProducts = HasSpecificAccessoryRequest(userMessage)
+      ? await catalogStylingService.LookupAsync(
+        userMessage,
+        scenario,
+        classification.BudgetCeiling ?? memory.BudgetCeiling,
+        classification.ColorFamily ?? memory.ColorFamily,
+        classification.MaterialKeyword ?? memory.MaterialKeyword,
+        RecommendationLookCount * 3,
+        cancellationToken)
+      : await catalogStylingService.RecommendAsync(
+        scenario,
+        classification.BudgetCeiling ?? memory.BudgetCeiling,
+        classification.ColorFamily ?? memory.ColorFamily,
+        classification.MaterialKeyword ?? memory.MaterialKeyword,
+        "phu_kien",
+        RecommendationLookCount * 2,
+        memory.RejectedProductIds,
+        cancellationToken);
+    var accessoryProducts = SelectProducts(
+      rawAccessoryProducts,
+      memory,
+      true,
+      RecommendationLookCount,
+      memory.AccessoryShortlistedProductIds,
+      BuildOutfitSignatureSet(memory));
 
     if (accessoryProducts.Count == 0)
     {
@@ -623,7 +674,7 @@ public sealed class StylistChatService(
 
     return new AssistantTurn(
       shouldBuildCombo
-        ? BuildRecommendationCopy(garmentProducts, accessoryProducts, scenario)
+        ? BuildRecommendationCopy(garmentProducts, accessoryProducts, scenario, true)
         : "Mình chọn trước vài phụ kiện đang hợp với gu và bối cảnh bạn mô tả. Nếu bạn muốn, mình có thể phối tiếp theo mẫu áo dài bạn đang xem.",
       BuildStructuredPayload(
         "recommendations",
@@ -977,26 +1028,65 @@ public sealed class StylistChatService(
   private static string BuildRecommendationCopy(
     IReadOnlyList<ChatRecommendationItemDto> garmentProducts,
     IReadOnlyList<ChatRecommendationItemDto> accessoryProducts,
-    string? scenario)
+    string? scenario,
+    bool noveltyFirst)
   {
     var intro = string.IsNullOrWhiteSpace(scenario)
-      ? "Mình phối sẵn một set hoàn chỉnh từ catalog live:"
-      : $"Với bối cảnh {scenario.Replace('-', ' ')}, mình phối sẵn một set hoàn chỉnh:";
-    var garmentHighlights = garmentProducts.Select((product, index) => $"{index + 1}. {product.Name}: {product.Rationale}");
-    var accessoryHighlights = accessoryProducts.Select((product, index) => $"{index + 1}. {product.Name}: {product.Rationale}");
+      ? "Mình lên sẵn vài look hoàn chỉnh từ catalog live:"
+      : $"Với bối cảnh {scenario.Replace('-', ' ')}, mình lên sẵn vài look hoàn chỉnh từ catalog live:";
     var sections = new List<string> { intro };
 
-    if (garmentProducts.Count > 0)
+    for (var index = 0; index < garmentProducts.Count; index++)
     {
-      sections.Add($"Áo dài gợi ý:\n{string.Join("\n", garmentHighlights)}");
-    }
+      var garment = garmentProducts[index];
+      var accessory = accessoryProducts.Count == 0
+        ? null
+        : accessoryProducts[Math.Min(index, accessoryProducts.Count - 1)];
+      var lookTitle = $"Look {index + 1} — {BuildLookLabel(index)}";
+      var difference = index == 0
+        ? (noveltyFirst ? "ưu tiên mẫu chưa trùng với các gợi ý trước" : "ưu tiên độ hợp bối cảnh và dễ mặc")
+        : BuildDifferenceReason(garment, accessory);
+      var stylingTip = accessory is null
+        ? "Bạn có thể thêm phụ kiện sáng màu để tổng thể gọn và có điểm nhấn hơn."
+        : $"Tip phối: đi cùng {accessory.Name.ToLowerInvariant()} để set gọn mắt và đỡ bị rời tổng thể.";
 
-    if (accessoryProducts.Count > 0)
-    {
-      sections.Add($"Phụ kiện đi kèm:\n{string.Join("\n", accessoryHighlights)}");
+      sections.Add(string.Join("\n", new[]
+      {
+        lookTitle,
+        $"- Áo dài chủ đạo: {garment.Name}",
+        $"- Điểm hợp: {garment.Rationale}",
+        accessory is null
+          ? "- Phụ kiện đi kèm: hiện mình chưa thấy món đủ hợp để ghép ngay trong lượt này."
+          : $"- Phụ kiện đi kèm: {accessory.Name} — {accessory.Rationale}",
+        $"- Khác biệt: {difference}",
+        $"- {stylingTip}"
+      }));
     }
 
     return string.Join("\n", sections);
+  }
+
+  private static string BuildLookLabel(int index)
+  {
+    return index switch
+    {
+      0 => "Thanh lịch nổi bật",
+      1 => "Dịu mắt dễ mặc",
+      2 => "Đổi gu mới hơn",
+      _ => "Gợi ý thêm"
+    };
+  }
+
+  private static string BuildDifferenceReason(
+    ChatRecommendationItemDto garment,
+    ChatRecommendationItemDto? accessory)
+  {
+    if (accessory is null)
+    {
+      return "tập trung vào áo dài chính để bạn dễ so nhanh giữa các mẫu.";
+    }
+
+    return $"mood khác nhờ đổi sang {garment.Name.ToLowerInvariant()} và ghép với {accessory.Name.ToLowerInvariant()}.";
   }
 
   private static bool ShouldPreferUnseenAlternatives(string userMessage, IntentClassificationDto classification, ThreadMemoryStateDto memory)
@@ -1046,16 +1136,56 @@ public sealed class StylistChatService(
     IReadOnlyList<ChatRecommendationItemDto> products,
     ThreadMemoryStateDto memory,
     bool preferUnseenAlternatives,
-    int limit)
+    int limit,
+    IReadOnlyList<long>? recentlyUsedProductIds = null,
+    ISet<string>? usedOutfitSignatures = null,
+    long? anchorProductId = null,
+    bool allowSeenFallback = true)
   {
-    if (!preferUnseenAlternatives || memory.ShownProductIds.Count == 0)
+    var rejectedProductIds = memory.RejectedProductIds.ToHashSet();
+    var shownProductIds = memory.ShownProductIds.ToHashSet();
+    var recentProductIds = recentlyUsedProductIds?.Count > 0 ? recentlyUsedProductIds.ToHashSet() : [];
+
+    var unseen = new List<ChatRecommendationItemDto>();
+    var seen = new List<ChatRecommendationItemDto>();
+
+    foreach (var product in products)
     {
-      return products.Take(limit).ToList();
+      if (rejectedProductIds.Contains(product.ProductId))
+      {
+        continue;
+      }
+
+      if (recentProductIds.Contains(product.ProductId) && products.Count > limit)
+      {
+        continue;
+      }
+
+      if (anchorProductId.HasValue && usedOutfitSignatures is not null && usedOutfitSignatures.Contains(BuildOutfitSignature(anchorProductId.Value, [product.ProductId])))
+      {
+        continue;
+      }
+
+      if (shownProductIds.Contains(product.ProductId))
+      {
+        seen.Add(product);
+      }
+      else
+      {
+        unseen.Add(product);
+      }
     }
 
-    var shownProductIds = memory.ShownProductIds.ToHashSet();
-    var unseen = products.Where(product => !shownProductIds.Contains(product.ProductId));
-    var seen = products.Where(product => shownProductIds.Contains(product.ProductId));
+    if (!preferUnseenAlternatives || shownProductIds.Count == 0)
+    {
+      return unseen.Concat(seen).Take(limit).ToList();
+    }
+
+    if (!allowSeenFallback)
+    {
+      return unseen.Take(limit).ToList();
+    }
+
     return unseen.Concat(seen).Take(limit).ToList();
   }
 
@@ -1063,6 +1193,17 @@ public sealed class StylistChatService(
   {
     var scenarioLabel = string.IsNullOrWhiteSpace(scenario) ? "nhu cầu hiện tại" : scenario.Replace('-', ' ');
     return $"Mình đã đi hết các mẫu áo dài chưa lặp lại cho bối cảnh {scenarioLabel}. Nếu bạn muốn, mình có thể chuyển sang hướng màu khác, khoảng giá khác hoặc phối lại phụ kiện trên các mẫu đã xem.";
+  }
+
+  private static string BuildOutfitSignature(long garmentProductId, IReadOnlyList<long> accessoryProductIds)
+  {
+    var normalizedAccessoryIds = accessoryProductIds.Distinct().OrderBy(id => id);
+    return $"{garmentProductId}:{string.Join('-', normalizedAccessoryIds)}";
+  }
+
+  private static HashSet<string> BuildOutfitSignatureSet(ThreadMemoryStateDto memory)
+  {
+    return memory.ShownOutfitSignatures.ToHashSet(StringComparer.Ordinal);
   }
 
   private static ChatStructuredPayloadDto BuildStructuredPayload(
@@ -1094,6 +1235,18 @@ public sealed class StylistChatService(
   {
     var hasGarmentContext = memory.SelectedGarmentProductId.HasValue || memory.ShortlistedProductIds.Count > 0 || memory.GarmentShortlistedProductIds.Count > 0;
     return hasGarmentContext;
+  }
+
+  private static bool HasSpecificAccessoryRequest(string userMessage)
+  {
+    var normalized = ChatTextUtils.Normalize(userMessage);
+    return normalized.Contains("tui xach") ||
+      normalized.Contains("tui sach") ||
+      normalized.Contains("tram cai") ||
+      normalized.Contains("quat") ||
+      normalized.Contains("guoc") ||
+      normalized.Contains("giay") ||
+      normalized.Contains("kep toc");
   }
 
   private async Task<IReadOnlyList<ChatRecommendationItemDto>> LoadComboGarmentProductsAsync(
