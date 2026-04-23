@@ -27,17 +27,17 @@ export default function ResetPasswordPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (invalidLink) {
-      setError('Lien ket dat lai mat khau khong hop le.');
+      setError('Liên kết đặt lại mật khẩu không hợp lệ.');
       return;
     }
 
     if (password.length < 8) {
-      setError('Mat khau moi phai co it nhat 8 ky tu.');
+      setError('Mật khẩu mới phải có ít nhất 8 ký tự.');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Mat khau xac nhan khong khop.');
+      setError('Mật khẩu xác nhận không khớp.');
       return;
     }
 
@@ -47,10 +47,10 @@ export default function ResetPasswordPage() {
 
     try {
       await resetPassword({ userId, token, newPassword: password });
-      setSuccess('Mat khau da duoc cap nhat. He thong se chuyen ban ve trang dang nhap.');
+      setSuccess('Mật khẩu đã được cập nhật. Hệ thống sẽ chuyển bạn về trang đăng nhập.');
       window.setTimeout(() => navigate('/login', { replace: true }), 1400);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Khong the dat lai mat khau.');
+      setError(submitError instanceof Error ? submitError.message : 'Không thể đặt lại mật khẩu.');
     } finally {
       setSubmitting(false);
     }
@@ -59,20 +59,20 @@ export default function ResetPasswordPage() {
   return (
     <section className={styles.page}>
       <div className={styles.panel}>
-        <h1 className={styles.title}>Dat lai mat khau</h1>
+        <h1 className={styles.title}>Đặt lại mật khẩu</h1>
         <p className={styles.description}>
-          Nhap mat khau moi de khoi phuc truy cap vao tai khoan cua ban.
+          Nhập mật khẩu mới để khôi phục truy cập vào tài khoản của bạn.
         </p>
 
         {invalidLink ? (
           <>
-            <p className={styles.warning}>Lien ket dat lai mat khau da khong con hop le hoac da bi thieu thong tin.</p>
-            <Link className={styles.link} to="/login">Quay lai dang nhap</Link>
+            <p className={styles.warning}>Liên kết đặt lại mật khẩu đã không còn hợp lệ hoặc đã bị thiếu thông tin.</p>
+            <Link className={styles.link} to="/login">Quay lại đăng nhập</Link>
           </>
         ) : (
           <form className={styles.form} onSubmit={handleSubmit}>
             <div className={styles.field}>
-              <label htmlFor="new-password">Mat khau moi</label>
+              <label htmlFor="new-password">Mật khẩu mới</label>
               <input
                 id="new-password"
                 type="password"
@@ -84,7 +84,7 @@ export default function ResetPasswordPage() {
             </div>
 
             <div className={styles.field}>
-              <label htmlFor="confirm-password">Xac nhan mat khau</label>
+              <label htmlFor="confirm-password">Xác nhận mật khẩu</label>
               <input
                 id="confirm-password"
                 type="password"
@@ -96,7 +96,7 @@ export default function ResetPasswordPage() {
             </div>
 
             <button className={styles.submit} type="submit" disabled={submitting}>
-              {submitting ? 'Dang cap nhat...' : 'Cap nhat mat khau'}
+              {submitting ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}
             </button>
           </form>
         )}

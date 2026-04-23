@@ -25,37 +25,37 @@ export default function AccountInfo({ onEdit }: AccountInfoProps) {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>THONG TIN TAI KHOAN</h1>
+      <h1 className={styles.title}>THÔNG TIN TÀI KHOẢN</h1>
 
       <div className={styles.fields}>
         <div className={styles.field}>
-          <span className={styles.label}>Ho va ten: </span>
+          <span className={styles.label}>Họ và tên: </span>
           <span className={styles.value}>{profile.fullName}</span>
         </div>
         <div className={styles.field}>
           <span className={styles.label}>Email: </span>
-          <span className={styles.value}>{profile.email ?? 'Chua cap nhat'}</span>
+          <span className={styles.value}>{profile.email ?? 'Chưa cập nhật'}</span>
         </div>
         <div className={styles.field}>
-          <span className={styles.label}>Dien thoai: </span>
-          <span className={styles.value}>{profile.phone ?? 'Chua cap nhat'}</span>
+          <span className={styles.label}>Điện thoại: </span>
+          <span className={styles.value}>{profile.phone ?? 'Chưa cập nhật'}</span>
         </div>
         <div className={styles.field}>
-          <span className={styles.label}>Ngay sinh: </span>
+          <span className={styles.label}>Ngày sinh: </span>
           <span className={styles.value}>
             {profile.dateOfBirth
               ? new Date(profile.dateOfBirth).toLocaleDateString('vi-VN')
-              : 'Chua cap nhat'}
+              : 'Chưa cập nhật'}
           </span>
         </div>
         <div className={styles.field}>
-          <span className={styles.label}>Trang thai: </span>
+          <span className={styles.label}>Trạng thái: </span>
           <span className={styles.value}>{profile.status ?? 'active'}</span>
         </div>
       </div>
 
       <button type="button" className={styles.editButton} onClick={onEdit}>
-        CAP NHAT THONG TIN TAI KHOAN
+        CẬP NHẬT THÔNG TIN TÀI KHOẢN
       </button>
     </div>
   );

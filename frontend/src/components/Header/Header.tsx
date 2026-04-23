@@ -190,7 +190,7 @@ export default function Header({ onOpenAccount }: HeaderProps) {
               {user.fullName}
             </a>
             <button className={styles.logoutButton} type="button" onClick={handleLogout}>
-              Dang xuat
+              Đăng xuất
             </button>
           </motion.div>
         ) : (
@@ -205,7 +205,7 @@ export default function Header({ onOpenAccount }: HeaderProps) {
             whileHover={{ y: -1, backgroundColor: 'rgba(255, 255, 255, 0.12)' }}
             whileTap={{ scale: 0.97 }}
           >
-            DANG NHAP
+            ĐĂNG NHẬP
           </motion.a>
         )}
         <motion.a
