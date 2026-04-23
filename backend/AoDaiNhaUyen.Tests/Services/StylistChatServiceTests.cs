@@ -4,6 +4,7 @@ using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using AoDaiNhaUyen.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace AoDaiNhaUyen.Tests.Services;
@@ -31,7 +32,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(
       thread.Id,
@@ -56,6 +58,227 @@ public sealed class StylistChatServiceTests
     Assert.Equal(lastAssistantMessage.Id, storedThread.Memory!.LastMessageId);
     Assert.True(storedThread.Memory.LastMessageId > 0);
     Assert.Equal(2, result.Messages.Count);
+
+    var storedMemory = new ThreadMemoryService().Read(storedThread.Memory);
+    Assert.Contains(lastAssistantMessage.Content, storedMemory.RecentAssistantMessages);
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_FollowUpRecommendation_PrioritizesUnseenBeforeSeen()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web",
+      Memory = new ChatThreadMemory
+      {
+        FactsJsonb = "{}",
+        ResolvedRefsJsonb = "{\"shownProductIds\":[101,201]}"
+      }
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var stylingService = new StubCatalogStylingService
+    {
+      GarmentRecommendations =
+      [
+        new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Đã từng gợi ý."),
+        new ChatRecommendationItemDto(103, "Áo dài đỏ", "ao-dai", "ao_dai", 1300000m, null, null, null, "Đã từng gợi ý."),
+        new ChatRecommendationItemDto(102, "Áo dài xanh", "ao-dai", "ao_dai", 1350000m, null, null, null, "Mẫu mới phù hợp." ),
+        new ChatRecommendationItemDto(104, "Áo dài tím", "ao-dai", "ao_dai", 1400000m, null, null, null, "Mẫu mới khác." )
+      ],
+      AccessoryRecommendations =
+      [
+        new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Đã từng gợi ý."),
+        new ChatRecommendationItemDto(203, "Kẹp tóc", "phu-kien", "phu_kien", 120000m, null, null, null, "Đã từng gợi ý."),
+        new ChatRecommendationItemDto(202, "Băng đô", "phu-kien", "phu_kien", 150000m, null, null, null, "Phụ kiện mới." )
+      ]
+    };
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("outfit_recommendation", "giao-vien", null, "blue", "lụa", "ao_dai", [], false, false)),
+      new ThreadMemoryService(),
+      stylingService,
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(
+      thread.Id,
+      1,
+      null,
+      "Mình cần thêm vài mẫu nữa",
+      "client-follow-up",
+      [],
+      CancellationToken.None);
+
+    var payload = result.Messages.Last().StructuredPayload!;
+    Assert.Equal([103, 102, 104], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
+    Assert.Equal([203, 202], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+    Assert.DoesNotContain(101, payload.GarmentProducts!.Select(product => product.ProductId));
+    Assert.DoesNotContain(201, payload.AccessoryProducts!.Select(product => product.ProductId));
+    Assert.Contains("Look 1", result.Messages.Last().Content);
+    Assert.Contains("Khác biệt:", result.Messages.Last().Content);
+    Assert.All(stylingService.RecommendExcludedProductIds, ids => Assert.Empty(ids));
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_BroadDifferentRequest_PrefersUnseenEvenWhenSelectedGarmentExists()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web",
+      Memory = new ChatThreadMemory
+      {
+        FactsJsonb = "{\"selectedGarmentProductId\":101}",
+        ResolvedRefsJsonb = "{\"shownProductIds\":[101,201]}"
+      }
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var stylingService = new StubCatalogStylingService
+    {
+      GarmentRecommendations =
+      [
+        new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Đã từng gợi ý."),
+        new ChatRecommendationItemDto(102, "Áo dài xanh", "ao-dai", "ao_dai", 1350000m, null, null, null, "Mẫu mới phù hợp."),
+        new ChatRecommendationItemDto(103, "Áo dài tím", "ao-dai", "ao_dai", 1400000m, null, null, null, "Mẫu mới khác.")
+      ],
+      AccessoryRecommendations =
+      [
+        new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Đã từng gợi ý."),
+        new ChatRecommendationItemDto(202, "Băng đô", "phu-kien", "phu_kien", 150000m, null, null, null, "Phụ kiện mới.")
+      ]
+    };
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("outfit_recommendation", "check-in", null, null, null, "ao_dai", [], false, false)),
+      new ThreadMemoryService(),
+      stylingService,
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(
+      thread.Id,
+      1,
+      null,
+      "hãy gợi ý những bộ khác đi, tui ko thích lắm",
+      "client-broad-different",
+      [],
+      CancellationToken.None);
+
+    var payload = result.Messages.Last().StructuredPayload!;
+    Assert.Equal([102, 103, 101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
+    Assert.Equal([202, 201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_FollowUpRecommendation_FallsBackToSeenProducts_WhenNoUnseenRemain()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web",
+      Memory = new ChatThreadMemory
+      {
+        FactsJsonb = "{}",
+        ResolvedRefsJsonb = "{\"shownProductIds\":[101,201]}"
+      }
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var stylingService = new StubCatalogStylingService();
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("outfit_recommendation", "giao-vien", null, "blue", "lụa", "ao_dai", [], false, false)),
+      new ThreadMemoryService(),
+      stylingService,
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(
+      thread.Id,
+      1,
+      null,
+      "Cho mình xem lại các mẫu phù hợp",
+      "client-follow-up-repeat",
+      [],
+      CancellationToken.None);
+
+    var payload = result.Messages.Last().StructuredPayload!;
+    Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
+    Assert.Equal([201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+    Assert.Contains("Look 1", result.Messages.Last().Content);
+    Assert.Contains("Khác biệt:", result.Messages.Last().Content);
+    Assert.NotNull(payload);
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_LookupFollowUp_KeepsSeenMatchesWhenTheyAreAllAvailableResults()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web",
+      Memory = new ChatThreadMemory
+      {
+        FactsJsonb = "{}",
+        ResolvedRefsJsonb = "{\"shownProductIds\":[101]}"
+      }
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var stylingService = new StubCatalogStylingService
+    {
+      LookupResults =
+      [
+        new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp.")
+      ]
+    };
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("catalog_lookup", "giao-vien", null, "blue", "lụa", "ao_dai", [], false, false)),
+      new ThreadMemoryService(),
+      stylingService,
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(
+      thread.Id,
+      1,
+      null,
+      "Cho mình xem lại mẫu áo dài lụa",
+      "client-lookup-repeat",
+      [],
+      CancellationToken.None);
+
+    var payload = result.Messages.Last().StructuredPayload!;
+    Assert.Equal("catalog_results", payload.Kind);
+    Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
   }
 
   [Fact]
@@ -80,7 +303,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver(uploadRoot.Path));
+      new TestUploadStoragePathResolver(uploadRoot.Path),
+      NullLogger<StylistChatService>.Instance);
 
     var threadDetail = await service.AddMessageAsync(
       thread.Id,
@@ -149,7 +373,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(new AiTryOnResultDto("data:image/png;base64,AQIDBA==", "image/png")),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver(uploadRoot.Path));
+      new TestUploadStoragePathResolver(uploadRoot.Path),
+      NullLogger<StylistChatService>.Instance);
 
     var message = await service.ExecuteTryOnAsync(
       thread.Id,
@@ -197,7 +422,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(["Xin chào ", "bạn nhé"]),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var events = await service.AddMessageStreamAsync(
       thread.Id,
@@ -260,7 +486,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(["Đã nhận ảnh của bạn"]),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver(uploadRoot.Path));
+      new TestUploadStoragePathResolver(uploadRoot.Path),
+      NullLogger<StylistChatService>.Instance);
 
     var events = await service.AddMessageStreamAsync(
       thread.Id,
@@ -301,7 +528,8 @@ public sealed class StylistChatServiceTests
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(shouldFallback: true),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var events = await service.AddMessageStreamAsync(
       thread.Id,
@@ -341,6 +569,7 @@ public sealed class StylistChatServiceTests
         null,
         "blue",
         "lụa",
+        null,
         [],
         false,
         false);
@@ -350,6 +579,8 @@ public sealed class StylistChatServiceTests
       string message,
       IReadOnlyList<ChatAttachmentDto> attachments,
       ThreadMemoryStateDto memory,
+      string? previousUserMessage = null,
+      string? previousAssistantMessage = null,
       CancellationToken cancellationToken = default)
     {
       return Task.FromResult(this.result with { HasImageAttachments = attachments.Count > 0 });
@@ -371,13 +602,14 @@ public sealed class StylistChatServiceTests
 
     var service = new StylistChatService(
       dbContext,
-      new StubIntentClassifier(new IntentClassificationDto("image_style_analysis", null, null, null, null, [], false, false)),
+      new StubIntentClassifier(new IntentClassificationDto("image_style_analysis", null, null, null, null, null, [], false, false)),
       new ThreadMemoryService(),
       new StubCatalogStylingService(),
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(thread.Id, 1, null, "Nhìn ảnh này giúp mình", "client-2", [], CancellationToken.None);
 
@@ -399,17 +631,163 @@ public sealed class StylistChatServiceTests
 
     var service = new StylistChatService(
       dbContext,
-      new StubIntentClassifier(new IntentClassificationDto("tryon_execute", null, null, null, null, [], false, false)),
+      new StubIntentClassifier(new IntentClassificationDto("tryon_execute", null, null, null, null, null, [], false, false)),
       new ThreadMemoryService(),
       new StubCatalogStylingService(),
       new StubCatalogTryOnService(),
       new StubStylistResponseComposer(),
       new StubFallbackTextService(),
-      new TestUploadStoragePathResolver());
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
 
     var result = await service.AddMessageAsync(thread.Id, 1, null, "Thử luôn cho mình", "client-3", [], CancellationToken.None);
 
     Assert.Equal("clarification", result.Messages.Last().Intent);
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_OutfitRecommendationAlwaysBuildsCombo()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web"
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var catalogStylingService = new StubCatalogStylingService();
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("outfit_recommendation", null, null, null, null, "phu_kien", [], false, false)),
+      new ThreadMemoryService(),
+      catalogStylingService,
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(thread.Id, 1, null, "Gợi ý set cho mình", "client-4", [], CancellationToken.None);
+
+    var payload = result.Messages.Last().StructuredPayload!;
+    Assert.Equal("recommendations", payload.Kind);
+    Assert.Contains("phu_kien", catalogStylingService.RecommendProductTypes);
+    Assert.Contains("ao_dai", catalogStylingService.RecommendProductTypes);
+    Assert.Single(payload.GarmentProducts!);
+    Assert.Single(payload.AccessoryProducts!);
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_BuildsSetRecommendationWithAccessorySelections()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web"
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var catalogStylingService = new StubCatalogStylingService();
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("outfit_recommendation", "giao-vien", null, null, null, "ao_dai", [], false, false)),
+      new ThreadMemoryService(),
+      catalogStylingService,
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(thread.Id, 1, null, "Phối cho mình một set hoàn chỉnh", "client-5", [], CancellationToken.None);
+
+    var payload = result.Messages.Last().StructuredPayload!;
+    Assert.Equal(101, payload.SelectedGarmentProductId);
+    Assert.Equal([201], payload.SelectedAccessoryProductIds);
+    Assert.Equal(["ao_dai", "phu_kien"], catalogStylingService.RecommendProductTypes);
+    Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
+    Assert.Equal([201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_AccessoryFollowUp_ReusesGarmentShortlistAndAddsAccessorySuggestions()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web",
+      Memory = new ChatThreadMemory
+      {
+        FactsJsonb = "{\"selectedGarmentProductId\":101}",
+        ResolvedRefsJsonb = "{\"lastShortlistProductIds\":[101,102],\"lastGarmentShortlistProductIds\":[101,102]}"
+      }
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var catalogStylingService = new StubCatalogStylingService();
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("accessory_recommendation", "giao-vien", null, null, null, "phu_kien", [], false, false)),
+      new ThreadMemoryService(),
+      catalogStylingService,
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(thread.Id, 1, null, "vậy bạn nghĩ nó nên đi cặp như thế nào?", "client-5b", [], CancellationToken.None);
+
+    var payload = result.Messages.Last().StructuredPayload!;
+    Assert.Equal([101, 102], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
+    Assert.Equal([201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+    Assert.Equal(101, payload.SelectedGarmentProductId);
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_UsesShortlistForProductDescriptionFollowUp()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web",
+      Memory = new ChatThreadMemory
+      {
+        FactsJsonb = "{}",
+        ResolvedRefsJsonb = "{\"lastShortlistProductIds\":[101,102,103]}"
+      }
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var catalogStylingService = new StubCatalogStylingService();
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("product_description", null, null, null, null, null, [], false, false)),
+      new ThreadMemoryService(),
+      catalogStylingService,
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(thread.Id, 1, null, "miêu tả đặc tính của 3 áo dài này", "client-6", [], CancellationToken.None);
+
+    var payload = result.Messages.Last().StructuredPayload!;
+    Assert.Equal("comparison", payload.Kind);
+    Assert.Equal([101, 102, 103], payload.Products.Select(product => product.ProductId).ToArray());
   }
 
   private sealed class StubFallbackTextService : IStylistFallbackTextService
@@ -419,14 +797,35 @@ public sealed class StylistChatServiceTests
 
   private sealed class StubCatalogStylingService : ICatalogStylingService
   {
+    public List<string?> RecommendProductTypes { get; } = [];
+    public List<IReadOnlyList<long>> RecommendExcludedProductIds { get; } = [];
+    public IReadOnlyList<ChatRecommendationItemDto> GarmentRecommendations { get; set; } =
+    [
+      new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Mẫu phù hợp với nhu cầu hiện tại.")
+    ];
+    public IReadOnlyList<ChatRecommendationItemDto> AccessoryRecommendations { get; set; } =
+    [
+      new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Hợp để phối cùng áo dài.")
+    ];
+    public IReadOnlyList<ChatRecommendationItemDto> LookupResults { get; set; } = [];
+
     public Task<IReadOnlyList<ChatRecommendationItemDto>> RecommendAsync(
       string? scenario,
       decimal? budgetCeiling,
       string? colorFamily,
       string? materialKeyword,
+      string? productType,
       int limit,
-      CancellationToken cancellationToken = default) =>
-      Task.FromResult<IReadOnlyList<ChatRecommendationItemDto>>([]);
+      IReadOnlyList<long>? excludeProductIds = null,
+      CancellationToken cancellationToken = default)
+    {
+      RecommendProductTypes.Add(productType);
+      RecommendExcludedProductIds.Add(excludeProductIds ?? []);
+      var products = productType == "phu_kien"
+        ? AccessoryRecommendations
+        : GarmentRecommendations;
+      return Task.FromResult<IReadOnlyList<ChatRecommendationItemDto>>(products.Take(limit).ToList());
+    }
 
     public Task<IReadOnlyList<ChatRecommendationItemDto>> LookupAsync(
       string query,
@@ -436,12 +835,14 @@ public sealed class StylistChatServiceTests
       string? materialKeyword,
       int limit,
       CancellationToken cancellationToken = default) =>
-      Task.FromResult<IReadOnlyList<ChatRecommendationItemDto>>([]);
+      Task.FromResult<IReadOnlyList<ChatRecommendationItemDto>>(LookupResults.Take(limit).ToList());
 
     public Task<IReadOnlyList<ChatRecommendationItemDto>> CompareAsync(
       IReadOnlyList<long> productIds,
       CancellationToken cancellationToken = default) =>
-      Task.FromResult<IReadOnlyList<ChatRecommendationItemDto>>([]);
+      Task.FromResult<IReadOnlyList<ChatRecommendationItemDto>>(productIds
+        .Select(productId => new ChatRecommendationItemDto(productId, $"Sản phẩm {productId}", "ao-dai", productId >= 200 ? "phu_kien" : "ao_dai", 1000000m, null, null, null, $"Đặc tính của sản phẩm {productId}."))
+        .ToList());
 
     public Task<IReadOnlyList<long>> ResolveProductReferencesAsync(
       string message,
@@ -485,6 +886,8 @@ public sealed class StylistChatServiceTests
       string intent,
       string? memorySummary,
       ChatStructuredPayloadDto? structuredPayload,
+      string? previousUserMessage = null,
+      string? previousAssistantMessage = null,
       CancellationToken cancellationToken = default) =>
       Task.FromResult(fallbackText);
 
@@ -494,6 +897,8 @@ public sealed class StylistChatServiceTests
       string intent,
       string? memorySummary,
       ChatStructuredPayloadDto? structuredPayload,
+      string? previousUserMessage = null,
+      string? previousAssistantMessage = null,
       [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
       if (shouldFallback)

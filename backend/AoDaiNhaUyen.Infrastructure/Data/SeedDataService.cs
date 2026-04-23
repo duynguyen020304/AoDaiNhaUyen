@@ -294,6 +294,9 @@ public sealed class SeedDataService(
       .ToListAsync();
 
     var scenarios = await dbContext.StyleScenarios.ToDictionaryAsync(item => item.Slug);
+    var seedBySlug = DefaultProducts.Items
+      .Where(x => x.AiMetadata != null)
+      .ToDictionary(x => x.Slug, x => x.AiMetadata!);
 
     foreach (var product in products)
     {
@@ -307,19 +310,29 @@ public sealed class SeedDataService(
         product.StyleProfiles.Add(profile);
       }
 
-      var (primaryColor, secondaryColor) = InferColorFamilies(product);
-      profile.Formality = InferFormality(product);
+      var hasSeed = seedBySlug.TryGetValue(product.Slug, out var seedMeta);
+      var colors = hasSeed
+        ? (seedMeta!.PrimaryColorFamily, seedMeta.SecondaryColorFamily)
+        : InferColorFamilies(product);
+      var primaryColor = colors.Item1;
+      var secondaryColor = colors.Item2;
+
+      profile.Formality = hasSeed ? seedMeta!.Formality : InferFormality(product);
       profile.Silhouette = product.ProductType == "ao_dai" ? "ao-dai-truyen-thong" : "accessory";
       profile.PrimaryColorFamily = primaryColor;
       profile.SecondaryColorFamily = secondaryColor;
-      profile.Notes = product.ProductType == "ao_dai"
+      profile.Notes = hasSeed ? seedMeta!.ProfileNotes : (product.ProductType == "ao_dai"
         ? "Ưu tiên tư vấn theo dịp sử dụng và phụ kiện đi kèm."
-        : "Dùng để hoàn thiện set áo dài trong chat stylist và try-on.";
-      profile.StyleKeywordsJsonb = JsonSerializer.Serialize(InferStyleKeywords(product));
+        : "Dùng để hoàn thiện set áo dài trong chat stylist và try-on.");
+      profile.StyleKeywordsJsonb = JsonSerializer.Serialize(hasSeed ? seedMeta!.StyleKeywords : InferStyleKeywords(product));
       profile.UpdatedAt = DateTime.UtcNow;
 
       product.Scenarios.Clear();
-      foreach (var scenarioSeed in InferScenarioScores(product))
+      var scenarioSeeds = hasSeed
+        ? seedMeta!.ScenarioScores.Select(s => (s.Slug, s.Score, s.Notes)).ToList()
+        : InferScenarioScores(product);
+
+      foreach (var scenarioSeed in scenarioSeeds)
       {
         if (!scenarios.TryGetValue(scenarioSeed.Slug, out var scenario))
         {

@@ -22,6 +22,10 @@ public sealed class VertexAiStylistResponseComposer(
     string intent,
     string? memorySummary,
     ChatStructuredPayloadDto? structuredPayload,
+    string? previousUserMessage = null,
+    string? previousAssistantMessage = null,
+    IReadOnlyList<ImageReferenceDto>? referencedImages = null,
+    string? imageCatalogText = null,
     CancellationToken cancellationToken = default)
   {
     if (string.IsNullOrWhiteSpace(googleCloudOptions.ApiKey) || string.IsNullOrWhiteSpace(googleCloudOptions.StylistTextModel))
@@ -29,7 +33,8 @@ public sealed class VertexAiStylistResponseComposer(
       return fallbackText;
     }
 
-    var prompt = BuildPrompt(userMessage, fallbackText, intent, memorySummary, structuredPayload);
+    var prompt = BuildPrompt(userMessage, fallbackText, intent, memorySummary, structuredPayload, previousUserMessage, previousAssistantMessage, imageCatalogText);
+    var parts = BuildParts(prompt, referencedImages);
     using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
     timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Max(googleCloudOptions.TimeoutSeconds, 1)));
 
@@ -39,9 +44,7 @@ public sealed class VertexAiStylistResponseComposer(
       {
         Content = JsonContent.Create(new GeminiTextRequest(
           [
-            new GeminiContent(
-              "user",
-              [new GeminiPart(prompt)])
+            new GeminiContent("user", parts)
           ],
           new GeminiGenerationConfig(0.35m, 0.9m, 32, 512),
           [
@@ -72,6 +75,10 @@ public sealed class VertexAiStylistResponseComposer(
     string intent,
     string? memorySummary,
     ChatStructuredPayloadDto? structuredPayload,
+    string? previousUserMessage = null,
+    string? previousAssistantMessage = null,
+    IReadOnlyList<ImageReferenceDto>? referencedImages = null,
+    string? imageCatalogText = null,
     [EnumeratorCancellation] CancellationToken cancellationToken = default)
   {
     if (string.IsNullOrWhiteSpace(googleCloudOptions.ApiKey) || string.IsNullOrWhiteSpace(googleCloudOptions.StylistTextModel))
@@ -80,11 +87,12 @@ public sealed class VertexAiStylistResponseComposer(
       yield break;
     }
 
-    var prompt = BuildPrompt(userMessage, fallbackText, intent, memorySummary, structuredPayload);
+    var prompt = BuildPrompt(userMessage, fallbackText, intent, memorySummary, structuredPayload, previousUserMessage, previousAssistantMessage, imageCatalogText);
+    var parts = BuildParts(prompt, referencedImages);
     using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
     timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Max(googleCloudOptions.TimeoutSeconds, 1)));
 
-    using var response = await SendStreamRequestAsync(prompt, timeoutCts.Token, cancellationToken);
+    using var response = await SendStreamRequestAsync(parts, timeoutCts.Token, cancellationToken);
     if (response is null)
     {
       yield return fallbackText;
@@ -158,7 +166,7 @@ public sealed class VertexAiStylistResponseComposer(
   }
 
   private async Task<HttpResponseMessage?> SendStreamRequestAsync(
-    string prompt,
+    IReadOnlyList<GeminiPart> parts,
     CancellationToken requestCancellationToken,
     CancellationToken callerCancellationToken)
   {
@@ -168,9 +176,7 @@ public sealed class VertexAiStylistResponseComposer(
       {
         Content = JsonContent.Create(new GeminiTextRequest(
           [
-            new GeminiContent(
-              "user",
-              [new GeminiPart(prompt)])
+            new GeminiContent("user", parts)
           ],
           new GeminiGenerationConfig(0.35m, 0.9m, 32, 512),
           [
@@ -226,7 +232,10 @@ public sealed class VertexAiStylistResponseComposer(
     string fallbackText,
     string intent,
     string? memorySummary,
-    ChatStructuredPayloadDto? structuredPayload)
+    ChatStructuredPayloadDto? structuredPayload,
+    string? previousUserMessage,
+    string? previousAssistantMessage,
+    string? imageCatalogText)
   {
     var builder = new StringBuilder();
     builder.AppendLine("Bạn là stylist AI của Ao Dai Nha Uyen.");
@@ -239,10 +248,20 @@ public sealed class VertexAiStylistResponseComposer(
     builder.AppendLine("- Giữ giọng văn tự nhiên như nhân viên tư vấn bán hàng giàu kinh nghiệm, thân thiện nhưng không khách sáo quá mức.");
     builder.AppendLine("- Hạn chế lạm dụng các từ quá lễ nghi hoặc lặp đi lặp lại như 'xin chào', 'dạ', 'ạ', 'rất vui được hỗ trợ'. Chỉ dùng khi thật sự hợp ngữ cảnh.");
     builder.AppendLine("- Ưu tiên trả lời trực tiếp vào nhu cầu của khách thay vì mở đầu bằng xã giao.");
+    builder.AppendLine("- Nếu user đang hỏi tiếp về các sản phẩm vừa được nhắc ở lượt trước, hãy tiếp nối context đó và không quay lại hỏi discovery như dịp mặc, ngân sách, chất liệu nếu payload hoặc memory đã đủ.");
     builder.AppendLine("- Giữ phản hồi dưới 140 từ trừ khi cần liệt kê 3 gợi ý.");
     builder.AppendLine();
     builder.AppendLine($"Intent: {intent}");
     builder.AppendLine($"Memory summary: {memorySummary ?? "none"}");
+    builder.AppendLine($"Previous user message: {previousUserMessage ?? "none"}");
+    builder.AppendLine($"Previous assistant message: {previousAssistantMessage ?? "none"}");
+    builder.AppendLine("Nếu đoạn chat đã dài, hãy ưu tiên bám theo conversation summary và previous-turn context trước, memory summary chỉ là ngữ cảnh phụ.");
+    if (!string.IsNullOrWhiteSpace(imageCatalogText))
+    {
+      builder.AppendLine($"Image catalog: {imageCatalogText}");
+      builder.AppendLine("Nếu user hỏi về ảnh, hãy mô tả những gì bạn thấy trong ảnh (màu sắc, phong cách, kiểu dáng, độ vừa vặn) và đưa ra nhận xét chân thành.");
+      builder.AppendLine("Tham chiếu đến ảnh bằng label trong image catalog khi thảo luận.");
+    }
     builder.AppendLine($"User message: {userMessage}");
     builder.AppendLine($"Deterministic fallback: {fallbackText}");
     builder.AppendLine("Structured payload:");
@@ -250,6 +269,19 @@ public sealed class VertexAiStylistResponseComposer(
     builder.AppendLine();
     builder.AppendLine("Trả về chỉ văn bản trả lời cuối cùng, không markdown, không JSON.");
     return builder.ToString();
+  }
+
+  private static IReadOnlyList<GeminiPart> BuildParts(string prompt, IReadOnlyList<ImageReferenceDto>? referencedImages)
+  {
+    var parts = new List<GeminiPart> { GeminiPart.FromText(prompt) };
+    if (referencedImages is not null)
+    {
+      foreach (var image in referencedImages)
+      {
+        parts.Add(GeminiPart.FromInlineData(image.MimeType, Convert.ToBase64String(image.Bytes)));
+      }
+    }
+    return parts;
   }
 
   private static string? TryExtractText(string body, bool trimResult = true)
@@ -306,7 +338,18 @@ public sealed class VertexAiStylistResponseComposer(
     [property: JsonPropertyName("role")] string Role,
     [property: JsonPropertyName("parts")] IReadOnlyList<GeminiPart> Parts);
 
-  private sealed record GeminiPart([property: JsonPropertyName("text")] string Text);
+  private sealed record GeminiPart(
+    [property: JsonPropertyName("text"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Text,
+    [property: JsonPropertyName("inlineData"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] GeminiInlineData? InlineData)
+  {
+    public static GeminiPart FromText(string text) => new(text, null);
+    public static GeminiPart FromInlineData(string mimeType, string base64Data) =>
+      new(null, new GeminiInlineData(mimeType, base64Data));
+  }
+
+  private sealed record GeminiInlineData(
+    [property: JsonPropertyName("mimeType")] string MimeType,
+    [property: JsonPropertyName("data")] string Data);
 
   private sealed record GeminiGenerationConfig(
     [property: JsonPropertyName("temperature")] decimal Temperature,

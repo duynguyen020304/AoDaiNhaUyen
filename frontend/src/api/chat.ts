@@ -13,6 +13,7 @@ export interface ChatRecommendationItem {
   productId: number;
   name: string;
   categorySlug: string;
+  productType: string;
   price: number;
   salePrice: number | null;
   primaryImageUrl: string | null;
@@ -29,6 +30,8 @@ export interface ChatStructuredPayload {
   selectedAccessoryProductIds: number[];
   pendingTryOnRequirements: string[];
   products: ChatRecommendationItem[];
+  garmentProducts?: ChatRecommendationItem[] | null;
+  accessoryProducts?: ChatRecommendationItem[] | null;
 }
 
 export interface ChatMessage {

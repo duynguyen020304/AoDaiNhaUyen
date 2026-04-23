@@ -9,7 +9,9 @@ public interface ICatalogStylingService
     decimal? budgetCeiling,
     string? colorFamily,
     string? materialKeyword,
+    string? productType,
     int limit,
+    IReadOnlyList<long>? excludeProductIds = null,
     CancellationToken cancellationToken = default);
 
   Task<IReadOnlyList<ChatRecommendationItemDto>> LookupAsync(

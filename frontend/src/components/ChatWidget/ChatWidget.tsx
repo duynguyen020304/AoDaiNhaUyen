@@ -7,6 +7,8 @@ import {
   listChatThreads,
   streamChatMessage,
   type ChatMessage,
+  type ChatRecommendationItem,
+  type ChatStructuredPayload,
   type ChatThreadDetail,
   type ChatThreadSummary,
 } from '../../api/chat';
@@ -15,6 +17,7 @@ import { useToast } from '../Toast/useToast';
 import styles from './ChatWidget.module.css';
 
 const easeOutQuart = [0.22, 1, 0.36, 1] as const;
+const TRY_ON_LOADING_INTENT = '__tryon_loading__';
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,6 +30,7 @@ export default function ChatWidget() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
+  const [pendingTryOnByThread, setPendingTryOnByThread] = useState<Record<number, ChatMessage>>({});
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -100,11 +104,61 @@ export default function ChatWidget() {
     };
   }, []);
 
+  const activeMessages = useMemo(() => {
+    if (!activeThread) {
+      return [] as ChatMessage[];
+    }
+
+    const pendingTryOnMessage = pendingTryOnByThread[activeThread.id];
+    return pendingTryOnMessage
+      ? [...activeThread.messages, pendingTryOnMessage]
+      : activeThread.messages;
+  }, [activeThread, pendingTryOnByThread]);
+
   const latestTryOnPayload = useMemo(() => {
-    return [...(activeThread?.messages ?? [])]
+    return [...activeMessages]
       .reverse()
       .find((message) => message.structuredPayload?.canTryOn);
-  }, [activeThread]);
+  }, [activeMessages]);
+
+  const isTryOnPending = activeThread ? Boolean(pendingTryOnByThread[activeThread.id]) : false;
+
+  const updateThreadSummaryEntry = (threadId: number, preview: string | null, updatedAt: string) => {
+    setThreads((current) => current.map((thread) => thread.id === threadId
+      ? { ...thread, preview, updatedAt }
+      : thread));
+  };
+
+  const addPendingTryOnMessage = (threadId: number, message: ChatMessage) => {
+    setPendingTryOnByThread((current) => ({ ...current, [threadId]: message }));
+  };
+
+  const clearPendingTryOnMessage = (threadId: number) => {
+    setPendingTryOnByThread((current) => {
+      const next = { ...current };
+      delete next[threadId];
+      return next;
+    });
+  };
+
+  const isTryOnLoadingMessage = (message: ChatMessage) => message.intent === TRY_ON_LOADING_INTENT;
+
+  const renderMessages = activeMessages;
+
+  const canShowTryOnButton = latestTryOnPayload?.structuredPayload?.canTryOn && !isTryOnPending;
+
+  const canSendMessage = !submitting;
+
+  void canSendMessage;
+  void canShowTryOnButton;
+  void isTryOnLoadingMessage;
+  void renderMessages;
+  void clearPendingTryOnMessage;
+  void addPendingTryOnMessage;
+  void updateThreadSummaryEntry;
+  void isTryOnPending;
+  void latestTryOnPayload;
+  void activeMessages;
 
   const handleCreateThread = async () => {
     streamAbortControllerRef.current?.abort();
@@ -175,10 +229,12 @@ export default function ChatWidget() {
       streamAbortControllerRef.current = streamAbortController;
       let assistantMessage: ChatMessage | null = null;
       let accumulatedText = '';
+      let bufferedStructuredPayload: ChatStructuredPayload | null = null;
 
       for await (const event of streamChatMessage(activeThread.id, capturedMessage, capturedFiles, streamAbortController.signal)) {
         switch (event.type) {
           case 'created': {
+            bufferedStructuredPayload = event.data.structuredPayload ?? null;
             assistantMessage = {
               id: event.data.messageId,
               role: 'assistant',
@@ -186,7 +242,7 @@ export default function ChatWidget() {
               intent: event.data.intent ?? null,
               createdAt: event.data.createdAt,
               attachments: event.data.attachments ?? [],
-              structuredPayload: event.data.structuredPayload ?? null,
+              structuredPayload: null,
             };
             setStreamingMessage(assistantMessage);
             break;
@@ -206,7 +262,7 @@ export default function ChatWidget() {
               intent: assistantMessage?.intent ?? null,
               createdAt: event.data.createdAt,
               attachments: assistantMessage?.attachments ?? [],
-              structuredPayload: assistantMessage?.structuredPayload ?? null,
+              structuredPayload: bufferedStructuredPayload,
             };
             setStreamingMessage(null);
             setActiveThread((current) => {
@@ -243,21 +299,42 @@ export default function ChatWidget() {
       return;
     }
 
-    setSubmitting(true);
+    const threadId = activeThread.id;
+    const placeholderId = -Date.now();
+    const placeholderMessage: ChatMessage = {
+      id: placeholderId,
+      role: 'assistant',
+      content: 'Ảnh thử đồ của bạn đang được tạo, hãy chờ một chút nhé.',
+      intent: TRY_ON_LOADING_INTENT,
+      createdAt: new Date().toISOString(),
+      attachments: [],
+      structuredPayload: null,
+    };
+
+    addPendingTryOnMessage(threadId, placeholderMessage);
+    updateThreadSummaryEntry(threadId, placeholderMessage.content, placeholderMessage.createdAt);
+
     try {
       const message = await executeChatTryOn(
-        activeThread.id,
+        threadId,
         latestTryOnPayload.structuredPayload.selectedGarmentProductId,
         latestTryOnPayload.structuredPayload.selectedAccessoryProductIds,
       );
-      setActiveThread((current) => current
-        ? { ...current, messages: [...current.messages, message], updatedAt: message.createdAt }
+      clearPendingTryOnMessage(threadId);
+      setActiveThread((current) => current?.id === threadId
+        ? {
+            ...current,
+            messages: [...current.messages, message],
+            updatedAt: message.createdAt,
+          }
         : current);
-      setThreads((current) => current.map((thread) => thread.id === activeThread.id
-        ? { ...thread, preview: message.content, updatedAt: message.createdAt }
-        : thread));
-    } finally {
-      setSubmitting(false);
+      updateThreadSummaryEntry(threadId, message.content, message.createdAt);
+    } catch {
+      clearPendingTryOnMessage(threadId);
+      const fallbackPreview = activeThread?.messages.at(-1)?.content ?? null;
+      const fallbackUpdatedAt = activeThread?.updatedAt ?? placeholderMessage.createdAt;
+      updateThreadSummaryEntry(threadId, fallbackPreview, fallbackUpdatedAt);
+      showToast('Không thể tạo ảnh thử đồ lúc này.', 'error');
     }
   };
 
@@ -286,7 +363,7 @@ export default function ChatWidget() {
               </header>
 
               <div className={styles.messages}>
-                {activeThread?.messages.map((message) => (
+                {renderMessages.map((message) => (
                   <MessageCard key={message.id} message={message} onPreviewImage={setPreviewImage} />
                 ))}
                 {streamingMessage && (
@@ -328,8 +405,8 @@ export default function ChatWidget() {
                       📎
                     </button>
                     <div className={styles.actionCluster}>
-                      {latestTryOnPayload?.structuredPayload?.canTryOn ? (
-                        <button type="button" className={styles.tryOnButton} disabled={submitting} onClick={handleTryOn}>
+                      {canShowTryOnButton ? (
+                        <button type="button" className={styles.tryOnButton} disabled={isTryOnPending} onClick={handleTryOn}>
                           Thử ngay
                         </button>
                       ) : null}
@@ -450,11 +527,14 @@ function MessageCard(
   { message, onPreviewImage, streaming }: { message: ChatMessage; onPreviewImage: (preview: { url: string; name: string }) => void; streaming?: boolean },
 ) {
   const isUser = message.role === 'user';
+  const isTryOnLoading = message.intent === TRY_ON_LOADING_INTENT;
+  const productSections = getProductSections(message.structuredPayload);
 
   return (
     <div className={`${styles.messageRow} ${isUser ? styles.messageRowUser : ''}`}>
       <div className={styles.messageBubble}>
         <div className={streaming ? styles.streamingCursor : undefined}>{message.content}</div>
+        {isTryOnLoading ? <div className={styles.tryOnSpinner} aria-label="Đang tạo ảnh thử đồ" /> : null}
         {message.attachments.map((attachment) => {
           const imageUrl = resolveAssetUrl(attachment.fileUrl) ?? attachment.fileUrl;
           const fileName = attachment.originalFileName ?? 'Xem ảnh đính kèm';
@@ -475,23 +555,15 @@ function MessageCard(
 
           return null;
         })}
-        {message.structuredPayload?.products.length ? (
-          <div className={styles.productGrid}>
-            {message.structuredPayload.products.map((product) => (
-              <div key={product.productId} className={styles.productCard}>
-                {product.primaryImageUrl ? (
-                  <img
-                    className={styles.productImage}
-                    src={resolveAssetUrl(product.primaryImageUrl) ?? product.primaryImageUrl}
-                    alt={product.name}
-                  />
-                ) : null}
-                <div className={styles.productInfo}>
-                  <div className={styles.productName}>{product.name}</div>
-                  <div className={styles.productMeta}>
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(product.salePrice ?? product.price)}
-                  </div>
-                  <div className={styles.productRationale}>{product.rationale}</div>
+        {productSections.length ? (
+          <div className={styles.productSections}>
+            {productSections.map((section) => (
+              <div key={section.key} className={styles.productSection}>
+                <div className={styles.productSectionTitle}>{section.title}</div>
+                <div className={styles.productGrid}>
+                  {section.products.map((product) => (
+                    <ProductCard key={`${section.key}-${product.productId}`} product={product} />
+                  ))}
                 </div>
               </div>
             ))}
@@ -500,6 +572,60 @@ function MessageCard(
       </div>
     </div>
   );
+}
+
+function ProductCard({ product }: { product: ChatRecommendationItem }) {
+  return (
+    <div className={styles.productCard}>
+      {product.primaryImageUrl ? (
+        <img
+          className={styles.productImage}
+          src={resolveAssetUrl(product.primaryImageUrl) ?? product.primaryImageUrl}
+          alt={product.name}
+        />
+      ) : null}
+      <div className={styles.productInfo}>
+        <div className={styles.productName}>{product.name}</div>
+        <div className={styles.productMeta}>
+          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(product.salePrice ?? product.price)}
+        </div>
+        <div className={styles.productRationale}>{product.rationale}</div>
+      </div>
+    </div>
+  );
+}
+
+function getProductSections(payload: ChatStructuredPayload | null): Array<{ key: string; title: string; products: ChatRecommendationItem[] }> {
+  if (!payload) {
+    return [];
+  }
+
+  const garmentProducts = payload.garmentProducts?.length
+    ? payload.garmentProducts
+    : payload.products.filter((product) => product.productType === 'ao_dai');
+  const accessoryProducts = payload.accessoryProducts?.length
+    ? payload.accessoryProducts
+    : payload.products.filter((product) => product.productType === 'phu_kien');
+
+  const sections: Array<{ key: string; title: string; products: ChatRecommendationItem[] }> = [];
+
+  if (garmentProducts.length) {
+    sections.push({ key: 'garments', title: 'Áo dài gợi ý', products: garmentProducts });
+  }
+
+  if (accessoryProducts.length) {
+    sections.push({ key: 'accessories', title: 'Phụ kiện đi kèm', products: accessoryProducts });
+  }
+
+  if (sections.length > 0) {
+    return sections;
+  }
+
+  if (payload.products.length) {
+    return [{ key: 'legacy', title: 'Sản phẩm gợi ý', products: payload.products }];
+  }
+
+  return [];
 }
 
 function updateThreadSummary(current: ChatThreadSummary[], thread: ChatThreadDetail): ChatThreadSummary[] {

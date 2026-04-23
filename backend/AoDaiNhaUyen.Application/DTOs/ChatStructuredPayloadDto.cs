@@ -8,4 +8,6 @@ public sealed record ChatStructuredPayloadDto(
   long? SelectedGarmentProductId,
   IReadOnlyList<long> SelectedAccessoryProductIds,
   IReadOnlyList<string> PendingTryOnRequirements,
-  IReadOnlyList<ChatRecommendationItemDto> Products);
+  IReadOnlyList<ChatRecommendationItemDto> Products,
+  IReadOnlyList<ChatRecommendationItemDto>? GarmentProducts = null,
+  IReadOnlyList<ChatRecommendationItemDto>? AccessoryProducts = null);
