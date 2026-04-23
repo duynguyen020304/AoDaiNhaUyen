@@ -14,7 +14,17 @@ public sealed class VertexAiStylistResponseComposer(
   HttpClient httpClient,
   IOptions<GoogleCloudOptions> options) : IStylistResponseComposer
 {
+  private static readonly IReadOnlyList<string> StylePromptVariants =
+  [
+    "Giọng hôm nay: gần gũi như một stylist đang đi shopping cùng khách, nói tự nhiên, ấm áp, không lên gân.",
+    "Giọng hôm nay: tinh gọn và tự tin như stylist tư vấn riêng, đi thẳng vào gợi ý nhưng vẫn mềm mại.",
+    "Giọng hôm nay: nhẹ nhàng như một người chị có gu đang giúp khách chọn đồ, ưu tiên cảm giác dễ chịu và chân thành.",
+    "Giọng hôm nay: linh hoạt, tươi và giàu năng lượng hơn một chút, nhưng vẫn phải tinh tế và không phô trương."
+  ];
+
   private readonly GoogleCloudOptions googleCloudOptions = options.Value;
+
+  public static string PickStylePromptVariant() => StylePromptVariants[Random.Shared.Next(StylePromptVariants.Count)];
 
   public async Task<string> ComposeAsync(
     string userMessage,
@@ -46,7 +56,7 @@ public sealed class VertexAiStylistResponseComposer(
           [
             new GeminiContent("user", parts)
           ],
-          new GeminiGenerationConfig(0.35m, 0.9m, 32, 512),
+          new GeminiGenerationConfig(0.55m, 0.9m, 48, 512),
           [
             new GeminiSafetySetting("HARM_CATEGORY_HARASSMENT", "BLOCK_MEDIUM_AND_ABOVE"),
             new GeminiSafetySetting("HARM_CATEGORY_HATE_SPEECH", "BLOCK_MEDIUM_AND_ABOVE")
@@ -178,7 +188,7 @@ public sealed class VertexAiStylistResponseComposer(
           [
             new GeminiContent("user", parts)
           ],
-          new GeminiGenerationConfig(0.35m, 0.9m, 32, 512),
+          new GeminiGenerationConfig(0.55m, 0.9m, 48, 512),
           [
             new GeminiSafetySetting("HARM_CATEGORY_HARASSMENT", "BLOCK_MEDIUM_AND_ABOVE"),
             new GeminiSafetySetting("HARM_CATEGORY_HATE_SPEECH", "BLOCK_MEDIUM_AND_ABOVE")
@@ -238,8 +248,10 @@ public sealed class VertexAiStylistResponseComposer(
     string? imageCatalogText)
   {
     var builder = new StringBuilder();
+    var styleVariant = PickStylePromptVariant();
     builder.AppendLine("Bạn là stylist AI của Ao Dai Nha Uyen.");
     builder.AppendLine("Nhiệm vụ: viết lại câu trả lời tiếng Việt tự nhiên, ngắn gọn, ấm áp nhưng chính xác.");
+    builder.AppendLine(styleVariant);
     builder.AppendLine("Ràng buộc:");
     builder.AppendLine("- Chỉ được dùng dữ liệu đã cung cấp.");
     builder.AppendLine("- Không được bịa sản phẩm, giá, màu, tồn kho, hay tính năng.");

@@ -45,12 +45,13 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     decimal? budgetCeiling,
     string? colorFamily,
     string? materialKeyword,
+    string? productType,
     int limit,
     CancellationToken cancellationToken = default)
   {
     var normalizedQuery = ChatTextUtils.Normalize(query);
     var queryTokens = ExtractQueryTokens(normalizedQuery);
-    var products = await LoadProductsAsync(null, cancellationToken);
+    var products = await LoadProductsAsync(productType, cancellationToken);
 
     var strictMatches = GetStrictMatches(products, normalizedQuery);
     var tokenMatches = strictMatches.Count > 0
@@ -152,16 +153,33 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     if (hasStrictMatches)
     {
       return coverageBoost > 0
-        ? "Khớp trực tiếp với mô tả hiện tại trong catalog live và giúp mở rộng lựa chọn ít trùng hơn."
-        : "Khớp trực tiếp với mô tả hiện tại trong catalog live.";
+        ? PickOne(
+          "Mẫu đang có trong catalog và mang lại lựa chọn khác biệt hơn.",
+          "Mẫu này khá sát nhu cầu hiện tại, lại cho cảm giác mới hơn một chút.",
+          "Mẫu này hợp nhu cầu hiện tại và vẫn đủ khác để bạn dễ cân nhắc thêm.")
+        : PickOne(
+          "Mẫu đang có trong catalog và khá sát nhu cầu của bạn.",
+          "Mẫu này đang khá đúng hướng bạn tìm.",
+          "Mẫu này bám khá sát nhu cầu hiện tại của bạn.");
     }
 
     if (tokenMatches > 0)
     {
-      return $"Khớp gần đúng với nhu cầu hiện tại qua {tokenMatches} tín hiệu mô tả trong catalog.";
+      return coverageBoost > 0
+        ? PickOne(
+          "Mẫu khá sát nhu cầu hiện tại và mang lại lựa chọn khác biệt hơn.",
+          "Mẫu này hợp hướng bạn đang tìm và vẫn tạo cảm giác mới mẻ hơn.",
+          "Mẫu này khá hợp nhu cầu hiện tại, lại không bị quá `giống các lựa chọn trước.")
+        : PickOne(
+          "Mẫu khá sát nhu cầu hiện tại của bạn.",
+          "Mẫu này đang khá hợp với thứ bạn tìm.",
+          "Mẫu này là một lựa chọn khá sát nhu cầu hiện tại.");
     }
 
-    return "Đây là mẫu gần đúng, đang có hàng và phù hợp để mở rộng lựa chọn khi chưa có khớp trực tiếp.";
+    return PickOne(
+      "Mẫu gần với nhu cầu hiện tại, dễ phối và vẫn đáng cân nhắc.",
+      "Mẫu này chưa phải khớp nhất nhưng vẫn là lựa chọn đáng để thử.",
+      "Mẫu này khá dễ phối và vẫn nằm trong nhóm nên cân nhắc.");
   }
 
   private static IReadOnlyList<string> ExtractQueryTokens(string normalizedQuery)
@@ -448,6 +466,16 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
   private static string BuildComparisonRationale(Product product)
   {
     var profile = product.StyleProfiles.FirstOrDefault();
-    return $"độ trang trọng {profile?.Formality ?? "medium"}, tông {profile?.PrimaryColorFamily ?? "chưa gắn"}";
+    var formality = profile?.Formality ?? "medium";
+    var color = profile?.PrimaryColorFamily ?? "chưa gắn";
+    return PickOne(
+      $"Thiên về độ trang trọng {formality}, tông {color}.",
+      $"Phong cách khá {formality}, tông màu chính là {color}.",
+      $"Mẫu này có độ trang trọng {formality} và nghiêng về tông {color}.");
+  }
+
+  private static string PickOne(params string[] options)
+  {
+    return options[Random.Shared.Next(options.Length)];
   }
 }

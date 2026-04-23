@@ -28,6 +28,17 @@ public sealed class StylistFallbackTextServiceTests
   }
 
   [Fact]
+  public void Pick_WithPlaceholders_ReplacesTemplateTokens()
+  {
+    var service = new StylistFallbackTextService();
+
+    var result = service.Pick("catalog_lookup_intro", ("count", "4"));
+
+    Assert.Contains("4", result);
+    Assert.DoesNotContain("{count}", result);
+  }
+
+  [Fact]
   public void Pick_Throws_ForUnknownTheme()
   {
     var service = new StylistFallbackTextService();

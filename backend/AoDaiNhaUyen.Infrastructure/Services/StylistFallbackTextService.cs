@@ -161,6 +161,114 @@ public sealed class StylistFallbackTextService : IStylistFallbackTextService
       "Kết quả thử đồ đã sẵn trong cuộc trò chuyện. Bạn muốn thử thêm phương án khác thì cứ nói mình nhé.",
       "Mình đã tạo xong ảnh thử đồ cho lần này. Nếu bạn muốn đổi mẫu hoặc phối thêm phụ kiện, mình hỗ trợ tiếp được ngay.",
       "Ảnh thử đồ mới đã có rồi. Bạn cứ xem trước, nếu muốn so thêm lựa chọn khác thì mình làm tiếp cho bạn."
+    ],
+    ["catalog_lookup_intro"] =
+    [
+      "Mình lọc ra được {count} mẫu khá hợp, bạn xem thử bên dưới nhé.",
+      "Mình chọn nhanh {count} mẫu đang khá sát nhu cầu của bạn, kéo xuống là thấy ngay.",
+      "Có {count} mẫu mình nghĩ bạn nên xem trước, mình để ngay bên dưới nhé.",
+      "Mình gom lại {count} lựa chọn dễ cân nhắc nhất cho bạn rồi nè.",
+      "Mình lọc sẵn {count} mẫu để bạn so nhanh, xem thử nhé."
+    ],
+    ["catalog_lookup_empty_for_type"] =
+    [
+      "Mình chưa thấy {productType} nào thật sự khớp với mô tả này trong catalog live. Bạn thử nói rõ hơn màu, chất liệu hoặc dịp mặc nhé.",
+      "Hiện mình chưa lọc ra {productType} phù hợp từ catalog. Bạn thêm giúp mình một tiêu chí như màu hoặc chất liệu để mình tìm lại nhé.",
+      "Catalog hiện chưa ra {productType} đủ sát với nhu cầu này. Bạn muốn mình lọc lại theo màu, chất liệu hay mức giá trước?",
+      "Mình chưa tìm được {productType} đúng ý trong catalog hiện có. Bạn mô tả thêm một chút để mình refine lại nhé.",
+      "Tạm thời mình chưa thấy {productType} nào khớp đủ gần. Bạn thử thu hẹp thêm theo tone màu, chất liệu hoặc dịp mặc nhé."
+    ],
+    ["accessory_recommendation_intro"] =
+    [
+      "Mình chọn trước vài phụ kiện hợp với gu bạn đang nói tới, bạn xem thử nhé.",
+      "Mình gom vài món phụ kiện dễ phối với nhu cầu hiện tại của bạn ở dưới đây nha.",
+      "Có vài phụ kiện đang khá ăn ý với kiểu bạn muốn, mình để sẵn bên dưới rồi.",
+      "Mình chọn trước mấy món phụ kiện nhìn vào là phối được ngay, bạn xem thử nhé.",
+      "Mình lọc giúp bạn vài phụ kiện hợp vibe hiện tại trước đã nha."
+    ],
+    ["product_description_intro"] =
+    [
+      "Mình tóm tắt nhanh các mẫu bạn đang hỏi ở dưới đây nhé:\n{description}",
+      "Mình note nhanh đặc điểm từng mẫu để bạn dễ so hơn nhé:\n{description}",
+      "Để mình tóm tắt gọn từng mẫu cho bạn dễ hình dung:\n{description}",
+      "Mình viết ngắn gọn đặc điểm của từng mẫu ở đây nha:\n{description}",
+      "Mình gom mô tả nhanh từng mẫu để bạn đỡ phải nhìn lại nhiều lần:\n{description}"
+    ],
+    ["comparison_result"] =
+    [
+      "{leftName} thiên về {leftRationale}, còn {rightName} thì {rightRationale}. Nếu cần thử trước, mình nghiêng về {suggestedName}.",
+      "Nếu đặt cạnh nhau thì {leftName} sẽ nổi bật ở chỗ {leftRationale}, còn {rightName} hợp ở điểm {rightRationale}. Mình nghĩ bạn có thể thử {suggestedName} trước.",
+      "Hai mẫu này đi hai hướng hơi khác nhau: {leftName} là kiểu {leftRationale}, còn {rightName} thì {rightRationale}. Muốn thử trước thì mình gợi ý {suggestedName}.",
+      "{leftName} hợp khi bạn cần {leftRationale}, còn {rightName} lại mạnh ở {rightRationale}. Nếu chọn một mẫu để thử trước, mình sẽ chọn {suggestedName}.",
+      "Mình thấy {leftName} và {rightName} khác nhau chủ yếu ở đây: một bên {leftRationale}, một bên {rightRationale}. Thử trước thì nên bắt đầu với {suggestedName}."
+    ],
+    ["image_analysis_acknowledged"] =
+    [
+      "Mình xem ảnh bạn gửi rồi, mình sẽ ưu tiên hướng hợp dịp {scenario} cho bạn nha.",
+      "Mình thấy ảnh rồi, để mình bám theo bối cảnh {scenario} mà gợi ý cho sát hơn nhé.",
+      "Ảnh mình nhận được rồi, mình sẽ ưu tiên set hợp dịp {scenario} và lên hình ổn hơn.",
+      "Ok, mình xem ảnh rồi. Mình sẽ dựa trên dịp {scenario} để gợi ý cho hợp hơn nha.",
+      "Mình đã xem ảnh, giờ mình bám theo bối cảnh {scenario} để chọn hướng phù hợp cho bạn."
+    ],
+    ["image_analysis_missing"] =
+    [
+      "Mình chưa thấy đúng ảnh bạn đang nhắc tới, bạn gửi lại giúp mình nha.",
+      "Ảnh bạn đang nói tới hiện mình chưa lấy ra được, gửi lại giúp mình để mình xem kỹ hơn nhé.",
+      "Mình chưa tìm được đúng ảnh đó trong cuộc trò chuyện, bạn gửi lại một lần nữa giúp mình nha.",
+      "Có vẻ mình chưa bắt đúng ảnh bạn đang nhắc, bạn gửi lại để mình nhận xét chuẩn hơn nhé.",
+      "Mình chưa mở được đúng ảnh đó, bạn gửi lại giúp mình để mình xem chính xác hơn nha."
+    ],
+    ["recommendation_exhausted"] =
+    [
+      "Mình đã đi gần hết các mẫu chưa trùng cho bối cảnh {scenario}. Nếu muốn, mình đổi hướng màu hoặc phối lại set cho bạn nhé.",
+      "Các mẫu chưa lặp cho bối cảnh {scenario} mình gần như đã đi hết rồi. Mình có thể xoay sang hướng khác cho bạn.",
+      "Với bối cảnh {scenario}, mình đã quét gần hết nhóm mẫu chưa trùng. Nếu bạn muốn, mình sẽ đổi gu một chút để mở thêm lựa chọn.",
+      "Mình đã xem gần hết các mẫu chưa lặp cho dịp {scenario}. Muốn mình đổi tone hoặc đổi kiểu phối luôn không?",
+      "Nhóm mẫu chưa trùng cho bối cảnh {scenario} mình đã đi gần hết. Nếu cần, mình sẽ mở sang hướng khác để bạn có thêm lựa chọn."
+    ],
+    ["recommendation_intro_plain"] =
+    [
+      "Mình lên sẵn vài look để bạn xem nhanh nhé:",
+      "Mình phối thử vài look cho bạn đây:",
+      "Mình chọn sẵn vài hướng phối để bạn dễ so nhé:",
+      "Có vài look mình thấy khá ổn cho bạn, xem thử nha:",
+      "Mình ghép sẵn vài look dễ mặc và dễ chọn cho bạn rồi đây:"
+    ],
+    ["recommendation_intro_scenario"] =
+    [
+      "Với bối cảnh {scenario}, mình lên sẵn vài look cho bạn nhé:",
+      "Nếu đi theo hướng {scenario}, mình phối thử vài look thế này cho bạn:",
+      "Mình chọn vài look hợp dịp {scenario} để bạn so nhanh nhé:",
+      "Cho bối cảnh {scenario}, mình thấy mấy look này khá ổn:",
+      "Nếu ưu tiên dịp {scenario}, mình sẽ bắt đầu từ vài look này nhé:"
+    ],
+    ["look_label_0"] = [ "Thanh lịch nổi bật", "Dễ mặc mà vẫn nổi", "An toàn nhưng vẫn có điểm nhấn" ],
+    ["look_label_1"] = [ "Dịu mắt dễ mặc", "Mềm và nữ tính hơn", "Nhẹ nhàng, lên hình ổn" ],
+    ["look_label_2"] = [ "Đổi gu mới hơn", "Có nét khác biệt hơn", "Lạ mắt hơn một chút" ],
+    ["look_label_other"] = [ "Gợi ý thêm", "Một hướng khác", "Phương án khác" ],
+    ["difference_reason_plain"] =
+    [
+      "tập trung vào áo dài chính để bạn dễ so nhanh giữa các mẫu.",
+      "giữ trọng tâm ở áo dài để bạn nhìn ra khác biệt rõ hơn.",
+      "đặt áo dài làm điểm chính để bạn cân giữa các mẫu dễ hơn."
+    ],
+    ["difference_reason_pair"] =
+    [
+      "mood khác nhờ đổi sang {garmentName} và ghép với {accessoryName}.",
+      "không khí set thay đổi rõ hơn khi đi cùng {accessoryName} và {garmentName}.",
+      "cảm giác tổng thể khác đi vì {garmentName} được phối với {accessoryName}."
+    ],
+    ["styling_tip_plain"] =
+    [
+      "Bạn có thể thêm phụ kiện sáng màu để tổng thể gọn và có điểm nhấn hơn.",
+      "Nếu muốn set rõ điểm nhấn hơn, bạn thêm một món phụ kiện sáng màu là ổn.",
+      "Chỉ cần thêm một phụ kiện sáng nhẹ là tổng thể sẽ cân hơn."
+    ],
+    ["styling_tip_pair"] =
+    [
+      "Tip phối: đi cùng {accessoryName} để set gọn mắt và đỡ bị rời tổng thể.",
+      "Tip nhỏ: thêm {accessoryName} sẽ giúp tổng thể liền mạch hơn.",
+      "Nếu phối với {accessoryName}, set này sẽ nhìn gọn và có điểm nhấn hơn."
     ]
   };
 
@@ -172,5 +280,21 @@ public sealed class StylistFallbackTextService : IStylistFallbackTextService
     }
 
     return variants[Random.Shared.Next(variants.Count)];
+  }
+
+  public string Pick(string theme, params (string Key, string Value)[] placeholders)
+  {
+    var message = Pick(theme);
+    if (placeholders.Length == 0)
+    {
+      return message;
+    }
+
+    foreach (var (key, value) in placeholders)
+    {
+      message = message.Replace($"{{{key}}}", value, StringComparison.Ordinal);
+    }
+
+    return message;
   }
 }

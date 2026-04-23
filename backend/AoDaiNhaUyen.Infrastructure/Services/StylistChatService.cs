@@ -521,6 +521,7 @@ public sealed class StylistChatService(
       classification.BudgetCeiling,
       classification.ColorFamily,
       classification.MaterialKeyword,
+      classification.ProductType,
       8,
       cancellationToken);
 
@@ -552,17 +553,20 @@ public sealed class StylistChatService(
 
     if (string.Equals(classification.ProductType, "phu_kien", StringComparison.OrdinalIgnoreCase) && accessoryProducts.Count == 0)
     {
-      accessoryProducts = selectedProducts.ToList();
-      garmentProducts = [];
+      return new AssistantTurn(
+        fallbackTextService.Pick("catalog_lookup_empty_for_type", ("productType", "phụ kiện")),
+        null);
     }
-    else if (string.Equals(classification.ProductType, "ao_dai", StringComparison.OrdinalIgnoreCase) && garmentProducts.Count == 0)
+
+    if (string.Equals(classification.ProductType, "ao_dai", StringComparison.OrdinalIgnoreCase) && garmentProducts.Count == 0)
     {
-      garmentProducts = selectedProducts.ToList();
-      accessoryProducts = [];
+      return new AssistantTurn(
+        fallbackTextService.Pick("catalog_lookup_empty_for_type", ("productType", "áo dài")),
+        null);
     }
 
     return new AssistantTurn(
-      $"Mình đã lọc được {selectedProducts.Count} mẫu đang có trong catalog. Bạn có thể xem từng mẫu bên dưới, hoặc nhắn “gợi ý set cho mình” để mình phối thành set hoàn chỉnh.",
+      fallbackTextService.Pick("catalog_lookup_intro", ("count", selectedProducts.Count.ToString())),
       BuildStructuredPayload(
         "catalog_results",
         classification.Scenario,
@@ -733,6 +737,7 @@ public sealed class StylistChatService(
         classification.BudgetCeiling ?? memory.BudgetCeiling,
         classification.ColorFamily ?? memory.ColorFamily,
         classification.MaterialKeyword ?? memory.MaterialKeyword,
+        "phu_kien",
         RecommendationLookCount * 3,
         cancellationToken)
       : await catalogStylingService.RecommendAsync(
@@ -769,7 +774,7 @@ public sealed class StylistChatService(
     return new AssistantTurn(
       shouldBuildCombo
         ? BuildRecommendationCopy(garmentProducts, accessoryProducts, scenario, true)
-        : "Mình chọn trước vài phụ kiện đang hợp với gu và bối cảnh bạn mô tả. Nếu bạn muốn, mình có thể phối tiếp theo mẫu áo dài bạn đang xem.",
+        : fallbackTextService.Pick("accessory_recommendation_intro"),
       BuildStructuredPayload(
         "recommendations",
         scenario,
@@ -812,7 +817,7 @@ public sealed class StylistChatService(
       products.Select((product, index) => $"{index + 1}. {product.Name}: {product.Rationale}"));
 
     return new AssistantTurn(
-      $"Mình tóm tắt nhanh đặc tính của các mẫu bạn đang hỏi:\n{description}",
+      fallbackTextService.Pick("product_description_intro", ("description", description)),
       BuildStructuredPayload(
         "comparison",
         classification.Scenario ?? memory.Scenario,
@@ -843,7 +848,13 @@ public sealed class StylistChatService(
     }
 
     return new AssistantTurn(
-      $"Mẫu {products[0].Name} thiên về {products[0].Rationale}, còn {products[1].Name} thì {products[1].Rationale}. Nếu bạn muốn thử đồ trước, mình khuyên bắt đầu với {products[0].Name}.",
+      fallbackTextService.Pick(
+        "comparison_result",
+        ("leftName", products[0].Name),
+        ("leftRationale", products[0].Rationale),
+        ("rightName", products[1].Name),
+        ("rightRationale", products[1].Rationale),
+        ("suggestedName", products[0].Name)),
       BuildStructuredPayload(
         "comparison",
         classification.Scenario,
@@ -911,14 +922,14 @@ public sealed class StylistChatService(
     if (referencedImages.Count > 0)
     {
       var fallback = scenario is not null
-        ? $"Mình xem ảnh bạn gửi rồi nha. Mình sẽ ưu tiên set hợp dịp {scenario.Replace('-', ' ')} và dễ lên ảnh."
-        : "Mình xem ảnh của bạn rồi nha.";
+        ? fallbackTextService.Pick("image_analysis_acknowledged", ("scenario", scenario.Replace('-', ' ')))
+        : fallbackTextService.Pick("image_analysis_need_scenario");
 
       return new AssistantTurn(fallback, null, referencedImages);
     }
 
     return new AssistantTurn(
-      "Mình không tìm thấy ảnh bạn đang nhắc tới. Bạn gửi lại ảnh đó giúp mình để mình nhận xét chính xác hơn nhé.",
+      fallbackTextService.Pick("image_analysis_missing"),
       null);
   }
 
@@ -1110,15 +1121,15 @@ public sealed class StylistChatService(
     return firstUser.Length <= 48 ? firstUser : string.Concat(firstUser.AsSpan(0, 48), "...");
   }
 
-  private static string BuildRecommendationCopy(
+  private string BuildRecommendationCopy(
     IReadOnlyList<ChatRecommendationItemDto> garmentProducts,
     IReadOnlyList<ChatRecommendationItemDto> accessoryProducts,
     string? scenario,
     bool noveltyFirst)
   {
     var intro = string.IsNullOrWhiteSpace(scenario)
-      ? "Mình lên sẵn vài look hoàn chỉnh từ catalog live:"
-      : $"Với bối cảnh {scenario.Replace('-', ' ')}, mình lên sẵn vài look hoàn chỉnh từ catalog live:";
+      ? fallbackTextService.Pick("recommendation_intro_plain")
+      : fallbackTextService.Pick("recommendation_intro_scenario", ("scenario", scenario.Replace('-', ' ')));
     var sections = new List<string> { intro };
 
     for (var index = 0; index < garmentProducts.Count; index++)
@@ -1129,11 +1140,13 @@ public sealed class StylistChatService(
         : accessoryProducts[Math.Min(index, accessoryProducts.Count - 1)];
       var lookTitle = $"Look {index + 1} — {BuildLookLabel(index)}";
       var difference = index == 0
-        ? (noveltyFirst ? "ưu tiên mẫu chưa trùng với các gợi ý trước" : "ưu tiên độ hợp bối cảnh và dễ mặc")
+        ? (noveltyFirst
+          ? "ưu tiên mẫu chưa trùng với các gợi ý trước"
+          : "ưu tiên độ hợp bối cảnh và dễ mặc")
         : BuildDifferenceReason(garment, accessory);
       var stylingTip = accessory is null
-        ? "Bạn có thể thêm phụ kiện sáng màu để tổng thể gọn và có điểm nhấn hơn."
-        : $"Tip phối: đi cùng {accessory.Name.ToLowerInvariant()} để set gọn mắt và đỡ bị rời tổng thể.";
+        ? fallbackTextService.Pick("styling_tip_plain")
+        : fallbackTextService.Pick("styling_tip_pair", ("accessoryName", accessory.Name.ToLowerInvariant()));
 
       sections.Add(string.Join("\n", new[]
       {
@@ -1151,27 +1164,30 @@ public sealed class StylistChatService(
     return string.Join("\n", sections);
   }
 
-  private static string BuildLookLabel(int index)
+  private string BuildLookLabel(int index)
   {
     return index switch
     {
-      0 => "Thanh lịch nổi bật",
-      1 => "Dịu mắt dễ mặc",
-      2 => "Đổi gu mới hơn",
-      _ => "Gợi ý thêm"
+      0 => fallbackTextService.Pick("look_label_0"),
+      1 => fallbackTextService.Pick("look_label_1"),
+      2 => fallbackTextService.Pick("look_label_2"),
+      _ => fallbackTextService.Pick("look_label_other")
     };
   }
 
-  private static string BuildDifferenceReason(
+  private string BuildDifferenceReason(
     ChatRecommendationItemDto garment,
     ChatRecommendationItemDto? accessory)
   {
     if (accessory is null)
     {
-      return "tập trung vào áo dài chính để bạn dễ so nhanh giữa các mẫu.";
+      return fallbackTextService.Pick("difference_reason_plain");
     }
 
-    return $"mood khác nhờ đổi sang {garment.Name.ToLowerInvariant()} và ghép với {accessory.Name.ToLowerInvariant()}.";
+    return fallbackTextService.Pick(
+      "difference_reason_pair",
+      ("garmentName", garment.Name.ToLowerInvariant()),
+      ("accessoryName", accessory.Name.ToLowerInvariant()));
   }
 
   private static bool ShouldPreferUnseenAlternatives(string userMessage, IntentClassificationDto classification, ThreadMemoryStateDto memory)

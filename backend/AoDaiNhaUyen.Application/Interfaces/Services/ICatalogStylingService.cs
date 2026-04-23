@@ -20,6 +20,7 @@ public interface ICatalogStylingService
     decimal? budgetCeiling,
     string? colorFamily,
     string? materialKeyword,
+    string? productType,
     int limit,
     CancellationToken cancellationToken = default);
 

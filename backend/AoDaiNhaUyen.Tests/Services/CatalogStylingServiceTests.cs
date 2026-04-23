@@ -66,7 +66,7 @@ public sealed class CatalogStylingServiceTests
     var results = await service.RecommendAsync("giao-vien", null, "blue", null, "ao_dai", 2, cancellationToken: CancellationToken.None);
 
     Assert.Equal([102, 101], results.Select(item => item.ProductId).ToArray());
-    Assert.Contains("mood ít trùng hơn", results[0].Rationale);
+    Assert.Contains("trùng", results[0].Rationale);
   }
 
   private static Product BuildProduct(

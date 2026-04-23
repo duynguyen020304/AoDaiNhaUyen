@@ -124,6 +124,15 @@ public sealed class VertexAiStylistResponseComposerTests
     Assert.Contains("Giữ giọng văn tự nhiên như nhân viên tư vấn bán hàng giàu kinh nghiệm", prompt);
     Assert.Contains("Hạn chế lạm dụng các từ quá lễ nghi", prompt);
     Assert.Contains("Ưu tiên trả lời trực tiếp vào nhu cầu của khách", prompt);
+    Assert.Contains("Giọng hôm nay:", prompt);
+  }
+
+  [Fact]
+  public void PickStylePromptVariant_ReturnsKnownVariant()
+  {
+    var variant = VertexAiStylistResponseComposer.PickStylePromptVariant();
+
+    Assert.StartsWith("Giọng hôm nay:", variant);
   }
 
   [Fact]
