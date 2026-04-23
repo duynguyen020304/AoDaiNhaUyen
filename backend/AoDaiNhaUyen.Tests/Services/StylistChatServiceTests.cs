@@ -185,6 +185,52 @@ public sealed class StylistChatServiceTests
   }
 
   [Fact]
+  public async Task AddMessageAsync_RepeatedAlternativeRequest_FallsBackToSeenProducts_WhenNoUnseenRemain()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web",
+      Memory = new ChatThreadMemory
+      {
+        FactsJsonb = "{}",
+        ResolvedRefsJsonb = "{\"shownProductIds\":[101,201],\"lastUserRequestType\":\"alternative_request\",\"conversationStage\":\"refine\"}"
+      }
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var stylingService = new StubCatalogStylingService();
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("outfit_recommendation", "giao-vien", null, "blue", "lụa", "ao_dai", [], false, false, SelectionStrategy: "novelty_first")),
+      new ThreadMemoryService(),
+      stylingService,
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(
+      thread.Id,
+      1,
+      null,
+      "hãy thử bộ đồ khác đi",
+      "client-follow-up-repeat-alt",
+      [],
+      CancellationToken.None);
+
+    var payload = result.Messages.Last().StructuredPayload!;
+    Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
+    Assert.Equal([201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+    Assert.Contains("Look 1", result.Messages.Last().Content);
+    Assert.NotNull(payload);
+  }
+
+  [Fact]
   public async Task AddMessageAsync_FollowUpRecommendation_FallsBackToSeenProducts_WhenNoUnseenRemain()
   {
     await using var dbContext = CreateDbContext();
@@ -279,6 +325,102 @@ public sealed class StylistChatServiceTests
     var payload = result.Messages.Last().StructuredPayload!;
     Assert.Equal("catalog_results", payload.Kind);
     Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_CatalogLookup_FallsBackToSeenProducts_WhenOnlySeenRemain()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web",
+      Memory = new ChatThreadMemory
+      {
+        FactsJsonb = "{}",
+        ResolvedRefsJsonb = "{\"shownProductIds\":[101]}"
+      }
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var stylingService = new StubCatalogStylingService
+    {
+      LookupResults =
+      [
+        new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp.")
+      ]
+    };
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("catalog_lookup", "giao-vien", null, "blue", "lụa", "ao_dai", [], false, false, RetrievalQuery: "liệt kê áo dài")),
+      new ThreadMemoryService(),
+      stylingService,
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(
+      thread.Id,
+      1,
+      null,
+      "liệt kê thêm vài mẫu",
+      "client-lookup-seen-fallback",
+      [],
+      CancellationToken.None);
+
+    var payload = result.Messages.Last().StructuredPayload!;
+    Assert.Equal("catalog_results", payload.Kind);
+    Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_CatalogLookup_SplitsGarmentAndAccessoryBuckets_ByActualProductType()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web"
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var stylingService = new StubCatalogStylingService
+    {
+      LookupResults =
+      [
+        new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp."),
+        new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Phụ kiện hợp.")
+      ]
+    };
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("catalog_lookup", "giao-vien", null, "blue", "lụa", "ao_dai", [], false, false, RetrievalQuery: "ao dai lua")),
+      new ThreadMemoryService(),
+      stylingService,
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(
+      thread.Id,
+      1,
+      null,
+      "cho mình xem áo dài lụa",
+      "client-lookup-bucket-split",
+      [],
+      CancellationToken.None);
+
+    var payload = result.Messages.Last().StructuredPayload!;
+    Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
+    Assert.Equal([201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
   }
 
   [Fact]
@@ -646,6 +788,109 @@ public sealed class StylistChatServiceTests
   }
 
   [Fact]
+  public async Task AddMessageAsync_UsesReferencedImageHintToResolveSpecificCatalogImage()
+  {
+    await using var dbContext = CreateDbContext();
+    using var uploadRoot = new TemporaryDirectory();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web",
+      Memory = new ChatThreadMemory
+      {
+        FactsJsonb = "{\"scenario\":\"chup-anh\",\"imageCatalog\":[{\"attachmentId\":1,\"label\":\"Ảnh 1\",\"kind\":\"user_image\"},{\"attachmentId\":2,\"label\":\"Ảnh 2\",\"kind\":\"user_image\"}]}",
+        ResolvedRefsJsonb = "{}"
+      }
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var attachment1 = new ChatAttachment
+    {
+      Id = 1,
+      ThreadId = thread.Id,
+      Kind = "user_image",
+      FileUrl = $"/upload/chat/{thread.Id}/img1.png",
+      MimeType = "image/png",
+      OriginalFileName = "img1.png",
+      FileSizeBytes = 3
+    };
+    var attachment2 = new ChatAttachment
+    {
+      Id = 2,
+      ThreadId = thread.Id,
+      Kind = "user_image",
+      FileUrl = $"/upload/chat/{thread.Id}/img2.png",
+      MimeType = "image/png",
+      OriginalFileName = "img2.png",
+      FileSizeBytes = 3
+    };
+    dbContext.ChatAttachments.AddRange(attachment1, attachment2);
+    await dbContext.SaveChangesAsync();
+
+    var threadDir = Path.Combine(uploadRoot.Path, "chat", thread.Id.ToString());
+    Directory.CreateDirectory(threadDir);
+    await File.WriteAllBytesAsync(Path.Combine(threadDir, "img1.png"), [1, 1, 1]);
+    await File.WriteAllBytesAsync(Path.Combine(threadDir, "img2.png"), [2, 2, 2]);
+
+    var composer = new CapturingStylistResponseComposer();
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("image_style_analysis", "chup-anh", null, null, null, null, [], false, false, ReferencedImageHint: "first")),
+      new ThreadMemoryService(),
+      new StubCatalogStylingService(),
+      new StubCatalogTryOnService(),
+      composer,
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(uploadRoot.Path),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(thread.Id, 1, null, "xem anh cuoi giup minh", "client-image-hint", [], CancellationToken.None);
+
+    Assert.Equal("image_style_analysis", result.Messages.Last().Intent);
+    var image = Assert.Single(composer.LastReferencedImages!);
+    Assert.Equal(1, image.AttachmentId);
+    Assert.Equal([1, 1, 1], image.Bytes);
+  }
+
+  [Fact]
+  public async Task AddMessageAsync_ReturnsClarificationWhenReferencedCatalogImageMissing()
+  {
+    await using var dbContext = CreateDbContext();
+    var thread = new ChatThread
+    {
+      UserId = 1,
+      Status = "active",
+      Source = "web",
+      Memory = new ChatThreadMemory
+      {
+        FactsJsonb = "{\"scenario\":\"chup-anh\",\"imageCatalog\":[{\"attachmentId\":88,\"label\":\"Ảnh 1\",\"kind\":\"user_image\"}]}",
+        ResolvedRefsJsonb = "{}"
+      }
+    };
+    dbContext.ChatThreads.Add(thread);
+    await dbContext.SaveChangesAsync();
+
+    var service = new StylistChatService(
+      dbContext,
+      new StubIntentClassifier(new IntentClassificationDto("image_style_analysis", "chup-anh", null, null, null, null, [], false, false, ReferencedImageHint: "first")),
+      new ThreadMemoryService(),
+      new StubCatalogStylingService(),
+      new StubCatalogTryOnService(),
+      new StubStylistResponseComposer(),
+      new StubFallbackTextService(),
+      new TestUploadStoragePathResolver(),
+      NullLogger<StylistChatService>.Instance);
+
+    var result = await service.AddMessageAsync(thread.Id, 1, null, "xem anh dau tien", "client-missing-image", [], CancellationToken.None);
+
+    Assert.Equal("image_style_analysis", result.Messages.Last().Intent);
+    Assert.Equal("Mình không tìm thấy ảnh bạn đang nhắc tới. Bạn gửi lại ảnh đó giúp mình để mình nhận xét chính xác hơn nhé.", result.Messages.Last().Content);
+    Assert.Null(result.Messages.Last().StructuredPayload);
+  }
+
+  [Fact]
   public async Task AddMessageAsync_OutfitRecommendationAlwaysBuildsCombo()
   {
     await using var dbContext = CreateDbContext();
@@ -869,6 +1114,44 @@ public sealed class StylistChatServiceTests
       Task.FromResult(result);
   }
 
+  private sealed class CapturingStylistResponseComposer : IStylistResponseComposer
+  {
+    public IReadOnlyList<ImageReferenceDto>? LastReferencedImages { get; private set; }
+
+    public Task<string> ComposeAsync(
+      string userMessage,
+      string fallbackText,
+      string intent,
+      string? memorySummary,
+      ChatStructuredPayloadDto? structuredPayload,
+      string? previousUserMessage = null,
+      string? previousAssistantMessage = null,
+      IReadOnlyList<ImageReferenceDto>? referencedImages = null,
+      string? imageCatalogText = null,
+      CancellationToken cancellationToken = default)
+    {
+      LastReferencedImages = referencedImages;
+      return Task.FromResult(fallbackText);
+    }
+
+    public async IAsyncEnumerable<string> ComposeStreamAsync(
+      string userMessage,
+      string fallbackText,
+      string intent,
+      string? memorySummary,
+      ChatStructuredPayloadDto? structuredPayload,
+      string? previousUserMessage = null,
+      string? previousAssistantMessage = null,
+      IReadOnlyList<ImageReferenceDto>? referencedImages = null,
+      string? imageCatalogText = null,
+      [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+      LastReferencedImages = referencedImages;
+      yield return fallbackText;
+      await Task.Yield();
+    }
+  }
+
   private sealed class StubStylistResponseComposer : IStylistResponseComposer
   {
     private readonly IReadOnlyList<string> chunks;
@@ -888,6 +1171,8 @@ public sealed class StylistChatServiceTests
       ChatStructuredPayloadDto? structuredPayload,
       string? previousUserMessage = null,
       string? previousAssistantMessage = null,
+      IReadOnlyList<ImageReferenceDto>? referencedImages = null,
+      string? imageCatalogText = null,
       CancellationToken cancellationToken = default) =>
       Task.FromResult(fallbackText);
 
@@ -899,6 +1184,8 @@ public sealed class StylistChatServiceTests
       ChatStructuredPayloadDto? structuredPayload,
       string? previousUserMessage = null,
       string? previousAssistantMessage = null,
+      IReadOnlyList<ImageReferenceDto>? referencedImages = null,
+      string? imageCatalogText = null,
       [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
       if (shouldFallback)

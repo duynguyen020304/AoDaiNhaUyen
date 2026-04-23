@@ -35,6 +35,8 @@ public sealed class VertexAiStylistResponseComposerTests
       null,
       null,
       null,
+      null,
+      null,
       CancellationToken.None).ToListAsync();
 
     Assert.Equal(["Xin ", "chào"], chunks);
@@ -51,6 +53,8 @@ public sealed class VertexAiStylistResponseComposerTests
       "Tư vấn cho mình",
       "fallback",
       "clarification",
+      null,
+      null,
       null,
       null,
       null,
@@ -81,6 +85,8 @@ public sealed class VertexAiStylistResponseComposerTests
       null,
       null,
       null,
+      null,
+      null,
       CancellationToken.None).ToListAsync();
 
     Assert.Equal(["fallback"], chunks);
@@ -99,6 +105,8 @@ public sealed class VertexAiStylistResponseComposerTests
       "xin chào bạn",
       "fallback",
       "clarification",
+      null,
+      null,
       null,
       null,
       null,
@@ -132,6 +140,8 @@ public sealed class VertexAiStylistResponseComposerTests
         "Tư vấn cho mình",
         "fallback",
         "clarification",
+        null,
+        null,
         null,
         null,
         null,

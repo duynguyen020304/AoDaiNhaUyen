@@ -49,27 +49,139 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     CancellationToken cancellationToken = default)
   {
     var normalizedQuery = ChatTextUtils.Normalize(query);
+    var queryTokens = ExtractQueryTokens(normalizedQuery);
     var products = await LoadProductsAsync(null, cancellationToken);
 
+    var strictMatches = GetStrictMatches(products, normalizedQuery);
+    var tokenMatches = strictMatches.Count > 0
+      ? strictMatches
+      : products.Where(product => CountTokenMatches(product, queryTokens) > 0).ToList();
+
+    var primaryCandidates = tokenMatches.Count > 0 ? tokenMatches : products;
+    var primaryResults = RankLookupCandidates(primaryCandidates, normalizedQuery, queryTokens, scenario, budgetCeiling, colorFamily, materialKeyword, limit, strictMatches.Count > 0);
+    if (primaryResults.Count > 0)
+    {
+      return primaryResults;
+    }
+
+    if (!string.IsNullOrWhiteSpace(materialKeyword))
+    {
+      var withoutMaterial = RankLookupCandidates(products, normalizedQuery, queryTokens, scenario, budgetCeiling, colorFamily, null, limit, false);
+      if (withoutMaterial.Count > 0)
+      {
+        return withoutMaterial;
+      }
+    }
+
+    if (!string.IsNullOrWhiteSpace(scenario))
+    {
+      var withoutScenario = RankLookupCandidates(products, normalizedQuery, queryTokens, null, budgetCeiling, colorFamily, null, limit, false);
+      if (withoutScenario.Count > 0)
+      {
+        return withoutScenario;
+      }
+    }
+
+    if (budgetCeiling.HasValue)
+    {
+      var withoutBudget = RankLookupCandidates(products, normalizedQuery, queryTokens, null, null, colorFamily, null, limit, false);
+      if (withoutBudget.Count > 0)
+      {
+        return withoutBudget;
+      }
+    }
+
+    return RankLookupCandidates(products, normalizedQuery, queryTokens, null, null, null, null, limit, false);
+  }
+
+  private static List<Product> GetStrictMatches(IReadOnlyList<Product> products, string normalizedQuery)
+  {
     return products
       .Where(product =>
       {
         var haystack = BuildLookupHaystack(product);
         return haystack.Contains(normalizedQuery) || QueryMatchesExpandedTerms(normalizedQuery, haystack);
       })
+      .ToList();
+  }
+
+  private List<ChatRecommendationItemDto> RankLookupCandidates(
+    IReadOnlyList<Product> candidates,
+    string normalizedQuery,
+    IReadOnlyList<string> queryTokens,
+    string? scenario,
+    decimal? budgetCeiling,
+    string? colorFamily,
+    string? materialKeyword,
+    int limit,
+    bool hasStrictMatches)
+  {
+    return candidates
       .Select(product => new
       {
         Product = product,
-        Score = ScoreProduct(product, scenario, budgetCeiling, colorFamily, materialKeyword) + 1.5m,
+        TokenMatches = CountTokenMatches(product, queryTokens),
+        Score = ScoreProduct(product, scenario, budgetCeiling, colorFamily, materialKeyword) + GetLookupBoost(product, normalizedQuery, queryTokens),
         CoverageBoost = CalculateCoverageBoost(product)
       })
-      .OrderByDescending(item => item.Score + item.CoverageBoost)
+      .Where(item => item.Score > 0)
+      .OrderByDescending(item => item.Score + item.CoverageBoost + (item.TokenMatches * 0.15m))
+      .ThenByDescending(item => item.TokenMatches)
       .ThenByDescending(item => GetAvailableStock(item.Product))
       .ThenByDescending(item => item.Product.IsFeatured)
       .ThenBy(item => item.Product.Name)
       .Take(limit)
-      .Select(item => MapProduct(item.Product, item.CoverageBoost > 0 ? "Khớp trực tiếp với mô tả hiện tại trong catalog live và giúp mở rộng lựa chọn ít trùng hơn." : "Khớp trực tiếp với mô tả hiện tại trong catalog live."))
+      .Select(item => MapProduct(item.Product, BuildLookupRationale(item.Product, normalizedQuery, item.TokenMatches, item.CoverageBoost, hasStrictMatches)))
       .ToList();
+  }
+
+  private static decimal GetLookupBoost(Product product, string normalizedQuery, IReadOnlyList<string> queryTokens)
+  {
+    var haystack = BuildLookupHaystack(product);
+    if (!string.IsNullOrWhiteSpace(normalizedQuery) && (haystack.Contains(normalizedQuery) || QueryMatchesExpandedTerms(normalizedQuery, haystack)))
+    {
+      return 1.5m;
+    }
+
+    var tokenMatches = CountTokenMatches(product, queryTokens);
+    return tokenMatches > 0 ? Math.Min(1.2m, tokenMatches * 0.35m) : 0.25m;
+  }
+
+  private static string BuildLookupRationale(Product product, string normalizedQuery, int tokenMatches, decimal coverageBoost, bool hasStrictMatches)
+  {
+    if (hasStrictMatches)
+    {
+      return coverageBoost > 0
+        ? "Khớp trực tiếp với mô tả hiện tại trong catalog live và giúp mở rộng lựa chọn ít trùng hơn."
+        : "Khớp trực tiếp với mô tả hiện tại trong catalog live.";
+    }
+
+    if (tokenMatches > 0)
+    {
+      return $"Khớp gần đúng với nhu cầu hiện tại qua {tokenMatches} tín hiệu mô tả trong catalog.";
+    }
+
+    return "Đây là mẫu gần đúng, đang có hàng và phù hợp để mở rộng lựa chọn khi chưa có khớp trực tiếp.";
+  }
+
+  private static IReadOnlyList<string> ExtractQueryTokens(string normalizedQuery)
+  {
+    return normalizedQuery
+      .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+      .Where(token => token.Length >= 3)
+      .Distinct(StringComparer.Ordinal)
+      .ToList();
+  }
+
+  private static int CountTokenMatches(Product product, IReadOnlyList<string> queryTokens)
+  {
+    if (queryTokens.Count == 0)
+    {
+      return 0;
+    }
+
+    var haystack = BuildLookupHaystack(product);
+    return queryTokens.Count(haystack.Contains);
   }
 
   public async Task<IReadOnlyList<ChatRecommendationItemDto>> CompareAsync(
@@ -140,9 +252,9 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
   {
     var expandedTerms = normalizedQuery switch
     {
-      var query when query.Contains("tui xach") => new[] { normalizedQuery.Replace("tui xach", "tui sach") },
-      var query when query.Contains("tui sach") => new[] { normalizedQuery.Replace("tui sach", "tui xach") },
-      var query when query.Contains("theu hoa sen") => new[] { normalizedQuery.Replace("theu hoa sen", "hoa sen") },
+      var currentQuery when currentQuery.Contains("tui xach") => new[] { normalizedQuery.Replace("tui xach", "tui sach") },
+      var currentQuery when currentQuery.Contains("tui sach") => new[] { normalizedQuery.Replace("tui sach", "tui xach") },
+      var currentQuery when currentQuery.Contains("theu hoa sen") => new[] { normalizedQuery.Replace("theu hoa sen", "hoa sen") },
       _ => Array.Empty<string>()
     };
 
@@ -178,40 +290,45 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
   {
     var score = 1m;
     var profile = product.StyleProfiles.FirstOrDefault();
-    var variant = product.Variants.OrderByDescending(item => item.IsDefault).ThenBy(item => item.Id).FirstOrDefault();
+    var activeVariants = product.Variants
+      .Where(item => item.Status == "active")
+      .OrderByDescending(item => item.IsDefault)
+      .ThenBy(item => item.Id)
+      .ToList();
+    var variant = activeVariants.FirstOrDefault() ?? product.Variants.OrderByDescending(item => item.IsDefault).ThenBy(item => item.Id).FirstOrDefault();
 
-    if (variant is not null && variant.Status != "active")
+    if (product.Variants.Count > 0 && activeVariants.Count == 0)
     {
       return 0m;
     }
 
-    if (variant is not null && variant.StockQty > 0)
+    if (GetAvailableStock(product) > 0)
     {
       score += 0.2m;
     }
 
     if (!string.IsNullOrWhiteSpace(scenario))
     {
-      score += (product.Scenarios.FirstOrDefault(item => item.Scenario.Slug == scenario)?.Score ?? 0m) * 2m;
+      score += (product.Scenarios.FirstOrDefault(item => item.Scenario.Slug == scenario)?.Score ?? 0.2m) * 1.2m;
     }
 
     if (!string.IsNullOrWhiteSpace(colorFamily) &&
         (string.Equals(profile?.PrimaryColorFamily, colorFamily, StringComparison.OrdinalIgnoreCase) ||
          string.Equals(profile?.SecondaryColorFamily, colorFamily, StringComparison.OrdinalIgnoreCase)))
     {
-      score += 1.2m;
+      score += 0.8m;
     }
 
     if (!string.IsNullOrWhiteSpace(materialKeyword) &&
         !string.IsNullOrWhiteSpace(product.Material) &&
         ChatTextUtils.Normalize(product.Material).Contains(ChatTextUtils.Normalize(materialKeyword)))
     {
-      score += 1m;
+      score += 0.7m;
     }
 
     if (budgetCeiling.HasValue && variant is not null)
     {
-      score += variant.Price <= budgetCeiling.Value ? 1.1m : -0.75m;
+      score += variant.Price <= budgetCeiling.Value ? 0.8m : -0.2m;
     }
 
     return score;

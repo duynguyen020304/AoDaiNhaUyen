@@ -355,27 +355,126 @@ public static class DefaultProducts
   ])),
 
     CreateAccessory("Túi sách hoa văn", "phu-kien-tu-xach-hoa-van", "tui-sach", 680000m, true, "Túi sách hoa văn thiết kế tinh tế với họa tiết truyền thống", "Túi sách được làm từ vải lụa cao cấp với họa tiết hoa văn tinh xảo, thiết kế hình chữ nhật thanh lịch. Quai đeo được may tỉ mỉ, có nút cài trang trí hoa văn tương ứng. Kích thước vừa vặn, phù hợp đựng sách và phụ kiện cá nhân, thể hiện vẻ đẹp truyền thống và sang trọng.", new SeedAiMetadata(
-  new[] { "tui-lua", "hoa-van-truyen-thong", "theu-peony", "hoa-van-trang-tri" },
-  "ivory",
-  "peach",
+  new[] { "tui-sach", "hoa-lon", "hoa-van-noi-bat", "dang-hop", "quai-cam" },
+  "brown",
+  "pink",
   "medium",
-  "Phối cùng áo dài truyền thống thêu hoa sen hoặc áo dài lụa trơn màu trắng, tạo vẻ đẹp cổ điển và thanh lịch.",
+  "Ảnh cho thấy túi dáng hộp màu trầm, mặt trước có cụm hoa lớn hồng và lá xanh nổi bật, hợp làm điểm nhấn cho set áo dài nữ tính hoặc chụp ảnh.",
   [
-    new SeedScenarioScore("le-tet", 0.85m, "Túi hoa văn thêm điểm nhấn cho set lễ Tết."),
-    new SeedScenarioScore("chup-anh", 0.80m, "Túi sách lên hình nổi bật cùng áo dài truyền thống.")
+    new SeedScenarioScore("chup-anh", 0.86m, "Họa tiết hoa lớn ở mặt trước tạo điểm nhấn rõ khi lên hình."),
+    new SeedScenarioScore("le-tet", 0.80m, "Túi có bề mặt trang trí nổi và sắc độ đậm, hợp dịp cần phụ kiện nổi bật.")
   ])),
-    CreateAccessory("Túi sách kiểu", "phu-kien-tu-xach-kieu", "tui-sach", 720000m, true, "Túi sách kiểu hiện đại với thiết kế độc đáo, phù hợp đi chơi", "Túi sách kiểu được làm từ vải lụa cao cấp với thiết kế hiện đại, có hình dáng độc đáo và thời trang. Quai đeo được thiết kế ergonomic, dễ dàng sử dụng. Kích thước vừa vặn, có ngăn đựng sách và phụ kiện, phù hợp cho các dịp đi chơi, du lịch và các sự kiện ngoài trời."),
-    CreateAccessory("Túi sách thanh", "phu-kien-tu-xach-thanh", "tui-sach", 650000m, false, "Túi sách thanh mảnh thiết kế tối giản, sang trọng", "Túi sách thanh mảnh được làm từ vải lụa mỏng nhẹ, có thiết kế tối giản và thanh lịch. Hình dáng mảnh mai, dễ dàng đựng trong túi xách hoặc cầm tay. Quai đeo được may tỉ mỉ, có nút cài tinh tế. Kích thước nhỏ gọn, phù hợp đựng sách nhỏ, điện thoại và các vật dụng cá nhân hàng ngày."),
-    CreateAccessory("Túi sách thêu hoa", "phu-kien-tu-xach-theu-hoa", "tui-sach", 760000m, false, "Túi sách thêu hoa tinh xảo, họa tiết hoa sen", "Túi sách được làm từ vải lụa cao cấp với thêu hoa sen tinh xảo bằng tay. Thiết kế hình chữ nhật thanh lịch, có hoa sen thêu nổi bật ở phần trước túi. Quai đeo được may tỉ mỉ, có nút cài trang trí hoa sen tương ứng. Kích thước vừa vặn, phù hợp đựng sách và phụ kiện, thể hiện vẻ đẹp truyền thống và tinh tế."),
-    CreateAccessory("Túi sách thức", "phu-kien-tu-xach-thuc", "tui-sach", 690000m, false, "Túi sách thức lớn thiết kế rộng rãi, tiện dụng", "Túi sách thức lớn được làm từ vải lụa dày dặn, có thiết kế rộng rãi và tiện dụng. Hình dáng vuông vức, có quai đeo chắc chắn và nút cài an toàn. Kích thước lớn, phù hợp đựng sách dày, tài liệu quan trọng và các vật dụng cá nhân cần thiết. Thiết kế truyền thống nhưng rất thực tế."),
-    CreateAccessory("Túi sách xà cừ", "phu-kien-tu-xach-xan-oc", "tui-sach", 790000m, false, "Túi sách xà cừ cao cấp với họa tiết xà cừ tinh xảo", "Túi sách xà cừ được làm từ vải lụa cao cấp với họa tiết xà cừ tinh xảo, mô phỏng vân vảy của con rồng. Thiết kế hình chữ nhật thanh lịch, có quai đeo được may tỉ mỉ với nút cài trang trí xà cừ. Kích thước vừa vặn, phù hợp đựng sách và phụ kiện, thể hiện vẻ đẹp sang trọng và quyền lực, phù hợp cho các sự kiện quan trọng."),
+    CreateAccessory("Túi sách kiểu", "phu-kien-tu-xach-kieu", "tui-sach", 720000m, true, "Túi sách kiểu hiện đại với thiết kế độc đáo, phù hợp đi chơi", "Túi sách kiểu được làm từ vải lụa cao cấp với thiết kế hiện đại, có hình dáng độc đáo và thời trang. Quai đeo được thiết kế ergonomic, dễ dàng sử dụng. Kích thước vừa vặn, có ngăn đựng sách và phụ kiện, phù hợp cho các dịp đi chơi, du lịch và các sự kiện ngoài trời.", new SeedAiMetadata(
+      new[] { "tui-sach", "hoa-van-xanh", "dang-tote", "quai-cam", "hien-dai" },
+      "ivory",
+      "blue",
+      "medium",
+      "Ảnh cho thấy túi sáng màu với hoa văn xanh đậm phủ mặt túi, dáng tote cỡ vừa và quai cầm tối màu, hợp các set đi chơi hoặc phối đồ hằng ngày.",
+      [
+        new SeedScenarioScore("di-choi", 0.85m, "Dáng túi cỡ vừa và họa tiết rõ giúp tổng thể trẻ và dễ dùng khi đi chơi."),
+        new SeedScenarioScore("chup-anh", 0.78m, "Hoa văn xanh trên nền sáng tạo điểm nhấn khá rõ trong ảnh.")
+      ])),
+    CreateAccessory("Túi sách thanh", "phu-kien-tu-xach-thanh", "tui-sach", 650000m, false, "Túi sách thanh mảnh thiết kế tối giản, sang trọng", "Túi sách thanh mảnh được làm từ vải lụa mỏng nhẹ, có thiết kế tối giản và thanh lịch. Hình dáng mảnh mai, dễ dàng đựng trong túi xách hoặc cầm tay. Quai đeo được may tỉ mỉ, có nút cài tinh tế. Kích thước nhỏ gọn, phù hợp đựng sách nhỏ, điện thoại và các vật dụng cá nhân hàng ngày.", new SeedAiMetadata(
+      new[] { "tui-sach", "toi-gian", "dang-tote", "cau-truc-ro", "thanh-lich" },
+      "brown",
+      "gold",
+      "medium",
+      "Ảnh cho thấy túi tông be nâu nhạt, phom đứng rõ khối, mặt trước tối giản với chi tiết kim loại vàng, hợp các set cần vẻ gọn gàng và chỉnh chu.",
+      [
+        new SeedScenarioScore("giao-vien", 0.85m, "Phom túi đứng và màu trung tính hợp bối cảnh cần sự chỉn chu."),
+        new SeedScenarioScore("du-tiec", 0.76m, "Chi tiết kim loại vàng giúp túi vẫn đủ sang khi phối set chỉnh tề.")
+      ])),
+    CreateAccessory("Túi sách thêu hoa", "phu-kien-tu-xach-theu-hoa", "tui-sach", 760000m, false, "Túi sách thêu hoa tinh xảo, họa tiết hoa sen", "Túi sách được làm từ vải lụa cao cấp với thêu hoa sen tinh xảo bằng tay. Thiết kế hình chữ nhật thanh lịch, có hoa sen thêu nổi bật ở phần trước túi. Quai đeo được may tỉ mỉ, có nút cài trang trí hoa sen tương ứng. Kích thước vừa vặn, phù hợp đựng sách và phụ kiện, thể hiện vẻ đẹp truyền thống và tinh tế.", new SeedAiMetadata(
+      new[] { "tui-sach", "theu-hoa", "hoa-noi-bat", "dang-hop", "day-xich" },
+      "black",
+      "pink",
+      "high",
+      "Ảnh cho thấy túi tông xanh đen đậm, mặt trước có cụm hoa thêu hồng đỏ và chi tiết dây xích vàng, hợp các set dự tiệc hoặc cần điểm nhấn nữ tính rõ.",
+      [
+        new SeedScenarioScore("du-tiec", 0.88m, "Hoa thêu và dây xích vàng tạo cảm giác dressy hơn các mẫu tối giản."),
+        new SeedScenarioScore("chup-anh", 0.85m, "Cụm hoa ở mặt trước rất dễ nổi bật khi lên hình.")
+      ])),
+    CreateAccessory("Túi sách thức", "phu-kien-tu-xach-thuc", "tui-sach", 690000m, false, "Túi sách thức lớn thiết kế rộng rãi, tiện dụng", "Túi sách thức lớn được làm từ vải lụa dày dặn, có thiết kế rộng rãi và tiện dụng. Hình dáng vuông vức, có quai đeo chắc chắn và nút cài an toàn. Kích thước lớn, phù hợp đựng sách dày, tài liệu quan trọng và các vật dụng cá nhân cần thiết. Thiết kế truyền thống nhưng rất thực tế.", new SeedAiMetadata(
+      new[] { "tui-sach", "motif-lon", "xanh-den", "dang-hop", "day-xich" },
+      "black",
+      "blue",
+      "medium",
+      "Ảnh cho thấy túi tông xanh đen đậm, mặt trước có một motif lớn xanh lam nổi rõ và dây xích vàng, thiên về cảm giác nổi bật hơn là tối giản thực dụng.",
+      [
+        new SeedScenarioScore("chup-anh", 0.84m, "Motif lớn ở mặt túi giúp phụ kiện tạo điểm nhấn tốt trong ảnh."),
+        new SeedScenarioScore("du-tiec", 0.80m, "Nền tối và chi tiết ánh vàng hợp set chỉnh chu buổi tối.")
+      ])),
+    CreateAccessory("Túi sách xà cừ", "phu-kien-tu-xach-xan-oc", "tui-sach", 790000m, false, "Túi sách xà cừ cao cấp với họa tiết xà cừ tinh xảo", "Túi sách xà cừ được làm từ vải lụa cao cấp với họa tiết xà cừ tinh xảo, mô phỏng vân vảy của con rồng. Thiết kế hình chữ nhật thanh lịch, có quai đeo được may tỉ mỉ với nút cài trang trí xà cừ. Kích thước vừa vặn, phù hợp đựng sách và phụ kiện, thể hiện vẻ đẹp sang trọng và quyền lực, phù hợp cho các sự kiện quan trọng.", new SeedAiMetadata(
+      new[] { "tui-sach", "chan-tram", "khoa-tron", "dang-hop", "sang-trong" },
+      "black",
+      "gold",
+      "high",
+      "Ảnh cho thấy túi đen phom đứng với bề mặt chần trám, khóa tròn kim loại vàng và dây xích vàng, mang cảm giác sang và rõ chất dự tiệc hơn các mẫu còn lại.",
+      [
+        new SeedScenarioScore("du-tiec", 0.90m, "Tông đen vàng và phom hộp giúp túi hợp set dự tiệc hoặc sự kiện tối."),
+        new SeedScenarioScore("chup-anh", 0.83m, "Bề mặt chần trám và khóa tròn tạo chi tiết dễ nhận ra khi lên hình.")
+      ])),
 
-    CreateAccessory("Trâm cài hoa đơn 2", "tram-cai-hoa-don-2", "tram-cai", 360000m, true, "Trâm cài hoa đơn 2 với thiết kế tinh xảo, phù hợp cho các dịp trang trọng", "Trâm cài hoa đơn 2 được chế tác từ bạc tinh khiết với hoa đơn thêu tay tinh xảo. Thiết kế cổ điển với hoa văn hoa đơn nổi bật, màu sắc trang nhã, tạo nên vẻ đẹp thanh lịch và sang trọng, lý tưởng để trang trí cho tóc trong các buổi lễ cưới và tiệc tùng quan trọng."),
-    CreateAccessory("Trâm cài hoa đơn sắc", "tram-cai-hoa-don-sac", "tram-cai", 340000m, true, "Trâm cài hoa đơn sắc với thiết kế đơn giản thanh lịch, phù hợp cho các dịp trang trọng", "Trâm cài hoa đơn sắc được chế tác từ bạc tinh khiết với hoa đơn thêu tay tinh xảo trên nền màu đồng nhất. Thiết kế cổ điển với hoa văn hoa đơn đơn sắc, tạo nên vẻ đẹp thanh lịch và sang trọng, lý tưởng để trang trí cho tóc trong các buổi lễ cưới và tiệc tùng quan trọng."),
-    CreateAccessory("Trâm cài hoa đơn", "tram-cai-hoa-don", "tram-cai", 320000m, false, "Trâm cài hoa đơn với thiết kế cổ điển, phù hợp cho các dịp trang trọng", "Trâm cài hoa đơn được chế tác từ bạc tinh khiết với hoa đơn thêu tay tinh xảo. Thiết kế cổ điển với hoa văn hoa đơn nổi bật, màu sắc trang nhã, tạo nên vẻ đẹp thanh lịch và sang trọng, lý tưởng để trang trí cho tóc trong các buổi lễ cưới và tiệc tùng quan trọng."),
-    CreateAccessory("Trâm cài tóc hồng ngọc bích", "tram-cai-toc-hong-ngoc-bich", "tram-cai", 390000m, false, "Trâm cài tóc hồng ngọc bích với thiết kế tinh xảo, màu sắc nổi bật", "Trâm cài tóc hồng ngọc bích được chế tác từ bạc tinh khiết với hoa văn thêu tay tinh xảo và ngọc bích hồng tự nhiên. Thiết kế hiện đại với hoa văn hoa văn phức tạp, màu sắc ngọc bích hồng rực rỡ, tạo nên vẻ đẹp quyến rũ và sang trọng, lý tưởng để trang trí cho tóc trong các buổi tiệc và sự kiện quan trọng."),
-    CreateAccessory("Trâm cài tóc vàng sắc điệu", "tram-cai-toc-vang-sac-dieu", "tram-cai", 380000m, false, "Trâm cài tóc vàng sắc điệu với thiết kế tinh xảo, màu sắc vàng óng", "Trâm cài tóc vàng sắc điệu được chế tác từ bạc tinh khiết với hoa văn thêu tay tinh xảo và sắc điệu vàng óng. Thiết kế hiện đại với hoa văn hoa văn phức tạp, màu sắc vàng óng sang trọng, tạo nên vẻ đẹp quý phái và thanh lịch, lý tưởng để trang trí cho tóc trong các buổi tiệc và sự kiện quan trọng."),
-    CreateAccessory("Trâm cài tóc xanh biếc", "tram-cai-toc-xanh-biec", "tram-cai", 370000m, false, "Trâm cài tóc xanh biếc với thiết kế tinh xảo, màu sắc xanh biếc thanh lịch", "Trâm cài tóc xanh biếc được chế tác từ bạc tinh khiết với hoa văn thêu tay tinh xảo và sắc xanh biếc tự nhiên. Thiết kế hiện đại với hoa văn hoa văn phức tạp, màu sắc xanh biếc thanh lịch, tạo nên vẻ đẹp trong suốt và sang trọng, lý tưởng để trang trí cho tóc trong các buổi tiệc và sự kiện quan trọng.")
+    CreateAccessory("Trâm cài hoa đơn 2", "tram-cai-hoa-don-2", "tram-cai", 360000m, true, "Trâm cài hoa đơn 2 với thiết kế tinh xảo, phù hợp cho các dịp trang trọng", "Trâm cài hoa đơn 2 được chế tác từ bạc tinh khiết với hoa đơn thêu tay tinh xảo. Thiết kế cổ điển với hoa văn hoa đơn nổi bật, màu sắc trang nhã, tạo nên vẻ đẹp thanh lịch và sang trọng, lý tưởng để trang trí cho tóc trong các buổi lễ cưới và tiệc tùng quan trọng.", new SeedAiMetadata(
+      new[] { "tram-cai", "hoa-don", "dang-dai", "kim-loai", "thanh-lich" },
+      "white",
+      "gold",
+      "medium",
+      "Ảnh cho thấy trâm dáng dài bằng kim loại sáng màu, phần đầu có cụm hoa sáng nổi bật và tổng thể khá thanh mảnh.",
+      [
+        new SeedScenarioScore("du-tiec", 0.80m, "Dáng trâm thanh và phần đầu trang trí rõ, hợp kiểu tóc dự tiệc."),
+        new SeedScenarioScore("chup-anh", 0.78m, "Chi tiết hoa ở đầu trâm tạo điểm nhấn tốt khi chụp cận.")
+      ])),
+    CreateAccessory("Trâm cài hoa đơn sắc", "tram-cai-hoa-don-sac", "tram-cai", 340000m, true, "Trâm cài hoa đơn sắc với thiết kế đơn giản thanh lịch, phù hợp cho các dịp trang trọng", "Trâm cài hoa đơn sắc được chế tác từ bạc tinh khiết với hoa đơn thêu tay tinh xảo trên nền màu đồng nhất. Thiết kế cổ điển với hoa văn hoa đơn đơn sắc, tạo nên vẻ đẹp thanh lịch và sang trọng, lý tưởng để trang trí cho tóc trong các buổi lễ cưới và tiệc tùng quan trọng.", new SeedAiMetadata(
+      new[] { "tram-cai", "cum-hoa", "vang-am", "dang-dai", "kim-loai" },
+      "white",
+      "yellow",
+      "medium",
+      "Ảnh cho thấy trâm dạng dài bằng kim loại sáng màu, đầu trâm là cụm hoa tông vàng cam ấm, tổng thể gọn nhưng vẫn khá nổi ở phần đầu.",
+      [
+        new SeedScenarioScore("du-tiec", 0.80m, "Cụm hoa vàng ấm tạo điểm nhấn tốt cho kiểu tóc dự tiệc."),
+        new SeedScenarioScore("chup-anh", 0.78m, "Phần đầu trâm có màu ấm và hình hoa rõ khi chụp gần.")
+      ])),
+    CreateAccessory("Trâm cài hoa đơn", "tram-cai-hoa-don", "tram-cai", 320000m, false, "Trâm cài hoa đơn với thiết kế cổ điển, phù hợp cho các dịp trang trọng", "Trâm cài hoa đơn được chế tác từ bạc tinh khiết với hoa đơn thêu tay tinh xảo. Thiết kế cổ điển với hoa văn hoa đơn nổi bật, màu sắc trang nhã, tạo nên vẻ đẹp thanh lịch và sang trọng, lý tưởng để trang trí cho tóc trong các buổi lễ cưới và tiệc tùng quan trọng.", new SeedAiMetadata(
+      new[] { "tram-cai", "cum-hoa", "trang-sang", "dang-dai", "co-dien" },
+      "white",
+      "gold",
+      "medium",
+      "Ảnh cho thấy trâm sáng màu dạng dài, đầu trâm là cụm hoa sáng rõ hơn mẫu đơn sắc và cho cảm giác cổ điển, thanh mảnh.",
+      [
+        new SeedScenarioScore("du-tiec", 0.79m, "Cụm hoa sáng ở đầu trâm hợp vai trò điểm nhấn cho kiểu tóc dự tiệc."),
+        new SeedScenarioScore("chup-anh", 0.77m, "Đầu trâm có tạo hình hoa rõ nên dễ thấy khi chụp bán cận.")
+      ])),
+    CreateAccessory("Trâm cài tóc hồng ngọc bích", "tram-cai-toc-hong-ngoc-bich", "tram-cai", 390000m, false, "Trâm cài tóc hồng ngọc bích với thiết kế tinh xảo, màu sắc nổi bật", "Trâm cài tóc hồng ngọc bích được chế tác từ bạc tinh khiết với hoa văn thêu tay tinh xảo và ngọc bích hồng tự nhiên. Thiết kế hiện đại với hoa văn hoa văn phức tạp, màu sắc ngọc bích hồng rực rỡ, tạo nên vẻ đẹp quyến rũ và sang trọng, lý tưởng để trang trí cho tóc trong các buổi tiệc và sự kiện quan trọng.", new SeedAiMetadata(
+      new[] { "tram-cai", "dang-dai", "cum-hoa", "hong-do", "la-xanh" },
+      "white",
+      "pink",
+      "medium",
+      "Ảnh cho thấy trâm cài dạng dài bằng kim loại sáng màu, đầu trâm là cụm hoa đính đá hồng đỏ kèm chi tiết lá xanh nhỏ, tạo cảm giác nổi bật và nhiều màu hơn các mẫu còn lại.",
+      [
+        new SeedScenarioScore("du-tiec", 0.83m, "Cụm hoa nhiều màu ở đầu trâm tạo điểm nhấn rõ cho kiểu tóc dự tiệc."),
+        new SeedScenarioScore("chup-anh", 0.82m, "Chi tiết đá màu và lá nhỏ dễ nổi bật trong ảnh cận.")
+      ])),
+    CreateAccessory("Trâm cài tóc vàng sắc điệu", "tram-cai-toc-vang-sac-dieu", "tram-cai", 380000m, false, "Trâm cài tóc vàng sắc điệu với thiết kế tinh xảo, màu sắc vàng óng", "Trâm cài tóc vàng sắc điệu được chế tác từ bạc tinh khiết với hoa văn thêu tay tinh xảo và sắc điệu vàng óng. Thiết kế hiện đại với hoa văn hoa văn phức tạp, màu sắc vàng óng sang trọng, tạo nên vẻ đẹp quý phái và thanh lịch, lý tưởng để trang trí cho tóc trong các buổi tiệc và sự kiện quan trọng.", new SeedAiMetadata(
+      new[] { "tram-cai", "dang-dai", "cum-hoa", "vang-am", "kim-loai" },
+      "white",
+      "yellow",
+      "medium",
+      "Ảnh cho thấy trâm cài dạng dài bằng kim loại sáng màu, đầu trâm là cụm hoa gắn đá vàng hổ phách đơn sắc, tổng thể gọn và sáng.",
+      [
+        new SeedScenarioScore("du-tiec", 0.81m, "Tông vàng ấm ở đầu trâm hợp vai trò điểm nhấn cho set dự tiệc."),
+        new SeedScenarioScore("chup-anh", 0.79m, "Màu đá đơn sắc và đầu hoa rõ hình giúp lên ảnh dễ đọc chi tiết.")
+      ])),
+    CreateAccessory("Trâm cài tóc xanh biếc", "tram-cai-toc-xanh-biec", "tram-cai", 370000m, false, "Trâm cài tóc xanh biếc với thiết kế tinh xảo, màu sắc xanh biếc thanh lịch", "Trâm cài tóc xanh biếc được chế tác từ bạc tinh khiết với hoa văn thêu tay tinh xảo và sắc xanh biếc tự nhiên. Thiết kế hiện đại với hoa văn hoa văn phức tạp, màu sắc xanh biếc thanh lịch, tạo nên vẻ đẹp trong suốt và sang trọng, lý tưởng để trang trí cho tóc trong các buổi tiệc và sự kiện quan trọng.", new SeedAiMetadata(
+      new[] { "tram-cai", "dang-dai", "cum-hoa", "xanh-biec", "kim-loai" },
+      "white",
+      "blue",
+      "medium",
+      "Ảnh cho thấy trâm cài dạng dài bằng kim loại sáng màu, đầu trâm là cụm hoa gắn đá xanh lam/xanh ngọc đơn sắc, kiểu dáng tương đồng mẫu vàng nhưng mát màu hơn.",
+      [
+        new SeedScenarioScore("chup-anh", 0.81m, "Đá xanh ở đầu trâm tạo điểm nhấn mát màu và dễ thấy khi chụp gần."),
+        new SeedScenarioScore("du-tiec", 0.78m, "Tổng thể thanh gọn, hợp làm phụ kiện tóc cho set chỉnh chu.")
+      ]))
   ];
 
   private static SeedProduct CreateAoDai(

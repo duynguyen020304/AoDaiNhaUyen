@@ -127,8 +127,13 @@ public sealed class StylistChatService(
       previousAssistantMessage,
       cancellationToken);
 
-    var referencedProductIds = await ResolveReferencedProductIdsAsync(userMessage.Content, memory, cancellationToken);
-    classification = NormalizeClassification(classification with { ReferencedProductIds = referencedProductIds }, memory, savedAttachments.Count > 0);
+    var referencedProductIds = await ResolveReferencedProductIdsAsync(userMessage.Content, classification, memory, cancellationToken);
+    classification = NormalizeClassification(classification with
+    {
+      ReferencedProductIds = referencedProductIds,
+      RetrievalQuery = string.IsNullOrWhiteSpace(classification.RetrievalQuery) ? userMessage.Content : classification.RetrievalQuery,
+      NeedsCatalogLookup = classification.NeedsCatalogLookup || referencedProductIds.Count > 0
+    }, memory, savedAttachments.Count > 0);
     userMessage.Intent = classification.Intent;
 
     var assistantTurn = await BuildAssistantTurnAsync(userMessage.Content, classification, memory, [.. thread.Attachments], savedAttachments, cancellationToken);
@@ -304,8 +309,13 @@ public sealed class StylistChatService(
       previousAssistantMessage,
       cancellationToken);
 
-    var referencedProductIds = await ResolveReferencedProductIdsAsync(userMessage.Content, memory, cancellationToken);
-    classification = NormalizeClassification(classification with { ReferencedProductIds = referencedProductIds }, memory, savedAttachments.Count > 0);
+    var referencedProductIds = await ResolveReferencedProductIdsAsync(userMessage.Content, classification, memory, cancellationToken);
+    classification = NormalizeClassification(classification with
+    {
+      ReferencedProductIds = referencedProductIds,
+      RetrievalQuery = string.IsNullOrWhiteSpace(classification.RetrievalQuery) ? userMessage.Content : classification.RetrievalQuery,
+      NeedsCatalogLookup = classification.NeedsCatalogLookup || referencedProductIds.Count > 0
+    }, memory, savedAttachments.Count > 0);
     userMessage.Intent = classification.Intent;
 
     var assistantTurn = await BuildAssistantTurnAsync(userMessage.Content, classification, memory, [.. thread.Attachments], savedAttachments, cancellationToken);
@@ -419,12 +429,14 @@ public sealed class StylistChatService(
 
   private async Task<IReadOnlyList<long>> ResolveReferencedProductIdsAsync(
     string message,
+    IntentClassificationDto classification,
     ThreadMemoryStateDto memory,
     CancellationToken cancellationToken)
   {
+    var shortlist = memory.ShortlistedProductIds.Count > 0 ? memory.ShortlistedProductIds : memory.GarmentShortlistedProductIds;
     var references = await catalogStylingService.ResolveProductReferencesAsync(
       message,
-      memory.ShortlistedProductIds.Count > 0 ? memory.ShortlistedProductIds : memory.GarmentShortlistedProductIds,
+      shortlist,
       cancellationToken);
 
     if (references.Count > 0)
@@ -432,19 +444,13 @@ public sealed class StylistChatService(
       return references;
     }
 
-    var normalized = ChatTextUtils.Normalize(message);
-    if (memory.SelectedGarmentProductId.HasValue && normalized.Contains("bo vua roi"))
+    return classification.ProductReferenceScope switch
     {
-      return [memory.SelectedGarmentProductId.Value];
-    }
-
-    if (memory.ShortlistedProductIds.Count > 0 && (normalized.Contains("3 ao dai nay") || normalized.Contains("3 mau nay") || normalized.Contains("cac mau nay") || normalized.Contains("mau tren") || normalized.Contains("cac san pham tren") || normalized.Contains("may mau tren")))
-    {
-      var requestedCount = normalized.Contains("3 ") ? Math.Min(3, memory.ShortlistedProductIds.Count) : memory.ShortlistedProductIds.Count;
-      return memory.ShortlistedProductIds.Take(requestedCount).ToList();
-    }
-
-    return [];
+      "selected_garment" when memory.SelectedGarmentProductId.HasValue => [memory.SelectedGarmentProductId.Value],
+      "shortlist_top_3" when memory.ShortlistedProductIds.Count > 0 => memory.ShortlistedProductIds.Take(3).ToList(),
+      "shortlist_all" when memory.ShortlistedProductIds.Count > 0 => memory.ShortlistedProductIds.ToList(),
+      _ => []
+    };
   }
 
   private async Task<AssistantTurn> BuildAssistantTurnAsync(
@@ -506,15 +512,8 @@ public sealed class StylistChatService(
     ThreadMemoryStateDto memory,
     CancellationToken cancellationToken)
   {
-    var query = string.IsNullOrWhiteSpace(userMessage)
-      ? string.Join(' ', new[]
-      {
-        classification.ColorFamily,
-        classification.MaterialKeyword,
-        classification.Scenario,
-        classification.ProductType == "phu_kien" ? "phu kien" : "ao dai"
-      }.Where(value => !string.IsNullOrWhiteSpace(value)))
-      : userMessage;
+    var query = BuildCatalogLookupQuery(userMessage, classification);
+    var preferUnseen = ShouldPreferUnseenAlternatives(userMessage, classification, memory);
 
     var products = await catalogStylingService.LookupAsync(
       query,
@@ -522,20 +521,48 @@ public sealed class StylistChatService(
       classification.BudgetCeiling,
       classification.ColorFamily,
       classification.MaterialKeyword,
-      4,
+      8,
       cancellationToken);
 
-    products = SelectProducts(products, memory, ShouldPreferUnseenAlternatives(userMessage, classification, memory), 4);
+    var selectedProducts = SelectProducts(products, memory, preferUnseen, 4);
 
-    if (products.Count == 0)
+    logger.LogInformation(
+      "Catalog lookup intent query={Query} source={QuerySource} totalCandidates={TotalCandidates} selected={Selected} preferUnseen={PreferUnseen}",
+      query,
+      ResolveCatalogLookupQuerySource(userMessage, classification),
+      products.Count,
+      selectedProducts.Count,
+      preferUnseen);
+
+    if (selectedProducts.Count == 0)
     {
+      logger.LogInformation(
+        "Catalog lookup empty reason={EmptyReason} query={Query} totalCandidates={TotalCandidates}",
+        products.Count == 0 ? "lookup_zero" : "select_zero",
+        query,
+        products.Count);
+
       return new AssistantTurn(
         fallbackTextService.Pick("catalog_lookup_empty"),
         null);
     }
 
+    var garmentProducts = selectedProducts.Where(product => product.ProductType == "ao_dai").ToList();
+    var accessoryProducts = selectedProducts.Where(product => product.ProductType == "phu_kien").ToList();
+
+    if (string.Equals(classification.ProductType, "phu_kien", StringComparison.OrdinalIgnoreCase) && accessoryProducts.Count == 0)
+    {
+      accessoryProducts = selectedProducts.ToList();
+      garmentProducts = [];
+    }
+    else if (string.Equals(classification.ProductType, "ao_dai", StringComparison.OrdinalIgnoreCase) && garmentProducts.Count == 0)
+    {
+      garmentProducts = selectedProducts.ToList();
+      accessoryProducts = [];
+    }
+
     return new AssistantTurn(
-      $"Mình đã lọc được {products.Count} mẫu đang có trong catalog. Bạn có thể xem từng mẫu bên dưới, hoặc nhắn “gợi ý set cho mình” để mình phối thành set hoàn chỉnh.",
+      $"Mình đã lọc được {selectedProducts.Count} mẫu đang có trong catalog. Bạn có thể xem từng mẫu bên dưới, hoặc nhắn “gợi ý set cho mình” để mình phối thành set hoàn chỉnh.",
       BuildStructuredPayload(
         "catalog_results",
         classification.Scenario,
@@ -544,8 +571,60 @@ public sealed class StylistChatService(
         memory.SelectedGarmentProductId,
         memory.SelectedAccessoryProductIds,
         [],
-        string.Equals(classification.ProductType, "phu_kien", StringComparison.OrdinalIgnoreCase) ? [] : products,
-        string.Equals(classification.ProductType, "phu_kien", StringComparison.OrdinalIgnoreCase) ? products : []));
+        garmentProducts,
+        accessoryProducts));
+  }
+
+  private static string BuildCatalogLookupQuery(string userMessage, IntentClassificationDto classification)
+  {
+    var trimmedMessage = userMessage?.Trim();
+    if (!string.IsNullOrWhiteSpace(trimmedMessage))
+    {
+      var normalizedUserMessage = ChatTextUtils.Normalize(trimmedMessage);
+      if (classification.ProductType == "ao_dai" && !normalizedUserMessage.Contains("ao dai"))
+      {
+        return $"ao dai {trimmedMessage}";
+      }
+
+      if (classification.ProductType == "phu_kien" && !normalizedUserMessage.Contains("phu kien"))
+      {
+        return $"phu kien {trimmedMessage}";
+      }
+    }
+
+    if (!string.IsNullOrWhiteSpace(classification.RetrievalQuery) && !LooksMachineGenerated(classification.RetrievalQuery))
+    {
+      return classification.RetrievalQuery.Trim();
+    }
+
+    if (!string.IsNullOrWhiteSpace(trimmedMessage))
+    {
+      return trimmedMessage;
+    }
+
+    return string.Join(' ', new[]
+    {
+      classification.ProductType == "phu_kien" ? "phu kien" : "ao dai",
+      classification.ColorFamily,
+      classification.MaterialKeyword,
+      classification.Scenario?.Replace('-', ' ')
+    }.Where(value => !string.IsNullOrWhiteSpace(value)));
+  }
+
+  private static string ResolveCatalogLookupQuerySource(string userMessage, IntentClassificationDto classification)
+  {
+    if (!string.IsNullOrWhiteSpace(classification.RetrievalQuery) && !LooksMachineGenerated(classification.RetrievalQuery))
+    {
+      return "classifier";
+    }
+
+    return !string.IsNullOrWhiteSpace(userMessage) ? "userMessage" : "slotFallback";
+  }
+
+  private static bool LooksMachineGenerated(string query)
+  {
+    var normalized = ChatTextUtils.Normalize(query);
+    return normalized == "ao dai" || normalized == "phu kien" || normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length <= 2;
   }
 
   private async Task<AssistantTurn> BuildRecommendationTurnAsync(
@@ -555,7 +634,8 @@ public sealed class StylistChatService(
     CancellationToken cancellationToken)
   {
     var scenario = classification.Scenario ?? memory.Scenario;
-    var preferUnseenAlternatives = ShouldPreferUnseenAlternatives(userMessage, classification, memory);
+    var preferUnseenAlternatives = string.Equals(classification.SelectionStrategy, "novelty_first", StringComparison.OrdinalIgnoreCase)
+      || ShouldPreferUnseenAlternatives(userMessage, classification, memory);
     var rejectedProductIds = memory.RejectedProductIds.Count > 0 ? memory.RejectedProductIds : [];
     var garmentFetchLimit = preferUnseenAlternatives
       ? Math.Max(RecommendationLookCount * 4, RecommendationLookCount + memory.ShownProductIds.Count + rejectedProductIds.Count)
@@ -571,6 +651,10 @@ public sealed class StylistChatService(
       rejectedProductIds,
       cancellationToken);
     var garmentProducts = SelectProducts(garmentCandidates, memory, preferUnseenAlternatives, RecommendationLookCount);
+    if (garmentProducts.Count == 0 && preferUnseenAlternatives)
+    {
+      garmentProducts = SelectProducts(garmentCandidates, memory, false, RecommendationLookCount);
+    }
 
     if (garmentProducts.Count == 0)
     {
@@ -642,7 +726,7 @@ public sealed class StylistChatService(
     CancellationToken cancellationToken)
   {
     var scenario = classification.Scenario ?? memory.Scenario;
-    var rawAccessoryProducts = HasSpecificAccessoryRequest(userMessage)
+    var rawAccessoryProducts = classification.HasSpecificAccessoryRequest
       ? await catalogStylingService.LookupAsync(
         userMessage,
         scenario,
@@ -819,7 +903,7 @@ public sealed class StylistChatService(
     CancellationToken cancellationToken)
   {
     var referencedImages = await ResolveReferencedImagesAsync(
-      userMessage, memory, threadAttachments, currentTurnAttachments, cancellationToken);
+      userMessage, classification, memory, threadAttachments, currentTurnAttachments, cancellationToken);
 
     var scenario = classification.Scenario ?? memory.Scenario;
 
@@ -833,36 +917,9 @@ public sealed class StylistChatService(
       return new AssistantTurn(fallback, null, referencedImages);
     }
 
-    // No images available — fall back to scenario-based recommendations
-    if (string.IsNullOrWhiteSpace(scenario))
-    {
-      return new AssistantTurn(
-        fallbackTextService.Pick("image_analysis_need_scenario"),
-        null);
-    }
-
-    var products = await catalogStylingService.RecommendAsync(
-      scenario,
-      memory.BudgetCeiling,
-      memory.ColorFamily,
-      memory.MaterialKeyword,
-      classification.ProductType,
-      3,
-      null,
-      cancellationToken);
-
     return new AssistantTurn(
-      $"Mình sẽ ưu tiên set hợp dịp {scenario.Replace('-', ' ')} và dễ lên ảnh. Dưới đây là {products.Count} mẫu mình chốt trước từ catalog live.",
-      BuildStructuredPayload(
-        "image_guided_recommendations",
-        scenario,
-        false,
-        !memory.LatestPersonAttachmentId.HasValue,
-        products.FirstOrDefault()?.ProductId,
-        [],
-        memory.LatestPersonAttachmentId.HasValue ? [] : ["upload_person_image"],
-        products,
-        []));
+      "Mình không tìm thấy ảnh bạn đang nhắc tới. Bạn gửi lại ảnh đó giúp mình để mình nhận xét chính xác hơn nhé.",
+      null);
   }
 
   private async Task<IReadOnlyList<ChatAttachment>> SaveIncomingAttachmentsAsync(
@@ -1129,8 +1186,7 @@ public sealed class StylistChatService(
       return false;
     }
 
-    var normalizedMessage = ChatTextUtils.Normalize(userMessage);
-    if (RequestsDifferentOptions(normalizedMessage))
+    if (classification.WantsDifferentOptions)
     {
       return true;
     }
@@ -1143,22 +1199,6 @@ public sealed class StylistChatService(
     return classification.Intent is "outfit_recommendation" or "catalog_lookup" or "image_style_analysis";
   }
 
-  private static bool RequestsDifferentOptions(string normalizedMessage)
-  {
-    return normalizedMessage.Contains("khac")
-      || normalizedMessage.Contains("khong thich")
-      || normalizedMessage.Contains("ko thich")
-      || normalizedMessage.Contains("k thich")
-      || normalizedMessage.Contains("khong ung")
-      || normalizedMessage.Contains("ko ung")
-      || normalizedMessage.Contains("khong hop")
-      || normalizedMessage.Contains("ko hop")
-      || normalizedMessage.Contains("mau khac")
-      || normalizedMessage.Contains("bo khac")
-      || normalizedMessage.Contains("goi y khac")
-      || normalizedMessage.Contains("them vai mau nua")
-      || normalizedMessage.Contains("them mau nua");
-  }
 
   private static IReadOnlyList<ChatRecommendationItemDto> SelectProducts(
     IReadOnlyList<ChatRecommendationItemDto> products,
@@ -1174,6 +1214,8 @@ public sealed class StylistChatService(
     var shownProductIds = memory.ShownProductIds.ToHashSet();
     var recentProductIds = recentlyUsedProductIds?.Count > 0 ? recentlyUsedProductIds.ToHashSet() : [];
 
+    var filtered = new List<ChatRecommendationItemDto>();
+    var strictFiltered = new List<ChatRecommendationItemDto>();
     var unseen = new List<ChatRecommendationItemDto>();
     var seen = new List<ChatRecommendationItemDto>();
 
@@ -1183,6 +1225,8 @@ public sealed class StylistChatService(
       {
         continue;
       }
+
+      filtered.Add(product);
 
       if (recentProductIds.Contains(product.ProductId) && products.Count > limit)
       {
@@ -1194,6 +1238,8 @@ public sealed class StylistChatService(
         continue;
       }
 
+      strictFiltered.Add(product);
+
       if (shownProductIds.Contains(product.ProductId))
       {
         seen.Add(product);
@@ -1204,9 +1250,21 @@ public sealed class StylistChatService(
       }
     }
 
+    if (strictFiltered.Count == 0)
+    {
+      strictFiltered = filtered;
+      unseen = strictFiltered.Where(product => !shownProductIds.Contains(product.ProductId)).ToList();
+      seen = strictFiltered.Where(product => shownProductIds.Contains(product.ProductId)).ToList();
+    }
+
     if (!preferUnseenAlternatives || shownProductIds.Count == 0)
     {
       return unseen.Concat(seen).Take(limit).ToList();
+    }
+
+    if (unseen.Count == 0 && allowSeenFallback)
+    {
+      return strictFiltered.Take(limit).ToList();
     }
 
     if (!allowSeenFallback)
@@ -1265,18 +1323,6 @@ public sealed class StylistChatService(
     return hasGarmentContext;
   }
 
-  private static bool HasSpecificAccessoryRequest(string userMessage)
-  {
-    var normalized = ChatTextUtils.Normalize(userMessage);
-    return normalized.Contains("tui xach") ||
-      normalized.Contains("tui sach") ||
-      normalized.Contains("tram cai") ||
-      normalized.Contains("quat") ||
-      normalized.Contains("guoc") ||
-      normalized.Contains("giay") ||
-      normalized.Contains("kep toc");
-  }
-
   private async Task<IReadOnlyList<ChatRecommendationItemDto>> LoadComboGarmentProductsAsync(
     IntentClassificationDto classification,
     ThreadMemoryStateDto memory,
@@ -1316,15 +1362,14 @@ public sealed class StylistChatService(
 
   private async Task<IReadOnlyList<ImageReferenceDto>> ResolveReferencedImagesAsync(
     string userMessage,
+    IntentClassificationDto classification,
     ThreadMemoryStateDto memory,
     IReadOnlyList<ChatAttachment> threadAttachments,
     IReadOnlyList<ChatAttachment>? currentTurnAttachments,
     CancellationToken cancellationToken)
   {
     var result = new List<ImageReferenceDto>();
-    var normalized = ChatTextUtils.Normalize(userMessage);
 
-    // If current turn has image attachments, include those first
     if (currentTurnAttachments is not null)
     {
       foreach (var attachment in currentTurnAttachments.Where(a => a.Kind is "user_image" or "tryon_result"))
@@ -1345,36 +1390,24 @@ public sealed class StylistChatService(
       }
     }
 
-    // Resolve from catalog based on user message references
     var catalog = memory.ImageCatalog;
     if (catalog.Count == 0)
     {
       return result;
     }
 
-    IEnumerable<ImageCatalogEntry> matched;
-
-    if (normalized.Contains("anh dau tien") || normalized.Contains("anh 1") || normalized.Contains("anh thu 1"))
+    var matched = classification.ReferencedImageHint switch
     {
-      matched = [catalog.First()];
-    }
-    else if (normalized.Contains("anh cuoi") || normalized.Contains("anh vua tao") || normalized.Contains("anh vua gui") || normalized.Contains("anh moi"))
-    {
-      matched = [catalog.Last()];
-    }
-    else if (TryExtractImageIndex(normalized, out var index) && index > 0 && index <= catalog.Count)
-    {
-      matched = [catalog[index - 1]];
-    }
-    else if (normalized.Contains("anh thu do") || normalized.Contains("ket qua thu do"))
-    {
-      matched = catalog.Where(e => e.Kind == "tryon_result").TakeLast(1);
-    }
-    else
-    {
-      // No specific reference — use the most recent image
-      matched = [catalog.Last()];
-    }
+      "first" => new[] { catalog.First() }.AsEnumerable(),
+      "last" => new[] { catalog.Last() }.AsEnumerable(),
+      "tryon_result" => catalog.Where(e => e.Kind == "tryon_result").TakeLast(1),
+      var hint when !string.IsNullOrWhiteSpace(hint)
+        && hint.StartsWith("image_", StringComparison.Ordinal)
+        && int.TryParse(hint[6..], out var hintIndex)
+        && hintIndex > 0
+        && hintIndex <= catalog.Count => new[] { catalog[hintIndex - 1] }.AsEnumerable(),
+      _ => new[] { catalog.Last() }.AsEnumerable()
+    };
 
     foreach (var entry in matched)
     {
@@ -1389,30 +1422,6 @@ public sealed class StylistChatService(
     }
 
     return result;
-  }
-
-  private static bool TryExtractImageIndex(string normalized, out int index)
-  {
-    index = 0;
-    var patterns = new[] { "anh thu ", "anh so ", "anh " };
-    foreach (var pattern in patterns)
-    {
-      var pos = normalized.IndexOf(pattern, StringComparison.Ordinal);
-      if (pos < 0)
-      {
-        continue;
-      }
-
-      var afterPattern = normalized[(pos + pattern.Length)..];
-      var digits = new string(afterPattern.TakeWhile(char.IsDigit).ToArray());
-      if (int.TryParse(digits, out var num) && num > 0)
-      {
-        index = num;
-        return true;
-      }
-    }
-
-    return false;
   }
 
   private sealed record AssistantTurn(string Content, ChatStructuredPayloadDto? StructuredPayload, IReadOnlyList<ImageReferenceDto>? ReferencedImages = null);

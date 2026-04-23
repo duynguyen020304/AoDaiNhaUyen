@@ -28,7 +28,7 @@ public sealed class IntentClassifier(
   ];
 
   private static readonly string[] AllowedScenarios = ["giao-vien", "le-tet", "du-tiec", "chup-anh"];
-  private static readonly string[] AllowedColorFamilies = ["blue", "pink", "red", "ivory"];
+  private static readonly string[] AllowedColorFamilies = ["blue", "pink", "red", "ivory", "black", "purple", "green", "yellow", "brown", "gold", "white"];
   private static readonly string[] AllowedMaterials = ["lụa", "gấm"];
   private readonly GoogleCloudOptions googleCloudOptions = options.Value;
 
@@ -42,7 +42,7 @@ public sealed class IntentClassifier(
   {
     var hasImageAttachments = attachments.Count > 0;
     var normalized = ChatTextUtils.Normalize(message);
-    var fallback = BuildFallbackClassification(message, normalized, memory, hasImageAttachments);
+    var fallback = BuildPromptDrivenFallback(message, normalized, memory, hasImageAttachments);
 
     if (string.IsNullOrWhiteSpace(message))
     {
@@ -78,7 +78,10 @@ public sealed class IntentClassifier(
       }
 
       var body = await response.Content.ReadAsStringAsync(timeoutCts.Token);
-      return ParseResponse(body, memory, hasImageAttachments) ?? fallback;
+      var parsed = ParseResponse(body, memory, hasImageAttachments);
+      return parsed is null
+        ? fallback
+        : EnrichPromptClassification(parsed, message, normalized, memory, hasImageAttachments);
     }
     catch
     {
@@ -108,6 +111,9 @@ public sealed class IntentClassifier(
       var materialKeyword = NormalizeAllowed(planner.MaterialKeyword, AllowedMaterials) ?? memory.MaterialKeyword;
       var budgetCeiling = planner.BudgetCeiling > 0 ? planner.BudgetCeiling : memory.BudgetCeiling;
       var requiresPersonImage = planner.RequiresPersonImage ?? false;
+      var responseMode = NormalizeAllowed(planner.ResponseMode, ["direct_answer", "recommendation", "comparison", "clarification", "tryon", "image_analysis"]);
+      var selectionStrategy = NormalizeAllowed(planner.SelectionStrategy, ["relevance_first", "novelty_first", "stylist_pick", "comparison_focus", "image_led"]);
+      var productReferenceScope = NormalizeAllowed(planner.ProductReferenceScope, ["none", "selected_garment", "shortlist_all", "shortlist_top_3"]);
 
       return new IntentClassificationDto(
         intent,
@@ -118,13 +124,126 @@ public sealed class IntentClassifier(
         NormalizeAllowed(planner.ProductType, ["ao_dai", "phu_kien"]),
         [],
         requiresPersonImage,
-        hasImageAttachments);
+        hasImageAttachments,
+        responseMode,
+        planner.NeedsCatalogLookup ?? intent is "catalog_lookup" or "outfit_recommendation" or "accessory_recommendation" or "product_description" or "product_comparison",
+        planner.NeedsClarification ?? intent == "clarification",
+        string.IsNullOrWhiteSpace(planner.RetrievalQuery) ? null : planner.RetrievalQuery.Trim(),
+        selectionStrategy,
+        string.IsNullOrWhiteSpace(planner.StylistBrief) ? null : planner.StylistBrief.Trim(),
+        NormalizeReferencedImageHint(planner.ReferencedImageHint),
+        productReferenceScope == "none" ? null : productReferenceScope,
+        planner.WantsDifferentOptions ?? string.Equals(selectionStrategy, "novelty_first", StringComparison.OrdinalIgnoreCase),
+        planner.HasSpecificAccessoryRequest ?? false);
     }
     catch (JsonException)
     {
       return null;
     }
   }
+
+  public static IntentClassificationDto BuildPromptDrivenFallback(
+    string message,
+    string normalized,
+    ThreadMemoryStateDto memory,
+    bool hasImageAttachments)
+  {
+    var fallback = BuildDegradedFallbackClassification(message, normalized, memory, hasImageAttachments);
+    return EnrichPromptClassification(fallback, message, normalized, memory, hasImageAttachments);
+  }
+
+  private static IntentClassificationDto EnrichPromptClassification(
+    IntentClassificationDto classification,
+    string message,
+    string normalized,
+    ThreadMemoryStateDto memory,
+    bool hasImageAttachments)
+  {
+    var responseMode = classification.Intent switch
+    {
+      "product_comparison" => "comparison",
+      "tryon_prepare" or "tryon_execute" => "tryon",
+      "image_style_analysis" => "image_analysis",
+      "outfit_recommendation" or "accessory_recommendation" => "recommendation",
+      "clarification" => "clarification",
+      _ => "direct_answer"
+    };
+
+    var retrievalQuery = classification.NeedsCatalogLookup == false && classification.Intent is not "catalog_lookup" and not "outfit_recommendation" and not "accessory_recommendation" and not "product_description" and not "product_comparison"
+      ? classification.RetrievalQuery
+      : BuildRetrievalQuery(message, classification);
+    var selectionStrategy = !string.IsNullOrWhiteSpace(classification.SelectionStrategy)
+      ? classification.SelectionStrategy
+      : classification.Intent switch
+      {
+        "product_comparison" => "comparison_focus",
+        "image_style_analysis" => "image_led",
+        "outfit_recommendation" or "accessory_recommendation" => "stylist_pick",
+        _ => classification.Intent is "catalog_lookup" or "product_description"
+          ? "relevance_first"
+          : null
+      };
+
+    return classification with
+    {
+      ResponseMode = classification.ResponseMode ?? responseMode,
+      NeedsCatalogLookup = classification.NeedsCatalogLookup || classification.Intent is "catalog_lookup" or "outfit_recommendation" or "accessory_recommendation" or "product_description" or "product_comparison",
+      NeedsClarification = classification.NeedsClarification || classification.Intent == "clarification",
+      RetrievalQuery = string.IsNullOrWhiteSpace(classification.RetrievalQuery) ? retrievalQuery : classification.RetrievalQuery,
+      SelectionStrategy = selectionStrategy,
+      StylistBrief = string.IsNullOrWhiteSpace(classification.StylistBrief) ? BuildStylistBrief(classification, memory) : classification.StylistBrief,
+      ReferencedImageHint = NormalizeReferencedImageHint(classification.ReferencedImageHint)
+    };
+  }
+
+  private static string BuildRetrievalQuery(string message, IntentClassificationDto classification)
+  {
+    var rawMessage = message?.Trim();
+    if (!string.IsNullOrWhiteSpace(rawMessage))
+    {
+      return rawMessage;
+    }
+
+    var softSlotQuery = string.Join(' ', new[]
+    {
+      classification.ProductType == "phu_kien" ? "phu kien" : "ao dai",
+      classification.ColorFamily,
+      classification.MaterialKeyword,
+      classification.Scenario?.Replace('-', ' ')
+    }.Where(value => !string.IsNullOrWhiteSpace(value)));
+
+    return string.IsNullOrWhiteSpace(softSlotQuery)
+      ? (classification.ProductType == "phu_kien" ? "phu kien" : "ao dai")
+      : softSlotQuery;
+  }
+
+  private static string BuildStylistBrief(IntentClassificationDto classification, ThreadMemoryStateDto memory)
+  {
+    var parts = new List<string>();
+
+    if (!string.IsNullOrWhiteSpace(classification.Scenario ?? memory.Scenario))
+    {
+      parts.Add($"Ưu tiên bối cảnh {(classification.Scenario ?? memory.Scenario)!.Replace('-', ' ')}");
+    }
+
+    if (!string.IsNullOrWhiteSpace(classification.ColorFamily ?? memory.ColorFamily))
+    {
+      parts.Add($"giữ tông {(classification.ColorFamily ?? memory.ColorFamily)}");
+    }
+
+    if (!string.IsNullOrWhiteSpace(classification.MaterialKeyword ?? memory.MaterialKeyword))
+    {
+      parts.Add($"ưu tiên chất liệu {classification.MaterialKeyword ?? memory.MaterialKeyword}");
+    }
+
+    if (classification.RequiresPersonImage)
+    {
+      parts.Add("cần ảnh người mặc trước khi thử đồ");
+    }
+
+    return parts.Count == 0 ? "Trả lời như stylist bán hàng giàu kinh nghiệm, ngắn gọn và quyết đoán." : string.Join(". ", parts) + ".";
+  }
+
 
   private string BuildEndpoint()
   {
@@ -147,20 +266,41 @@ public sealed class IntentClassifier(
     string? previousAssistantMessage)
   {
     var builder = new StringBuilder();
-    builder.AppendLine("Bạn là bộ lập kế hoạch intent cho stylist AI Ao Dai Nha Uyen.");
-    builder.AppendLine("Phân loại duy nhất một intent và trích xuất slot chuẩn hoá từ tin nhắn hiện tại, attachment và memory.");
+    builder.AppendLine("Bạn là bộ phân loại intent cho stylist AI Ao Dai Nha Uyen.");
+    builder.AppendLine("Mục tiêu: suy ra ý định hành động tốt nhất từ tin nhắn mới nhất, attachment hiện tại, memory và hội thoại gần đây.");
+    builder.AppendLine("Ưu tiên hiểu mục tiêu thật sự của user theo ngữ nghĩa và ngữ cảnh follow-up, không dựa vào khớp cụm từ máy móc.");
     builder.AppendLine("Chỉ dùng các intent: catalog_lookup, outfit_recommendation, accessory_recommendation, product_description, product_comparison, tryon_prepare, tryon_execute, image_style_analysis, clarification, out_of_scope.");
+    builder.AppendLine("Định nghĩa intent:");
+    builder.AppendLine("- catalog_lookup: user muốn tìm, xem hoặc duyệt sản phẩm phù hợp.");
+    builder.AppendLine("- outfit_recommendation: user muốn gợi ý outfit/set phối hoàn chỉnh hoặc phối cùng món đang nói tới.");
+    builder.AppendLine("- accessory_recommendation: user chỉ muốn phụ kiện, không phải set hoàn chỉnh.");
+    builder.AppendLine("- product_description: user muốn giải thích, nhận xét, mô tả hoặc làm rõ sản phẩm đang được nhắc tới.");
+    builder.AppendLine("- product_comparison: user muốn so sánh hoặc chọn giữa nhiều sản phẩm.");
+    builder.AppendLine("- tryon_prepare: user muốn thử đồ nhưng còn thiếu điều kiện để thực hiện an toàn.");
+    builder.AppendLine("- tryon_execute: user muốn thử đồ và đủ dữ kiện để tiến hành.");
+    builder.AppendLine("- image_style_analysis: user muốn nhận xét phong cách từ ảnh mới hoặc ảnh đã có trong memory.");
+    builder.AppendLine("- clarification: chưa đủ chắc chắn để chọn hành động an toàn.");
+    builder.AppendLine("- out_of_scope: nội dung thuộc đơn hàng, giao hàng, vận chuyển, đổi trả, hoàn tiền hoặc hỗ trợ ngoài stylist.");
     builder.AppendLine("Scenario chỉ được là: giao-vien, le-tet, du-tiec, chup-anh.");
-    builder.AppendLine("ColorFamily chỉ được là: blue, pink, red, ivory.");
+    builder.AppendLine("ColorFamily chỉ được là: blue, pink, red, ivory, black, purple, green, yellow, brown, gold, white.");
+    builder.AppendLine("Nếu user nói theo kiểu liệt kê/xem danh sách/xem tất cả/có mẫu nào/có gì phù hợp thì ưu tiên catalog_lookup thay vì clarification.");
+    builder.AppendLine("retrievalQuery nên giữ sát câu user nhất có thể; không rewrite sang câu máy móc nếu raw message đã đủ tốt để search catalog.");
     builder.AppendLine("MaterialKeyword chỉ được là: lụa, gấm.");
-    builder.AppendLine("Chọn clarification khi thiếu dữ kiện để hành động an toàn. Chọn out_of_scope cho đơn hàng, vận chuyển, đổi trả, hoàn tiền.");
-    builder.AppendLine("Chọn image_style_analysis khi người dùng gửi ảnh để xin nhận xét/gợi ý style từ ảnh, hoặc khi người dùng hỏi về/thảo luận ảnh đã gửi trước đó (ví dụ: 'ảnh vừa tạo có đẹp không', 'ảnh đầu tiên', 'nhận xét ảnh'). Chọn tryon_prepare hoặc tryon_execute cho nhu cầu thử đồ.");
-    builder.AppendLine("Chọn product_description khi user hỏi mô tả, đặc tính, chi tiết, nhận xét hoặc nói rõ hơn về các sản phẩm đã được nhắc ở shortlist hiện tại.");
-    builder.AppendLine("Nếu user nói 'mẫu này', 'các mẫu này', '3 áo dài này', 'mấy mẫu trên' thì hiểu đó là follow-up dựa trên shortlist trong memory, không hỏi lại discovery trừ khi thật sự không có shortlist.");
-    builder.AppendLine("Nếu user hỏi 'đi cặp như thế nào', 'phối sao cho hợp', 'gợi ý set', 'mix cùng mẫu này', 'phối cùng áo dài này' và memory đã có áo dài đang shortlist hoặc selected garment, hãy ưu tiên outfit_recommendation để trả về combo áo dài + phụ kiện.");
-    builder.AppendLine("Chỉ dùng accessory_recommendation khi người dùng thực sự muốn xem phụ kiện riêng, không cần set hoàn chỉnh với áo dài.");
-    builder.AppendLine("requiresPersonImage=true chỉ khi yêu cầu thử đồ nhưng chưa có ảnh người mặc mới hoặc trong memory.");
+    builder.AppendLine("ProductType chỉ được là: ao_dai, phu_kien hoặc null.");
+    builder.AppendLine("Decision rules:");
+    builder.AppendLine("- Suy luận follow-up từ shortlist, selected garment, image catalog, recent messages và previous turns.");
+    builder.AppendLine("- Chọn intent hỗ trợ hành động tiếp theo rõ nhất cho user.");
+    builder.AppendLine("- Chỉ chọn clarification khi thiếu dữ kiện hoặc intent thật sự mơ hồ.");
+    builder.AppendLine("- Không bịa sản phẩm, ảnh, hay ngữ cảnh không có trong input/memory.");
+    builder.AppendLine("- requiresPersonImage=true chỉ khi user muốn thử đồ nhưng chưa có ảnh người mặc mới hoặc trong memory.");
+    builder.AppendLine("- ReferencedImageHint chỉ được là: first, last, tryon_result, image_1, image_2, image_3 hoặc null.");
+    builder.AppendLine("- ProductReferenceScope chỉ được là: none, selected_garment, shortlist_all, shortlist_top_3.");
+    builder.AppendLine("- WantsDifferentOptions=true khi user muốn xem hướng khác, mẫu khác hoặc đổi gu; không suy từ keyword máy móc nếu ngữ cảnh không phải đổi lựa chọn.");
+    builder.AppendLine("- HasSpecificAccessoryRequest=true khi user hỏi loại phụ kiện cụ thể như túi xách, trâm cài, quạt, guốc, giày, kẹp tóc.");
+    builder.AppendLine("- Nếu user đang nói về món vừa chọn, dùng ProductReferenceScope=selected_garment thay vì đoán id cụ thể.");
     builder.AppendLine("Trả về JSON duy nhất, không markdown.");
+    builder.AppendLine("JSON fields: intent, scenario, budgetCeiling, colorFamily, materialKeyword, productType, requiresPersonImage, responseMode, needsCatalogLookup, needsClarification, retrievalQuery, selectionStrategy, stylistBrief, referencedImageHint, productReferenceScope, wantsDifferentOptions, hasSpecificAccessoryRequest.");
+    builder.AppendLine("Không viết giải thích ngoài JSON.");
     builder.AppendLine();
     builder.AppendLine($"Message: {message}");
     builder.AppendLine($"Attachment kinds: {(attachments.Count == 0 ? "none" : string.Join(", ", attachments.Select(item => item.Kind)))}");
@@ -184,6 +324,27 @@ public sealed class IntentClassifier(
 
   private static string? NormalizeAllowed(string? value, IEnumerable<string> allowed) =>
     allowed.FirstOrDefault(item => string.Equals(item, value, StringComparison.OrdinalIgnoreCase));
+
+  private static string? NormalizeReferencedImageHint(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value))
+    {
+      return null;
+    }
+
+    var normalized = value.Trim().ToLowerInvariant();
+    if (normalized is "first" or "last" or "tryon_result")
+    {
+      return normalized;
+    }
+
+    if (normalized.StartsWith("image_", StringComparison.Ordinal) && int.TryParse(normalized[6..], out var index) && index > 0)
+    {
+      return normalized;
+    }
+
+    return null;
+  }
 
   private static string? ExtractScenario(string normalized)
   {
@@ -266,49 +427,188 @@ public sealed class IntentClassifier(
     return null;
   }
 
-  private static bool HasSpecificAccessoryKeywords(string normalized) =>
-    normalized.Contains("tui xach") ||
-    normalized.Contains("tui sach") ||
-    normalized.Contains("tram cai") ||
-    normalized.Contains("quat") ||
-    normalized.Contains("guoc") ||
-    normalized.Contains("giay") ||
-    normalized.Contains("kep toc");
+  private static IntentClassificationDto BuildDegradedFallbackClassification(
+    string message,
+    string normalized,
+    ThreadMemoryStateDto memory,
+    bool hasImageAttachments)
+  {
+    var scenario = ExtractScenario(normalized) ?? memory.Scenario;
+    var budgetCeiling = ChatTextUtils.TryExtractBudget(message) ?? memory.BudgetCeiling;
+    var colorFamily = ExtractColorFamily(normalized) ?? memory.ColorFamily;
+    var materialKeyword = ExtractMaterialKeyword(normalized) ?? memory.MaterialKeyword;
+    var productType = DetectProductType(message) ?? "ao_dai";
 
-  private static bool HasSpecificAoDaiKeywords(string normalized) =>
-    normalized.Contains("theu") ||
-    normalized.Contains("hoa sen") ||
-    normalized.Contains("truyen thong") ||
-    normalized.Contains("cach tan") ||
-    normalized.Contains("lua tron") ||
-    normalized.Contains("gam theu");
+    if (normalized.Contains("giao hang") || normalized.Contains("van chuyen") || normalized.Contains("doi tra") || normalized.Contains("hoan tien"))
+    {
+      return CreateOutOfScopeIntent(scenario, budgetCeiling, colorFamily, materialKeyword, productType, hasImageAttachments);
+    }
 
-  private static bool IsAccessoryOnlyIntent(string normalized) =>
-    normalized.Contains("phu kien nao") ||
-    normalized.Contains("co nhung phu kien") ||
-    normalized.Contains("shop co phu kien") ||
-    (normalized.Contains("phu kien") && !normalized.Contains("set")) ||
-    HasSpecificAccessoryKeywords(normalized);
+    if (IsCatalogLookupIntent(normalized) || IsNaturalCatalogNeedIntent(normalized))
+    {
+      return CreateCatalogLookupIntent(scenario, budgetCeiling, colorFamily, materialKeyword, productType, hasImageAttachments);
+    }
+
+    return CreateClarificationIntent(scenario, budgetCeiling, colorFamily, materialKeyword, productType, hasImageAttachments);
+  }
+
+  private static IntentClassificationDto CreateCatalogLookupIntent(
+    string? scenario,
+    decimal? budgetCeiling,
+    string? colorFamily,
+    string? materialKeyword,
+    string? productType,
+    bool hasImageAttachments) =>
+    new(
+      "catalog_lookup",
+      scenario,
+      budgetCeiling,
+      colorFamily,
+      materialKeyword,
+      productType,
+      [],
+      false,
+      hasImageAttachments);
 
   private static bool IsCatalogLookupIntent(string normalized) =>
-    normalized.Contains("co nhung") ||
-    normalized.Contains("dang co") ||
-    normalized.Contains("catalog") ||
-    normalized.Contains("san sang de lua chon") ||
+    normalized.Contains("liet ke") ||
+    normalized.Contains("danh sach") ||
+    normalized.Contains("xem tat ca") ||
+    normalized.Contains("xem het") ||
+    normalized.Contains("cho xem") ||
+    normalized.Contains("co gi") ||
+    normalized.Contains("co may mau") ||
+    normalized.Contains("tat ca mau") ||
     normalized.Contains("mau nao") ||
-    normalized.Contains("cho toi xem") ||
-    normalized.Contains("can tim") ||
-    normalized.Contains("muon tim") ||
-    HasSpecificAccessoryKeywords(normalized) ||
-    HasSpecificAoDaiKeywords(normalized);
+    normalized.Contains("co nhung") ||
+    normalized.Contains("dang co");
 
-  private static bool IsRecommendationIntent(string normalized) =>
-    normalized.Contains("goi y") ||
-    normalized.Contains("tu van") ||
-    normalized.Contains("chon giup") ||
-    normalized.Contains("phoi do") ||
-    (normalized.Contains("ao dai") && (normalized.Contains("can") || normalized.Contains("muon") || normalized.Contains("tim"))) ||
-    (HasSpecificAccessoryKeywords(normalized) && (normalized.Contains("dep") || normalized.Contains("hop") || normalized.Contains("goi y") || normalized.Contains("can")));
+  private static bool IsNaturalCatalogNeedIntent(string normalized) =>
+    (normalized.Contains("muon xem") || normalized.Contains("tim") || normalized.Contains("can tim") || normalized.Contains("muon tim")) &&
+    (normalized.Contains("ao dai") || normalized.Contains("phu kien") || normalized.Contains("mau") || normalized.Contains("san pham"));
+
+
+  private static IntentClassificationDto CreateOutOfScopeIntent(
+    string? scenario,
+    decimal? budgetCeiling,
+    string? colorFamily,
+    string? materialKeyword,
+    string? productType,
+    bool hasImageAttachments) =>
+    new(
+      "out_of_scope",
+      scenario,
+      budgetCeiling,
+      colorFamily,
+      materialKeyword,
+      productType,
+      [],
+      false,
+      hasImageAttachments);
+
+  private static IntentClassificationDto CreateImageAnalysisIntent(
+    string? scenario,
+    decimal? budgetCeiling,
+    string? colorFamily,
+    string? materialKeyword,
+    string? productType,
+    bool hasImageAttachments) =>
+    new(
+      "image_style_analysis",
+      scenario,
+      budgetCeiling,
+      colorFamily,
+      materialKeyword,
+      productType,
+      [],
+      false,
+      hasImageAttachments);
+
+  private static IntentClassificationDto CreateTryOnIntent(
+    string? scenario,
+    decimal? budgetCeiling,
+    string? colorFamily,
+    string? materialKeyword,
+    bool hasImageAttachments,
+    ThreadMemoryStateDto memory) =>
+    new(
+      "tryon_execute",
+      scenario,
+      budgetCeiling,
+      colorFamily,
+      materialKeyword,
+      "ao_dai",
+      [],
+      !memory.LatestPersonAttachmentId.HasValue,
+      hasImageAttachments);
+
+  private static IntentClassificationDto CreateProductDescriptionIntent(
+    string? scenario,
+    decimal? budgetCeiling,
+    string? colorFamily,
+    string? materialKeyword,
+    string? productType,
+    bool hasImageAttachments) =>
+    new(
+      "product_description",
+      scenario,
+      budgetCeiling,
+      colorFamily,
+      materialKeyword,
+      productType,
+      [],
+      false,
+      hasImageAttachments);
+
+  private static IntentClassificationDto CreateComparisonIntent(
+    string? scenario,
+    decimal? budgetCeiling,
+    string? colorFamily,
+    string? materialKeyword,
+    string? productType,
+    bool hasImageAttachments) =>
+    new(
+      "product_comparison",
+      scenario,
+      budgetCeiling,
+      colorFamily,
+      materialKeyword,
+      productType,
+      [],
+      false,
+      hasImageAttachments);
+
+  private static IntentClassificationDto CreateSetCompletionIntent(
+    string? scenario,
+    decimal? budgetCeiling,
+    string? colorFamily,
+    string? materialKeyword,
+    bool hasImageAttachments) =>
+    new(
+      "outfit_recommendation",
+      scenario,
+      budgetCeiling,
+      colorFamily,
+      materialKeyword,
+      "ao_dai",
+      [],
+      false,
+      hasImageAttachments);
+
+  private static IntentClassificationDto CreateClarificationIntent(
+    string? scenario,
+    decimal? budgetCeiling,
+    string? colorFamily,
+    string? materialKeyword,
+    string? productType,
+    bool hasImageAttachments) =>
+    IntentClassificationDto.Clarification(
+      scenario,
+      budgetCeiling,
+      colorFamily,
+      materialKeyword,
+      productType,
+      hasImageAttachments: hasImageAttachments);
 
   private static string? TryExtractText(string body)
   {
@@ -362,7 +662,17 @@ public sealed class IntentClassifier(
     string? ColorFamily,
     string? MaterialKeyword,
     string? ProductType,
-    bool? RequiresPersonImage);
+    bool? RequiresPersonImage,
+    string? ResponseMode,
+    bool? NeedsCatalogLookup,
+    bool? NeedsClarification,
+    string? RetrievalQuery,
+    string? SelectionStrategy,
+    string? StylistBrief,
+    string? ReferencedImageHint,
+    string? ProductReferenceScope,
+    bool? WantsDifferentOptions,
+    bool? HasSpecificAccessoryRequest);
 
   private sealed record GeminiTextRequest(
     [property: JsonPropertyName("contents")] IReadOnlyList<GeminiContent> Contents,
@@ -385,76 +695,6 @@ public sealed class IntentClassifier(
     [property: JsonPropertyName("category")] string Category,
     [property: JsonPropertyName("threshold")] string Threshold);
 
-  private static IntentClassificationDto BuildFallbackClassification(
-    string message,
-    string normalized,
-    ThreadMemoryStateDto memory,
-    bool hasImageAttachments)
-  {
-    var scenario = ExtractScenario(normalized) ?? memory.Scenario;
-    var budgetCeiling = ChatTextUtils.TryExtractBudget(message) ?? memory.BudgetCeiling;
-    var colorFamily = ExtractColorFamily(normalized) ?? memory.ColorFamily;
-    var materialKeyword = ExtractMaterialKeyword(normalized) ?? memory.MaterialKeyword;
-    var productType = DetectProductType(message);
-
-    if (IsOutOfScope(normalized))
-    {
-      return new IntentClassificationDto("out_of_scope", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, hasImageAttachments);
-    }
-
-    if (IsImageReferenceFollowUp(normalized) && (hasImageAttachments || memory.ImageCatalog.Count > 0))
-    {
-      return new IntentClassificationDto("image_style_analysis", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, hasImageAttachments || memory.ImageCatalog.Count > 0);
-    }
-
-    if (IsTryOnIntent(normalized))
-    {
-      return new IntentClassificationDto("tryon_execute", scenario, budgetCeiling, colorFamily, materialKeyword, "ao_dai", [], !memory.LatestPersonAttachmentId.HasValue, hasImageAttachments);
-    }
-
-    if (hasImageAttachments && IsImageAnalysisIntent(normalized))
-    {
-      return new IntentClassificationDto("image_style_analysis", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, true);
-    }
-
-    if (IsProductDescriptionIntent(normalized))
-    {
-      return new IntentClassificationDto("product_description", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, hasImageAttachments);
-    }
-
-    if (IsComparisonIntent(normalized))
-    {
-      return new IntentClassificationDto("product_comparison", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, hasImageAttachments);
-    }
-
-    if (IsSetCompletionIntent(normalized, memory))
-    {
-      return new IntentClassificationDto("outfit_recommendation", scenario, budgetCeiling, colorFamily, materialKeyword, "ao_dai", [], false, hasImageAttachments);
-    }
-
-    if (IsAccessoryOnlyIntent(normalized))
-    {
-      return new IntentClassificationDto("accessory_recommendation", scenario, budgetCeiling, colorFamily, materialKeyword, "phu_kien", [], false, hasImageAttachments);
-    }
-
-    if (IsCatalogLookupIntent(normalized))
-    {
-      return new IntentClassificationDto("catalog_lookup", scenario, budgetCeiling, colorFamily, materialKeyword, productType, [], false, hasImageAttachments);
-    }
-
-    if (IsRecommendationIntent(normalized))
-    {
-      return new IntentClassificationDto("outfit_recommendation", scenario, budgetCeiling, colorFamily, materialKeyword, productType ?? "ao_dai", [], false, hasImageAttachments);
-    }
-
-    return IntentClassificationDto.Clarification(
-      scenario,
-      budgetCeiling,
-      colorFamily,
-      materialKeyword,
-      productType,
-      hasImageAttachments: hasImageAttachments);
-  }
 
   private static bool IsOutOfScope(string normalized) =>
     normalized.Contains("giao hang") ||
@@ -466,7 +706,17 @@ public sealed class IntentClassifier(
     normalized.Contains("thu do") ||
     normalized.Contains("thu ngay") ||
     normalized.Contains("thu luon") ||
-    normalized.Contains("uom thu");
+    normalized.Contains("uom thu") ||
+    normalized.Contains("thu voi anh nay") ||
+    normalized.Contains("thu mau nay");
+
+  private static bool IsTryOnImageReferenceIntent(string normalized) =>
+    normalized.Contains("thu do anh") ||
+    normalized.Contains("thu anh nay") ||
+    normalized.Contains("thu anh do") ||
+    normalized.Contains("thu voi anh nay") ||
+    normalized.Contains("thu voi anh do") ||
+    normalized.Contains("thu ket qua thu do");
 
   private static bool IsImageAnalysisIntent(string normalized) =>
     normalized.Contains("nhin anh") ||
@@ -483,13 +733,8 @@ public sealed class IntentClassifier(
     normalized.Contains("anh nay") ||
     normalized.Contains("anh do") ||
     normalized.Contains("cai anh") ||
-    normalized.Contains("nhin anh") ||
-    normalized.Contains("xem anh") ||
-    normalized.Contains("nhan xet anh") ||
     normalized.Contains("anh co dep") ||
-    normalized.Contains("dep khong") && normalized.Contains("anh") ||
-    normalized.Contains("anh thu do") ||
-    normalized.Contains("ket qua thu do");
+    normalized.Contains("dep khong") && normalized.Contains("anh");
 
   private static bool IsProductDescriptionIntent(string normalized) =>
     normalized.Contains("chi tiet") ||
@@ -502,6 +747,62 @@ public sealed class IntentClassifier(
     normalized.Contains("so sanh") ||
     normalized.Contains("khac nhau") ||
     normalized.Contains("nen chon mau nao");
+
+  private static string? InferReferencedImageHint(string normalized, ThreadMemoryStateDto memory)
+  {
+    if (memory.ImageCatalog.Count == 0)
+    {
+      return null;
+    }
+
+    if (normalized.Contains("anh dau tien") || normalized.Contains("anh 1") || normalized.Contains("anh thu 1"))
+    {
+      return "first";
+    }
+
+    if (normalized.Contains("anh cuoi") || normalized.Contains("anh vua tao") || normalized.Contains("anh vua gui") || normalized.Contains("anh moi"))
+    {
+      return "last";
+    }
+
+    if (normalized.Contains("anh thu do") || normalized.Contains("ket qua thu do"))
+    {
+      return "tryon_result";
+    }
+
+    if (TryExtractImageIndex(normalized, out var imageIndex) && imageIndex > 0)
+    {
+      return $"image_{imageIndex}";
+    }
+
+    return normalized.Contains("anh nay") || normalized.Contains("anh do") || normalized.Contains("cai anh")
+      ? "last"
+      : null;
+  }
+
+  private static bool TryExtractImageIndex(string normalized, out int index)
+  {
+    index = 0;
+    var patterns = new[] { "anh thu ", "anh so ", "anh " };
+    foreach (var pattern in patterns)
+    {
+      var pos = normalized.IndexOf(pattern, StringComparison.Ordinal);
+      if (pos < 0)
+      {
+        continue;
+      }
+
+      var afterPattern = normalized[(pos + pattern.Length)..];
+      var digits = new string(afterPattern.TakeWhile(char.IsDigit).ToArray());
+      if (int.TryParse(digits, out var number) && number > 0)
+      {
+        index = number;
+        return true;
+      }
+    }
+
+    return false;
+  }
 
   private static bool IsSetCompletionIntent(string normalized, ThreadMemoryStateDto memory)
   {

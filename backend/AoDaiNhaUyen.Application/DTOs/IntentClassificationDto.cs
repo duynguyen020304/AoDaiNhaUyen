@@ -9,7 +9,17 @@ public sealed record IntentClassificationDto(
   string? ProductType,
   IReadOnlyList<long> ReferencedProductIds,
   bool RequiresPersonImage,
-  bool HasImageAttachments = false)
+  bool HasImageAttachments = false,
+  string? ResponseMode = null,
+  bool NeedsCatalogLookup = false,
+  bool NeedsClarification = false,
+  string? RetrievalQuery = null,
+  string? SelectionStrategy = null,
+  string? StylistBrief = null,
+  string? ReferencedImageHint = null,
+  string? ProductReferenceScope = null,
+  bool WantsDifferentOptions = false,
+  bool HasSpecificAccessoryRequest = false)
 {
   public static IntentClassificationDto Clarification(
     string? scenario,
@@ -19,7 +29,8 @@ public sealed record IntentClassificationDto(
     string? productType = null,
     IReadOnlyList<long>? referencedProductIds = null,
     bool requiresPersonImage = false,
-    bool hasImageAttachments = false) =>
+    bool hasImageAttachments = false,
+    string? stylistBrief = null) =>
     new(
       "clarification",
       scenario,
@@ -29,5 +40,14 @@ public sealed record IntentClassificationDto(
       productType,
       referencedProductIds ?? [],
       requiresPersonImage,
-      hasImageAttachments);
+      hasImageAttachments,
+      NeedsClarification: true,
+      StylistBrief: stylistBrief);
+
+  public bool UsesPromptDecisions =>
+    !string.IsNullOrWhiteSpace(SelectionStrategy) ||
+    !string.IsNullOrWhiteSpace(ReferencedImageHint) ||
+    !string.IsNullOrWhiteSpace(ProductReferenceScope) ||
+    WantsDifferentOptions ||
+    HasSpecificAccessoryRequest;
 }
