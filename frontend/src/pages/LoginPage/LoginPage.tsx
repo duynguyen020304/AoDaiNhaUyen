@@ -37,7 +37,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (verified === 'true') {
-      showToast('Email da duoc xac thuc. He thong dang khoi phuc phien dang nhap cua ban.', 'success');
+      showToast('Email đã được xác thực. Hệ thống đang khôi phục phiên đăng nhập của bạn.', 'success');
       window.setTimeout(() => {
         setError(null);
         setActiveTab('login');
@@ -48,8 +48,8 @@ export default function LoginPage() {
 
     if (verified === 'false') {
       const message = verificationReason === 'verification_token_expired'
-        ? 'Lien ket xac thuc da het han. Vui long dang ky lai hoac lien he ho tro.'
-        : 'Khong the xac thuc email voi lien ket nay.';
+        ? 'Liên kết xác thực đã hết hạn. Vui lòng đăng ký lại hoặc liên hệ hỗ trợ.'
+        : 'Không thể xác thực email với liên kết này.';
       showToast(message, 'error');
       window.setTimeout(() => {
         setActiveTab('login');
@@ -96,14 +96,14 @@ export default function LoginPage() {
         password: regPassword,
         confirmPassword: regConfirm,
       });
-      showToast('Dang ky thanh cong. Vui long kiem tra email de xac thuc tai khoan.', 'success');
+      showToast('Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản.', 'success');
       setActiveTab('login');
       setRegPassword('');
       setRegConfirm('');
       setPassword('');
       setEmail(regEmail);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Khong the dang ky tai khoan.');
+      setError(submitError instanceof Error ? submitError.message : 'Không thể đăng ký tài khoản.');
     } finally {
       setIsSubmitting(false);
     }
@@ -115,11 +115,11 @@ export default function LoginPage() {
 
     try {
       await forgotPassword(forgotEmail);
-      showToast('Neu email ton tai trong he thong, huong dan dat lai mat khau da duoc gui.', 'success');
+      showToast('Nếu email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi.', 'success');
       setShowForgotPassword(false);
       setForgotEmail('');
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Khong the gui email dat lai mat khau.');
+      setError(submitError instanceof Error ? submitError.message : 'Không thể gửi email đặt lại mật khẩu.');
     } finally {
       setIsSubmitting(false);
     }
@@ -202,11 +202,11 @@ export default function LoginPage() {
             {showForgotPassword ? (
               <div className={styles.inlinePanel}>
                 <p className={styles.inlineCopy}>
-                  Nhap email dang ky. Neu tai khoan ton tai, chung toi se gui lien ket dat lai mat khau.
+                  Nhập email đăng ký. Nếu tài khoản tồn tại, chúng tôi sẽ gửi liên kết đặt lại mật khẩu.
                 </p>
                 <div className={styles.inlineForm}>
                   <div className={styles.field}>
-                    <label htmlFor="forgot-email">Email khoi phuc</label>
+                    <label htmlFor="forgot-email">Email khôi phục</label>
                     <div className={styles.inputWrapper}>
                       <img className={styles.inputIcon} src="/assets/login/icon-email.svg" alt="" />
                       <input
@@ -226,7 +226,7 @@ export default function LoginPage() {
                     disabled={isSubmitting}
                     onClick={() => { void handleForgotPassword(); }}
                   >
-                    {isSubmitting ? 'Dang gui...' : 'Gui email dat lai mat khau'}
+                    {isSubmitting ? 'Đang gửi...' : 'Gửi email đặt lại mật khẩu'}
                   </button>
                 </div>
               </div>

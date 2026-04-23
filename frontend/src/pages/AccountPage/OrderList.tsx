@@ -26,12 +26,12 @@ export default function OrderList() {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>DON HANG CUA BAN</h1>
+      <h1 className={styles.title}>ĐƠN HÀNG CỦA BẠN</h1>
       {loading ? <p className={styles.empty}>Đang tải đơn hàng...</p> : null}
       {error ? <p className={styles.empty}>{error}</p> : null}
 
       {!loading && !error && orders.length === 0 && (
-        <p className={styles.empty}>Ban chua co don hang nao.</p>
+        <p className={styles.empty}>Bạn chưa có đơn hàng nào.</p>
       )}
 
       <div className={styles.orderList}>
@@ -58,16 +58,16 @@ export default function OrderList() {
                 </div>
                 <div className={styles.itemInfo}>
                   <p className={styles.itemName}>
-                    Loai ao dai: {item.productName}
+                    Loại áo dài: {item.productName}
                   </p>
                   {item.size && (
                     <p className={styles.itemDetail}>Size: {item.size}</p>
                   )}
                   {item.color && (
-                    <p className={styles.itemDetail}>Mau: {item.color}</p>
+                    <p className={styles.itemDetail}>Màu: {item.color}</p>
                   )}
                   <p className={styles.itemDetail}>
-                    So luong: {item.quantity}
+                    Số lượng: {item.quantity}
                   </p>
                 </div>
                 <div className={styles.itemPrice}>
@@ -78,10 +78,10 @@ export default function OrderList() {
 
             <div className={styles.orderFooter}>
               <span className={styles.status}>
-                Tinh trang: {order.paymentStatus ?? order.orderStatus}
+                Tình trạng: {order.paymentStatus ?? order.orderStatus}
               </span>
               <span className={styles.total}>
-                Tong: {formatPrice(order.totalAmount)}
+                Tổng: {formatPrice(order.totalAmount)}
               </span>
             </div>
           </div>

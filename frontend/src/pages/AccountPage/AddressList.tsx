@@ -55,7 +55,7 @@ export default function AddressList() {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>THONG TIN DIA CHI</h1>
+      <h1 className={styles.title}>THÔNG TIN ĐỊA CHỈ</h1>
       {loading ? <p>Đang tải địa chỉ...</p> : null}
       {error ? <p>{error}</p> : null}
 
@@ -65,7 +65,7 @@ export default function AddressList() {
           className={styles.addButton}
           onClick={() => setIsAdding(!isAdding)}
         >
-          {isAdding ? 'HUY' : 'NHAP DIA CHI MOI'}
+          {isAdding ? 'HỦY' : 'NHẬP ĐỊA CHỈ MỚI'}
         </button>
       </div>
 
@@ -73,47 +73,47 @@ export default function AddressList() {
         <form className={styles.addressForm} onSubmit={handleAdd}>
           <input
             className={styles.input}
-            placeholder="Ten nguoi nhan"
+            placeholder="Tên người nhận"
             value={form.recipientName}
             onChange={(e) => handleChange('recipientName', e.target.value)}
             required
           />
           <input
             className={styles.input}
-            placeholder="So dien thoai"
+            placeholder="Số điện thoại"
             value={form.recipientPhone}
             onChange={(e) => handleChange('recipientPhone', e.target.value)}
             required
           />
           <input
             className={styles.input}
-            placeholder="Tinh/Thanh pho"
+            placeholder="Tỉnh/Thành phố"
             value={form.province}
             onChange={(e) => handleChange('province', e.target.value)}
             required
           />
           <input
             className={styles.input}
-            placeholder="Quan/Huyen"
+            placeholder="Quận/Huyện"
             value={form.district}
             onChange={(e) => handleChange('district', e.target.value)}
             required
           />
           <input
             className={styles.input}
-            placeholder="Phuong/Xa"
+            placeholder="Phường/Xã"
             value={form.ward ?? ''}
             onChange={(e) => handleChange('ward', e.target.value)}
           />
           <input
             className={styles.input}
-            placeholder="So nha, ten duong"
+            placeholder="Số nhà, tên đường"
             value={form.addressLine}
             onChange={(e) => handleChange('addressLine', e.target.value)}
             required
           />
           <button type="submit" className={styles.saveButton}>
-            LUU DIA CHI
+            LƯU ĐỊA CHỈ
           </button>
         </form>
       )}
@@ -127,7 +127,7 @@ export default function AddressList() {
             <p className={styles.addressText}>
               {addr.addressLine}, {addr.ward ?? ''} {addr.district}, {addr.province}
             </p>
-            {addr.isDefault && <span className={styles.badge}>Mac dinh</span>}
+            {addr.isDefault && <span className={styles.badge}>Mặc định</span>}
             <div className={styles.cardActions}>
               {!addr.isDefault && (
                 <button
@@ -135,7 +135,7 @@ export default function AddressList() {
                   className={styles.deleteButton}
                   onClick={() => handleDelete(addr.id)}
                 >
-                  Xoa
+                  Xóa
                 </button>
               )}
             </div>

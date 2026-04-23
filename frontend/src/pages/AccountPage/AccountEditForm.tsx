@@ -54,12 +54,12 @@ export default function AccountEditForm({ onSaved }: AccountEditFormProps) {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>CAP NHAT TAI KHOAN</h1>
+      <h1 className={styles.title}>CẬP NHẬT TÀI KHOẢN</h1>
       {error ? <p>{error}</p> : null}
 
       <form className={styles.form} onSubmit={handleSubmit}>
         <label className={styles.fieldLabel}>
-          Ho va ten
+          Họ và tên
           <input
             className={styles.fieldInput}
             type="text"
@@ -69,7 +69,7 @@ export default function AccountEditForm({ onSaved }: AccountEditFormProps) {
         </label>
 
         <label className={styles.fieldLabel}>
-          So dien thoai
+          Số điện thoại
           <input
             className={styles.fieldInput}
             type="tel"
@@ -79,7 +79,7 @@ export default function AccountEditForm({ onSaved }: AccountEditFormProps) {
         </label>
 
         <label className={styles.fieldLabel}>
-          Ngay sinh
+          Ngày sinh
           <input
             className={styles.fieldInput}
             type="date"
@@ -103,7 +103,7 @@ export default function AccountEditForm({ onSaved }: AccountEditFormProps) {
           className={styles.submitButton}
           disabled={saving}
         >
-          {saving ? 'Dang luu...' : 'LUU THONG TIN'}
+          {saving ? 'Đang lưu...' : 'LƯU THÔNG TIN'}
         </button>
       </form>
     </div>

@@ -28,7 +28,7 @@ public sealed class UserService(
         return AuthResult<UserProfileDto>.Success(profile);
     }
 
-    public async Task<AuthResult<UserProfileDto>> UpdateUserProfileAsync(long userId, UserProfileDto profile, CancellationToken cancellationToken = default)
+    public async Task<AuthResult<UserProfileDto>> UpdateUserProfileAsync(long userId, UpdateUserProfileDto profile, CancellationToken cancellationToken = default)
     {
         var user = await dbContext.Users
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
@@ -38,12 +38,10 @@ public sealed class UserService(
             return AuthResult<UserProfileDto>.Failure("user_not_found", "Người dùng không tồn tại.");
         }
 
-        user.FullName = profile.FullName ?? user.FullName;
-        user.Email = profile.Email ?? user.Email;
-        user.Phone = profile.Phone ?? user.Phone;
-        user.Gender = profile.Gender ?? user.Gender;
+        user.FullName = string.IsNullOrWhiteSpace(profile.FullName) ? user.FullName : profile.FullName.Trim();
+        user.Phone = string.IsNullOrWhiteSpace(profile.Phone) ? null : profile.Phone.Trim();
+        user.Gender = string.IsNullOrWhiteSpace(profile.Gender) ? null : profile.Gender.Trim();
         user.DateOfBirth = profile.DateOfBirth;
-        user.AvatarUrl = profile.AvatarUrl ?? user.AvatarUrl;
         user.UpdatedAt = DateTime.UtcNow;
 
         try

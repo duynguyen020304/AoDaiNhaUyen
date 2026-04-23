@@ -43,7 +43,7 @@ public sealed class UserController(
     }
 
     [HttpPut("profile")]
-    public async Task<IActionResult> UpdateProfile([FromBody] UserProfileDto profile, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileDto profile, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
         if (userId == 0)
