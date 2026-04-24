@@ -75,25 +75,7 @@ public sealed class VertexAiTryOnService(
 
   private static GeminiGenerateRequest BuildPayload(AiTryOnRequestDto request)
   {
-    var accessoryNames = request.AccessoryImages.Count == 0
-      ? "không có phụ kiện bổ sung"
-      : string.Join(", ", request.AccessoryImages.Select(accessory => accessory.Id));
-
-    var prompt = string.Join(
-      "\n",
-      "Hãy tạo ảnh thời trang chân thực từ các ảnh đầu vào.",
-      "Ảnh 1 là ảnh người dùng.",
-      "Ảnh 2 là ảnh trang phục mẫu.",
-      $"Các ảnh tiếp theo là ảnh phụ kiện đi kèm: {accessoryNames}.",
-      "Yêu cầu xử lý:",
-      "1. Remove background của ảnh 1.",
-      "2. Lấy trang phục của người trong ảnh 2 và ghép cho người trong ảnh 1.",
-      "3. Giữ khuôn mặt, vóc dáng và danh tính của người trong ảnh 1.",
-      "4. Final image phải dùng background của ảnh 2.",
-      "5. Nhân vật cuối cùng phải là người trong ảnh 1 nhưng mặc trang phục của người trong ảnh 2.",
-      "6. Nếu có ảnh phụ kiện, hãy thêm các phụ kiện đó lên nhân vật cuối cùng một cách tự nhiên và phù hợp.",
-      "7. Kết quả phải chân thực, toàn thân nếu có thể, ánh sáng hài hòa, không méo người, không đổi khuôn mặt.",
-      "Chỉ trả về đúng một ảnh kết quả.");
+    var prompt = BuildTryOnPrompt(request.AccessoryImages);
 
     var parts = new List<GeminiPart>
     {
@@ -125,6 +107,30 @@ public sealed class VertexAiTryOnService(
         new GeminiSafetySetting("HARM_CATEGORY_HARASSMENT", "BLOCK_MEDIUM_AND_ABOVE"),
         new GeminiSafetySetting("HARM_CATEGORY_HATE_SPEECH", "BLOCK_MEDIUM_AND_ABOVE")
       ]);
+  }
+
+  private static string BuildTryOnPrompt(IReadOnlyList<AiTryOnAccessoryImageDto> accessories)
+  {
+    var accessoryNames = accessories.Count == 0
+      ? "không có phụ kiện bổ sung"
+      : string.Join(", ", accessories.Select(accessory =>
+        string.IsNullOrWhiteSpace(accessory.DisplayName) ? accessory.Id : accessory.DisplayName.Trim()));
+
+    return string.Join(
+      "\n",
+      "Hãy tạo ảnh thời trang chân thực từ các ảnh đầu vào.",
+      "Ảnh 1 là ảnh người dùng/người mẫu cần thử đồ.",
+      "Ảnh 2 là ảnh trang phục mẫu cần ghép lên người trong ảnh 1.",
+      $"Các ảnh tiếp theo là ảnh phụ kiện đi kèm: {accessoryNames}.",
+      "Yêu cầu xử lý:",
+      "1. Remove background của ảnh 1.",
+      "2. Lấy trang phục trong ảnh 2 và ghép cho người trong ảnh 1.",
+      "3. Giữ nguyên khuôn mặt, vóc dáng, tông da và danh tính của người trong ảnh 1.",
+      "4. Final image phải dùng background của ảnh 2.",
+      "5. Nhân vật cuối cùng phải là người trong ảnh 1 nhưng mặc trang phục của người trong ảnh 2.",
+      "6. Nếu có ảnh phụ kiện, hãy đặt phụ kiện lên nhân vật cuối cùng tự nhiên, đúng tỷ lệ và giống ảnh phụ kiện mẫu.",
+      "7. Kết quả phải chân thực, toàn thân nếu có thể, ánh sáng hài hòa, không méo người, không đổi khuôn mặt.",
+      "Chỉ trả về đúng một ảnh kết quả.");
   }
 
   private static GeneratedImage? TryExtractGeneratedImage(string responseBody)

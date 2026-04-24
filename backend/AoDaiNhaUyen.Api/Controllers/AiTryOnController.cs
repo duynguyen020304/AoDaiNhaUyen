@@ -197,6 +197,7 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
     {
       results.Add(new AiTryOnAccessoryImageDto(
         accessoryIds[i],
+        accessoryIds[i],
         await ReadFileAsync(accessoryImages[i], cancellationToken),
         accessoryImages[i].ContentType));
     }

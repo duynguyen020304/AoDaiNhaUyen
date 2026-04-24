@@ -173,6 +173,7 @@ public sealed class CatalogTryOnService(
 
       resolved.Add(new AiTryOnAccessoryImageDto(
         product.Slug,
+        product.Name,
         await ReadAssetBytesAsync(aiAsset.FileUrl, cancellationToken),
         aiAsset.MimeType));
     }
