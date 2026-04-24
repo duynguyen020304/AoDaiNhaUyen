@@ -8,18 +8,22 @@ interface ResultPanelProps {
   selectedGarment: string | null;
   canTryOn: boolean;
   isProcessing: boolean;
+  isPurchasing?: boolean;
   errorMessage?: string | null;
   onTryonClick: () => void;
+  onBuyNowClick: () => void;
 }
 
 export default function ResultPanel({
   tryonResult,
   canTryOn,
   isProcessing,
+  isPurchasing = false,
   errorMessage,
   onTryonClick,
+  onBuyNowClick,
 }: ResultPanelProps) {
-  const isEnabled = canTryOn && !isProcessing;
+  const isEnabled = tryonResult ? !isPurchasing : canTryOn && !isProcessing;
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleDownload = () => {
@@ -84,9 +88,9 @@ export default function ResultPanel({
         <button
           className={`${styles.tryonButton} ${isEnabled ? styles.enabled : ''}`}
           disabled={!isEnabled}
-          onClick={onTryonClick}
+          onClick={tryonResult ? onBuyNowClick : onTryonClick}
         >
-          {isProcessing ? 'ĐANG XỬ LÝ...' : 'THỬ ĐỒ NGAY'}
+          {isPurchasing ? 'ĐANG THÊM VÀO GIỎ...' : isProcessing ? 'ĐANG XỬ LÝ...' : tryonResult ? 'MUA SẢN PHẨM NGAY' : 'THỬ ĐỒ NGAY'}
         </button>
         {errorMessage ? <p className={styles.errorMessage}>{errorMessage}</p> : null}
       </div>
