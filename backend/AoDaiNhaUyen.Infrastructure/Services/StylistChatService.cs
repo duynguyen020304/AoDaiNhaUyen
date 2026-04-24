@@ -886,7 +886,8 @@ public sealed class StylistChatService(
     }
 
     var products = await catalogStylingService.CompareAsync([selectedGarmentProductId], cancellationToken);
-    var requiresPersonImage = !memory.LatestPersonAttachmentId.HasValue;
+    var personAttachmentId = ResolveReferencedPersonImageId(classification, memory);
+    var requiresPersonImage = !personAttachmentId.HasValue;
     var pending = requiresPersonImage ? new List<string> { "upload_person_image" } : [];
 
     return new AssistantTurn(
@@ -1376,6 +1377,39 @@ public sealed class StylistChatService(
       : string.Join(", ", memory.ImageCatalog.Select(e => $"{e.Label} ({e.Kind})"));
   }
 
+  private static long? ResolveReferencedPersonImageId(IntentClassificationDto classification, ThreadMemoryStateDto memory)
+  {
+    if (string.IsNullOrWhiteSpace(classification.ReferencedImageHint))
+    {
+      return memory.LatestPersonAttachmentId;
+    }
+
+    var entry = ResolveImageCatalogEntries(memory, classification.ReferencedImageHint).FirstOrDefault();
+    return entry?.Kind == "user_image" ? entry.AttachmentId : null;
+  }
+
+  private static IEnumerable<ImageCatalogEntry> ResolveImageCatalogEntries(ThreadMemoryStateDto memory, string? hint)
+  {
+    var catalog = memory.ImageCatalog;
+    if (catalog.Count == 0)
+    {
+      return [];
+    }
+
+    return hint switch
+    {
+      "first" => [catalog.First()],
+      "last" => [catalog.Last()],
+      "tryon_result" => catalog.Where(e => e.Kind == "tryon_result").TakeLast(1),
+      var value when !string.IsNullOrWhiteSpace(value)
+        && value.StartsWith("image_", StringComparison.Ordinal)
+        && int.TryParse(value[6..], out var hintIndex)
+        && hintIndex > 0
+        && hintIndex <= catalog.Count => [catalog[hintIndex - 1]],
+      _ => [catalog.Last()]
+    };
+  }
+
   private async Task<IReadOnlyList<ImageReferenceDto>> ResolveReferencedImagesAsync(
     string userMessage,
     IntentClassificationDto classification,
@@ -1406,24 +1440,7 @@ public sealed class StylistChatService(
       }
     }
 
-    var catalog = memory.ImageCatalog;
-    if (catalog.Count == 0)
-    {
-      return result;
-    }
-
-    var matched = classification.ReferencedImageHint switch
-    {
-      "first" => new[] { catalog.First() }.AsEnumerable(),
-      "last" => new[] { catalog.Last() }.AsEnumerable(),
-      "tryon_result" => catalog.Where(e => e.Kind == "tryon_result").TakeLast(1),
-      var hint when !string.IsNullOrWhiteSpace(hint)
-        && hint.StartsWith("image_", StringComparison.Ordinal)
-        && int.TryParse(hint[6..], out var hintIndex)
-        && hintIndex > 0
-        && hintIndex <= catalog.Count => new[] { catalog[hintIndex - 1] }.AsEnumerable(),
-      _ => new[] { catalog.Last() }.AsEnumerable()
-    };
+    var matched = ResolveImageCatalogEntries(memory, classification.ReferencedImageHint);
 
     foreach (var entry in matched)
     {

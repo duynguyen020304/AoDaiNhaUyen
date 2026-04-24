@@ -71,7 +71,8 @@ public sealed class VertexAiStylistResponseComposer(
       }
 
       var body = await response.Content.ReadAsStringAsync(timeoutCts.Token);
-      return TryExtractText(body) ?? fallbackText;
+      var text = TryExtractText(body) ?? fallbackText;
+      return ValidateComposedText(text, fallbackText, structuredPayload);
     }
     catch
     {
@@ -112,7 +113,7 @@ public sealed class VertexAiStylistResponseComposer(
     await using var stream = await response.Content.ReadAsStreamAsync(timeoutCts.Token);
     using var reader = new StreamReader(stream);
 
-    var yieldedChunk = false;
+    var accumulatedText = new StringBuilder();
     while (true)
     {
       var readResult = await TryReadLineAsync(reader, timeoutCts.Token, cancellationToken);
@@ -139,14 +140,10 @@ public sealed class VertexAiStylistResponseComposer(
         continue;
       }
 
-      yieldedChunk = true;
-      yield return delta;
+      accumulatedText.Append(delta);
     }
 
-    if (!yieldedChunk)
-    {
-      yield return fallbackText;
-    }
+    yield return ValidateComposedText(accumulatedText.Length > 0 ? accumulatedText.ToString() : fallbackText, fallbackText, structuredPayload);
   }
 
   private string BuildEndpoint()
@@ -276,12 +273,119 @@ public sealed class VertexAiStylistResponseComposer(
     }
     builder.AppendLine($"User message: {userMessage}");
     builder.AppendLine($"Deterministic fallback: {fallbackText}");
+    builder.AppendLine("Fact contract:");
+    builder.AppendLine(BuildFactContract(structuredPayload));
     builder.AppendLine("Structured payload:");
     builder.AppendLine(JsonSerializer.Serialize(structuredPayload, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
     builder.AppendLine();
     builder.AppendLine("Trả về chỉ văn bản trả lời cuối cùng, không markdown, không JSON.");
     return builder.ToString();
   }
+
+  private static string BuildFactContract(ChatStructuredPayloadDto? payload)
+  {
+    if (payload is null)
+    {
+      return "none";
+    }
+
+    var products = payload.Products
+      .Concat(payload.GarmentProducts ?? [])
+      .Concat(payload.AccessoryProducts ?? [])
+      .GroupBy(product => product.ProductId)
+      .Select(group => group.First())
+      .ToList();
+
+    var names = products.Select(product => product.Name).Where(value => !string.IsNullOrWhiteSpace(value));
+    var ids = products.Select(product => product.ProductId);
+    var prices = products.Select(product => product.Price.ToString("0"));
+    var types = products.Select(product => product.ProductType).Where(value => !string.IsNullOrWhiteSpace(value)).Distinct();
+    var requiredNextStep = payload.PendingTryOnRequirements.Contains("upload_person_image") || payload.RequiresPersonImage
+      ? "upload_person_image"
+      : "none";
+
+    return string.Join("\n", new[]
+    {
+      $"Allowed product names: {JoinOrNone(names)}",
+      $"Allowed product IDs: {JoinOrNone(ids.Select(id => id.ToString()))}",
+      $"Allowed prices: {JoinOrNone(prices)}",
+      $"Allowed product types: {JoinOrNone(types)}",
+      $"Selected garment ID: {payload.SelectedGarmentProductId?.ToString() ?? "none"}",
+      $"Selected accessory IDs: {JoinOrNone(payload.SelectedAccessoryProductIds.Select(id => id.ToString()))}",
+      $"CanTryOn: {payload.CanTryOn}",
+      $"RequiresPersonImage: {payload.RequiresPersonImage}",
+      $"PendingTryOnRequirements: {JoinOrNone(payload.PendingTryOnRequirements)}",
+      $"Required next step: {requiredNextStep}"
+    });
+  }
+
+  private static string JoinOrNone(IEnumerable<string> values)
+  {
+    var list = values.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct().ToList();
+    return list.Count == 0 ? "none" : string.Join(", ", list);
+  }
+
+  private static string ValidateComposedText(string text, string fallbackText, ChatStructuredPayloadDto? payload)
+  {
+    if (payload is null)
+    {
+      return text;
+    }
+
+    var products = payload.Products
+      .Concat(payload.GarmentProducts ?? [])
+      .Concat(payload.AccessoryProducts ?? [])
+      .GroupBy(product => product.ProductId)
+      .Select(group => group.First())
+      .ToList();
+
+    if (products.Count > 0)
+    {
+      var allowedPrices = products.Select(product => product.Price.ToString("0")).ToHashSet(StringComparer.Ordinal);
+      foreach (System.Text.RegularExpressions.Match match in System.Text.RegularExpressions.Regex.Matches(text, @"\d[\d\.\,\s]*(?:đ|₫|vnd|VND)"))
+      {
+        var digits = new string(match.Value.Where(char.IsDigit).ToArray());
+        if (!allowedPrices.Contains(digits))
+        {
+          return fallbackText;
+        }
+      }
+
+      var allowedNames = products.Select(product => product.Name).Where(value => !string.IsNullOrWhiteSpace(value)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+      foreach (var knownName in KnownProductNames)
+      {
+        if (!allowedNames.Contains(knownName) && text.Contains(knownName, StringComparison.OrdinalIgnoreCase))
+        {
+          return fallbackText;
+        }
+      }
+    }
+
+    var normalized = ChatTextUtils.Normalize(text);
+    var missingPerson = payload.PendingTryOnRequirements.Contains("upload_person_image") || payload.RequiresPersonImage || !payload.CanTryOn;
+    if (missingPerson && (normalized.Contains("san sang thu") || normalized.Contains("co the thu ngay") || normalized.Contains("thu do ngay") || normalized.Contains("bam thu")))
+    {
+      return fallbackText;
+    }
+
+    if (payload.RequiresPersonImage && (normalized.Contains("khong can anh") || normalized.Contains("du anh nguoi")))
+    {
+      return fallbackText;
+    }
+
+    return text;
+  }
+
+  private static readonly string[] KnownProductNames =
+  [
+    "Áo dài lụa",
+    "Áo dài đỏ",
+    "Áo dài xanh",
+    "Áo dài tím",
+    "Khăn lụa",
+    "Băng đô",
+    "Kẹp tóc"
+  ];
 
   private static IReadOnlyList<GeminiPart> BuildParts(string prompt, IReadOnlyList<ImageReferenceDto>? referencedImages)
   {

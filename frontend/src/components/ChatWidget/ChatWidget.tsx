@@ -31,6 +31,7 @@ export default function ChatWidget() {
   const [submitting, setSubmitting] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
   const [pendingTryOnByThread, setPendingTryOnByThread] = useState<Record<number, ChatMessage>>({});
+  const [usedTryOnMessageByThread, setUsedTryOnMessageByThread] = useState<Record<number, number>>({});
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -145,7 +146,11 @@ export default function ChatWidget() {
 
   const renderMessages = activeMessages;
 
-  const canShowTryOnButton = latestTryOnPayload?.structuredPayload?.canTryOn && !isTryOnPending;
+  const hasUsedLatestTryOn = activeThread && latestTryOnPayload
+    ? usedTryOnMessageByThread[activeThread.id] === latestTryOnPayload.id
+    : false;
+
+  const canShowTryOnButton = latestTryOnPayload?.structuredPayload?.canTryOn && !isTryOnPending && !hasUsedLatestTryOn;
 
   const canSendMessage = !submitting;
 
@@ -159,6 +164,7 @@ export default function ChatWidget() {
   void isTryOnPending;
   void latestTryOnPayload;
   void activeMessages;
+  void hasUsedLatestTryOn;
 
   const handleCreateThread = async () => {
     streamAbortControllerRef.current?.abort();
@@ -300,6 +306,7 @@ export default function ChatWidget() {
     }
 
     const threadId = activeThread.id;
+    const sourceMessageId = latestTryOnPayload.id;
     const placeholderId = -Date.now();
     const placeholderMessage: ChatMessage = {
       id: placeholderId,
@@ -311,6 +318,7 @@ export default function ChatWidget() {
       structuredPayload: null,
     };
 
+    setUsedTryOnMessageByThread((current) => ({ ...current, [threadId]: sourceMessageId }));
     addPendingTryOnMessage(threadId, placeholderMessage);
     updateThreadSummaryEntry(threadId, placeholderMessage.content, placeholderMessage.createdAt);
 
@@ -331,6 +339,15 @@ export default function ChatWidget() {
       updateThreadSummaryEntry(threadId, message.content, message.createdAt);
     } catch {
       clearPendingTryOnMessage(threadId);
+      setUsedTryOnMessageByThread((current) => {
+        if (current[threadId] !== sourceMessageId) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next[threadId];
+        return next;
+      });
       const fallbackPreview = activeThread?.messages.at(-1)?.content ?? null;
       const fallbackUpdatedAt = activeThread?.updatedAt ?? placeholderMessage.createdAt;
       updateThreadSummaryEntry(threadId, fallbackPreview, fallbackUpdatedAt);

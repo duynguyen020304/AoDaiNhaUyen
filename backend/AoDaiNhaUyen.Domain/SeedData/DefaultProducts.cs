@@ -142,72 +142,72 @@ public static class DefaultProducts
     new SeedScenarioScore("du-tiec", 0.85m, "Tạo không khí thoải mái và gần gũi."),
     new SeedScenarioScore("giao-vien", 0.80m, "Thanh lịch nhưng không quá trang trọng.")
   ])),
-    CreateAoDai("Áo dài thêu hoa 6", "ao-dai-theu-hoa-6", "ao-dai-theu-hoa", "gam-theu", 4250000m, false, "Áo dài thêu hoa sen màu tím thẫm", "Áo dài lụa gam thêu cao cấp với hoa sen màu tím thẫm thêu thủ công phức tạp. Thiết kế cổ tròn truyền thống, tay áo dài, tà áo bay bổng với hoa sen tím thẫm thêu dọc theo đường may. Màu sắc sang trọng, hoa văn tinh xảo, chất liệu lụa đắt tiền, phù hợp cho các sự kiện trang trọng và tiệc tùng.", new SeedAiMetadata(
-  new[] { "theu-hoa-sen", "tim-tham", "co-tron", "tay-ao-dài", "gam-theu" },
-  "purple",
-  "white",
-  "high",
-  "Phù hợp cho các sự kiện trang trọng, tiệc tùng, tạo vẻ sang trọng và quyền lực.",
+    CreateAoDai("Áo dài thêu hoa 6", "ao-dai-theu-hoa-6", "ao-dai-theu-hoa", "gam-theu", 4250000m, false, "Áo dài thêu hoa tông vàng kem với họa tiết mềm mại", "Áo dài gam thêu tông vàng kem dịu với họa tiết thêu chạy dọc thân áo. Phom dáng thanh lịch, bề mặt vải sáng màu và chi tiết thêu tạo cảm giác trang nhã, phù hợp các dịp cần vẻ nữ tính và chỉn chu.", new SeedAiMetadata(
+  new[] { "vang-kem", "theu-hoa", "co-dien", "thanh-lich", "gam-theu" },
+  "yellow",
+  "ivory",
+  "medium",
+  "Hợp phong cách nền nã, nữ tính; dễ phối phụ kiện ngọc trai hoặc tông vàng nhạt để giữ tổng thể mềm và sang.",
   [
-    new SeedScenarioScore("du-tiec", 0.93m, "Màu tím thẫm tạo hiệu ứng đẳng cấp."),
-    new SeedScenarioScore("chup-anh", 0.90m, "Lên hình đẹp với background tối."),
-    new SeedScenarioScore("le-tet", 0.87m, "Tạo không khí trang trọng và nghiêm túc.")
+    new SeedScenarioScore("chup-anh", 0.90m, "Tông sáng và họa tiết thêu lên ảnh mềm, dễ nổi chi tiết."),
+    new SeedScenarioScore("du-tiec", 0.84m, "Trang nhã và chỉn chu hơn là rực rỡ, hợp tiệc nhẹ hoặc tiệc gia đình."),
+    new SeedScenarioScore("le-tet", 0.82m, "Sắc vàng kem tạo cảm giác dịu và thanh lịch cho dịp gặp mặt.")
   ])),
 
-    CreateAoDai("Áo dài truyền thống 1", "ao-dai-truyen-thong-1", "ao-dai-truyen-thong", "lua-to-tam", 3050000m, true, "Áo dài truyền thống màu đỏ thẫm với cổ tròn tinh tế", "Mẫu áo dài truyền thống với cổ tròn thanh lịch, đường cắt xẻ tà tinh tế. Vải lụa tơ tằm cao cấp với màu đỏ thẫm sang trọng, phù hợp cho các dịp lễ tết và sự kiện trang trọng, thể hiện vẻ đẹp truyền thống Việt Nam.", new SeedAiMetadata(
-  new[] { "do-tham", "co-tron", "truyen-thong", "sang-trong", "xẻ-ta" },
-  "red",
-  "gold",
-  "high",
-  "Phối cùng nón lá và hoa cầm tay, phù hợp dịp lễ tết truyền thống.",
-  [
-    new SeedScenarioScore("le-tet", 0.95m, "Màu đỏ thẫm tượng trưng sự may mắn dịp lễ tết."),
-    new SeedScenarioScore("chup-anh", 0.88m, "Nổi bật trong bối cảnh cổ điển."),
-    new SeedScenarioScore("giao-vien", 0.82m, "Trang trọng và chuẩn mực.")
-  ])),
-    CreateAoDai("Áo dài truyền thống 2", "ao-dai-truyen-thong-2", "ao-dai-truyen-thong", "lua-to-tam", 3150000m, true, "Áo dài truyền thống màu xanh ngọc với họa tiết hoa văn", "Mẫu áo dài truyền thống với cổ tròn và đường cắt xẻ tà thanh lịch. Vải lụa tơ tằm màu xanh ngọc tinh tế, thêu hoa văn tinh xảo ở phần thân áo, tạo vẻ ngoài thanh thoát và sang trọng, lý tưởng cho các buổi tiệc và chụp ảnh.", new SeedAiMetadata(
-  new[] { "xanh-ngoc", "co-tron", "truyen-thong", "thanh-thoat", "hoa-van" },
-  "blue",
-  "white",
-  "high",
-  "Phối cùng nón lá và hoa sen, tạo vẻ thanh lịch trong các sự kiện văn hóa.",
-  [
-    new SeedScenarioScore("chup-anh", 0.92m, "Màu xanh ngọc lên hình đẹp với background tự nhiên."),
-    new SeedScenarioScore("du-tiec", 0.85m, "Tạo không khí thư thái trong không gian tiệc."),
-    new SeedScenarioScore("giao-vien", 0.80m, "Thanh lịch và tinh tế.")
-  ])),
-    CreateAoDai("Áo dài truyền thống 4", "ao-dai-truyen-thong-4", "ao-dai-truyen-thong", "lua-to-tam", 3250000m, false, "Áo dài truyền thống màu tím nhạt với thêu hoa cúc", "Mẫu áo dài truyền thống với cổ tròn và đường cắt xẻ tà tinh tế. Vải lụa tơ tằm màu tím nhạt dịu dàng, thêu hoa cúc tinh xảo ở phần thân áo, tạo vẻ ngoài thanh lịch và sang trọng, phù hợp cho các buổi tiệc và chụp ảnh.", new SeedAiMetadata(
-  new[] { "tim-nhat", "co-tron", "truyen-thong", "dieu-dang", "hoa-cuc" },
-  "purple",
-  "white",
+    CreateAoDai("Áo dài truyền thống 1", "ao-dai-truyen-thong-1", "ao-dai-truyen-thong", "lua-to-tam", 3050000m, true, "Áo dài truyền thống tông kem nhạt với họa tiết mềm", "Mẫu áo dài truyền thống tông kem sáng, phom dáng kín đáo và nền nã. Bề mặt vải có điểm nhấn họa tiết nhẹ giúp tổng thể thanh lịch, phù hợp các dịp trang trọng ban ngày và chụp ảnh theo phong cách cổ điển.", new SeedAiMetadata(
+  new[] { "kem-nhat", "truyen-thong", "nen-na", "thanh-lich", "hoa-van-nhe" },
+  "ivory",
+  "beige",
   "medium",
-  "Phối cùng nón lá và hoa cúc, tạo vẻ dịu dàng trong các sự kiện lãng mạn.",
+  "Hợp phong cách dịu, chỉn chu; dễ phối phụ kiện ngọc trai hoặc tông nude để giữ vẻ trang nhã.",
   [
-    new SeedScenarioScore("chup-anh", 0.90m, "Màu tím nhạt lên hình rất đẹp với ánh sáng tự nhiên."),
-    new SeedScenarioScore("du-tiec", 0.85m, "Tạo không khí lãng mạn trong không gian tiệc."),
-    new SeedScenarioScore("giao-vien", 0.75m, "Thanh lịch nhưng vẫn giữ được vẻ nữ tính.")
+    new SeedScenarioScore("giao-vien", 0.90m, "Tông sáng nền nã tạo cảm giác chuẩn mực và thanh lịch."),
+    new SeedScenarioScore("chup-anh", 0.86m, "Nền kem lên ảnh nhẹ và hợp bối cảnh truyền thống."),
+    new SeedScenarioScore("du-tiec", 0.78m, "Phù hợp tiệc nhẹ hoặc sự kiện gia đình hơn là tiệc quá nổi bật.")
   ])),
-    CreateAoDai("Áo dài truyền thống 5", "ao-dai-truyen-thong-5", "ao-dai-truyen-thong", "lua-to-tam", 3350000m, false, "Áo dài truyền thống màu vàng óng với thêu kim tuyến", "Mẫu áo dài truyền thống với cổ tròn và đường cắt xẻ tà ấn tượng. Vải lụa tơ tằm màu vàng óng sang trọng, thêu kim tuyến lấp lánh tạo hiệu ứng thịnh soạn, phù hợp cho các sự kiện quan trọng và lễ hội.", new SeedAiMetadata(
-  new[] { "vang-ong", "co-tron", "truyen-thong", "thinh-son", "kim-tuyen" },
-  "yellow",
-  "gold",
-  "high",
-  "Phối cùng nón lá và hoa sen vàng, tạo vẻ thịnh soạn trong các sự kiện quan trọng.",
-  [
-    new SeedScenarioScore("du-tiec", 0.98m, "Màu vàng óng với kim tuyến lấp lánh tạo hiệu ứng đẳng cấp."),
-    new SeedScenarioScore("chup-anh", 0.92m, "Lên hình ấn tượng với background tối."),
-    new SeedScenarioScore("le-tet", 0.90m, "Tượng trưng cho sự may mắn và thịnh vượng.")
-  ])),
-    CreateAoDai("Áo dài truyền thống 6", "ao-dai-truyen-thong-6", "ao-dai-truyen-thong", "lua-to-tam", 3450000m, false, "Áo dài truyền thống màu xanh lam với thêu hoa sen", "Mẫu áo dài truyền thống với cổ tròn và đường cắt xẻ tà thanh lịch. Vải lụa tơ tằm màu xanh lam sâu, thêu hoa sen tinh xảo ở phần thân áo, tạo vẻ ngoài thanh thoát và sang trọng, lý tưởng cho các buổi tiệc và sự kiện văn hóa.", new SeedAiMetadata(
-  new[] { "xanh-lam", "co-tron", "truyen-thong", "thanh-thoat", "hoa-sen" },
+    CreateAoDai("Áo dài truyền thống 2", "ao-dai-truyen-thong-2", "ao-dai-truyen-thong", "lua-to-tam", 3150000m, true, "Áo dài truyền thống tông xanh lạnh với điểm nhấn thêu", "Mẫu áo dài truyền thống tông xanh lạnh, bề mặt có họa tiết thêu nổi bật hơn seed cũ. Tổng thể tạo cảm giác điềm tĩnh và trang nhã, phù hợp chụp ảnh, sự kiện văn hóa và các dịp cần vẻ thanh thoát.", new SeedAiMetadata(
+  new[] { "xanh-lanh", "truyen-thong", "theu-noi", "thanh-thoat", "trang-nha" },
   "blue",
-  "white",
-  "high",
-  "Phối cùng nón lá và hoa sen, tạo vẻ thanh lịch trong các sự kiện văn hóa.",
+  "ivory",
+  "medium",
+  "Hợp vóc dáng thanh mảnh, phối phụ kiện bạc hoặc ngọc trai để giữ tông mát và tinh tế.",
   [
-    new SeedScenarioScore("chup-anh", 0.95m, "Màu xanh lam lên hình rất đẹp với background tự nhiên."),
-    new SeedScenarioScore("du-tiec", 0.88m, "Tạo không khí thanh lịch trong không gian tiệc."),
-    new SeedScenarioScore("giao-vien", 0.82m, "Thanh lịch và tinh tế.")
+    new SeedScenarioScore("chup-anh", 0.91m, "Tông xanh lạnh và họa tiết nổi giúp ảnh có chiều sâu."),
+    new SeedScenarioScore("su-kien-van-hoa", 0.86m, "Giữ vẻ truyền thống nhưng không quá nặng nề."),
+    new SeedScenarioScore("giao-vien", 0.80m, "Thanh lịch và kín đáo, hợp môi trường cần sự chỉn chu.")
+  ])),
+    CreateAoDai("Áo dài truyền thống 4", "ao-dai-truyen-thong-4", "ao-dai-truyen-thong", "lua-to-tam", 3250000m, false, "Áo dài truyền thống tông xanh ngọc nhạt với nét dịu", "Mẫu áo dài truyền thống tông xanh ngọc nhạt, sắc độ mát và nhẹ hơn mô tả cũ. Tổng thể cho cảm giác dịu, thanh và nền nã, hợp chụp ảnh, dịp gặp mặt và các bối cảnh cần vẻ nữ tính nhưng vẫn kín đáo.", new SeedAiMetadata(
+  new[] { "xanh-ngoc-nhat", "truyen-thong", "diu-dang", "nen-na", "thanh-thoat" },
+  "green",
+  "ivory",
+  "medium",
+  "Hợp phong cách mềm và thanh; phối phụ kiện bạc, ngọc trai hoặc tông kem để giữ tổng thể nhẹ mắt.",
+  [
+    new SeedScenarioScore("chup-anh", 0.90m, "Tông xanh nhạt lên hình mềm và sạch màu."),
+    new SeedScenarioScore("giao-vien", 0.82m, "Nền nã và kín đáo, hợp bối cảnh cần sự chỉn chu."),
+    new SeedScenarioScore("du-tiec", 0.78m, "Hợp tiệc nhẹ và dịp gặp mặt hơn là tiệc quá nổi bật.")
+  ])),
+    CreateAoDai("Áo dài truyền thống 5", "ao-dai-truyen-thong-5", "ao-dai-truyen-thong", "lua-to-tam", 3350000m, false, "Áo dài truyền thống tông xanh đậm với cảm giác cổ điển", "Mẫu áo dài truyền thống tông xanh đậm, sắc độ trầm và đứng dáng hơn mô tả seed cũ. Tổng thể tạo cảm giác cổ điển, kín đáo và trang nhã, hợp chụp ảnh, dịp gặp mặt trang trọng và phối phụ kiện tông trung tính.", new SeedAiMetadata(
+  new[] { "xanh-dam", "truyen-thong", "co-dien", "trang-nha", "ton-tram" },
+  "blue",
+  "black",
+  "medium",
+  "Hợp phong cách chững chạc và nền nã; nên phối phụ kiện bạc, đen hoặc ngọc trai để giữ tổng thể trầm và sang.",
+  [
+    new SeedScenarioScore("chup-anh", 0.91m, "Tông xanh đậm tạo ảnh sâu màu và hợp bối cảnh cổ điển."),
+    new SeedScenarioScore("giao-vien", 0.86m, "Màu trầm và phom truyền thống tạo cảm giác chỉn chu, nghiêm túc."),
+    new SeedScenarioScore("du-tiec", 0.78m, "Hợp tiệc trang nhã hơn là kiểu nổi bật, rực rỡ.")
+  ])),
+    CreateAoDai("Áo dài truyền thống 6", "ao-dai-truyen-thong-6", "ao-dai-truyen-thong", "lua-to-tam", 3450000m, false, "Áo dài truyền thống tông vàng ấm với vẻ trang nhã", "Mẫu áo dài truyền thống tông vàng ấm, tổng thể sáng hơn và mềm hơn metadata cũ. Cảm giác thị giác thiên về thanh nhã, nền nã và dễ lên ảnh trong bối cảnh sáng hoặc ngoài trời.", new SeedAiMetadata(
+  new[] { "vang-am", "truyen-thong", "trang-nha", "nen-na", "tong-sang" },
+  "yellow",
+  "ivory",
+  "medium",
+  "Hợp phong cách thanh lịch, dễ phối phụ kiện vàng nhạt hoặc ngọc trai để giữ vẻ sáng và mềm.",
+  [
+    new SeedScenarioScore("chup-anh", 0.92m, "Tông vàng ấm nổi chi tiết tốt trong bối cảnh sáng."),
+    new SeedScenarioScore("le-tet", 0.84m, "Màu ấm tạo không khí tươi và trang nhã cho dịp gặp mặt."),
+    new SeedScenarioScore("du-tiec", 0.79m, "Hợp tiệc gia đình hoặc sự kiện nhẹ nhàng hơn là tiệc tối đậm chất dressy.")
   ])),
     CreateAoDai("Áo dài truyền thống nơ đỏ", "home-ao-dai-truyen-thong-node", "ao-dai-truyen-thong", "lua-to-tam", 3550000m, true, "Áo dài truyền thống màu đỏ với nơ ngực trang trí", "Mẫu áo dài truyền thống với cổ tròn và đường cắt xẻ tà tinh tế. Vải lụa tơ tằm màu đỏ rực rỡ, trang trí nơ ngực màu đỏ nổi bật, tạo vẻ ngoài quyền lực và sang trọng, phù hợp cho các sự kiện quan trọng và lễ hội.", new SeedAiMetadata(
   new[] { "do-ruc-ro", "co-tron", "truyen-thong", "quyen-luc", "no-trang-tri" },

@@ -166,7 +166,51 @@ public sealed class IntentClassifierTests
   }
 
   [Fact]
-  public async Task ClassifyAsync_DegradedFallbackDoesNotInferTryOnFromKeywords()
+  public void ParseResponse_ParsesFencedJson()
+  {
+    var result = IntentClassifier.ParseResponse(CreateGeminiResponseText("```json\n{\"intent\":\"catalog_lookup\"}\n```"), new ThreadMemoryStateDto(), false);
+
+    Assert.NotNull(result);
+    Assert.Equal("catalog_lookup", result!.Intent);
+  }
+
+  [Fact]
+  public void ParseResponse_ParsesJsonWithProseAroundIt()
+  {
+    var result = IntentClassifier.ParseResponse(CreateGeminiResponseText("Đây nhé {\"intent\":\"product_description\"} xong"), new ThreadMemoryStateDto(), false);
+
+    Assert.NotNull(result);
+    Assert.Equal("product_description", result!.Intent);
+  }
+
+  [Fact]
+  public void ParseResponse_UsesFirstBalancedJsonObject()
+  {
+    var result = IntentClassifier.ParseResponse(CreateGeminiResponseText("{\"intent\":\"clarification\"} {\"intent\":\"catalog_lookup\"}"), new ThreadMemoryStateDto(), false);
+
+    Assert.NotNull(result);
+    Assert.Equal("clarification", result!.Intent);
+  }
+
+  [Fact]
+  public void ParseResponse_IgnoresBracesInsideStrings()
+  {
+    var result = IntentClassifier.ParseResponse(CreateGeminiResponseText("{\"intent\":\"clarification\",\"stylistBrief\":\"giữ {tone}\"}"), new ThreadMemoryStateDto(), false);
+
+    Assert.NotNull(result);
+    Assert.Equal("giữ {tone}", result!.StylistBrief);
+  }
+
+  [Fact]
+  public void ParseResponse_ReturnsNullForIncompleteJsonObject()
+  {
+    var result = IntentClassifier.ParseResponse(CreateGeminiResponseText("{\"intent\":\"catalog_lookup\""), new ThreadMemoryStateDto(), false);
+
+    Assert.Null(result);
+  }
+
+  [Fact]
+  public async Task ClassifyAsync_DegradedFallbackInfersTryOnWhenPrerequisitesExist()
   {
     var classifier = new IntentClassifier(
       new HttpClient(new UnusedHttpMessageHandler()),
@@ -174,7 +218,9 @@ public sealed class IntentClassifierTests
 
     var memory = new ThreadMemoryStateDto
     {
-      ImageCatalog = [new ImageCatalogEntry(11, "user_image", "Ảnh 1", null)]
+      ImageCatalog = [new ImageCatalogEntry(11, "user_image", "Ảnh 1", null)],
+      SelectedGarmentProductId = 101,
+      LatestPersonAttachmentId = 11
     };
 
     var result = await classifier.ClassifyAsync(
@@ -185,8 +231,8 @@ public sealed class IntentClassifierTests
       null,
       CancellationToken.None);
 
-    Assert.Equal("clarification", result.Intent);
-    Assert.Null(result.ReferencedImageHint);
+    Assert.Equal("tryon_execute", result.Intent);
+    Assert.Equal("last", result.ReferencedImageHint);
   }
 
   [Fact]
@@ -240,7 +286,7 @@ public sealed class IntentClassifierTests
   }
 
   [Fact]
-  public async Task ClassifyAsync_DegradedFallbackDoesNotInferImageAnalysisFromKeywords()
+  public async Task ClassifyAsync_DegradedFallbackInfersImageAnalysisFromCatalogReference()
   {
     var classifier = new IntentClassifier(
       new HttpClient(new UnusedHttpMessageHandler()),
@@ -259,8 +305,8 @@ public sealed class IntentClassifierTests
       null,
       CancellationToken.None);
 
-    Assert.Equal("clarification", result.Intent);
-    Assert.Null(result.ReferencedImageHint);
+    Assert.Equal("image_style_analysis", result.Intent);
+    Assert.Equal("first", result.ReferencedImageHint);
   }
 
   [Fact]
@@ -443,6 +489,24 @@ public sealed class IntentClassifierTests
     Assert.DoesNotContain("Nếu user nói 'mẫu này'", prompt);
     Assert.DoesNotContain("Nếu user hỏi 'đi cặp như thế nào'", prompt);
   }
+
+  private static string CreateGeminiResponseText(string plannerJson) =>
+    JsonSerializer.Serialize(new
+    {
+      candidates = new[]
+      {
+        new
+        {
+          content = new
+          {
+            parts = new[]
+            {
+              new { text = plannerJson }
+            }
+          }
+        }
+      }
+    });
 
   private static HttpResponseMessage CreateGeminiResponse(string plannerJson) =>
     new(HttpStatusCode.OK)

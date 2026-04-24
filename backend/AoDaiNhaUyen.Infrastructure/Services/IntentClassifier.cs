@@ -97,9 +97,15 @@ public sealed class IntentClassifier(
       return null;
     }
 
+    var plannerJson = ExtractFirstBalancedJsonObject(json);
+    if (string.IsNullOrWhiteSpace(plannerJson))
+    {
+      return null;
+    }
+
     try
     {
-      var planner = JsonSerializer.Deserialize<PlannerOutput>(json, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+      var planner = JsonSerializer.Deserialize<PlannerOutput>(plannerJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
       if (planner is null)
       {
         return null;
@@ -444,6 +450,33 @@ public sealed class IntentClassifier(
       return CreateOutOfScopeIntent(scenario, budgetCeiling, colorFamily, materialKeyword, productType, hasImageAttachments);
     }
 
+    if (hasImageAttachments && !IsTryOnIntent(normalized) && !IsCatalogLookupIntent(normalized) && !IsNaturalCatalogNeedIntent(normalized))
+    {
+      return CreateImageAnalysisIntent(scenario, budgetCeiling, colorFamily, materialKeyword, productType, hasImageAttachments) with { ReferencedImageHint = "last" };
+    }
+
+    if (IsImageReferenceFollowUp(normalized) && !IsTryOnIntent(normalized))
+    {
+      return memory.ImageCatalog.Count > 0
+        ? CreateImageAnalysisIntent(scenario, budgetCeiling, colorFamily, materialKeyword, productType, hasImageAttachments) with { ReferencedImageHint = InferReferencedImageHint(normalized, memory) }
+        : CreateClarificationIntent(scenario, budgetCeiling, colorFamily, materialKeyword, productType, hasImageAttachments);
+    }
+
+    if (IsTryOnIntent(normalized))
+    {
+      var hasGarment = memory.SelectedGarmentProductId.HasValue || memory.ShortlistedProductIds.Count > 0 || memory.GarmentShortlistedProductIds.Count > 0;
+      if (!hasGarment)
+      {
+        return CreateClarificationIntent(scenario, budgetCeiling, colorFamily, materialKeyword, productType, hasImageAttachments);
+      }
+
+      return CreateTryOnIntent(scenario, budgetCeiling, colorFamily, materialKeyword, hasImageAttachments, memory) with
+      {
+        Intent = memory.LatestPersonAttachmentId.HasValue || hasImageAttachments ? "tryon_execute" : "tryon_prepare",
+        ReferencedImageHint = InferReferencedImageHint(normalized, memory)
+      };
+    }
+
     if (IsCatalogLookupIntent(normalized) || IsNaturalCatalogNeedIntent(normalized))
     {
       return CreateCatalogLookupIntent(scenario, budgetCeiling, colorFamily, materialKeyword, productType, hasImageAttachments);
@@ -655,7 +688,77 @@ public sealed class IntentClassifier(
     return null;
   }
 
+
+  private static string? ExtractFirstBalancedJsonObject(string text)
+  {
+    var trimmed = text.Trim();
+    if (trimmed.StartsWith("```", StringComparison.Ordinal))
+    {
+      var firstLineEnd = trimmed.IndexOf('\n');
+      if (firstLineEnd >= 0)
+      {
+        trimmed = trimmed[(firstLineEnd + 1)..].Trim();
+      }
+
+      if (trimmed.EndsWith("```", StringComparison.Ordinal))
+      {
+        trimmed = trimmed[..^3].Trim();
+      }
+    }
+
+    var start = trimmed.IndexOf('{');
+    if (start < 0)
+    {
+      return null;
+    }
+
+    var depth = 0;
+    var inString = false;
+    var escaped = false;
+    for (var i = start; i < trimmed.Length; i++)
+    {
+      var current = trimmed[i];
+      if (inString)
+      {
+        if (escaped)
+        {
+          escaped = false;
+        }
+        else if (current == '\\')
+        {
+          escaped = true;
+        }
+        else if (current == '"')
+        {
+          inString = false;
+        }
+        continue;
+      }
+
+      if (current == '"')
+      {
+        inString = true;
+        continue;
+      }
+
+      if (current == '{')
+      {
+        depth++;
+      }
+      else if (current == '}')
+      {
+        depth--;
+        if (depth == 0)
+        {
+          return trimmed[start..(i + 1)];
+        }
+      }
+    }
+
+    return null;
+  }
   private sealed record PlannerOutput(
+
     string? Intent,
     string? Scenario,
     decimal? BudgetCeiling,

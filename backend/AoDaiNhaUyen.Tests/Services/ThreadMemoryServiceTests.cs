@@ -171,6 +171,57 @@ public sealed class ThreadMemoryServiceTests
   }
 
   [Fact]
+  public void ApplyUserConversationTurn_CapsSummaryAndKeepsNewestContent()
+  {
+    var memory = new ThreadMemoryStateDto();
+
+    for (var i = 0; i < 40; i++)
+    {
+      service.ApplyUserConversationTurn(memory, $"tin nhắn người dùng {i} {new string('x', 120)}");
+    }
+
+    Assert.True(memory.UserConversationSummary!.Length <= 3000);
+    Assert.Contains("tin nhắn người dùng 39", string.Join("\n", memory.RecentUserMessages));
+    Assert.Contains("tin nhắn người dùng 19", memory.UserConversationSummary);
+    Assert.DoesNotContain("tin nhắn người dùng 20", memory.UserConversationSummary);
+    Assert.Equal(20, memory.RecentUserMessages.Count);
+    Assert.Equal("tin nhắn người dùng 20 " + new string('x', 120), memory.RecentUserMessages[0]);
+  }
+
+  [Fact]
+  public void ApplyAssistantTurn_CapsSummaryAndKeepsNewestContent()
+  {
+    var memory = new ThreadMemoryStateDto();
+    var classification = new IntentClassificationDto("clarification", null, null, null, null, null, [], false);
+
+    for (var i = 0; i < 40; i++)
+    {
+      service.ApplyAssistantTurn(memory, classification, null, null, null, $"tin nhắn assistant {i} {new string('y', 120)}");
+    }
+
+    Assert.True(memory.AssistantConversationSummary!.Length <= 3000);
+    Assert.Contains("tin nhắn assistant 39", string.Join("\n", memory.RecentAssistantMessages));
+    Assert.Contains("tin nhắn assistant 19", memory.AssistantConversationSummary);
+    Assert.DoesNotContain("tin nhắn assistant 20", memory.AssistantConversationSummary);
+    Assert.Equal(20, memory.RecentAssistantMessages.Count);
+    Assert.Equal("tin nhắn assistant 20 " + new string('y', 120), memory.RecentAssistantMessages[0]);
+  }
+
+  [Fact]
+  public void ApplyUserConversationTurn_LeavesShortSummaryUnchanged()
+  {
+    var memory = new ThreadMemoryStateDto();
+
+    for (var i = 0; i < 21; i++)
+    {
+      service.ApplyUserConversationTurn(memory, $"short {i}");
+    }
+
+    Assert.Equal("1. short 0\n2. short 1\n3. short 2\n4. short 3\n5. short 4\n6. short 5\n7. short 6\n8. short 7\n9. short 8\n10. short 9\n11. short 10\n12. short 11\n13. short 12\n14. short 13\n15. short 14\n16. short 15\n17. short 16\n18. short 17\n19. short 18\n20. short 19", memory.UserConversationSummary);
+    Assert.Equal(["short 20"], memory.RecentUserMessages);
+  }
+
+  [Fact]
   public void Persist_RoundTripsExtendedTurnState()
   {
     var thread = new ChatThread { Id = 9 };

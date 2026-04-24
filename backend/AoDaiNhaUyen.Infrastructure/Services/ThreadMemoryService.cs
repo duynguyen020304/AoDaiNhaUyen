@@ -7,6 +7,7 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 
 public sealed class ThreadMemoryService : IThreadMemoryService
 {
+  private const int MaxConversationSummaryChars = 3000;
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
   public ThreadMemoryStateDto Read(ChatThreadMemory? memory)
@@ -111,10 +112,10 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     }
 
     memory.RecentUserMessages.Add(userMessage.Trim());
-    if (memory.RecentUserMessages.Count > 10)
+    if (memory.RecentUserMessages.Count > 20)
     {
-      memory.UserConversationSummary = AppendSummary(memory.UserConversationSummary, memory.RecentUserMessages.Take(10).ToList());
-      memory.RecentUserMessages = memory.RecentUserMessages.Skip(10).ToList();
+      memory.UserConversationSummary = AppendSummary(memory.UserConversationSummary, memory.RecentUserMessages.Take(20).ToList());
+      memory.RecentUserMessages = memory.RecentUserMessages.Skip(20).ToList();
     }
   }
 
@@ -248,10 +249,10 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     if (!string.IsNullOrWhiteSpace(assistantMessage))
     {
       memory.RecentAssistantMessages.Add(assistantMessage.Trim());
-      if (memory.RecentAssistantMessages.Count > 10)
+      if (memory.RecentAssistantMessages.Count > 20)
       {
-        memory.AssistantConversationSummary = AppendSummary(memory.AssistantConversationSummary, memory.RecentAssistantMessages.Take(10).ToList());
-        memory.RecentAssistantMessages = memory.RecentAssistantMessages.Skip(10).ToList();
+        memory.AssistantConversationSummary = AppendSummary(memory.AssistantConversationSummary, memory.RecentAssistantMessages.Take(20).ToList());
+        memory.RecentAssistantMessages = memory.RecentAssistantMessages.Skip(20).ToList();
       }
     }
   }
@@ -350,9 +351,13 @@ public sealed class ThreadMemoryService : IThreadMemoryService
   private static string AppendSummary(string? existingSummary, IReadOnlyList<string> messages)
   {
     var summary = string.Join("\n", messages.Select((message, index) => $"{index + 1}. {message}"));
-    return string.IsNullOrWhiteSpace(existingSummary)
+    var combined = string.IsNullOrWhiteSpace(existingSummary)
       ? summary
       : string.Concat(existingSummary, "\n", summary);
+
+    return combined.Length <= MaxConversationSummaryChars
+      ? combined
+      : combined[^MaxConversationSummaryChars..];
   }
 
   private static string? BuildOutfitSignature(long selectedGarmentProductId, IReadOnlyList<long> selectedAccessoryProductIds)

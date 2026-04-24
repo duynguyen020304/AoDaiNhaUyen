@@ -39,7 +39,7 @@ public sealed class VertexAiStylistResponseComposerTests
       null,
       CancellationToken.None).ToListAsync();
 
-    Assert.Equal(["Xin ", "chào"], chunks);
+    Assert.Equal(["Xin chào"], chunks);
     Assert.Contains(":streamGenerateContent?alt=sse", handler.Requests[0].RequestUri?.ToString());
   }
 
@@ -128,6 +128,66 @@ public sealed class VertexAiStylistResponseComposerTests
   }
 
   [Fact]
+  public async Task ComposeAsync_FallsBack_WhenModelInventsPrice()
+  {
+    var handler = new StubHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
+    {
+      Content = new StringContent("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Áo dài lụa giá 9.999.000đ\"}]}}]}", Encoding.UTF8, "application/json")
+    });
+    var composer = CreateComposer(handler);
+
+    var result = await composer.ComposeAsync("tư vấn", "fallback", "catalog_lookup", null, CreatePayload(), null, null, null, null, CancellationToken.None);
+
+    Assert.Equal("fallback", result);
+  }
+
+  [Fact]
+  public async Task ComposeAsync_FallsBack_WhenTryOnReadyContradictsPendingPersonImage()
+  {
+    var handler = new StubHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
+    {
+      Content = new StringContent("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Mẫu này sẵn sàng thử ngay\"}]}}]}", Encoding.UTF8, "application/json")
+    });
+    var composer = CreateComposer(handler);
+
+    var result = await composer.ComposeAsync("tư vấn", "fallback", "tryon_prepare", null, CreatePayload(requiresPersonImage: true), null, null, null, null, CancellationToken.None);
+
+    Assert.Equal("fallback", result);
+  }
+
+  [Fact]
+  public async Task ComposeAsync_AcceptsValidPayloadFacts()
+  {
+    var handler = new StubHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
+    {
+      Content = new StringContent("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Áo dài lụa hợp nhu cầu, giá 1200000đ. Bạn gửi thêm ảnh người mặc nhé.\"}]}}]}", Encoding.UTF8, "application/json")
+    });
+    var composer = CreateComposer(handler);
+
+    var result = await composer.ComposeAsync("tư vấn", "fallback", "catalog_lookup", null, CreatePayload(requiresPersonImage: true), null, null, null, null, CancellationToken.None);
+
+    Assert.Contains("Áo dài lụa", result);
+  }
+
+  [Fact]
+  public async Task ComposeAsync_IncludesFactContractInPrompt()
+  {
+    var handler = new StubHttpMessageHandler(new HttpResponseMessage(HttpStatusCode.OK)
+    {
+      Content = new StringContent("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"fallback\"}]}}]}", Encoding.UTF8, "application/json")
+    });
+    var composer = CreateComposer(handler);
+
+    await composer.ComposeAsync("tư vấn", "fallback", "catalog_lookup", null, CreatePayload(), null, null, null, null, CancellationToken.None);
+
+    var body = await handler.Requests[0].Content!.ReadAsStringAsync();
+    using var document = JsonDocument.Parse(body);
+    var prompt = document.RootElement.GetProperty("contents")[0].GetProperty("parts")[0].GetProperty("text").GetString();
+    Assert.Contains("Fact contract:", prompt);
+    Assert.Contains("Allowed product names: Áo dài lụa", prompt);
+  }
+
+  [Fact]
   public void PickStylePromptVariant_ReturnsKnownVariant()
   {
     var variant = VertexAiStylistResponseComposer.PickStylePromptVariant();
@@ -160,6 +220,17 @@ public sealed class VertexAiStylistResponseComposerTests
       }
     });
   }
+
+  private static AoDaiNhaUyen.Application.DTOs.ChatStructuredPayloadDto CreatePayload(bool requiresPersonImage = false) =>
+    new(
+      "catalog_results",
+      null,
+      !requiresPersonImage,
+      requiresPersonImage,
+      101,
+      [],
+      requiresPersonImage ? ["upload_person_image"] : [],
+      [new AoDaiNhaUyen.Application.DTOs.ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Hợp.")]);
 
   private static VertexAiStylistResponseComposer CreateComposer(HttpMessageHandler handler)
   {
