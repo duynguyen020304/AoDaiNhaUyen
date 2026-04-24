@@ -1,17 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { sectionReveal, fadeUp, viewportOnce } from '../../utils/motion';
 import { convertToSupportedFormat } from '../../utils/imageConversion';
+import { useAuth } from '../../auth/useAuth';
 import AccessoryPanel from './AccessoryPanel';
 import ClothingPanel from './ClothingPanel';
 import ResultPanel from './ResultPanel';
 import ImageDropZone from './ImageDropZone';
 import { getAiTryOnCatalog, submitAiTryOn, type AiTryOnCatalogItem } from '../../api/aiTryon';
+import { addCartItem } from '../../api/cart';
 import styles from './AiTryonPage.module.css';
 
 type UserPhotoSource = 'file' | 'paste';
 
 export default function AiTryonPage() {
+  const navigate = useNavigate();
+  const { status } = useAuth();
   const [garments, setGarments] = useState<AiTryOnCatalogItem[]>([]);
   const [accessories, setAccessories] = useState<AiTryOnCatalogItem[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -25,6 +30,8 @@ export default function AiTryonPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [tryonResult, setTryonResult] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [tryonError, setTryonError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -74,6 +81,8 @@ export default function AiTryonPage() {
     setUserPhotoSource('file');
     setTryonResult(null);
     setTryonError(null);
+    setSelectedAccessories([]);
+    setSelectedGarment(null);
   }, []);
 
   const handlePastePhoto = useCallback((file: File) => {
@@ -94,12 +103,32 @@ export default function AiTryonPage() {
     setUserPhotoSource('paste');
     setTryonResult(null);
     setTryonError(null);
+    setSelectedAccessories([]);
+    setSelectedGarment(null);
   }, []);
 
   const handleToggleAccessory = useCallback((id: number) => {
-    setSelectedAccessories((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
-    );
+    setSelectedAccessories((prev) => {
+      if (prev.includes(id)) {
+        setTryonError(null);
+        return prev.filter((a) => a !== id);
+      }
+
+      if (prev.length >= 3) {
+        setTryonError('Bạn chỉ có thể chọn tối đa 3 phụ kiện cho mỗi lần thử đồ.');
+        return prev;
+      }
+
+      setTryonError(null);
+      return [...prev, id];
+    });
+    setTryonResult(null);
+  }, []);
+
+  const handleSelectGarment = useCallback((id: number) => {
+    setSelectedGarment(id);
+    setTryonResult(null);
+    setTryonError(null);
   }, []);
 
   const handleTryonClick = useCallback(async () => {
@@ -130,6 +159,50 @@ export default function AiTryonPage() {
       setIsProcessing(false);
     }
   }, [garments, selectedAccessories, selectedGarment, userPhotoFile]);
+
+  const handleBuyNowClick = useCallback(async () => {
+    if (!tryonResult || !selectedGarment) return;
+
+    if (status === 'loading') {
+      setTryonError('Hệ thống đang kiểm tra phiên đăng nhập. Vui lòng thử lại sau giây lát.');
+      return;
+    }
+
+    if (status === 'anonymous') {
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    const selectedItems = [
+      garments.find((item) => item.productId === selectedGarment),
+      ...selectedAccessories
+        .map((productId) => accessories.find((item) => item.productId === productId)),
+    ].filter((item): item is AiTryOnCatalogItem => Boolean(item));
+
+    const purchasableItems = selectedItems.filter(
+      (item) => typeof item.defaultVariantId === 'number',
+    );
+
+    if (purchasableItems.length === 0) {
+      setTryonError('Các sản phẩm đã chọn chưa có phiên bản để thêm vào giỏ hàng.');
+      return;
+    }
+
+    setIsPurchasing(true);
+    setTryonError(null);
+
+    try {
+      for (const item of purchasableItems) {
+        await addCartItem({ variantId: item.defaultVariantId as number, quantity: 1 });
+      }
+
+      navigate('/cart');
+    } catch (error) {
+      setTryonError(error instanceof Error ? error.message : 'Không thể thêm sản phẩm vào giỏ hàng.');
+    } finally {
+      setIsPurchasing(false);
+    }
+  }, [accessories, garments, navigate, selectedAccessories, selectedGarment, status, tryonResult]);
 
   return (
     <main
@@ -193,21 +266,25 @@ export default function AiTryonPage() {
             />
           </div>
 
-          {/* Clothing selection */}
-          <ClothingPanel
-            selectedCategory={selectedCategory}
-            selectedGarment={selectedGarment}
-            garments={garments}
-            onCategoryChange={setSelectedCategory}
-            onSelectGarment={setSelectedGarment}
-          />
+          {userPhoto ? (
+            <>
+              {/* Clothing selection */}
+              <ClothingPanel
+                selectedCategory={selectedCategory}
+                selectedGarment={selectedGarment}
+                garments={garments}
+                onCategoryChange={setSelectedCategory}
+                onSelectGarment={handleSelectGarment}
+              />
 
-          {/* Accessories selection */}
-          <AccessoryPanel
-            accessories={accessories}
-            selectedAccessories={selectedAccessories}
-            onToggleAccessory={handleToggleAccessory}
-          />
+              {/* Accessories selection */}
+              <AccessoryPanel
+                accessories={accessories}
+                selectedAccessories={selectedAccessories}
+                onToggleAccessory={handleToggleAccessory}
+              />
+            </>
+          ) : null}
         </motion.div>
 
         {/* Right column: Results */}
@@ -217,11 +294,53 @@ export default function AiTryonPage() {
             selectedGarment={selectedGarment ? String(selectedGarment) : null}
             canTryOn={!catalogLoading && !!userPhotoFile && !!selectedGarment}
             isProcessing={catalogLoading || isProcessing}
+            isPurchasing={isPurchasing}
             errorMessage={tryonError}
             onTryonClick={handleTryonClick}
+            onBuyNowClick={handleBuyNowClick}
           />
         </motion.div>
       </motion.section>
+
+      {showLoginPrompt ? (
+        <div
+          className={styles.loginPromptOverlay}
+          role="presentation"
+          onClick={() => setShowLoginPrompt(false)}
+        >
+          <motion.div
+            className={styles.loginPrompt}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ai-tryon-login-title"
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.18 }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="ai-tryon-login-title">Bạn có muốn đăng nhập không?</h2>
+            <p>
+              Đăng nhập để thêm các sản phẩm đã chọn vào giỏ hàng và tiếp tục thanh toán.
+            </p>
+            <div className={styles.loginPromptActions}>
+              <button
+                type="button"
+                className={styles.loginPromptSecondary}
+                onClick={() => setShowLoginPrompt(false)}
+              >
+                Để sau
+              </button>
+              <button
+                type="button"
+                className={styles.loginPromptPrimary}
+                onClick={() => navigate('/login', { state: { from: '/ai-tryon' } })}
+              >
+                Đăng nhập
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      ) : null}
     </main>
   );
 }

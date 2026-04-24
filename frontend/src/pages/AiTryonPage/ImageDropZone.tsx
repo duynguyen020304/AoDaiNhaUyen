@@ -59,19 +59,31 @@ export default function ImageDropZone({
     return (
       <>
         <div className={styles.compact}>
-          <span
-            className={styles.fileName}
-            onClick={() => setPreviewOpen(true)}
-          >
-            {fileName}
-          </span>
-          <button
-            type="button"
-            className={styles.changeBtn}
-            onClick={() => inputRef.current?.click()}
-          >
-            Thay đổi
-          </button>
+          {photoUrl ? (
+            <button
+              type="button"
+              className={styles.previewButton}
+              onClick={() => setPreviewOpen(true)}
+              aria-label="Xem trước ảnh đã tải lên"
+            >
+              <img src={photoUrl} alt="Ảnh đã tải lên" />
+            </button>
+          ) : null}
+          <div className={styles.compactInfo}>
+            <span
+              className={styles.fileName}
+              onClick={() => setPreviewOpen(true)}
+            >
+              {fileName}
+            </span>
+            <button
+              type="button"
+              className={styles.changeBtn}
+              onClick={() => inputRef.current?.click()}
+            >
+              Thay đổi
+            </button>
+          </div>
           <input
             ref={inputRef}
             type="file"
