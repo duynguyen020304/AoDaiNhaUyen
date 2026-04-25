@@ -32,13 +32,24 @@ public sealed class VertexAiImageValidationService(
     };
     httpRequest.Headers.Add("x-goog-api-key", googleCloudOptions.ApiKey);
 
-    using var response = await httpClient.SendAsync(httpRequest, timeoutCts.Token);
-    var responseBody = await response.Content.ReadAsStringAsync(timeoutCts.Token);
+    HttpResponseMessage response;
+    string responseBody;
+    try
+    {
+      response = await httpClient.SendAsync(httpRequest, timeoutCts.Token);
+      responseBody = await response.Content.ReadAsStringAsync(timeoutCts.Token);
+    }
+    catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+    {
+      throw new ImageValidationProviderException($"Vertex AI image validation timed out. {exception.Message}");
+    }
 
-    if (!response.IsSuccessStatusCode)
+    using var responseMessage = response;
+
+    if (!responseMessage.IsSuccessStatusCode)
     {
       throw new ImageValidationProviderException(
-        $"Vertex AI image validation returned {(int)response.StatusCode}. {GetProviderErrorMessage(responseBody)}");
+        $"Vertex AI image validation returned {(int)responseMessage.StatusCode}. {GetProviderErrorMessage(responseBody)}");
     }
 
     var text = ExtractText(responseBody);

@@ -114,7 +114,7 @@ public sealed class CatalogTryOnServiceTests
     return new AppDbContext(options);
   }
 
-  private sealed class StubImageValidationService(ImageValidationResultDto result) : IImageValidationService
+  private sealed class StubImageValidationService(ImageValidationResultDto result) : ICachedImageValidationService
   {
     public byte[]? LastBytes { get; private set; }
     public string? LastMimeType { get; private set; }
@@ -122,6 +122,7 @@ public sealed class CatalogTryOnServiceTests
     public Task<ImageValidationResultDto> ValidatePersonImageAsync(
       byte[] imageBytes,
       string mimeType,
+      string? fileName = null,
       CancellationToken cancellationToken = default)
     {
       LastBytes = imageBytes;

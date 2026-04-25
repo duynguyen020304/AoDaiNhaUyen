@@ -9,7 +9,7 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 public sealed class CatalogTryOnService(
   AppDbContext dbContext,
   IAiTryOnService aiTryOnService,
-  IImageValidationService imageValidationService,
+  ICachedImageValidationService imageValidationService,
   IHttpClientFactory httpClientFactory,
   IUploadStoragePathResolver uploadStoragePathResolver) : ICatalogTryOnService
 {
@@ -56,6 +56,7 @@ public sealed class CatalogTryOnService(
     var validation = await imageValidationService.ValidatePersonImageAsync(
       request.PersonImageBytes,
       request.PersonImageMimeType,
+      null,
       cancellationToken);
 
     if (!validation.IsValid)

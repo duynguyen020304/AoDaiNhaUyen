@@ -35,6 +35,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<Payment> Payments => Set<Payment>();
   public DbSet<Shipment> Shipments => Set<Shipment>();
   public DbSet<Review> Reviews => Set<Review>();
+  public DbSet<ImageValidationCacheEntry> ImageValidationCacheEntries => Set<ImageValidationCacheEntry>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
@@ -525,6 +526,28 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
       builder.HasOne(x => x.OrderItem).WithMany().HasForeignKey(x => x.OrderItemId).OnDelete(DeleteBehavior.SetNull);
       builder.ToTable(t => t.HasCheckConstraint("ck_reviews_rating", "rating BETWEEN 1 AND 5"));
+    });
+
+    modelBuilder.Entity<ImageValidationCacheEntry>(builder =>
+    {
+      builder.ToTable("image_validation_cache_entries");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Sha256Hash).HasMaxLength(64).IsRequired();
+      builder.Property(x => x.MimeType).HasMaxLength(100).IsRequired();
+      builder.Property(x => x.FileSizeBytes).IsRequired();
+      builder.Property(x => x.Width).IsRequired();
+      builder.Property(x => x.Height).IsRequired();
+      builder.Property(x => x.IsValid).IsRequired();
+      builder.Property(x => x.Reason).HasMaxLength(500).IsRequired();
+      builder.Property(x => x.Category).HasMaxLength(80);
+      builder.Property(x => x.Confidence).HasColumnType("numeric(5,4)");
+      builder.Property(x => x.Provider).HasMaxLength(80).IsRequired();
+      builder.Property(x => x.Model).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.ExpiresAt).IsRequired();
+      builder.Property(x => x.LastUsedAt);
+      builder.HasIndex(x => x.Sha256Hash).IsUnique();
+      builder.HasIndex(x => x.ExpiresAt).HasDatabaseName("idx_image_validation_cache_entries_expires_at");
     });
 
     ApplySnakeCaseColumnNames(modelBuilder);

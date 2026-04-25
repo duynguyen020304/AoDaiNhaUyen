@@ -135,6 +135,12 @@ public static class ServiceRegistration
       httpClient.Timeout = Timeout.InfiniteTimeSpan;
     });
     services.Configure<GoogleCloudOptions>(configuration.GetSection("GoogleCloud"));
+    services
+      .AddOptions<ImageValidationOptions>()
+      .Bind(configuration.GetSection(ImageValidationOptions.SectionName))
+      .ValidateDataAnnotations()
+      .ValidateOnStart();
+    services.AddScoped<ICachedImageValidationService, CachedImageValidationService>();
     services.AddHttpClient<IImageValidationService, VertexAiImageValidationService>(httpClient =>
     {
       httpClient.Timeout = Timeout.InfiniteTimeSpan;
