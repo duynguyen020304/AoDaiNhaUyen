@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './auth/AuthContext';
 import { ToastProvider } from './components/Toast/ToastContext';
+import { registerServiceWorker } from './utils/serviceWorkerCache';
 import './styles/global.css';
 
 createRoot(document.getElementById('root')!).render(
@@ -17,3 +18,5 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 );
+
+registerServiceWorker();
