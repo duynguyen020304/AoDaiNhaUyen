@@ -80,6 +80,20 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
         "missing_tryon_asset",
         ex.Message));
     }
+    catch (ImageValidationConfigurationException ex)
+    {
+      return StatusCode(StatusCodes.Status503ServiceUnavailable, ApiResponseFactory.Failure(
+        "Dịch vụ kiểm tra ảnh chưa được cấu hình",
+        "image_validation_not_configured",
+        ex.Message));
+    }
+    catch (ImageValidationProviderException)
+    {
+      return StatusCode(StatusCodes.Status502BadGateway, ApiResponseFactory.Failure(
+        "Không thể kiểm tra ảnh thử đồ",
+        "image_validation_failed",
+        "Không thể kiểm tra ảnh thử đồ lúc này. Vui lòng thử lại sau."));
+    }
     catch (AiTryOnConfigurationException ex)
     {
       return StatusCode(StatusCodes.Status503ServiceUnavailable, ApiResponseFactory.Failure(

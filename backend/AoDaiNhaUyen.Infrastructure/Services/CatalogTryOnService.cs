@@ -9,6 +9,7 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 public sealed class CatalogTryOnService(
   AppDbContext dbContext,
   IAiTryOnService aiTryOnService,
+  IImageValidationService imageValidationService,
   IHttpClientFactory httpClientFactory,
   IUploadStoragePathResolver uploadStoragePathResolver) : ICatalogTryOnService
 {
@@ -52,6 +53,16 @@ public sealed class CatalogTryOnService(
     CatalogAiTryOnRequestDto request,
     CancellationToken cancellationToken = default)
   {
+    var validation = await imageValidationService.ValidatePersonImageAsync(
+      request.PersonImageBytes,
+      request.PersonImageMimeType,
+      cancellationToken);
+
+    if (!validation.IsValid)
+    {
+      throw new InvalidOperationException(validation.Reason);
+    }
+
     var garmentSelection = await ResolveGarmentSelectionAsync(request, cancellationToken);
     var accessorySelections = request.AccessoryProductIds.Count > 0
       ? await ResolveAccessorySelectionsAsync(request.AccessoryProductIds, cancellationToken)

@@ -48,9 +48,11 @@ public sealed class CatalogTryOnServiceTests
     await dbContext.SaveChangesAsync();
 
     var aiTryOnService = new CapturingAiTryOnService();
+    var imageValidationService = new StubImageValidationService(new ImageValidationResultDto(true, "Ảnh phù hợp để thử đồ.", "valid_person", 0.95m));
     var service = new CatalogTryOnService(
       dbContext,
       aiTryOnService,
+      imageValidationService,
       new StubHttpClientFactory(),
       new UploadStoragePathResolver(uploadRoot.Path));
 
@@ -67,8 +69,41 @@ public sealed class CatalogTryOnServiceTests
         []),
       CancellationToken.None);
 
+    Assert.Equal([1, 2, 3], imageValidationService.LastBytes);
+    Assert.Equal("image/png", imageValidationService.LastMimeType);
     Assert.Equal([9, 8, 7, 6], aiTryOnService.LastRequest!.GarmentImageBytes);
     Assert.Equal("ao-dai-thu-do", aiTryOnService.LastRequest.GarmentId);
+  }
+
+  [Fact]
+  public async Task CreateAsync_InvalidPersonImage_ThrowsAndDoesNotGenerate()
+  {
+    await using var dbContext = CreateDbContext();
+    using var uploadRoot = new TemporaryDirectory();
+
+    var aiTryOnService = new CapturingAiTryOnService();
+    var service = new CatalogTryOnService(
+      dbContext,
+      aiTryOnService,
+      new StubImageValidationService(new ImageValidationResultDto(false, "Ảnh không có người phù hợp để thử đồ.", "object_only", 0.9m)),
+      new StubHttpClientFactory(),
+      new UploadStoragePathResolver(uploadRoot.Path));
+
+    var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(
+      new CatalogAiTryOnRequestDto(
+        null,
+        [1, 2, 3],
+        "image/png",
+        123,
+        null,
+        [],
+        null,
+        null,
+        []),
+      CancellationToken.None));
+
+    Assert.Equal("Ảnh không có người phù hợp để thử đồ.", exception.Message);
+    Assert.Null(aiTryOnService.LastRequest);
   }
 
   private static AppDbContext CreateDbContext()
@@ -77,6 +112,22 @@ public sealed class CatalogTryOnServiceTests
       .UseInMemoryDatabase($"catalog-tryon-{Guid.NewGuid():N}")
       .Options;
     return new AppDbContext(options);
+  }
+
+  private sealed class StubImageValidationService(ImageValidationResultDto result) : IImageValidationService
+  {
+    public byte[]? LastBytes { get; private set; }
+    public string? LastMimeType { get; private set; }
+
+    public Task<ImageValidationResultDto> ValidatePersonImageAsync(
+      byte[] imageBytes,
+      string mimeType,
+      CancellationToken cancellationToken = default)
+    {
+      LastBytes = imageBytes;
+      LastMimeType = mimeType;
+      return Task.FromResult(result);
+    }
   }
 
   private sealed class CapturingAiTryOnService : IAiTryOnService

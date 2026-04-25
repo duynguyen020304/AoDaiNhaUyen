@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs;
+using AoDaiNhaUyen.Application.Exceptions;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -192,6 +193,20 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     catch (InvalidOperationException ex)
     {
       return BadRequest(ApiResponseFactory.Failure("Không thể tạo ảnh thử đồ", "chat_tryon_failed", ex.Message));
+    }
+    catch (ImageValidationConfigurationException ex)
+    {
+      return StatusCode(StatusCodes.Status503ServiceUnavailable, ApiResponseFactory.Failure(
+        "Dịch vụ kiểm tra ảnh chưa được cấu hình",
+        "image_validation_not_configured",
+        ex.Message));
+    }
+    catch (ImageValidationProviderException)
+    {
+      return StatusCode(StatusCodes.Status502BadGateway, ApiResponseFactory.Failure(
+        "Không thể kiểm tra ảnh thử đồ",
+        "image_validation_failed",
+        "Không thể kiểm tra ảnh thử đồ lúc này. Vui lòng thử lại sau."));
     }
   }
 
