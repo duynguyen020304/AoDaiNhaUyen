@@ -11,9 +11,15 @@ interface CategoryTabsProps {
   categories: GarmentCategory[];
   selected: string;
   onChange: (key: string) => void;
+  layoutId?: string;
 }
 
-export default function CategoryTabs({ categories, selected, onChange }: CategoryTabsProps) {
+export default function CategoryTabs({
+  categories,
+  selected,
+  onChange,
+  layoutId = 'ai-category-pill',
+}: CategoryTabsProps) {
   return (
     <motion.div className={styles.tabs} variants={staggerContainer} initial="hidden" animate="show">
       {categories.map((cat) => (
@@ -27,7 +33,7 @@ export default function CategoryTabs({ categories, selected, onChange }: Categor
           whileTap={{ scale: 0.97 }}
         >
           {cat.key === selected && (
-            <motion.span className={styles.activePill} layoutId="ai-category-pill" />
+            <motion.span className={styles.activePill} layoutId={layoutId} />
           )}
           <span className={styles.label}>{cat.label}</span>
         </motion.button>

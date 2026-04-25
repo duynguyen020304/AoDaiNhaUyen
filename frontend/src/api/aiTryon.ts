@@ -12,8 +12,23 @@ export interface AiTryOnCatalogItem {
 }
 
 export interface AiTryOnCatalogResponse {
-  garments: AiTryOnCatalogItem[];
-  accessories: AiTryOnCatalogItem[];
+  garments: AiTryOnCatalogPage;
+  accessories: AiTryOnCatalogPage;
+  garmentCategories: AiTryOnCatalogCategory[];
+  accessoryCategories: AiTryOnCatalogCategory[];
+}
+
+export interface AiTryOnCatalogPage {
+  items: AiTryOnCatalogItem[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface AiTryOnCatalogCategory {
+  key: string;
+  label: string;
 }
 
 export interface AiTryOnResponse {
@@ -28,8 +43,30 @@ interface SubmitAiTryOnParams {
   accessoryProductIds?: number[];
 }
 
-export function getAiTryOnCatalog(): Promise<AiTryOnCatalogResponse> {
-  return request<AiTryOnCatalogResponse>('/api/v1/ai-tryon/catalog');
+interface GetAiTryOnCatalogParams {
+  garmentPage?: number;
+  accessoryPage?: number;
+  pageSize?: number;
+  garmentCategory?: string;
+  accessoryCategory?: string;
+}
+
+export function getAiTryOnCatalog({
+  garmentPage = 1,
+  accessoryPage = 1,
+  pageSize = 6,
+  garmentCategory = 'all',
+  accessoryCategory = 'all',
+}: GetAiTryOnCatalogParams = {}): Promise<AiTryOnCatalogResponse> {
+  const params = new URLSearchParams({
+    garmentPage: String(garmentPage),
+    accessoryPage: String(accessoryPage),
+    pageSize: String(pageSize),
+    garmentCategory,
+    accessoryCategory,
+  });
+
+  return request<AiTryOnCatalogResponse>(`/api/v1/ai-tryon/catalog?${params}`);
 }
 
 export function submitAiTryOn({

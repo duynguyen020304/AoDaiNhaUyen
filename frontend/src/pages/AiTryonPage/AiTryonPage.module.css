@@ -2,7 +2,6 @@
   min-height: 100vh;
   background: var(--ai-page-bg);
   color: var(--ink);
-  padding-top: 80px;
 }
 
 /* Hero Section */
@@ -64,6 +63,15 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.resultCol {
+  min-width: 0;
+}
+
+.resultSticky {
+  position: sticky;
+  top: 96px;
 }
 
 .card {
@@ -189,6 +197,10 @@
 @media (max-width: 1100px) {
   .mainSection {
     grid-template-columns: 1fr;
+  }
+
+  .resultSticky {
+    position: static;
   }
 }
 
