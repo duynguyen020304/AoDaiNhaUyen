@@ -4,7 +4,9 @@ namespace AoDaiNhaUyen.Application.Interfaces.Services;
 
 public interface ICatalogTryOnService
 {
-  Task<AiTryOnCatalogDto> GetCatalogAsync(CancellationToken cancellationToken = default);
+  Task<AiTryOnCatalogDto> GetCatalogAsync(
+    AiTryOnCatalogQueryDto query,
+    CancellationToken cancellationToken = default);
 
   Task<AiTryOnResultDto> CreateAsync(
     CatalogAiTryOnRequestDto request,

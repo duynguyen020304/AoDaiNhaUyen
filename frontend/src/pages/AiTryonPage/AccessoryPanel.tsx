@@ -1,18 +1,30 @@
 import { motion } from 'framer-motion';
 import { listStagger, fadeUp } from '../../utils/motion';
-import type { AiTryOnCatalogItem } from '../../api/aiTryon';
+import CategoryTabs from './CategoryTabs';
+import PaginationControls from './PaginationControls';
+import type { AiTryOnCatalogCategory, AiTryOnCatalogItem, AiTryOnCatalogPage } from '../../api/aiTryon';
 import { resolveAssetUrl } from '../../api/client';
 import styles from './AccessoryPanel.module.css';
 
 interface AccessoryPanelProps {
   accessories: AiTryOnCatalogItem[];
+  accessoryPage: AiTryOnCatalogPage;
+  categories: AiTryOnCatalogCategory[];
+  selectedCategory: string;
   selectedAccessories: number[];
-  onToggleAccessory: (id: number) => void;
+  onCategoryChange: (key: string) => void;
+  onPageChange: (page: number) => void;
+  onToggleAccessory: (item: AiTryOnCatalogItem) => void;
 }
 
 export default function AccessoryPanel({
   accessories,
+  accessoryPage,
+  categories,
+  selectedCategory,
   selectedAccessories,
+  onCategoryChange,
+  onPageChange,
   onToggleAccessory,
 }: AccessoryPanelProps) {
   return (
@@ -22,11 +34,19 @@ export default function AccessoryPanel({
         <h2>CHỌN PHỤ KIỆN</h2>
       </div>
 
+      <CategoryTabs
+        categories={categories}
+        selected={selectedCategory}
+        onChange={onCategoryChange}
+        layoutId="ai-accessory-category-pill"
+      />
+
       <motion.div
         className={styles.grid}
         variants={listStagger}
         initial="hidden"
         animate="show"
+        key={`${selectedCategory}-${accessoryPage.page}`}
       >
         {accessories.map((item) => {
           const isSelected = selectedAccessories.includes(item.productId);
@@ -35,7 +55,7 @@ export default function AccessoryPanel({
               key={item.productId}
               className={`${styles.card} ${isSelected ? styles.selected : ''}`}
               type="button"
-              onClick={() => onToggleAccessory(item.productId)}
+              onClick={() => onToggleAccessory(item)}
               variants={fadeUp}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.97 }}
@@ -49,6 +69,14 @@ export default function AccessoryPanel({
           );
         })}
       </motion.div>
+
+      <PaginationControls
+        page={accessoryPage.page}
+        pageSize={accessoryPage.pageSize}
+        totalItems={accessoryPage.totalItems}
+        totalPages={accessoryPage.totalPages}
+        onPageChange={onPageChange}
+      />
     </div>
   );
 }

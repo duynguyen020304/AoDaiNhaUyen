@@ -1211,8 +1211,14 @@ public sealed class StylistChatServiceTests
       this.result = result ?? new AiTryOnResultDto("data:image/png;base64,AQID", "image/png");
     }
 
-    public Task<AiTryOnCatalogDto> GetCatalogAsync(CancellationToken cancellationToken = default) =>
-      Task.FromResult(new AiTryOnCatalogDto([], []));
+    public Task<AiTryOnCatalogDto> GetCatalogAsync(
+      AiTryOnCatalogQueryDto query,
+      CancellationToken cancellationToken = default) =>
+      Task.FromResult(new AiTryOnCatalogDto(
+        new AiTryOnCatalogPageDto([], 1, 6, 0, 1),
+        new AiTryOnCatalogPageDto([], 1, 6, 0, 1),
+        [],
+        []));
 
     public Task<AiTryOnResultDto> CreateAsync(
       CatalogAiTryOnRequestDto request,

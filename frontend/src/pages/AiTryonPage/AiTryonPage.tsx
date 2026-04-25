@@ -8,17 +8,42 @@ import AccessoryPanel from './AccessoryPanel';
 import ClothingPanel from './ClothingPanel';
 import ResultPanel from './ResultPanel';
 import ImageDropZone from './ImageDropZone';
-import { getAiTryOnCatalog, submitAiTryOn, type AiTryOnCatalogItem } from '../../api/aiTryon';
+import {
+  getAiTryOnCatalog,
+  submitAiTryOn,
+  type AiTryOnCatalogCategory,
+  type AiTryOnCatalogItem,
+  type AiTryOnCatalogPage,
+} from '../../api/aiTryon';
 import { addCartItem } from '../../api/cart';
 import styles from './AiTryonPage.module.css';
 
 type UserPhotoSource = 'file' | 'paste';
+const CATALOG_PAGE_SIZE = 6;
+const EMPTY_CATALOG_PAGE: AiTryOnCatalogPage = {
+  items: [],
+  page: 1,
+  pageSize: CATALOG_PAGE_SIZE,
+  totalItems: 0,
+  totalPages: 1,
+};
+const DEFAULT_GARMENT_CATEGORIES: AiTryOnCatalogCategory[] = [
+  { key: 'all', label: 'Tất cả' },
+  { key: 'bestseller', label: 'Bestseller' },
+];
+const DEFAULT_ACCESSORY_CATEGORIES: AiTryOnCatalogCategory[] = [
+  { key: 'all', label: 'Tất cả' },
+];
 
 export default function AiTryonPage() {
   const navigate = useNavigate();
   const { status } = useAuth();
   const [garments, setGarments] = useState<AiTryOnCatalogItem[]>([]);
   const [accessories, setAccessories] = useState<AiTryOnCatalogItem[]>([]);
+  const [garmentPage, setGarmentPage] = useState<AiTryOnCatalogPage>(EMPTY_CATALOG_PAGE);
+  const [accessoryPage, setAccessoryPage] = useState<AiTryOnCatalogPage>(EMPTY_CATALOG_PAGE);
+  const [garmentCategories, setGarmentCategories] = useState<AiTryOnCatalogCategory[]>(DEFAULT_GARMENT_CATEGORIES);
+  const [accessoryCategories, setAccessoryCategories] = useState<AiTryOnCatalogCategory[]>(DEFAULT_ACCESSORY_CATEGORIES);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
@@ -26,8 +51,13 @@ export default function AiTryonPage() {
   const [userFileName, setUserFileName] = useState<string | null>(null);
   const [userPhotoSource, setUserPhotoSource] = useState<UserPhotoSource>('file');
   const [selectedAccessories, setSelectedAccessories] = useState<number[]>([]);
+  const [selectedAccessoryItems, setSelectedAccessoryItems] = useState<Record<number, AiTryOnCatalogItem>>({});
   const [selectedGarment, setSelectedGarment] = useState<number | null>(null);
+  const [selectedGarmentItem, setSelectedGarmentItem] = useState<AiTryOnCatalogItem | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedAccessoryCategory, setSelectedAccessoryCategory] = useState('all');
+  const [garmentPageNumber, setGarmentPageNumber] = useState(1);
+  const [accessoryPageNumber, setAccessoryPageNumber] = useState(1);
   const [tryonResult, setTryonResult] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -48,10 +78,20 @@ export default function AiTryonPage() {
       setCatalogError(null);
 
       try {
-        const result = await getAiTryOnCatalog();
+        const result = await getAiTryOnCatalog({
+          garmentPage: garmentPageNumber,
+          accessoryPage: accessoryPageNumber,
+          pageSize: CATALOG_PAGE_SIZE,
+          garmentCategory: selectedCategory,
+          accessoryCategory: selectedAccessoryCategory,
+        });
         if (!ignore) {
-          setGarments(result.garments);
-          setAccessories(result.accessories);
+          setGarments(result.garments.items);
+          setAccessories(result.accessories.items);
+          setGarmentPage(result.garments);
+          setAccessoryPage(result.accessories);
+          setGarmentCategories(result.garmentCategories);
+          setAccessoryCategories(result.accessoryCategories);
         }
       } catch (error) {
         if (!ignore) {
@@ -69,7 +109,7 @@ export default function AiTryonPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [accessoryPageNumber, garmentPageNumber, selectedAccessoryCategory, selectedCategory]);
 
   const handleUploadPhoto = useCallback((file: File) => {
     setUserPhoto((prev) => {
@@ -82,7 +122,9 @@ export default function AiTryonPage() {
     setTryonResult(null);
     setTryonError(null);
     setSelectedAccessories([]);
+    setSelectedAccessoryItems({});
     setSelectedGarment(null);
+    setSelectedGarmentItem(null);
   }, []);
 
   const handlePastePhoto = useCallback((file: File) => {
@@ -104,13 +146,21 @@ export default function AiTryonPage() {
     setTryonResult(null);
     setTryonError(null);
     setSelectedAccessories([]);
+    setSelectedAccessoryItems({});
     setSelectedGarment(null);
+    setSelectedGarmentItem(null);
   }, []);
 
-  const handleToggleAccessory = useCallback((id: number) => {
+  const handleToggleAccessory = useCallback((item: AiTryOnCatalogItem) => {
+    const id = item.productId;
     setSelectedAccessories((prev) => {
       if (prev.includes(id)) {
         setTryonError(null);
+        setSelectedAccessoryItems((current) => {
+          const next = { ...current };
+          delete next[id];
+          return next;
+        });
         return prev.filter((a) => a !== id);
       }
 
@@ -120,21 +170,36 @@ export default function AiTryonPage() {
       }
 
       setTryonError(null);
+      setSelectedAccessoryItems((current) => ({
+        ...current,
+        [id]: item,
+      }));
       return [...prev, id];
     });
     setTryonResult(null);
   }, []);
 
-  const handleSelectGarment = useCallback((id: number) => {
-    setSelectedGarment(id);
+  const handleSelectGarment = useCallback((item: AiTryOnCatalogItem) => {
+    setSelectedGarment(item.productId);
+    setSelectedGarmentItem(item);
     setTryonResult(null);
     setTryonError(null);
+  }, []);
+
+  const handleGarmentCategoryChange = useCallback((category: string) => {
+    setSelectedCategory(category);
+    setGarmentPageNumber(1);
+  }, []);
+
+  const handleAccessoryCategoryChange = useCallback((category: string) => {
+    setSelectedAccessoryCategory(category);
+    setAccessoryPageNumber(1);
   }, []);
 
   const handleTryonClick = useCallback(async () => {
     if (!userPhotoFile || !selectedGarment) return;
 
-    const garment = garments.find((item) => item.productId === selectedGarment);
+    const garment = selectedGarmentItem;
     if (!garment) {
       setTryonError('Không tìm thấy trang phục đã chọn.');
       return;
@@ -158,7 +223,7 @@ export default function AiTryonPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [garments, selectedAccessories, selectedGarment, userPhotoFile]);
+  }, [selectedAccessories, selectedGarment, selectedGarmentItem, userPhotoFile]);
 
   const handleBuyNowClick = useCallback(async () => {
     if (!tryonResult || !selectedGarment) return;
@@ -174,9 +239,9 @@ export default function AiTryonPage() {
     }
 
     const selectedItems = [
-      garments.find((item) => item.productId === selectedGarment),
+      selectedGarmentItem,
       ...selectedAccessories
-        .map((productId) => accessories.find((item) => item.productId === productId)),
+        .map((productId) => selectedAccessoryItems[productId]),
     ].filter((item): item is AiTryOnCatalogItem => Boolean(item));
 
     const purchasableItems = selectedItems.filter(
@@ -202,7 +267,15 @@ export default function AiTryonPage() {
     } finally {
       setIsPurchasing(false);
     }
-  }, [accessories, garments, navigate, selectedAccessories, selectedGarment, status, tryonResult]);
+  }, [
+    navigate,
+    selectedAccessories,
+    selectedAccessoryItems,
+    selectedGarment,
+    selectedGarmentItem,
+    status,
+    tryonResult,
+  ]);
 
   return (
     <main
@@ -273,14 +346,22 @@ export default function AiTryonPage() {
                 selectedCategory={selectedCategory}
                 selectedGarment={selectedGarment}
                 garments={garments}
-                onCategoryChange={setSelectedCategory}
+                garmentPage={garmentPage}
+                categories={garmentCategories}
+                onCategoryChange={handleGarmentCategoryChange}
+                onPageChange={setGarmentPageNumber}
                 onSelectGarment={handleSelectGarment}
               />
 
               {/* Accessories selection */}
               <AccessoryPanel
                 accessories={accessories}
+                accessoryPage={accessoryPage}
+                categories={accessoryCategories}
+                selectedCategory={selectedAccessoryCategory}
                 selectedAccessories={selectedAccessories}
+                onCategoryChange={handleAccessoryCategoryChange}
+                onPageChange={setAccessoryPageNumber}
                 onToggleAccessory={handleToggleAccessory}
               />
             </>
@@ -288,17 +369,19 @@ export default function AiTryonPage() {
         </motion.div>
 
         {/* Right column: Results */}
-        <motion.div variants={fadeUp}>
-          <ResultPanel
-            tryonResult={tryonResult}
-            selectedGarment={selectedGarment ? String(selectedGarment) : null}
-            canTryOn={!catalogLoading && !!userPhotoFile && !!selectedGarment}
-            isProcessing={catalogLoading || isProcessing}
-            isPurchasing={isPurchasing}
-            errorMessage={tryonError}
-            onTryonClick={handleTryonClick}
-            onBuyNowClick={handleBuyNowClick}
-          />
+        <motion.div variants={fadeUp} className={styles.resultCol}>
+          <div className={!tryonResult ? styles.resultSticky : undefined}>
+            <ResultPanel
+              tryonResult={tryonResult}
+              selectedGarment={selectedGarment ? String(selectedGarment) : null}
+              canTryOn={!catalogLoading && !!userPhotoFile && !!selectedGarment}
+              isProcessing={catalogLoading || isProcessing}
+              isPurchasing={isPurchasing}
+              errorMessage={tryonError}
+              onTryonClick={handleTryonClick}
+              onBuyNowClick={handleBuyNowClick}
+            />
+          </div>
         </motion.div>
       </motion.section>
 
