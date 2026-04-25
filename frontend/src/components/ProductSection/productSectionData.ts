@@ -13,6 +13,75 @@ export type ProductSectionSlide = {
   detailLines: string[];
 };
 
+export type ProductSectionNote = {
+  id: string;
+  label: string;
+  title: string;
+  lines: string[];
+  hotspotX: string;
+  hotspotY: string;
+  calloutX: string;
+  calloutY: string;
+  calloutObjectPosition: string;
+  calloutScale: number;
+  connectorLength: string;
+  connectorAngle: string;
+};
+
+export const productSectionNotes: ProductSectionNote[] = [
+  {
+    id: 'embroidered-detail',
+    label: 'Xem chi tiết họa tiết thêu',
+    title: 'Họa tiết thêu',
+    lines: [
+      'Các mảng thêu được đặt theo chiều dọc thân áo để kéo dài dáng người và giữ nhịp nhìn mềm mại trên nền vải.',
+      'Độ tương phản vừa phải giúp chi tiết nổi lên khi nhìn gần nhưng vẫn giữ tổng thể thanh lịch trong khung carousel.',
+    ],
+    hotspotX: '14%',
+    hotspotY: '18%',
+    calloutX: '-34%',
+    calloutY: '20%',
+    calloutObjectPosition: '48% 12%',
+    calloutScale: 2.5,
+    connectorLength: '132px',
+    connectorAngle: '6deg',
+  },
+  {
+    id: 'bodice-form',
+    label: 'Xem chi tiết phom áo',
+    title: 'Phom áo',
+    lines: [
+      'Phần thân áo tập trung vào đường cắt gọn và tỷ lệ ôm vừa phải để tôn dáng nhưng vẫn giữ được sự kín đáo.',
+      'Chất liệu có độ rủ mềm giúp bề mặt áo ít gãy nếp, tạo cảm giác thanh thoát khi người mẫu di chuyển.',
+    ],
+    hotspotX: '50%',
+    hotspotY: '31%',
+    calloutX: '72%',
+    calloutY: '38%',
+    calloutObjectPosition: '50% 35%',
+    calloutScale: 2.7,
+    connectorLength: '112px',
+    connectorAngle: '198deg',
+  },
+  {
+    id: 'handbag-detail',
+    label: 'Xem chi tiết phụ kiện cầm tay',
+    title: 'Phụ kiện cầm tay',
+    lines: [
+      'Túi hoặc hoa cầm tay được dùng như điểm nhấn ở nửa dưới khung hình, giúp cân bằng dáng đứng và màu sắc trang phục.',
+      'Các chi tiết xếp nếp, quai vòng hoặc chất liệu sáng màu tạo thêm nhịp hiện đại cho tổng thể áo dài.',
+    ],
+    hotspotX: '18%',
+    hotspotY: '64%',
+    calloutX: '-38%',
+    calloutY: '63%',
+    calloutObjectPosition: '45% 64%',
+    calloutScale: 2.8,
+    connectorLength: '154px',
+    connectorAngle: '-4deg',
+  },
+];
+
 export const productSectionSlides: ProductSectionSlide[] = [
   {
     id: 'white-floral',
