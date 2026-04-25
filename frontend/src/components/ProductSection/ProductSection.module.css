@@ -178,6 +178,16 @@
   font-weight: 700;
 }
 
+.noteList {
+  display: grid;
+  gap: 12px;
+  margin: 4px 0 0;
+  padding-left: 20px;
+  font-size: 16px;
+  line-height: 1.62;
+  font-weight: 700;
+}
+
 .heroColumn {
   position: relative;
   min-height: 920px;
@@ -199,7 +209,7 @@
   min-height: 70vh;
   height: 792px;
   margin: 0 auto;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--gold);
   border-radius: 0 0 208px 208px;
   background: #7c1411;
@@ -217,11 +227,141 @@
   object-fit: cover;
   object-position: center;
   opacity: 0.92;
+  border-radius: inherit;
 }
 
 .heroImage {
   object-fit: cover;
   object-position: center top;
+  border-radius: inherit;
+}
+
+.hotspotLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.hotspotButton {
+  position: absolute;
+  left: var(--hotspot-x);
+  top: var(--hotspot-y);
+  display: grid;
+  place-items: center;
+  width: 86px;
+  height: 86px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+}
+
+.hotspotButton::before,
+.hotspotButton::after,
+.hotspotButton span {
+  position: absolute;
+  border-radius: 50%;
+  content: "";
+}
+
+.hotspotButton::before {
+  inset: 20px;
+  border: 8px solid rgba(255, 255, 255, 0.96);
+  background: rgba(156, 12, 12, 0.34);
+  box-shadow:
+    0 0 0 1px rgba(255, 212, 0, 0.48),
+    0 8px 18px rgba(0, 0, 0, 0.24);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease;
+}
+
+.hotspotButton::after {
+  inset: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  opacity: 0;
+  transform: scale(0.74);
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease;
+}
+
+.hotspotButton span {
+  inset: 34px;
+  background: #fffaf0;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.58);
+}
+
+.hotspotButton:hover::before,
+.hotspotButton:focus-visible::before,
+.hotspotActive::before {
+  background: rgba(255, 212, 0, 0.16);
+  box-shadow:
+    0 0 0 2px rgba(255, 212, 0, 0.68),
+    0 0 26px rgba(255, 250, 240, 0.42),
+    0 12px 22px rgba(0, 0, 0, 0.28);
+  transform: scale(1.08);
+}
+
+.hotspotButton:hover::after,
+.hotspotButton:focus-visible::after,
+.hotspotActive::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.hotspotButton:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.noteCallout {
+  position: absolute;
+  left: var(--callout-x);
+  top: var(--callout-y);
+  z-index: 5;
+  width: 242px;
+  height: 242px;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+.noteLens {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.88);
+  border-radius: 50%;
+  background: #fff7e2;
+  box-shadow:
+    inset 0 0 0 7px rgba(115, 7, 7, 0.82),
+    0 16px 34px rgba(0, 0, 0, 0.32);
+}
+
+.noteLens img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--callout-object-position);
+}
+
+.noteConnector {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: -1;
+  width: var(--connector-length);
+  height: 2px;
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  transform: rotate(var(--connector-angle));
+  transform-origin: left center;
 }
 
 .arrowLeft,
@@ -384,7 +524,7 @@
   grid-template-columns: 54px minmax(0, 1fr) 54px;
   align-items: center;
   gap: 8px;
-  width: min(100%, 600px);
+  width: min(80%, 600px);
   margin: 26px auto 0;
 }
 
@@ -536,6 +676,16 @@
   height: 62px;
 }
 
+.coinInner .coin {
+  width: 44px;
+  height: 44px;
+}
+
+.coinCenter .coin {
+  width: 62px;
+  height: 62px;
+}
+
 .coinActive .coin {
   opacity: 1;
   box-shadow:
@@ -679,8 +829,36 @@
   }
 
   .detailLine,
-  .detailLabel {
+  .detailLabel,
+  .noteList {
     font-size: 15px;
+  }
+
+  .hotspotButton {
+    width: 64px;
+    height: 64px;
+  }
+
+  .hotspotButton::before {
+    inset: 15px;
+    border-width: 6px;
+  }
+
+  .hotspotButton::after {
+    inset: 10px;
+  }
+
+  .hotspotButton span {
+    inset: 25px;
+  }
+
+  .noteCallout {
+    width: 150px;
+    height: 150px;
+  }
+
+  .noteConnector {
+    transform: rotate(var(--connector-angle)) scaleX(0.6);
   }
 
   .archFrame {
@@ -739,6 +917,11 @@
     height: 13px;
   }
 
+  .hotspotLayer,
+  .noteCallout {
+    display: none;
+  }
+
   .coinRow {
     gap: 8px;
   }
@@ -755,6 +938,16 @@
   }
 
   .coinButton:nth-child(3) .coin {
+    width: 46px;
+    height: 46px;
+  }
+
+  .coinInner .coin {
+    width: 32px;
+    height: 32px;
+  }
+
+  .coinCenter .coin {
     width: 46px;
     height: 46px;
   }
