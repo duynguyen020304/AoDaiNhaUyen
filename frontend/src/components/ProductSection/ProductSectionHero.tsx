@@ -24,6 +24,8 @@ export default function ProductSectionHero({
   prefersReducedMotion,
   slide,
 }: ProductSectionHeroProps) {
+  const activeNoteImage = activeNote ? slide.spotImages[activeNote.id] ?? slide.heroImage : null;
+
   return (
     <motion.div className={styles.heroColumn} variants={fadeScale}>
       <motion.img
@@ -39,7 +41,7 @@ export default function ProductSectionHero({
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
 
-      <div className={styles.archFrame}>
+      <div className={styles.archFrame} onMouseLeave={() => onNoteChange(null)}>
         <img className={styles.archBackdrop} src="/assets/dress-panel.png" alt="" aria-hidden="true" />
 
         <AnimatePresence mode="wait">
@@ -57,54 +59,64 @@ export default function ProductSectionHero({
 
         <div className={styles.hotspotLayer} aria-label="Chi tiết thiết kế">
           {notes.map((note) => (
-            <button
-              key={note.id}
-              type="button"
-              className={`${styles.hotspotButton} ${activeNote?.id === note.id ? styles.hotspotActive : ''}`}
-              style={
-                {
-                  '--hotspot-x': note.hotspotX,
-                  '--hotspot-y': note.hotspotY,
-                } as CSSProperties
-              }
-              aria-label={note.label}
-              aria-pressed={activeNote?.id === note.id}
-              onBlur={() => onNoteChange(null)}
-              onFocus={() => onNoteChange(note)}
-              onMouseEnter={() => onNoteChange(note)}
-              onMouseLeave={() => onNoteChange(null)}
-            >
-              <span aria-hidden="true" />
-            </button>
+            (() => {
+              const placement = slide.notePlacements[note.id] ?? note;
+
+              return (
+                <button
+                  key={note.id}
+                  type="button"
+                  className={`${styles.hotspotButton} ${activeNote?.id === note.id ? styles.hotspotActive : ''}`}
+                  style={
+                    {
+                      '--hotspot-x': placement.hotspotX,
+                      '--hotspot-y': placement.hotspotY,
+                    } as CSSProperties
+                  }
+                  aria-label={note.label}
+                  aria-pressed={activeNote?.id === note.id}
+                  onBlur={() => onNoteChange(null)}
+                  onFocus={() => onNoteChange(note)}
+                  onMouseEnter={() => onNoteChange(note)}
+                >
+                  <span aria-hidden="true" />
+                </button>
+              );
+            })()
           ))}
         </div>
 
         <AnimatePresence>
           {activeNote ? (
-            <motion.div
-              key={activeNote.id}
-              className={styles.noteCallout}
-              style={
-                {
-                  '--callout-x': activeNote.calloutX,
-                  '--callout-y': activeNote.calloutY,
-                  '--callout-object-position': activeNote.calloutObjectPosition,
-                  '--callout-scale': activeNote.calloutScale,
-                  '--connector-length': activeNote.connectorLength,
-                  '--connector-angle': activeNote.connectorAngle,
-                } as CSSProperties
-              }
-              initial={{ opacity: 0, scale: 0.84 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.24, ease: easeOutQuart }}
-              aria-hidden="true"
-            >
-              <span className={styles.noteConnector} />
-              <span className={styles.noteLens}>
-                <img src={slide.heroImage} alt="" />
-              </span>
-            </motion.div>
+            (() => {
+              const placement = slide.notePlacements[activeNote.id] ?? activeNote;
+
+              return (
+                <motion.div
+                  key={activeNote.id}
+                  className={styles.noteCallout}
+                  style={
+                    {
+                      '--callout-x': placement.calloutX,
+                      '--callout-y': placement.calloutY,
+                      '--callout-object-position': placement.calloutObjectPosition ?? activeNote.calloutObjectPosition,
+                      '--connector-length': placement.connectorLength,
+                      '--connector-angle': placement.connectorAngle,
+                    } as CSSProperties
+                  }
+                  initial={{ opacity: 0, scale: 0.84 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.24, ease: easeOutQuart }}
+                  aria-hidden="true"
+                >
+                  <span className={styles.noteConnector} />
+                  <span className={styles.noteLens}>
+                    <img src={activeNoteImage ?? slide.heroImage} alt="" />
+                  </span>
+                </motion.div>
+              );
+            })()
           ) : null}
         </AnimatePresence>
       </div>

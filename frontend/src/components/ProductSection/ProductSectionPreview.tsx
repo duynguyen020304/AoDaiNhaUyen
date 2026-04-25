@@ -4,7 +4,6 @@ import { cardReveal, easeOutQuart, listStagger } from '../../utils/motion';
 import type { ProductSectionSlide } from './productSectionData';
 
 const topFlourish = '/assets/top-flourish.png';
-const previewOffsets = [-2, -1, 0, 1, 2];
 const indicatorOffsets = [-1, 0, 1];
 
 type ProductSectionPreviewProps = {
@@ -24,6 +23,7 @@ export default function ProductSectionPreview({
   onPrevious,
   onSelect,
 }: ProductSectionPreviewProps) {
+  const previewOffsets = [-1, 0, 1];
   const previewItems = previewOffsets.map((offset) => {
     const index = (active + offset + slides.length) % slides.length;
     return { index, item: slides[index], offset };
@@ -118,7 +118,9 @@ export default function ProductSectionPreview({
           <button
             key={`${item.id}-coin-${offset}`}
             type="button"
-            className={`${styles.coinButton} ${offset === 0 ? styles.coinActive : ''}`}
+            className={`${styles.coinButton} ${Math.abs(offset) === 1 ? styles.coinInner : ''} ${
+              offset === 0 ? `${styles.coinActive} ${styles.coinCenter}` : ''
+            }`}
             onClick={() => onSelect(index)}
             aria-label={item.previewLabel}
           >

@@ -349,7 +349,6 @@
   height: 100%;
   object-fit: cover;
   object-position: var(--callout-object-position);
-  transform: scale(var(--callout-scale));
 }
 
 .noteConnector {
@@ -525,7 +524,7 @@
   grid-template-columns: 54px minmax(0, 1fr) 54px;
   align-items: center;
   gap: 8px;
-  width: min(100%, 600px);
+  width: min(80%, 600px);
   margin: 26px auto 0;
 }
 
@@ -673,6 +672,16 @@
 }
 
 .coinButton:nth-child(3) .coin {
+  width: 62px;
+  height: 62px;
+}
+
+.coinInner .coin {
+  width: 44px;
+  height: 44px;
+}
+
+.coinCenter .coin {
   width: 62px;
   height: 62px;
 }
@@ -929,6 +938,16 @@
   }
 
   .coinButton:nth-child(3) .coin {
+    width: 46px;
+    height: 46px;
+  }
+
+  .coinInner .coin {
+    width: 32px;
+    height: 32px;
+  }
+
+  .coinCenter .coin {
     width: 46px;
     height: 46px;
   }
