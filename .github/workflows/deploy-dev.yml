@@ -348,6 +348,7 @@ jobs:
           export GoogleCloud__VirtualTryOnModel='${{ secrets.HK1_GCLOUD_MODEL }}'
           export GoogleCloud__StylistTextModel='${{ secrets.HK1_GCLOUD_STYLIST_TEXT_MODEL }}'
           export GoogleCloud__TimeoutSeconds='${{ secrets.HK1_GCLOUD_TIMEOUT_SECONDS }}'
+          export CacheSettings__Version='${{ secrets.HK1_CACHE_SETTINGS_VERSION }}'
           export FrontendOrigins='${{ secrets.HK1_FRONTEND_ORIGINS }}'
           EOF
           chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
@@ -688,6 +689,7 @@ jobs:
           export GoogleCloud__VirtualTryOnModel='${{ secrets.US1_GCLOUD_MODEL }}'
           export GoogleCloud__StylistTextModel='${{ secrets.US1_GCLOUD_STYLIST_TEXT_MODEL }}'
           export GoogleCloud__TimeoutSeconds='${{ secrets.US1_GCLOUD_TIMEOUT_SECONDS }}'
+          export CacheSettings__Version='${{ secrets.US1_CACHE_SETTINGS_VERSION }}'
           export FrontendOrigins='${{ secrets.US1_FRONTEND_ORIGINS }}'
           EOF
           chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh

@@ -359,7 +359,7 @@ export default function LoginPage() {
             </div>
 
             <p className={styles.terms}>
-              Bằng việc đăng ký, bạn đã đồng ý với Điều khoản sử dụng và Chính sách bảo mật của MaryMy
+              Bằng việc đăng ký, bạn đã đồng ý với Điều khoản sử dụng và Chính sách bảo mật của Nhã Uyên
             </p>
           </form>
         )}

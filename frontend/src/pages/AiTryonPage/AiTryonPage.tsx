@@ -231,7 +231,7 @@ export default function AiTryonPage() {
         </motion.span>
         <motion.h1 variants={fadeUp}>Phòng Thử Đồ Ảo AI</motion.h1>
         <motion.p className={styles.description} variants={fadeUp}>
-          Tải lên ảnh khuôn mặt của bạn và để trí tuệ nhân tạo của MaryMy giúp bạn
+          Tải lên ảnh khuôn mặt của bạn và để trí tuệ nhân tạo của Nhã Uyên giúp bạn
           thử những thiết kế Áo Dài lộng lẫy nhất trước khi quyết định.
         </motion.p>
       </motion.section>

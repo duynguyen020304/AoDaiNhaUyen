@@ -26,7 +26,7 @@ export default function AiCopy() {
         <span>Với Công Nghệ AI</span>
       </motion.h1>
       <motion.p className={styles.aiIntro} variants={fadeUp}>
-        Khám phá vẻ đẹp của bạn trong tà áo dài MaryMy mà không cần thử trực tiếp. Công nghệ AI
+        Khám phá vẻ đẹp của bạn trong tà áo dài Nhã Uyên mà không cần thử trực tiếp. Công nghệ AI
         giúp bạn xem trước cách mỗi thiết kế tôn lên nét đẹp riêng chỉ trong vài giây.
       </motion.p>
 
