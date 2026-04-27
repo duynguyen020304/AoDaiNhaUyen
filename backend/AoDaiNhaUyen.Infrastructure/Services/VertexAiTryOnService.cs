@@ -123,13 +123,13 @@ public sealed class VertexAiTryOnService(
       "Ảnh 2 là ảnh trang phục mẫu cần ghép lên người trong ảnh 1.",
       $"Các ảnh tiếp theo là ảnh phụ kiện đi kèm: {accessoryNames}.",
       "Yêu cầu xử lý:",
-      "1. Remove background của ảnh 1.",
-      "2. Lấy trang phục trong ảnh 2 và ghép cho người trong ảnh 1.",
-      "3. Giữ nguyên khuôn mặt, vóc dáng, tông da và danh tính của người trong ảnh 1.",
-      "4. Final image phải dùng background của ảnh 2.",
-      "5. Nhân vật cuối cùng phải là người trong ảnh 1 nhưng mặc trang phục của người trong ảnh 2.",
+      "1. Lấy trang phục trong ảnh 2 và ghép cho người trong ảnh 1.",
+      "2. Giữ nguyên khuôn mặt, vóc dáng, tông da và danh tính của người trong ảnh 1.",
+      "3. Xem xét background của ảnh 1: nếu background đó phù hợp, đẹp và không lộn xộn (ví dụ: ngoại cảnh, studio, sân khấu, sự kiện, tường đơn giản, không gian kiến trúc), hãy giữ lại background đó cho ảnh kết quả. Nếu background của ảnh 1 không phù hợp (ví dụ: phòng bừa bộn, nhà vệ sinh, background xấu hoặc thiếu thẩm mỹ), thì dùng background của ảnh 2.",
+      "4. Nhân vật cuối cùng phải là người trong ảnh 1 nhưng mặc trang phục của người trong ảnh 2.",
+      "5. Người trong ảnh 1 có thể là bất kỳ giới tính nào, bao gồm nam. Nếu người trong ảnh 1 là nam và trang phục trong ảnh 2 là áo dài kiểu nữ, hãy vẫn mặc trang phục đó một cách tự nhiên, thanh lịch và hợp lý nhất cho người đó; điều chỉnh độ vừa, dáng rủ, tư thế và cách diện cho phù hợp với vóc dáng và phong cách của người mặc, không làm kết quả gượng gạo, hài hước, biếm họa hoặc méo mó.",
       "6. Nếu có ảnh phụ kiện, hãy đặt phụ kiện lên nhân vật cuối cùng tự nhiên, đúng tỷ lệ và giống ảnh phụ kiện mẫu.",
-      "7. Kết quả phải chân thực, toàn thân nếu có thể, ánh sáng hài hòa, không méo người, không đổi khuôn mặt.",
+      "7. Kết quả phải chân thực, toàn thân nếu có thể, ánh sáng hài hòa với background được chọn, không méo người, không đổi khuôn mặt.",
       "Chỉ trả về đúng một ảnh kết quả.");
   }
 

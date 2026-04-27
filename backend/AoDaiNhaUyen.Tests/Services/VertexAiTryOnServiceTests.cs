@@ -41,6 +41,46 @@ public sealed class VertexAiTryOnServiceTests
   }
 
   [Fact]
+  public async Task GenerateAsync_PromptContainsConditionalBackgroundInstruction()
+  {
+    var handler = new StubHttpMessageHandler(CreateImageResponse());
+    var service = CreateService(handler);
+
+    await service.GenerateAsync(CreateRequest([]));
+
+    var prompt = await ReadPromptAsync(handler);
+    Assert.Contains("background của ảnh 1", prompt);
+    Assert.Contains("nếu background đó phù hợp", prompt);
+    Assert.Contains("dùng background của ảnh 2", prompt);
+  }
+
+  [Fact]
+  public async Task GenerateAsync_PromptContainsMaleHandlingInstruction()
+  {
+    var handler = new StubHttpMessageHandler(CreateImageResponse());
+    var service = CreateService(handler);
+
+    await service.GenerateAsync(CreateRequest([]));
+
+    var prompt = await ReadPromptAsync(handler);
+    Assert.Contains("bất kỳ giới tính nào", prompt);
+    Assert.Contains("nam", prompt);
+    Assert.Contains("tự nhiên, thanh lịch", prompt);
+  }
+
+  [Fact]
+  public async Task GenerateAsync_PromptDoesNotHardcodeGarmentBackground()
+  {
+    var handler = new StubHttpMessageHandler(CreateImageResponse());
+    var service = CreateService(handler);
+
+    await service.GenerateAsync(CreateRequest([]));
+
+    var prompt = await ReadPromptAsync(handler);
+    Assert.DoesNotContain("Final image phải dùng background", prompt);
+  }
+
+  [Fact]
   public async Task GenerateAsync_PreservesImagePartOrdering()
   {
     var handler = new StubHttpMessageHandler(CreateImageResponse());
