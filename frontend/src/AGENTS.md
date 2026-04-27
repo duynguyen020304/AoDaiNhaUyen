@@ -4,25 +4,25 @@
 # src
 
 ## Purpose
-Application source code for the Ao Dai Nha Uyen SPA. Contains all React components, pages, API modules, authentication logic, type definitions, utility functions, and global styles.
+App source for Ao Dai Nha Uyen SPA. Has React components, pages, API modules, auth logic, types, utils, global styles.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `main.tsx` | React entry point: renders `<BrowserRouter>` with `<AuthProvider>` and `<ToastProvider>` wrapping `<App>` |
-| `App.tsx` | Root component: defines all routes, renders Header/Footer conditionally, manages AccountPage as modal overlay |
-| `vite-env.d.ts` | Vite client type declarations |
+| `main.tsx` | React entry: renders `<BrowserRouter>` with `<AuthProvider>` and `<ToastProvider>` around `<App>` |
+| `App.tsx` | Root component: defines routes, conditional Header/Footer, AccountPage modal overlay |
+| `vite-env.d.ts` | Vite client types |
 
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
-| `api/` | API client modules (fetch-based) for backend communication (see `api/AGENTS.md`) |
-| `auth/` | Authentication context, protected route guard, and useAuth hook (see `auth/AGENTS.md`) |
-| `components/` | Reusable UI components organized in PascalCase folders (see `components/AGENTS.md`) |
+| `api/` | Fetch API client modules for backend communication (see `api/AGENTS.md`) |
+| `auth/` | Auth context, protected route guard, useAuth hook (see `auth/AGENTS.md`) |
+| `components/` | Reusable UI components in PascalCase folders (see `components/AGENTS.md`) |
 | `pages/` | Route-level page components (see `pages/AGENTS.md`) |
-| `styles/` | Global CSS: variables (design tokens), reset, typography, texture, transitions (see `styles/AGENTS.md`) |
-| `types/` | TypeScript type definitions per domain (see `types/AGENTS.md`) |
-| `utils/` | Utility functions: motion variants, image conversion (see `utils/AGENTS.md`) |
+| `styles/` | Global CSS: variables/design tokens, reset, typography, texture, transitions (see `styles/AGENTS.md`) |
+| `types/` | TypeScript domain types (see `types/AGENTS.md`) |
+| `utils/` | Utils: motion variants, image conversion (see `utils/AGENTS.md`) |
 
 ## For AI Agents
 ### Routes (defined in App.tsx)
@@ -37,16 +37,16 @@ Application source code for the Ao Dai Nha Uyen SPA. Contains all React componen
 | `/login` | `LoginPage` | Email/password + OAuth login |
 | `/reset-password` | `ResetPasswordPage` | Password reset flow |
 | `/auth/google/callback` | `AuthGoogleCallbackPage` | Google OAuth callback |
-| `/auth/facebook/callback` | `AuthFacebookCallbackPage` | Facebook OAuth callback |
+| `/auth/zalo/callback` | `AuthZaloCallbackPage` | Zalo OAuth callback |
 | `/privacy-policy` | `PrivacyPolicyPage` | Privacy policy page |
 | `/data-deletion` | `DataDeletionPage` | Data deletion request page |
 | `/account/*` | Redirects to `HomePage` + AccountPage modal | Protected; redirects to `/login` if anonymous |
 
 ### Architecture Notes
-- **Auth**: `AuthProvider` in `auth/AuthContext.tsx` manages session state (`loading` | `authenticated` | `anonymous`). Uses `useAuth()` hook for access.
-- **API client**: `api/client.ts` uses native `fetch` (not axios). Resolves regional API base URLs based on hostname. Includes `request<T>()` and `requestPaginated<T>()` helpers. All responses follow `ApiEnvelope<T>` shape.
-- **Account page**: Rendered as a modal overlay in `App.tsx`, not as a routed page. Protected by auth status check.
-- **Toast notifications**: `ToastProvider` wraps the app; use `useToast()` hook to show notifications.
+- **Auth**: `AuthProvider` in `auth/AuthContext.tsx` manages session state (`loading` | `authenticated` | `anonymous`). Use `useAuth()` hook.
+- **API client**: `api/client.ts` uses native `fetch` (not axios). Resolves regional API base URLs by hostname. Has `request<T>()` and `requestPaginated<T>()` helpers. All responses use `ApiEnvelope<T>` shape.
+- **Account page**: Modal overlay in `App.tsx`, not routed page. Auth-protected.
+- **Toast notifications**: `ToastProvider` wraps app; use `useToast()` hook.
 - **Header/Footer**: Hidden on login and OAuth callback pages.
 - **State management**: React Context only (auth + toast). No Redux/Zustand.
 - **Component structure**: PascalCase folders with component TSX + CSS Module pair.

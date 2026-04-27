@@ -4,7 +4,7 @@
 # public
 
 ## Purpose
-Root-level static assets served directly at `/`. Contains login page background images shared across the app.
+Root static assets served direct at `/`. Has login page background images shared across app.
 
 ## Subdirectories
 | Directory | Purpose |
@@ -14,6 +14,6 @@ Root-level static assets served directly at `/`. Contains login page background 
 
 ## For AI Agents
 ### Working In This Directory
-- Assets here are served at the root path, separate from `frontend/public/`
+- Assets here served at root path, separate from `frontend/public/`
 - Keep file names descriptive and lowercase
-- Verify large media files are necessary before adding
+- Verify large media files needed before adding

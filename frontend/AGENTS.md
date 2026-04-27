@@ -4,14 +4,14 @@
 # frontend
 
 ## Purpose
-React 19 + TypeScript + Vite SPA for the Ao Dai Nha Uyen e-commerce platform. Uses framer-motion for animations, react-router-dom v7 for routing, CSS Modules with PostCSS for styling. No Tailwind -- raw CSS via PostCSS (nested, autoprefixer, cssnano).
+React 19 + TypeScript + Vite SPA for Ao Dai Nha Uyen e-commerce platform. Uses framer-motion animations, react-router-dom v7 routing, CSS Modules with PostCSS styling. No Tailwind -- raw CSS via PostCSS (nested, autoprefixer, cssnano).
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `package.json` | Dependencies and scripts (bun as package manager) |
-| `vite.config.ts` | Vite build configuration with react plugin, PostCSS, and envPrefix |
-| `tsconfig.json` | TypeScript configuration |
+| `package.json` | Dependencies + scripts (bun package manager) |
+| `vite.config.ts` | Vite build config with react plugin, PostCSS, envPrefix |
+| `tsconfig.json` | TypeScript config |
 | `eslint.config.js` | ESLint flat config |
 | `postcss.config.js` | PostCSS with nested, autoprefixer, cssnano |
 | `index.html` | HTML entry point |
@@ -21,18 +21,18 @@ React 19 + TypeScript + Vite SPA for the Ao Dai Nha Uyen e-commerce platform. Us
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
-| `src/` | Application source code (see `src/AGENTS.md`) |
+| `src/` | App source code (see `src/AGENTS.md`) |
 | `public/` | Static assets served at root (see `public/AGENTS.md`) |
 
 ## For AI Agents
 ### Working In This Directory
-- Use **bun** as package manager (bun.lock exists): `bun install`, `bun run dev`
+- Use **bun** package manager (bun.lock exists): `bun install`, `bun run dev`
 - `bun run dev` starts dev server on localhost:5173
 - `bun run build` runs TypeScript checks (`tsc -b`) then Vite production build
 - `bun run lint` runs ESLint flat config
 - CSS Modules (*.module.css) for component styling -- no Tailwind
 - Design tokens in `src/styles/variables.css` (burgundy, gold, cream palette)
-- All UI text is in Vietnamese
+- All UI text in Vietnamese
 - Vite env prefix: `VITE_` and `PUBLIC_`
 
 ### Testing Requirements

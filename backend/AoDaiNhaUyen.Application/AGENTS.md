@@ -4,7 +4,7 @@
 # AoDaiNhaUyen.Application
 
 ## Purpose
-Application layer containing DTOs, service interfaces, service implementations, custom exceptions, and configuration options. Defines the business contract between the API and Infrastructure layers.
+Application layer with DTOs, service interfaces, service implementations, custom exceptions, config options. Defines business contract between API and Infrastructure layers.
 
 ## Key Files
 | File | Description |
@@ -15,9 +15,9 @@ Application layer containing DTOs, service interfaces, service implementations, 
 | Directory | Purpose |
 |-----------|---------|
 | `DTOs/` | Data transfer objects for all API request/response payloads (see `DTOs/AGENTS.md`) |
-| `Exceptions/` | Custom exception types for domain-specific error scenarios |
+| `Exceptions/` | Custom exception types for domain-specific errors |
 | `Interfaces/` | Repository and service interfaces (see `Interfaces/AGENTS.md`) |
-| `Options/` | Configuration option classes bound via .NET Options pattern |
+| `Options/` | Config option classes bound via .NET Options pattern |
 | `Services/` | Application service implementations (currently CatalogService) |
 
 ## DTOs
@@ -26,7 +26,7 @@ Application layer containing DTOs, service interfaces, service implementations, 
 |------|-------------|
 | `AiTryOnAccessoryImageDto.cs` | DTO for accessory images in AI try-on requests |
 | `AiTryOnCatalogDto.cs` | Catalog listing for AI try-on products |
-| `AiTryOnCatalogItemDto.cs` | Individual item in the try-on catalog |
+| `AiTryOnCatalogItemDto.cs` | Single item in try-on catalog |
 | `AiTryOnRequestDto.cs` | Original AI try-on request |
 | `AiTryOnResultDto.cs` | AI try-on result with generated image |
 | `CatalogAiTryOnRequestDto.cs` | Catalog-based try-on request (product ID + person image) |
@@ -39,7 +39,7 @@ Application layer containing DTOs, service interfaces, service implementations, 
 | `ChatThreadDetailDto.cs` | Full thread detail with messages |
 | `ChatThreadSummaryDto.cs` | Thread listing summary |
 | `IncomingChatAttachmentDto.cs` | Incoming attachment from client upload |
-| `IntentClassificationDto.cs` | Result of intent classification (intent, scenario, color, budget, etc.) |
+| `IntentClassificationDto.cs` | Intent classification result (intent, scenario, color, budget, etc.) |
 | `PagedResult.cs` | Generic paginated result container |
 | `ProductDetailDto.cs` | Full product detail with variants and images |
 | `ProductImageDto.cs` | Product image DTO |
@@ -50,7 +50,7 @@ Application layer containing DTOs, service interfaces, service implementations, 
 ### Auth/ DTOs
 | File | Description |
 |------|-------------|
-| `AuthResult.cs` | Authentication result with access/refresh tokens |
+| `AuthResult.cs` | Auth result with access/refresh tokens |
 | `AuthSessionDto.cs` | Session data DTO |
 | `AuthUserDto.cs` | Authenticated user DTO |
 | `FacebookUserInfoDto.cs` | Facebook OAuth user info |
@@ -62,7 +62,7 @@ Application layer containing DTOs, service interfaces, service implementations, 
 |------|-------------|
 | `AddCartItemDto.cs` | Add item to cart request |
 | `CartDto.cs` | Cart with items DTO |
-| `CartItemDto.cs` | Individual cart item DTO |
+| `CartItemDto.cs` | Single cart item DTO |
 | `UpdateCartItemDto.cs` | Update cart item quantity request |
 
 ### Checkout/ DTOs
@@ -84,7 +84,7 @@ Application layer containing DTOs, service interfaces, service implementations, 
 ## Exceptions
 | File | Description |
 |------|-------------|
-| `AiTryOnConfigurationException.cs` | Thrown when Vertex AI is not configured (maps to 503) |
+| `AiTryOnConfigurationException.cs` | Thrown when Vertex AI not configured (maps to 503) |
 | `AiTryOnProviderException.cs` | Thrown when Vertex AI call fails (maps to 502) |
 | `GoogleOAuthExchangeException.cs` | Thrown when Google OAuth code exchange fails |
 | `FacebookOAuthExchangeException.cs` | Thrown when Facebook OAuth code exchange fails |
@@ -93,7 +93,7 @@ Application layer containing DTOs, service interfaces, service implementations, 
 | File | Description |
 |------|-------------|
 | `CookieSettings.cs` | Cookie names for access_token and refresh_token |
-| `EmailSettings.cs` | SMTP configuration with URI validation |
+| `EmailSettings.cs` | SMTP config with URI validation |
 | `FacebookOAuthSettings.cs` | Facebook AppId, AppSecret, RedirectUri |
 | `GoogleOAuthSettings.cs` | Google ClientId, ClientSecret, RedirectUri |
 | `JwtSettings.cs` | JWT SecretKey, Issuer, Audience |
@@ -105,10 +105,10 @@ Application layer containing DTOs, service interfaces, service implementations, 
 
 ## For AI Agents
 ### Working In This Directory
-- This project defines the **contracts** (interfaces) and **data shapes** (DTOs) for the entire application
-- DTOs are immutable records -- use `sealed record` for new DTOs
-- All interfaces are in `Interfaces/` with `I` prefix convention
+- This project defines **contracts** (interfaces) and **data shapes** (DTOs) for entire application
+- DTOs immutable records -- use `sealed record` for new DTOs
+- All interfaces in `Interfaces/` with `I` prefix convention
 - Options classes use data annotations for validation (Required, URL validation)
-- When adding a new feature: define DTOs here, add interface in `Interfaces/Services/`, implement in Infrastructure
-- CatalogService is the only service implemented in Application layer -- all others are in Infrastructure
-- Exception types are caught specifically in controllers and mapped to appropriate HTTP status codes
+- When adding new feature: define DTOs here, add interface in `Interfaces/Services/`, implement in Infrastructure
+- CatalogService only service implemented in Application layer -- all others in Infrastructure
+- Exception types caught specifically in controllers and mapped to proper HTTP status codes

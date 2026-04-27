@@ -227,7 +227,8 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
         accessoryIds[i],
         accessoryIds[i],
         await ReadFileAsync(accessoryImages[i], cancellationToken),
-        accessoryImages[i].ContentType));
+        accessoryImages[i].ContentType,
+        "unknown"));
     }
 
     return results;

@@ -4,4 +4,5 @@ public sealed record AiTryOnAccessoryImageDto(
   string Id,
   string DisplayName,
   byte[] ImageBytes,
-  string MimeType);
+  string MimeType,
+  string CategorySlug);

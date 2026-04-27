@@ -4,7 +4,7 @@
 # types
 
 ## Purpose
-TypeScript type definitions organized by domain. These types are shared across API modules, components, and pages. All types mirror the backend API response shapes.
+TypeScript type definitions grouped by domain. Shared across API modules, components, pages. Types mirror backend API response shapes.
 
 ## Key Files
 | File | Description |
@@ -19,7 +19,7 @@ TypeScript type definitions organized by domain. These types are shared across A
 
 ## For AI Agents
 ### Type Dependency Graph
-- `api.ts` is the foundation: defines `ApiEnvelope` and `PaginatedApiEnvelope` used by all API modules
+- `api.ts` is foundation: defines `ApiEnvelope` and `PaginatedApiEnvelope` used by all API modules
 - `catalog.ts` and `order.ts` import `PaginatedApiEnvelope` from `api.ts`
 - API modules (`src/api/`) import types from this directory
 - Components and pages import types indirectly through API return types or directly when needed

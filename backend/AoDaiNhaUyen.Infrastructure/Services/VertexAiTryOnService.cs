@@ -113,11 +113,20 @@ public sealed class VertexAiTryOnService(
   {
     var accessoryNames = accessories.Count == 0
       ? "không có phụ kiện bổ sung"
-      : string.Join(", ", accessories.Select(accessory =>
-        string.IsNullOrWhiteSpace(accessory.DisplayName) ? accessory.Id : accessory.DisplayName.Trim()));
+      : string.Join(", ", accessories.Select(GetAccessoryName));
 
-    return string.Join(
-      "\n",
+    var hairAccessoryNames = FormatAccessoryNames(accessories.Where(accessory => accessory.CategorySlug == "tram-cai"));
+    var handheldAccessoryNames = FormatAccessoryNames(accessories.Where(accessory =>
+      accessory.CategorySlug == "quat" || accessory.CategorySlug == "tui-sach"));
+    var footwearNames = FormatAccessoryNames(accessories.Where(accessory => accessory.CategorySlug == "giay"));
+    var otherAccessoryNames = FormatAccessoryNames(accessories.Where(accessory =>
+      accessory.CategorySlug != "tram-cai"
+      && accessory.CategorySlug != "quat"
+      && accessory.CategorySlug != "tui-sach"
+      && accessory.CategorySlug != "giay"));
+
+    var lines = new List<string>
+    {
       "Hãy tạo ảnh thời trang chân thực từ các ảnh đầu vào.",
       "Ảnh 1 là ảnh người dùng/người mẫu cần thử đồ.",
       "Ảnh 2 là ảnh trang phục mẫu cần ghép lên người trong ảnh 1.",
@@ -127,11 +136,49 @@ public sealed class VertexAiTryOnService(
       "2. Giữ nguyên khuôn mặt, vóc dáng, tông da và danh tính của người trong ảnh 1.",
       "3. Xem xét background của ảnh 1: nếu background đó phù hợp, đẹp và không lộn xộn (ví dụ: ngoại cảnh, studio, sân khấu, sự kiện, tường đơn giản, không gian kiến trúc), hãy giữ lại background đó cho ảnh kết quả. Nếu background của ảnh 1 không phù hợp (ví dụ: phòng bừa bộn, nhà vệ sinh, background xấu hoặc thiếu thẩm mỹ), thì dùng background của ảnh 2.",
       "4. Nhân vật cuối cùng phải là người trong ảnh 1 nhưng mặc trang phục của người trong ảnh 2.",
-      "5. Người trong ảnh 1 có thể là bất kỳ giới tính nào, bao gồm nam. Nếu người trong ảnh 1 là nam và trang phục trong ảnh 2 là áo dài kiểu nữ, hãy vẫn mặc trang phục đó một cách tự nhiên, thanh lịch và hợp lý nhất cho người đó; điều chỉnh độ vừa, dáng rủ, tư thế và cách diện cho phù hợp với vóc dáng và phong cách của người mặc, không làm kết quả gượng gạo, hài hước, biếm họa hoặc méo mó.",
-      "6. Nếu có ảnh phụ kiện, hãy đặt phụ kiện lên nhân vật cuối cùng tự nhiên, đúng tỷ lệ và giống ảnh phụ kiện mẫu.",
-      "7. Kết quả phải chân thực, toàn thân nếu có thể, ánh sáng hài hòa với background được chọn, không méo người, không đổi khuôn mặt.",
-      "Chỉ trả về đúng một ảnh kết quả.");
+      "5. Người trong ảnh 1 có thể là bất kỳ giới tính nào, bao gồm nam. Nếu người trong ảnh 1 là nam và trang phục trong ảnh 2 là áo dài kiểu nữ, hãy vẫn mặc trang phục đó một cách tự nhiên, thanh lịch và hợp lý nhất cho người đó; điều chỉnh độ vừa, dáng rủ, tư thế và cách diện cho phù hợp với vóc dáng và phong cách của người mặc, không làm kết quả gượng gạo, hài hước, biếm họa hoặc méo mó."
+    };
+
+    if (hairAccessoryNames is not null)
+    {
+      lines.Add($"6a. Nếu có phụ kiện cài tóc ({hairAccessoryNames}), hãy điều chỉnh kiểu tóc để phụ kiện được đeo/kẹp tự nhiên và nhìn thấy rõ, ví dụ búi tóc, tết tóc hoặc vén tóc phù hợp; vẫn giữ đặc điểm nhận diện cơ bản của tóc và khuôn mặt người trong ảnh 1.");
+    }
+
+    if (handheldAccessoryNames is not null)
+    {
+      lines.Add($"6b. Nếu có phụ kiện cầm tay ({handheldAccessoryNames}), hãy điều chỉnh dáng tay/cánh tay để cầm, nâng hoặc khoác phụ kiện tự nhiên, đúng tỷ lệ; không làm méo bàn tay, cánh tay hoặc tư thế tổng thể.");
+    }
+
+    if (footwearNames is not null)
+    {
+      lines.Add($"6c. Nếu có giày dép ({footwearNames}), hãy đặt đúng vào chân, đúng tỷ lệ, đúng góc nhìn theo tư thế đứng/ngồi.");
+    }
+
+    if (otherAccessoryNames is not null)
+    {
+      lines.Add($"6d. Nếu có phụ kiện khác ({otherAccessoryNames}), hãy đặt ở vị trí phù hợp, tự nhiên, đúng tỷ lệ và giống ảnh phụ kiện mẫu.");
+    }
+
+    if (accessories.Count == 0)
+    {
+      lines.Add("6. Nếu không có ảnh phụ kiện, kết quả vẫn phải hoàn chỉnh, tự nhiên và đẹp.");
+    }
+
+    lines.Add("7. Mọi điều chỉnh về tóc, tay, cánh tay hoặc dáng người chỉ để phụ kiện phù hợp hơn; không được làm đổi danh tính, khuôn mặt, vóc dáng hoặc tạo tư thế gượng gạo.");
+    lines.Add("8. Kết quả phải chân thực, toàn thân nếu có thể, ánh sáng hài hòa với background được chọn, không méo người, không đổi khuôn mặt.");
+    lines.Add("Chỉ trả về đúng một ảnh kết quả.");
+
+    return string.Join("\n", lines);
   }
+
+  private static string? FormatAccessoryNames(IEnumerable<AiTryOnAccessoryImageDto> accessories)
+  {
+    var names = accessories.Select(GetAccessoryName).ToList();
+    return names.Count == 0 ? null : string.Join(", ", names);
+  }
+
+  private static string GetAccessoryName(AiTryOnAccessoryImageDto accessory) =>
+    string.IsNullOrWhiteSpace(accessory.DisplayName) ? accessory.Id : accessory.DisplayName.Trim();
 
   private static GeneratedImage? TryExtractGeneratedImage(string responseBody)
   {

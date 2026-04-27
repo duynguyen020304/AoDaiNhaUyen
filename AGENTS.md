@@ -3,14 +3,14 @@
 # AoDaiNhaUyen
 
 ## Purpose
-Premium Vietnamese áo dài e-commerce platform. Full-stack application with an ASP.NET Core 10 backend (clean architecture) and a React 19 + TypeScript + Vite frontend. Features AI try-on, chat widget, cart/checkout, social auth (Google/Facebook), and product catalog management.
+Premium Vietnamese áo dài e-commerce platform. Full-stack app with ASP.NET Core 10 backend (clean architecture) + React 19 + TypeScript + Vite frontend. Features AI try-on, chat widget, cart/checkout, social auth (Google/Facebook), product catalog management.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `spec.md` | MVP specification with pages, routes, design system, and component inventory |
+| `spec.md` | MVP spec: pages, routes, design system, component inventory |
 | `.gitignore` | Git ignore rules |
-| `AGENTS.md` | This file — AI-readable project documentation |
+| `AGENTS.md` | This file — AI-readable project docs |
 
 ## Subdirectories
 | Directory | Purpose |
@@ -18,22 +18,22 @@ Premium Vietnamese áo dài e-commerce platform. Full-stack application with an 
 | `backend/` | ASP.NET Core 10 API with clean architecture (see `backend/AGENTS.md`) |
 | `frontend/` | React 19 + TypeScript + Vite SPA (see `frontend/AGENTS.md`) |
 | `.github/` | GitHub Actions CI/CD workflows (see `.github/AGENTS.md`) |
-| `public/` | Root-level static assets served at `/` (see `public/AGENTS.md`) |
+| `public/` | Root static assets served at `/` (see `public/AGENTS.md`) |
 
 ## For AI Agents
 
 ### Working In This Directory
-- Monorepo structure: `backend/` (.NET) and `frontend/` (React) are independent
+- Monorepo: `backend/` (.NET) + `frontend/` (React) independent
 - Backend uses .NET 10 with clean architecture (Api → Application → Domain → Infrastructure)
 - Frontend uses Vite with bun as package manager; **never switch to npm if bun.lock exists**
-- All UI language is Vietnamese; API messages are in Vietnamese
-- API responses must use the standard envelope: `{ success, message, data, errors, timestamp }`
+- All UI language Vietnamese; API messages Vietnamese
+- API responses use standard envelope: `{ success, message, data, errors, timestamp }`
 - Never return raw anonymous objects from controllers (no `Ok(new { data })`)
 
 ### Testing Requirements
 - Frontend: `npm run lint` + `npm run build` + visual validation via Playwright MCP for UI changes
 - Backend: `dotnet test` from `backend/`
-- For persisted data/backend changes, validate with `psql` against the PostgreSQL database
+- Persisted data/backend changes: validate with `psql` against PostgreSQL database
 
 ### Common Patterns
 - Frontend components: PascalCase folders under `src/components/<Name>/`, paired with CSS Modules
@@ -42,9 +42,9 @@ Premium Vietnamese áo dài e-commerce platform. Full-stack application with an 
 - Conventional Commit messages with optional scope: `feat(section): description`
 
 ### Commit Guidelines
-- Short imperative messages, optionally with Conventional Commit scope
+- Short imperative messages, optional Conventional Commit scope
 - Only commit complete, validated work
-- Review diff before committing; avoid unrelated changes
+- Review diff before commit; avoid unrelated changes
 - Screenshots/recordings for visual PR changes
 
 ## Dependencies

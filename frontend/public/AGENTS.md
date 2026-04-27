@@ -4,7 +4,7 @@
 # public
 
 ## Purpose
-Static assets served at the root URL path by Vite. Contains all images, SVGs, and other media used across the application. Referenced in code via absolute paths (e.g., `/assets/hero-bg.jpg`).
+Static assets served at root URL path by Vite. Contains images, SVGs, media used across app. Referenced in code via absolute paths (e.g., `/assets/hero-bg.jpg`).
 
 ## Subdirectories
 | Directory | Purpose |
@@ -38,8 +38,8 @@ Static assets served at the root URL path by Vite. Contains all images, SVGs, an
 ### Working In This Directory
 - All assets referenced via absolute paths: `/assets/<subdir>/<filename>`
 - No `login/` or `product-section/` subdirectories exist (login uses inline styles, product section uses assets from other dirs)
-- Product images follow naming convention: `product-{category}-{number}.png` (categories: cach-tan, lua-tron, theu-hoa, truyen-thong)
-- AI try-on product thumbnails follow convention: `aodai-{category}-{number}.png` and `phukien-{number}.png`
+- Product images use naming convention: `product-{category}-{number}.png` (categories: cach-tan, lua-tron, theu-hoa, truyen-thong)
+- AI try-on product thumbnails use convention: `aodai-{category}-{number}.png` and `phukien-{number}.png`
 - Collection era images: `bst{N}-{type}.{ext}` (bg, product, street, cach-tan, reflection, texture)
 - Gallery images: `gal-{category}-{number}.{ext}` (truyen-thong, theu-hoa, lua-tron, cach-tan, extra)
-- When adding new assets, follow existing naming conventions and place in the correct subdirectory
+- Adding new assets: follow existing naming conventions and put in correct subdirectory

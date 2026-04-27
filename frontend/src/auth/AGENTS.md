@@ -4,14 +4,14 @@
 # auth
 
 ## Purpose
-Authentication layer using React Context. Manages user session state, provides login/logout/OAuth methods, and offers a route guard for protected pages.
+Auth layer using React Context. Manages user session state, gives login/logout/OAuth methods, route guard for protected pages.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `AuthContext.tsx` | `AuthProvider` component and `AuthContext`. Manages auth status (`loading` \| `authenticated` \| `anonymous`), bootstraps session on mount by calling `getCurrentUser()` then `refreshSession()` as fallback. Provides: `login()`, `logout()`, `completeGoogleLogin()`, `completeFacebookLogin()`, `startGoogleLogin()`, `startFacebookLogin()`, `refreshSession()`. Wraps the entire app in `main.tsx` |
+| `AuthContext.tsx` | `AuthProvider` component and `AuthContext`. Manages auth status (`loading` \| `authenticated` \| `anonymous`), bootstraps session on mount by calling `getCurrentUser()` then `refreshSession()` as fallback. Provides: `login()`, `logout()`, `completeGoogleLogin()`, `completeZaloLogin()`, `startGoogleLogin()`, `startZaloLogin()`, `refreshSession()`. Wraps entire app in `main.tsx` |
 | `ProtectedRoute.tsx` | Route guard component: redirects anonymous users to `/login` with `state.from` for return navigation. Returns `null` while loading. Renders `<Outlet />` for authenticated users |
-| `useAuth.ts` | Custom hook: `useAuth()` returns the `AuthContextValue` (status, user, login, logout, OAuth methods). Throws if used outside `AuthProvider` |
+| `useAuth.ts` | Custom hook: `useAuth()` returns `AuthContextValue` (status, user, login, logout, OAuth methods). Throws if used outside `AuthProvider` |
 
 ## For AI Agents
 ### Auth Status Flow
@@ -22,9 +22,9 @@ Authentication layer using React Context. Manages user session state, provides l
 5. Status transitions use `startTransition()` for concurrent React features
 
 ### OAuth Flow
-- `startGoogleLogin()` / `startFacebookLogin()` redirect the browser to the OAuth provider
-- On callback, `AuthGoogleCallbackPage` / `AuthFacebookCallbackPage` extract the `code` from URL params
-- They call `completeGoogleLogin(code)` / `completeFacebookLogin(code)` which exchanges the code for a session
+- `startGoogleLogin()` / `startZaloLogin()` redirect browser to OAuth provider
+- On callback, `AuthGoogleCallbackPage` / `AuthZaloCallbackPage` extract `code` from URL params
+- They call `completeGoogleLogin(code)` / `completeZaloLogin(code)`, exchanges code for session
 
 ### Usage Pattern
 ```tsx
