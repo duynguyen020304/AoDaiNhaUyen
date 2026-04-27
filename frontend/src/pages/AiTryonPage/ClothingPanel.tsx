@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { listStagger, cardReveal } from '../../utils/motion';
 import CategoryTabs from './CategoryTabs';
-import type { AiTryOnCatalogItem } from '../../api/aiTryon';
+import PaginationControls from './PaginationControls';
+import type { AiTryOnCatalogCategory, AiTryOnCatalogItem, AiTryOnCatalogPage } from '../../api/aiTryon';
 import { resolveAssetUrl } from '../../api/client';
 import styles from './ClothingPanel.module.css';
 
@@ -10,39 +10,23 @@ interface ClothingPanelProps {
   selectedCategory: string;
   selectedGarment: number | null;
   garments: AiTryOnCatalogItem[];
+  garmentPage: AiTryOnCatalogPage;
+  categories: AiTryOnCatalogCategory[];
   onCategoryChange: (key: string) => void;
-  onSelectGarment: (id: number) => void;
+  onPageChange: (page: number) => void;
+  onSelectGarment: (item: AiTryOnCatalogItem) => void;
 }
 
 export default function ClothingPanel({
   selectedCategory,
   selectedGarment,
   garments,
+  garmentPage,
+  categories,
   onCategoryChange,
+  onPageChange,
   onSelectGarment,
 }: ClothingPanelProps) {
-  const garmentCategories = useMemo(() => {
-    const mappedCategories = garments
-      .reduce((accumulator, garment) => {
-        if (!accumulator.some((item) => item.key === garment.categorySlug)) {
-          accumulator.push({
-            key: garment.categorySlug,
-            label: formatCategoryLabel(garment.categorySlug),
-          });
-        }
-
-        return accumulator;
-      }, [{ key: 'all', label: 'All' }, { key: 'bestseller', label: 'Bestseller' }] as Array<{ key: string; label: string }>);
-
-    return mappedCategories;
-  }, [garments]);
-
-  const filteredGarments = useMemo(() => {
-    if (selectedCategory === 'all') return garments;
-    if (selectedCategory === 'bestseller') return garments.filter((garment) => garment.isFeatured);
-    return garments.filter((garment) => garment.categorySlug === selectedCategory);
-  }, [garments, selectedCategory]);
-
   return (
     <div className={styles.panel}>
       <div className={styles.stepHeader}>
@@ -51,9 +35,10 @@ export default function ClothingPanel({
       </div>
 
       <CategoryTabs
-        categories={garmentCategories}
+        categories={categories}
         selected={selectedCategory}
         onChange={onCategoryChange}
+        layoutId="ai-garment-category-pill"
       />
 
       <motion.div
@@ -61,16 +46,16 @@ export default function ClothingPanel({
         variants={listStagger}
         initial="hidden"
         animate="show"
-        key={selectedCategory}
+        key={`${selectedCategory}-${garmentPage.page}`}
       >
-        {filteredGarments.map((item) => {
+        {garments.map((item) => {
           const isSelected = selectedGarment === item.productId;
           return (
             <motion.button
               key={item.productId}
               className={`${styles.card} ${isSelected ? styles.selected : ''}`}
               type="button"
-              onClick={() => onSelectGarment(item.productId)}
+              onClick={() => onSelectGarment(item)}
               variants={cardReveal}
               layout
             >
@@ -83,21 +68,14 @@ export default function ClothingPanel({
           );
         })}
       </motion.div>
+
+      <PaginationControls
+        page={garmentPage.page}
+        pageSize={garmentPage.pageSize}
+        totalItems={garmentPage.totalItems}
+        totalPages={garmentPage.totalPages}
+        onPageChange={onPageChange}
+      />
     </div>
   );
-}
-
-function formatCategoryLabel(categorySlug: string) {
-  switch (categorySlug) {
-    case 'ao-dai-truyen-thong':
-      return 'Áo dài truyền thống';
-    case 'ao-dai-lua-tron':
-      return 'Áo dài lụa trơn';
-    case 'ao-dai-theu-hoa':
-      return 'Áo dài thêu hoa';
-    case 'ao-dai-cach-tan':
-      return 'Áo dài cách tân';
-    default:
-      return categorySlug;
-  }
 }

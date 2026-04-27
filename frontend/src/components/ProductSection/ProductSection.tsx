@@ -5,19 +5,31 @@ import { sectionReveal, viewportOnce } from '../../utils/motion';
 import ProductSectionCopy from './ProductSectionCopy';
 import ProductSectionHero from './ProductSectionHero';
 import ProductSectionPreview from './ProductSectionPreview';
-import { productSectionSlides } from './productSectionData';
+import { productSectionNotes, productSectionSlides, type ProductSectionNote } from './productSectionData';
 
 const goldFlower = '/assets/gold-flower.svg';
 const redFloral = '/assets/red-floral.svg';
 
 export default function ProductSection() {
   const [active, setActive] = useState(2);
+  const [activeNote, setActiveNote] = useState<ProductSectionNote | null>(null);
   const prefersReducedMotion = useReducedMotion();
   const activeSlide = productSectionSlides[active];
 
-  const previous = () =>
+  const updateActive = (nextIndex: number) => {
+    setActive(nextIndex);
+    setActiveNote(null);
+  };
+
+  const previous = () => {
+    setActiveNote(null);
     setActive((current) => (current - 1 + productSectionSlides.length) % productSectionSlides.length);
-  const next = () => setActive((current) => (current + 1) % productSectionSlides.length);
+  };
+
+  const next = () => {
+    setActiveNote(null);
+    setActive((current) => (current + 1) % productSectionSlides.length);
+  };
 
   return (
     <motion.section
@@ -46,15 +58,18 @@ export default function ProductSection() {
       <img className={styles.bottomFloral} src={redFloral} alt="" aria-hidden="true" />
 
       <div className={styles.contentGrid}>
-        <ProductSectionCopy slide={activeSlide} />
+        <ProductSectionCopy activeNote={activeNote} slide={activeSlide} />
         <ProductSectionHero
           active={active}
+          activeNote={activeNote}
+          notes={productSectionNotes}
           prefersReducedMotion={prefersReducedMotion}
           slide={activeSlide}
           slides={productSectionSlides}
           onNext={next}
           onPrevious={previous}
-          onSelect={setActive}
+          onSelect={updateActive}
+          onNoteChange={setActiveNote}
         />
         <ProductSectionPreview
           active={active}
@@ -62,7 +77,7 @@ export default function ProductSection() {
           slides={productSectionSlides}
           onNext={next}
           onPrevious={previous}
-          onSelect={setActive}
+          onSelect={updateActive}
         />
       </div>
     </motion.section>

@@ -1,16 +1,23 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import styles from './ProductSection.module.css';
 import { carouselCopy, carouselCopyItem } from '../../utils/motion';
-import type { ProductSectionSlide } from './productSectionData';
+import type { ProductSectionNote, ProductSectionSlide } from './productSectionData';
 
 const topFlourish = '/assets/top-flourish.png';
 
-export default function ProductSectionCopy({ slide }: { slide: ProductSectionSlide }) {
+type ProductSectionCopyProps = {
+  activeNote: ProductSectionNote | null;
+  slide: ProductSectionSlide;
+};
+
+export default function ProductSectionCopy({ activeNote, slide }: ProductSectionCopyProps) {
+  const detailItems = activeNote?.lines ?? slide.detailLines;
+
   return (
     <div className={styles.copyColumn}>
       <AnimatePresence mode="wait">
         <motion.div
-          key={slide.id}
+          key={`${slide.id}-${activeNote?.id ?? 'overview'}`}
           className={styles.copyContent}
           variants={carouselCopy}
           initial="enter"
@@ -30,14 +37,25 @@ export default function ProductSectionCopy({ slide }: { slide: ProductSectionSli
           </motion.h2>
 
           <motion.div className={styles.detailPanel} variants={carouselCopyItem}>
-            {slide.detailLines.map((line, index) => (
-              <p
-                key={`${slide.id}-${line}`}
-                className={index % 3 === 0 ? styles.detailLabel : styles.detailLine}
-              >
-                {line}
-              </p>
-            ))}
+            {activeNote ? (
+              <>
+                <p className={styles.detailLabel}>{activeNote.title}</p>
+                <ul className={styles.noteList}>
+                  {activeNote.lines.map((line) => (
+                    <li key={`${activeNote.id}-${line}`}>{line}</li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              detailItems.map((line, index) => (
+                <p
+                  key={`${slide.id}-${line}`}
+                  className={index % 3 === 0 ? styles.detailLabel : styles.detailLine}
+                >
+                  {line}
+                </p>
+              ))
+            )}
           </motion.div>
         </motion.div>
       </AnimatePresence>

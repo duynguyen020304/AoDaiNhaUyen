@@ -18,8 +18,16 @@ public sealed class CatalogTryOnService(
   private const string CuratedAccessoryAssetKind = "tryon_accessory_curated";
   private const string AccessoryAssetKind = "tryon_accessory";
 
-  public async Task<AiTryOnCatalogDto> GetCatalogAsync(CancellationToken cancellationToken = default)
+  public async Task<AiTryOnCatalogDto> GetCatalogAsync(
+    AiTryOnCatalogQueryDto query,
+    CancellationToken cancellationToken = default)
   {
+    var pageSize = Math.Clamp(query.PageSize, 1, 24);
+    var garmentPage = Math.Max(query.GarmentPage, 1);
+    var accessoryPage = Math.Max(query.AccessoryPage, 1);
+    var garmentCategory = NormalizeCategory(query.GarmentCategory);
+    var accessoryCategory = NormalizeCategory(query.AccessoryCategory);
+
     var products = await dbContext.Products
       .AsNoTracking()
       .Include(product => product.Category)
@@ -32,21 +40,28 @@ public sealed class CatalogTryOnService(
       .ThenBy(product => product.Name)
       .ToListAsync(cancellationToken);
 
-    var garments = products
+    var allGarments = products
       .Where(product => product.ProductType == "ao_dai")
       .Select(product => MapCatalogItem(product, GarmentAssetKind))
       .Where(item => item is not null)
       .Cast<AiTryOnCatalogItemDto>()
       .ToList();
 
-    var accessories = products
+    var allAccessories = products
       .Where(product => product.ProductType == "phu_kien")
       .Select(product => MapCatalogItem(product, AccessoryAssetKind))
       .Where(item => item is not null)
       .Cast<AiTryOnCatalogItemDto>()
       .ToList();
 
-    return new AiTryOnCatalogDto(garments, accessories);
+    var filteredGarments = FilterCatalogItems(allGarments, garmentCategory, supportsFeatured: true);
+    var filteredAccessories = FilterCatalogItems(allAccessories, accessoryCategory, supportsFeatured: false);
+
+    return new AiTryOnCatalogDto(
+      CreatePage(filteredGarments, garmentPage, pageSize),
+      CreatePage(filteredAccessories, accessoryPage, pageSize),
+      CreateCategories(allGarments, includeFeatured: true),
+      CreateCategories(allAccessories, includeFeatured: false));
   }
 
   public async Task<AiTryOnResultDto> CreateAsync(
@@ -267,6 +282,92 @@ public sealed class CatalogTryOnService(
       .ThenByDescending(asset => asset.VariantId.HasValue)
       .ThenBy(asset => asset.Id)
       .FirstOrDefault();
+  }
+
+  private static IReadOnlyList<AiTryOnCatalogItemDto> FilterCatalogItems(
+    IReadOnlyList<AiTryOnCatalogItemDto> items,
+    string? category,
+    bool supportsFeatured)
+  {
+    if (string.IsNullOrWhiteSpace(category) || category == "all")
+    {
+      return items;
+    }
+
+    if (supportsFeatured && category == "bestseller")
+    {
+      return items.Where(item => item.IsFeatured).ToList();
+    }
+
+    return items.Where(item => item.CategorySlug == category).ToList();
+  }
+
+  private static AiTryOnCatalogPageDto CreatePage(
+    IReadOnlyList<AiTryOnCatalogItemDto> items,
+    int page,
+    int pageSize)
+  {
+    var totalItems = items.Count;
+    var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)pageSize));
+    var normalizedPage = Math.Clamp(page, 1, totalPages);
+    var pageItems = items
+      .Skip((normalizedPage - 1) * pageSize)
+      .Take(pageSize)
+      .ToList();
+
+    return new AiTryOnCatalogPageDto(pageItems, normalizedPage, pageSize, totalItems, totalPages);
+  }
+
+  private static IReadOnlyList<AiTryOnCatalogCategoryDto> CreateCategories(
+    IReadOnlyList<AiTryOnCatalogItemDto> items,
+    bool includeFeatured)
+  {
+    var categories = new List<AiTryOnCatalogCategoryDto>
+    {
+      new("all", "Tất cả")
+    };
+
+    if (includeFeatured)
+    {
+      categories.Add(new AiTryOnCatalogCategoryDto("bestseller", "Bestseller"));
+    }
+
+    categories.AddRange(items
+      .Select(item => item.CategorySlug)
+      .Distinct(StringComparer.Ordinal)
+      .Select(slug => new AiTryOnCatalogCategoryDto(slug, FormatCategoryLabel(slug))));
+
+    return categories;
+  }
+
+  private static string? NormalizeCategory(string? category)
+  {
+    var normalized = category?.Trim();
+    return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+  }
+
+  private static string FormatCategoryLabel(string categorySlug)
+  {
+    return categorySlug switch
+    {
+      "ao-dai-truyen-thong" => "Áo dài truyền thống",
+      "ao-dai-lua-tron" => "Áo dài lụa trơn",
+      "ao-dai-theu-hoa" => "Áo dài thêu hoa",
+      "ao-dai-cach-tan" => "Áo dài cách tân",
+      "giay" => "Giày",
+      "khan-dong" => "Khăn đóng",
+      "man-doi-dau" => "Mấn đội đầu",
+      "quat" => "Quạt",
+      "tram-cai" => "Trâm cài",
+      "trang-suc" => "Trang sức",
+      "tui-sach" => "Túi sách",
+      "tui-xach" => "Túi xách",
+      _ => string.Join(
+        " ",
+        categorySlug
+          .Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
+          .Select(word => $"{char.ToUpperInvariant(word[0])}{word[1..]}"))
+    };
   }
 
   private sealed record ResolvedTryOnImage(

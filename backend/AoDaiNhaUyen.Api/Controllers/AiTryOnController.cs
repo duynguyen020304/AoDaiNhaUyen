@@ -15,9 +15,23 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
   private const long MaxRequestBytes = MaxImageBytes * (2 + MaxAccessoryImages);
 
   [HttpGet("catalog")]
-  public async Task<IActionResult> GetCatalog(CancellationToken cancellationToken)
+  public async Task<IActionResult> GetCatalog(
+    [FromQuery] int garmentPage = 1,
+    [FromQuery] int accessoryPage = 1,
+    [FromQuery] int pageSize = 6,
+    [FromQuery] string? garmentCategory = null,
+    [FromQuery] string? accessoryCategory = null,
+    CancellationToken cancellationToken = default)
   {
-    var result = await catalogTryOnService.GetCatalogAsync(cancellationToken);
+    var result = await catalogTryOnService.GetCatalogAsync(
+      new AiTryOnCatalogQueryDto(
+        garmentPage,
+        accessoryPage,
+        pageSize,
+        garmentCategory,
+        accessoryCategory),
+      cancellationToken);
+
     return Ok(ApiResponseFactory.Success(result));
   }
 
