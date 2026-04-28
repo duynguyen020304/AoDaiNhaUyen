@@ -130,11 +130,17 @@ public static class ServiceRegistration
     });
     services.AddScoped<IThreadMemoryService, ThreadMemoryService>();
     services.AddScoped<IStylistFallbackTextService, StylistFallbackTextService>();
-    services.AddScoped<IStylistChatService, StylistChatService>();
+    services.AddScoped<StylistChatService>();
+    services.AddSingleton<IStylistChatService, ConcurrencyLimitedStylistChatService>();
     services.AddHttpClient<IStylistResponseComposer, VertexAiStylistResponseComposer>(httpClient =>
     {
       httpClient.Timeout = Timeout.InfiniteTimeSpan;
     });
+    services
+      .AddOptions<ChatConcurrencyOptions>()
+      .Bind(configuration.GetSection(ChatConcurrencyOptions.SectionName))
+      .ValidateDataAnnotations()
+      .ValidateOnStart();
     services.Configure<GoogleCloudOptions>(configuration.GetSection("GoogleCloud"));
     services
       .AddOptions<AiTryOnConcurrencyOptions>()

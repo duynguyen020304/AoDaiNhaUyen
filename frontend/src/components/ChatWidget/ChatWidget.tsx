@@ -29,6 +29,7 @@ export default function ChatWidget() {
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [queuePosition, setQueuePosition] = useState<number | null>(null);
   const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
   const [pendingTryOnByThread, setPendingTryOnByThread] = useState<Record<number, ChatMessage>>({});
   const [usedTryOnMessageByThread, setUsedTryOnMessageByThread] = useState<Record<number, number>>({});
@@ -169,6 +170,7 @@ export default function ChatWidget() {
   const handleCreateThread = async () => {
     streamAbortControllerRef.current?.abort();
     setStreamingMessage(null);
+    setQueuePosition(null);
     setLoading(true);
     try {
       const thread = await createChatThread();
@@ -186,6 +188,7 @@ export default function ChatWidget() {
   const handleSelectThread = async (threadId: number) => {
     streamAbortControllerRef.current?.abort();
     setStreamingMessage(null);
+    setQueuePosition(null);
     setLoading(true);
     try {
       setActiveThread(await getChatThread(threadId));
@@ -239,7 +242,12 @@ export default function ChatWidget() {
 
       for await (const event of streamChatMessage(activeThread.id, capturedMessage, capturedFiles, streamAbortController.signal)) {
         switch (event.type) {
+          case 'queued': {
+            setQueuePosition(event.data.position);
+            break;
+          }
           case 'created': {
+            setQueuePosition(null);
             bufferedStructuredPayload = event.data.structuredPayload ?? null;
             assistantMessage = {
               id: event.data.messageId,
@@ -280,11 +288,13 @@ export default function ChatWidget() {
             break;
           }
           case 'error': {
+            setQueuePosition(null);
             setStreamingMessage(null);
             showToast(event.data.message, 'error');
             break;
           }
           case 'done': {
+            setQueuePosition(null);
             break;
           }
         }
@@ -295,6 +305,7 @@ export default function ChatWidget() {
         showToast('Không thể nhận phản hồi trực tiếp từ stylist AI.', 'error');
       }
     } finally {
+      setQueuePosition(null);
       streamAbortControllerRef.current = null;
       setSubmitting(false);
     }
@@ -383,6 +394,13 @@ export default function ChatWidget() {
                 {renderMessages.map((message) => (
                   <MessageCard key={message.id} message={message} onPreviewImage={setPreviewImage} />
                 ))}
+                {queuePosition !== null ? (
+                  <div className={styles.queueNotice}>
+                    {queuePosition > 0
+                      ? `Stylist AI đang bận, bạn đang ở vị trí ${queuePosition}. Vui lòng chờ một chút nhé.`
+                      : 'Stylist AI đang chuẩn bị phản hồi, vui lòng chờ một chút nhé.'}
+                  </div>
+                ) : null}
                 {streamingMessage && (
                   <MessageCard key="streaming" message={streamingMessage} onPreviewImage={setPreviewImage} streaming />
                 )}

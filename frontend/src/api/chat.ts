@@ -113,6 +113,10 @@ export interface SseCreatedEvent {
   structuredPayload: ChatStructuredPayload | null;
 }
 
+export interface SseQueuedEvent {
+  position: number;
+}
+
 export interface SseTextDeltaEvent {
   delta: string;
 }
@@ -130,6 +134,7 @@ export interface SseStreamErrorEvent {
 
 export type SseChatEvent =
   | { type: 'created'; data: SseCreatedEvent }
+  | { type: 'queued'; data: SseQueuedEvent }
   | { type: 'text_delta'; data: SseTextDeltaEvent }
   | { type: 'text_done'; data: SseTextDoneEvent }
   | { type: 'error'; data: SseStreamErrorEvent }
@@ -211,6 +216,8 @@ export async function* streamChatMessage(
       switch (eventType) {
         case 'created':
           return { type: 'created', data: JSON.parse(rawData) as SseCreatedEvent };
+        case 'queued':
+          return { type: 'queued', data: JSON.parse(rawData) as SseQueuedEvent };
         case 'text_delta':
           return { type: 'text_delta', data: JSON.parse(rawData) as SseTextDeltaEvent };
         case 'text_done':

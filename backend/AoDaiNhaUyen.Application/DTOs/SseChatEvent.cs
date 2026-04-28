@@ -11,6 +11,8 @@ public abstract record SseChatEvent
     IReadOnlyList<ChatAttachmentDto> Attachments,
     ChatStructuredPayloadDto? StructuredPayload) : SseChatEvent;
 
+  public sealed record Queued(int Position) : SseChatEvent;
+
   public sealed record TextDelta(string Delta) : SseChatEvent;
 
   public sealed record TextDone(string FullText, long MessageId, DateTime CreatedAt) : SseChatEvent;

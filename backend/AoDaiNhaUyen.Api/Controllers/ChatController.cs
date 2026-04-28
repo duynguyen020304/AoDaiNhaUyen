@@ -160,6 +160,7 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     var eventType = sseEvent switch
     {
       SseChatEvent.Created => "created",
+      SseChatEvent.Queued => "queued",
       SseChatEvent.TextDelta => "text_delta",
       SseChatEvent.TextDone => "text_done",
       SseChatEvent.StreamError => "error",

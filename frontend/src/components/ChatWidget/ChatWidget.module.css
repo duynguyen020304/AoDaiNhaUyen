@@ -171,6 +171,18 @@
   white-space: nowrap;
 }
 
+.queueNotice {
+  align-self: flex-start;
+  max-width: min(280px, 88%);
+  padding: 9px 12px;
+  border: 1px solid rgba(109, 21, 23, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 248, 235, 0.9);
+  color: rgba(77, 25, 22, 0.78);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 /* --- Product grid (compact horizontal cards) --- */
 .productSections {
   margin-top: 10px;
