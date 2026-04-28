@@ -4,13 +4,13 @@
 # AoDaiNhaUyen.Api
 
 ## Purpose
-ASP.NET Core 10 web API host. Contains controllers, middleware, response types, API-level services, and application configuration. This is the entry point -- Program.cs bootstraps the entire application.
+ASP.NET Core 10 web API host. Has controllers, middleware, response types, API-level services, app config. Entry point -- Program.cs bootstraps whole app.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `Program.cs` | Application entry point: loads .env, configures CORS, static files, auth, DI container, and seed-on-startup |
-| `AoDaiNhaUyen.Api.csproj` | Project file with NuGet references |
+| `Program.cs` | App entry point: loads .env, configures CORS, static files, auth, DI container, seed-on-startup |
+| `AoDaiNhaUyen.Api.csproj` | Project file with NuGet refs |
 
 ## Subdirectories
 | Directory | Purpose |
@@ -26,7 +26,7 @@ ASP.NET Core 10 web API host. Contains controllers, middleware, response types, 
 ## Configuration
 | File | Description |
 |------|-------------|
-| `ServiceRegistration.cs` | `AddBackendServices()` extension: registers DbContext, JWT auth, all repositories, services, and options with validation |
+| `ServiceRegistration.cs` | `AddBackendServices()` extension: registers DbContext, JWT auth, all repositories, services, options with validation |
 
 ### What ServiceRegistration.cs Configures
 - **Database**: Npgsql/PostgreSQL via connection string from config or env var `ConnectionStrings__DefaultConnection`
@@ -39,13 +39,13 @@ ASP.NET Core 10 web API host. Contains controllers, middleware, response types, 
 ## Controllers
 | Controller | Route | Description |
 |-----------|-------|-------------|
-| `AiTryOnController` | `api/v1/ai-tryon` | AI virtual try-on: catalog listing and image generation via Vertex AI |
+| `AiTryOnController` | `api/v1/ai-tryon` | AI virtual try-on: catalog list and image generation via Vertex AI |
 | `AuthController` | `api/auth` | Full auth flow: register, login, Google/Facebook OAuth, email verification, password reset, refresh tokens |
-| `CategoriesController` | `api/v1/categories` | Category listing (flat and header tree) |
+| `CategoriesController` | `api/v1/categories` | Category list (flat and header tree) |
 | `ChatController` | `api/v1/chat/threads` | AI stylist chat: thread management, messaging with attachments, in-chat try-on |
 | `CheckoutController` | `api/users/me/checkout` | Order placement (requires auth) |
 | `HealthController` | `health` | Health check endpoint |
-| `ProductsController` | `api/v1/products` | Product catalog: paginated listing with filters, detail by slug |
+| `ProductsController` | `api/v1/products` | Product catalog: paginated list with filters, detail by slug |
 | `UserAddressController` | `api/users/me/addresses` | User address CRUD (requires auth) |
 | `UserCartController` | `api/users/me/cart` | Shopping cart operations (requires auth) |
 | `UserController` | `api/users/me` | User profile read/update (requires auth) |
@@ -66,23 +66,23 @@ ASP.NET Core 10 web API host. Contains controllers, middleware, response types, 
 ## Services
 | File | Description |
 |------|-------------|
-| `SmtpEmailService.cs` | IEmailService implementation using MailKit/SMTP for sending verification and password reset emails |
+| `SmtpEmailService.cs` | IEmailService implementation using MailKit/SMTP for verification and password reset emails |
 
 ## For AI Agents
 ### Working In This Directory
-- Controllers are thin -- they only handle HTTP concerns (parsing, validation, response shaping) and delegate all business logic to Application services
+- Controllers thin -- only handle HTTP concerns (parsing, validation, response shaping) and delegate all business logic to Application services
 - All responses use `ApiResponse<T>` or `PaginatedApiResponse<T>` envelope from `Responses/` via `ApiResponseFactory`
-- JWT auth configured in `Configuration/ServiceRegistration.cs` -- tokens are read from HttpOnly cookies, not Authorization headers
+- JWT auth configured in `Configuration/ServiceRegistration.cs` -- tokens read from HttpOnly cookies, not Authorization headers
 - CORS policy "Frontend" allows configured origins from `FrontendOrigins` config (defaults to localhost:5173 and production domains)
 - Static files served from `upload/` directory at `/upload` path
-- Error messages in controllers are in Vietnamese (e.g., "Dang ky that bai", "Khong tim thay du lieu")
+- Error messages in controllers use Vietnamese (e.g., "Dang ky that bai", "Khong tim thay du lieu")
 - AuthController writes access_token (60min, path `/`) and refresh_token (30d, path `/api/auth`) as HttpOnly cookies
-- ChatController supports both authenticated users and anonymous guests (via `stylist_guest` cookie)
-- AiTryOnController has 8MB per-image limit, max 3 accessory images, supports both uploaded garment images and catalog product selection
+- ChatController supports authenticated users and anonymous guests (via `stylist_guest` cookie)
+- AiTryOnController has 8MB per-image limit, max 3 accessory images, supports uploaded garment images and catalog product selection
 
 ### Adding a New Controller
 1. Create in `Controllers/` with `[ApiController]` and `[Route("api/...")]`
 2. Inject Application-layer service interfaces via primary constructor
 3. Use `ApiResponseFactory.Success/Failure` for all responses
 4. Add `[Authorize]` for endpoints requiring authentication
-5. Register the backing service in `Configuration/ServiceRegistration.cs`
+5. Register backing service in `Configuration/ServiceRegistration.cs`

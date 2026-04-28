@@ -179,6 +179,7 @@ public sealed class CatalogTryOnService(
     var products = await dbContext.Products
       .AsNoTracking()
       .Include(product => product.AiAssets)
+      .Include(product => product.Category)
       .Where(product => accessoryProductIds.Contains(product.Id) && product.Status == "active")
       .ToListAsync(cancellationToken);
 
@@ -202,7 +203,8 @@ public sealed class CatalogTryOnService(
         product.Slug,
         product.Name,
         await ReadAssetBytesAsync(aiAsset.FileUrl, cancellationToken),
-        aiAsset.MimeType));
+        aiAsset.MimeType,
+        product.Category.Slug));
     }
 
     return resolved;

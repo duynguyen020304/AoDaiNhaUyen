@@ -4,13 +4,13 @@
 # utils
 
 ## Purpose
-Shared utility functions and constants used across components and pages. Provides reusable framer-motion animation variants and image format conversion.
+Shared utility functions/constants across components/pages. Reusable framer-motion animation variants + image format conversion.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `motion.ts` | Reusable framer-motion animation variants and constants. Exports: `easeOutQuart` (cubic bezier [0.22, 1, 0.36, 1]), `viewportOnce` (once: true, margin config), `sectionReveal` (opacity + y with stagger), `staggerContainer` (stagger children), `fadeUp` (opacity + y), `fadeScale` (opacity + scale), `maskReveal` (clipPath horizontal reveal), `coverReveal` (scaleX wipe), `listStagger` (faster stagger), `cardReveal` (opacity + y + scale), `carouselCopy` (enter/center/exit with blur), `carouselCopyItem` (carousel child), `imageParallaxHover` (rest/hover scale + y), `cardHover` (rest/hover y + scale) |
-| `imageConversion.ts` | Image format converter for AI try-on compatibility. `convertToSupportedFormat(file: File)` converts unsupported image formats to JPEG (quality 0.92) using canvas. Supported formats: JPEG, PNG, WebP, HEIC, HEIF. Used before uploading images to the Gemini-based AI try-on API |
+| `motion.ts` | Reusable framer-motion animation variants/constants. Exports: `easeOutQuart` (cubic bezier [0.22, 1, 0.36, 1]), `viewportOnce` (once: true, margin config), `sectionReveal` (opacity + y with stagger), `staggerContainer` (stagger children), `fadeUp` (opacity + y), `fadeScale` (opacity + scale), `maskReveal` (clipPath horizontal reveal), `coverReveal` (scaleX wipe), `listStagger` (faster stagger), `cardReveal` (opacity + y + scale), `carouselCopy` (enter/center/exit with blur), `carouselCopyItem` (carousel child), `imageParallaxHover` (rest/hover scale + y), `cardHover` (rest/hover y + scale) |
+| `imageConversion.ts` | Image format converter for AI try-on compatibility. `convertToSupportedFormat(file: File)` converts unsupported image formats to JPEG (quality 0.92) using canvas. Supported formats: JPEG, PNG, WebP, HEIC, HEIF. Used before image upload to Gemini-based AI try-on API |
 
 ## For AI Agents
 ### Motion Variant Usage Pattern
@@ -37,5 +37,5 @@ import { fadeUp, staggerContainer, viewportOnce } from '../utils/motion';
 ### Image Conversion
 - Only needed for AI try-on file uploads
 - Handles HEIC/HEIF conversion (common on iOS devices)
-- Falls back to returning the original file if conversion fails
+- Falls back to original file if conversion fails
 - Output: JPEG at 92% quality with `.jpg` extension

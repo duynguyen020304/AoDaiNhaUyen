@@ -12,6 +12,7 @@ using AoDaiNhaUyen.Infrastructure.Repositories;
 using AoDaiNhaUyen.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace AoDaiNhaUyen.Api.Configuration;
@@ -136,6 +137,11 @@ public static class ServiceRegistration
     });
     services.Configure<GoogleCloudOptions>(configuration.GetSection("GoogleCloud"));
     services
+      .AddOptions<AiTryOnConcurrencyOptions>()
+      .Bind(configuration.GetSection(AiTryOnConcurrencyOptions.SectionName))
+      .ValidateDataAnnotations()
+      .ValidateOnStart();
+    services
       .AddOptions<ImageValidationOptions>()
       .Bind(configuration.GetSection(ImageValidationOptions.SectionName))
       .ValidateDataAnnotations()
@@ -145,10 +151,15 @@ public static class ServiceRegistration
     {
       httpClient.Timeout = Timeout.InfiniteTimeSpan;
     });
-    services.AddHttpClient<IAiTryOnService, VertexAiTryOnService>(httpClient =>
+    services.AddHttpClient<VertexAiTryOnService>(httpClient =>
     {
       httpClient.Timeout = Timeout.InfiniteTimeSpan;
     });
+    services.AddSingleton<IAiTryOnService>(serviceProvider =>
+      new ConcurrencyLimitedAiTryOnService(
+        () => serviceProvider.GetRequiredService<VertexAiTryOnService>(),
+        serviceProvider.GetRequiredService<IOptions<AiTryOnConcurrencyOptions>>(),
+        serviceProvider.GetRequiredService<ILogger<ConcurrencyLimitedAiTryOnService>>()));
 
     return services;
   }

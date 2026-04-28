@@ -4,7 +4,7 @@
 # backend
 
 ## Purpose
-ASP.NET Core 10 REST API following clean architecture. Four projects: Api (presentation), Application (use cases/DTOs), Domain (entities), Infrastructure (data access/external services). Uses EF Core with PostgreSQL, JWT authentication with Google/Facebook OAuth, MailKit for email, and Google Vertex AI for virtual try-on and stylist chat.
+ASP.NET Core 10 REST API, clean architecture. Four projects: Api (presentation), Application (use cases/DTOs), Domain (entities), Infrastructure (data access/external services). Uses EF Core with PostgreSQL, JWT auth with Google/Facebook OAuth, MailKit email, Google Vertex AI for virtual try-on + stylist chat.
 
 ## Key Files
 | File | Description |
@@ -14,15 +14,15 @@ ASP.NET Core 10 REST API following clean architecture. Four projects: Api (prese
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
-| `AoDaiNhaUyen.Api/` | ASP.NET Core web API host -- controllers, middleware, configuration (see `AoDaiNhaUyen.Api/AGENTS.md`) |
-| `AoDaiNhaUyen.Application/` | Application layer -- DTOs, interfaces, service implementations (see `AoDaiNhaUyen.Application/AGENTS.md`) |
+| `AoDaiNhaUyen.Api/` | ASP.NET Core web API host -- controllers, middleware, config (see `AoDaiNhaUyen.Api/AGENTS.md`) |
+| `AoDaiNhaUyen.Application/` | Application layer -- DTOs, interfaces, services (see `AoDaiNhaUyen.Application/AGENTS.md`) |
 | `AoDaiNhaUyen.Domain/` | Domain layer -- entities, seed data (see `AoDaiNhaUyen.Domain/AGENTS.md`) |
 | `AoDaiNhaUyen.Infrastructure/` | Infrastructure layer -- EF Core, repositories, external services (see `AoDaiNhaUyen.Infrastructure/AGENTS.md`) |
-| `AoDaiNhaUyen.Tests/` | Unit and integration tests (see `AoDaiNhaUyen.Tests/AGENTS.md`) |
+| `AoDaiNhaUyen.Tests/` | Unit + integration tests (see `AoDaiNhaUyen.Tests/AGENTS.md`) |
 
 ## For AI Agents
 ### Working In This Directory
-- Clean architecture: Api -> Application -> Infrastructure; Domain is standalone (no dependencies on other projects)
+- Clean architecture: Api -> Application -> Infrastructure; Domain standalone (no dependencies on other projects)
 - Dependency flow: Api references Application + Infrastructure; Infrastructure references Application + Domain; Application references Domain
 - Run `dotnet build` from here to compile all projects
 - Run `dotnet test` to execute tests
@@ -40,9 +40,9 @@ ASP.NET Core 10 REST API following clean architecture. Four projects: Api (prese
 - Repository pattern for data access (ICategoryRepository, IProductRepository, ICartRepository, IUserProfileRepository)
 - Service layer for business logic (AuthService, CartService, CheckoutService, CatalogService, etc.)
 - DTOs for request/response mapping
-- JWT Bearer authentication with Google/Facebook OAuth providers
+- JWT Bearer auth with Google/Facebook OAuth providers
 - Token stored in HttpOnly cookies (access_token + refresh_token)
-- Options pattern with ValidateDataAnnotations for configuration (JwtSettings, EmailSettings, GoogleOAuthSettings, FacebookOAuthSettings, CookieSettings)
+- Options pattern with ValidateDataAnnotations for config (JwtSettings, EmailSettings, GoogleOAuthSettings, FacebookOAuthSettings, CookieSettings)
 
 ## Dependencies
 ### External

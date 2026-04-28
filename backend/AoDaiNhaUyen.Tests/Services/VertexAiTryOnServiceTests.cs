@@ -18,7 +18,7 @@ public sealed class VertexAiTryOnServiceTests
     var service = CreateService(handler);
 
     await service.GenerateAsync(CreateRequest([
-      new AiTryOnAccessoryImageDto("khan-lua-do", "Khăn lụa đỏ", [7, 8, 9], "image/png")
+      new AiTryOnAccessoryImageDto("khan-lua-do", "Khăn lụa đỏ", [7, 8, 9], "image/png", "unknown")
     ]));
 
     var prompt = await ReadPromptAsync(handler);
@@ -33,11 +33,51 @@ public sealed class VertexAiTryOnServiceTests
     var service = CreateService(handler);
 
     await service.GenerateAsync(CreateRequest([
-      new AiTryOnAccessoryImageDto("khan-lua-do", "", [7, 8, 9], "image/png")
+      new AiTryOnAccessoryImageDto("khan-lua-do", "", [7, 8, 9], "image/png", "unknown")
     ]));
 
     var prompt = await ReadPromptAsync(handler);
     Assert.Contains("khan-lua-do", prompt);
+  }
+
+  [Fact]
+  public async Task GenerateAsync_PromptContainsConditionalBackgroundInstruction()
+  {
+    var handler = new StubHttpMessageHandler(CreateImageResponse());
+    var service = CreateService(handler);
+
+    await service.GenerateAsync(CreateRequest([]));
+
+    var prompt = await ReadPromptAsync(handler);
+    Assert.Contains("background của ảnh 1", prompt);
+    Assert.Contains("nếu background đó phù hợp", prompt);
+    Assert.Contains("dùng background của ảnh 2", prompt);
+  }
+
+  [Fact]
+  public async Task GenerateAsync_PromptContainsMaleHandlingInstruction()
+  {
+    var handler = new StubHttpMessageHandler(CreateImageResponse());
+    var service = CreateService(handler);
+
+    await service.GenerateAsync(CreateRequest([]));
+
+    var prompt = await ReadPromptAsync(handler);
+    Assert.Contains("bất kỳ giới tính nào", prompt);
+    Assert.Contains("nam", prompt);
+    Assert.Contains("tự nhiên, thanh lịch", prompt);
+  }
+
+  [Fact]
+  public async Task GenerateAsync_PromptDoesNotHardcodeGarmentBackground()
+  {
+    var handler = new StubHttpMessageHandler(CreateImageResponse());
+    var service = CreateService(handler);
+
+    await service.GenerateAsync(CreateRequest([]));
+
+    var prompt = await ReadPromptAsync(handler);
+    Assert.DoesNotContain("Final image phải dùng background", prompt);
   }
 
   [Fact]
@@ -47,7 +87,7 @@ public sealed class VertexAiTryOnServiceTests
     var service = CreateService(handler);
 
     await service.GenerateAsync(CreateRequest([
-      new AiTryOnAccessoryImageDto("khan-lua-do", "Khăn lụa đỏ", [7, 8, 9], "image/png")
+      new AiTryOnAccessoryImageDto("khan-lua-do", "Khăn lụa đỏ", [7, 8, 9], "image/png", "unknown")
     ]));
 
     var body = await handler.Requests[0].Content!.ReadAsStringAsync();
@@ -63,6 +103,86 @@ public sealed class VertexAiTryOnServiceTests
     Assert.Equal(Convert.ToBase64String([4, 5, 6]), parts[2].GetProperty("inlineData").GetProperty("data").GetString());
     Assert.Equal("image/png", parts[3].GetProperty("inlineData").GetProperty("mimeType").GetString());
     Assert.Equal(Convert.ToBase64String([7, 8, 9]), parts[3].GetProperty("inlineData").GetProperty("data").GetString());
+  }
+
+  [Fact]
+  public async Task GenerateAsync_PromptContainsHairAccessoryInstruction()
+  {
+    var handler = new StubHttpMessageHandler(CreateImageResponse());
+    var service = CreateService(handler);
+
+    await service.GenerateAsync(CreateRequest([
+      new AiTryOnAccessoryImageDto("tram-cai-hoa-don", "Trâm cài hoa đơn", [7, 8, 9], "image/png", "tram-cai")
+    ]));
+
+    var prompt = await ReadPromptAsync(handler);
+    Assert.Contains("phụ kiện cài tóc", prompt);
+    Assert.Contains("điều chỉnh kiểu tóc", prompt);
+    Assert.Contains("Trâm cài hoa đơn", prompt);
+  }
+
+  [Fact]
+  public async Task GenerateAsync_PromptContainsFanHandheldInstruction()
+  {
+    var handler = new StubHttpMessageHandler(CreateImageResponse());
+    var service = CreateService(handler);
+
+    await service.GenerateAsync(CreateRequest([
+      new AiTryOnAccessoryImageDto("quat-bau", "Quạt bầu", [7, 8, 9], "image/png", "quat")
+    ]));
+
+    var prompt = await ReadPromptAsync(handler);
+    Assert.Contains("phụ kiện cầm tay", prompt);
+    Assert.Contains("điều chỉnh dáng tay", prompt);
+    Assert.Contains("Quạt bầu", prompt);
+  }
+
+  [Fact]
+  public async Task GenerateAsync_PromptContainsBagHandheldInstruction()
+  {
+    var handler = new StubHttpMessageHandler(CreateImageResponse());
+    var service = CreateService(handler);
+
+    await service.GenerateAsync(CreateRequest([
+      new AiTryOnAccessoryImageDto("tui-theu-hoa", "Túi thêu hoa", [7, 8, 9], "image/png", "tui-sach")
+    ]));
+
+    var prompt = await ReadPromptAsync(handler);
+    Assert.Contains("phụ kiện cầm tay", prompt);
+    Assert.Contains("điều chỉnh dáng tay", prompt);
+    Assert.Contains("Túi thêu hoa", prompt);
+  }
+
+  [Fact]
+  public async Task GenerateAsync_PromptContainsMultipleAccessoryCategoryInstructions()
+  {
+    var handler = new StubHttpMessageHandler(CreateImageResponse());
+    var service = CreateService(handler);
+
+    await service.GenerateAsync(CreateRequest([
+      new AiTryOnAccessoryImageDto("tram-cai-hoa-don", "Trâm cài hoa đơn", [7, 8, 9], "image/png", "tram-cai"),
+      new AiTryOnAccessoryImageDto("quat-bau", "Quạt bầu", [10, 11, 12], "image/png", "quat")
+    ]));
+
+    var prompt = await ReadPromptAsync(handler);
+    Assert.Contains("điều chỉnh kiểu tóc", prompt);
+    Assert.Contains("điều chỉnh dáng tay", prompt);
+  }
+
+  [Fact]
+  public async Task GenerateAsync_PromptUsesGenericInstructionForUnknownAccessoryCategory()
+  {
+    var handler = new StubHttpMessageHandler(CreateImageResponse());
+    var service = CreateService(handler);
+
+    await service.GenerateAsync(CreateRequest([
+      new AiTryOnAccessoryImageDto("khan-lua-do", "Khăn lụa đỏ", [7, 8, 9], "image/png", "unknown")
+    ]));
+
+    var prompt = await ReadPromptAsync(handler);
+    Assert.Contains("phụ kiện khác", prompt);
+    Assert.DoesNotContain("điều chỉnh kiểu tóc", prompt);
+    Assert.DoesNotContain("điều chỉnh dáng tay", prompt);
   }
 
   private static AiTryOnRequestDto CreateRequest(IReadOnlyList<AiTryOnAccessoryImageDto> accessories) =>
