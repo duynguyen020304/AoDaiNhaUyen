@@ -162,8 +162,9 @@
 }
 
 .bst2 .cloudTop {
-  left: -2%;
-  top: -13.5%;
+  left: -6.1%;
+  top: -15%;
+  opacity: 0.5;
 }
 
 .bst2 .cloudBottom {
@@ -213,7 +214,7 @@
 }
 
 .bst3 .cloudTop {
-  left: 49.8%;
+  left: 50%;
   top: -18.4%;
 }
 
@@ -265,7 +266,7 @@
 }
 
 .bst4 .cloudTop {
-  left: 5.8%;
+  left: 5.5%;
   top: -19%;
 }
 

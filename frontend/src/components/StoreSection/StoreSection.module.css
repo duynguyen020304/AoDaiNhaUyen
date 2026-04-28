@@ -22,6 +22,7 @@
   flex-direction: column;
   gap: 28px;
   will-change: transform;
+  margin-top: 3vw;
 }
 
 .storeCard h2 {
@@ -70,6 +71,7 @@
   height: 548px;
   overflow: hidden;
   background: #d9d9d9;
+  margin-top: 3vw;
 }
 
 .storeMap iframe {
@@ -88,10 +90,9 @@
 
 .storeHeading {
   position: absolute;
-  left: 50%;
-  width: 703px;
-  transform: translateX(-50%);
-  margin: 0;
+  width: 100%;
+  transform: translate(-50%, -50%);
+  margin-top: 1vw;
   color: transparent;
   background: var(--gold-gradient);
   -webkit-background-clip: text;

@@ -1,17 +1,11 @@
 import { motion } from 'framer-motion';
 import styles from './BrandStorySection.module.css';
-import { fadeUp, sectionReveal, viewportOnce } from '../../utils/motion';
+import { fadeUp, viewportOnce } from '../../utils/motion';
 import { BRAND_STORY, GOLD_GRADIENT, IMG } from './data';
 
 export default function BrandStorySection() {
   return (
-    <motion.section
-      className={styles.brand}
-      variants={sectionReveal}
-      initial="hidden"
-      whileInView="show"
-      viewport={viewportOnce}
-    >
+    <section className={styles.brand}>
       {/* Background texture */}
       <div className={styles.textureOverlay}>
         <img src={IMG.figmaBst6Bg} alt="" />
@@ -25,19 +19,34 @@ export default function BrandStorySection() {
         className={styles.title}
         style={{ backgroundImage: GOLD_GRADIENT }}
         variants={fadeUp}
+        initial="hidden"
+        whileInView="show"
+        viewport={viewportOnce}
       >
         {BRAND_STORY.title}
       </motion.h2>
 
       {/* Two-column text */}
       <div className={styles.columns}>
-        <motion.p className={styles.paragraph} variants={fadeUp}>
+        <motion.p
+          className={styles.paragraph}
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="show"
+          viewport={viewportOnce}
+        >
           {BRAND_STORY.leftText}
         </motion.p>
-        <motion.p className={`${styles.paragraph} ${styles.paragraphRight}`} variants={fadeUp}>
+        <motion.p
+          className={`${styles.paragraph} ${styles.paragraphRight}`}
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="show"
+          viewport={viewportOnce}
+        >
           {BRAND_STORY.rightText}
         </motion.p>
       </div>
-    </motion.section>
+    </section>
   );
 }

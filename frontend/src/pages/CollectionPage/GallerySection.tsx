@@ -18,6 +18,10 @@ export default function GallerySection() {
         <img src={IMG.galleryTexture} alt="" />
       </div>
 
+      <div className={styles.bgPattern}>
+        <img src="/assets/collection/figma-gallery-pattern.png" alt="" />
+      </div>
+
       {/* Collection cards */}
       <motion.div
         className={styles.collections}

@@ -283,10 +283,11 @@
 }
 
 .hotspotButton::after {
-  inset: 14px;
+  inset: 8px;
   border: 1px solid rgba(255, 255, 255, 0.72);
   opacity: 0;
   transform: scale(0.74);
+  animation: hotspotWave 1.8s ease-out infinite;
   transition:
     opacity 220ms ease,
     transform 220ms ease;
@@ -319,6 +320,25 @@
 .hotspotButton:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
+}
+
+@keyframes hotspotWave {
+  0% {
+    opacity: 1;
+    transform: scale(0.72);
+  }
+
+  72%,
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hotspotButton::after {
+    animation: none;
+  }
 }
 
 .noteCallout {
@@ -520,12 +540,12 @@
 }
 
 .previewControls {
-  display: grid;
+  display: flex;
   grid-template-columns: 54px minmax(0, 1fr) 54px;
   align-items: center;
-  gap: 8px;
-  width: min(80%, 600px);
-  margin: 26px auto 0;
+  width: min(100%, 620px);
+  margin: 1vw auto 0;
+  justify-content: center;
 }
 
 .thumbnailRail {
@@ -534,6 +554,7 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
+  overflow: visible;
 }
 
 .previewArrowLeft,
@@ -588,18 +609,18 @@
 }
 
 .thumbnailOuter {
-  width: 66px;
-  height: 104px;
+  width: 54px;
+  height: 86px;
 }
 
 .thumbnailInner {
-  width: 82px;
-  height: 122px;
+  width: 68px;
+  height: 102px;
 }
 
 .thumbnailCenter {
-  width: 110px;
-  height: 171px;
+  width: 92px;
+  height: 144px;
   z-index: 1;
   transform: translateY(-2px);
 }
@@ -636,7 +657,6 @@
   justify-content: center;
   align-items: flex-end;
   gap: 12px;
-  margin-top: 8px;
 }
 
 .coinButton {
@@ -665,10 +685,18 @@
     box-shadow 240ms ease;
 }
 
+.coinButton:nth-child(1) .coin,
+.coinButton:nth-child(5) .coin {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 2vw;
+}
+
 .coinButton:nth-child(2) .coin,
 .coinButton:nth-child(4) .coin {
   width: 44px;
   height: 44px;
+  margin-bottom: 1vw;
 }
 
 .coinButton:nth-child(3) .coin {
@@ -694,16 +722,13 @@
     0 10px 18px rgba(0, 0, 0, 0.28);
 }
 
-.bottomPill {
-  display: none;
-  width: 100%;
-  max-width: 484px;
-  height: 45px;
-  margin: 12px auto 0;
-  border: 12px solid var(--gold);
-  border-radius: 999px;
-  background: var(--preview-bottom-pill-bg);
-  box-shadow: inset 35px 35px 4px 24px rgba(0, 0, 0, 0.12);
+.coinRowBottom {
+  display: block;
+  width: min(92%, 520px);
+  height: auto;
+  margin: 10px auto 0;
+  pointer-events: none;
+  user-select: none;
 }
 .drumPattern {
   position: absolute;
@@ -744,18 +769,18 @@
   }
 
   .thumbnailOuter {
-    width: 58px;
-    height: 92px;
+    width: 50px;
+    height: 80px;
   }
 
   .thumbnailInner {
-    width: 72px;
-    height: 108px;
+    width: 62px;
+    height: 94px;
   }
 
   .thumbnailCenter {
-    width: 96px;
-    height: 150px;
+    width: 82px;
+    height: 128px;
   }
 
   .previewArrowLeft,
@@ -891,18 +916,18 @@
   }
 
   .thumbnailOuter {
-    width: 42px;
-    height: 68px;
+    width: 36px;
+    height: 58px;
   }
 
   .thumbnailInner {
-    width: 52px;
-    height: 84px;
+    width: 44px;
+    height: 72px;
   }
 
   .thumbnailCenter {
-    width: 70px;
-    height: 112px;
+    width: 58px;
+    height: 94px;
   }
 
   .previewArrowLeft,
@@ -952,8 +977,8 @@
     height: 46px;
   }
 
-  .bottomPill {
-    max-width: 320px;
+  .coinRowBottom {
+    width: min(92%, 320px);
   }
 
   .goldFlower {
