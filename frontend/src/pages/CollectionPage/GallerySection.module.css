@@ -25,9 +25,9 @@
 
 .bgPattern {
   position: absolute;
-  left: 50%;
-  top: 47%;
-  width: 296.77%;
+  left: 35%;
+  top: 55%;
+  width: 300.77%;
   min-width: 2600px;
   aspect-ratio: 5698 / 5783;
   transform: translate(-50%, -50%) rotate(-21.33deg);
@@ -56,26 +56,6 @@
   aspect-ratio: 1920 / var(--frame-height);
   min-height: 680px;
   overflow: hidden;
-  background: #160303;
-}
-
-.collectionCard::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 46%;
-  width: 296.77%;
-  aspect-ratio: 5698 / 5783;
-  background: url('/assets/collection/figma-gallery-pattern.png') center / contain no-repeat;
-  opacity: 0.13;
-  transform: translate(-50%, -50%) rotate(-21.33deg);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.collectionCard2::before {
-  left: 45%;
-  top: 42%;
 }
 
 .collectionCard1 {

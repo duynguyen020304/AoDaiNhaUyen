@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import styles from './CollectionSection.module.css';
-import { cardHover, cardReveal, imageParallaxHover, staggerContainer } from '../../utils/motion';
+import { cardHover, cardReveal, staggerContainer } from '../../utils/motion';
 
 type Dress = {
   src: string;
@@ -56,14 +56,11 @@ export default function DressShowcase({ dresses, tabLabel }: DressShowcaseProps)
               whileHover="hover"
               transition={{ duration: 0.32, ease: 'easeOut' }}
             >
-              <motion.img
-                src={dress.src}
-                alt={dress.alt}
-                variants={imageParallaxHover}
-                transition={{ duration: 0.36, ease: 'easeOut' }}
-              />
+              <motion.img src={dress.src} alt={dress.alt} />
               <motion.div className={styles.dressGlow} variants={cardHover} aria-hidden="true" />
-              <h3>{dress.name}</h3>
+              <div className={styles.productNameFrame}>
+                <h3>{dress.name}</h3>
+              </div>
             </motion.article>
           ))}
         </motion.div>

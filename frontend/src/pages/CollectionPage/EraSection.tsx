@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import type { CSSProperties } from 'react';
 import styles from './EraSection.module.css';
-import { fadeUp, sectionReveal, viewportOnce } from '../../utils/motion';
+import { fadeUp, viewportOnce } from '../../utils/motion';
 import { GOLD_GRADIENT, IMG, type EraData } from './data';
 
 interface Props {
@@ -12,13 +12,9 @@ export default function EraSection({ data }: Props) {
   const isRight = data.layout === 'right';
 
   return (
-    <motion.section
+    <section
       className={`${styles.era} ${styles[data.variant]}`}
       style={{ '--era-height': data.frameHeight } as CSSProperties}
-      variants={sectionReveal}
-      initial="hidden"
-      whileInView="show"
-      viewport={viewportOnce}
     >
       <div className={styles.bgScene}>
         <img src={data.images.bg ?? data.images.street} alt="" className={styles.bgImg} />
@@ -32,7 +28,13 @@ export default function EraSection({ data }: Props) {
       <img src={IMG.figmaCloudPattern} alt="" className={`${styles.cloudDecor} ${styles.cloudBottom}`} aria-hidden="true" />
 
       <div className={`${styles.content} ${isRight ? styles.contentRight : styles.contentLeft}`}>
-        <motion.div className={styles.textCol} variants={fadeUp}>
+        <motion.div
+          className={styles.textCol}
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="show"
+          viewport={viewportOnce}
+        >
           <h3
             className={styles.eraTitle}
             style={{ backgroundImage: GOLD_GRADIENT }}
@@ -46,12 +48,12 @@ export default function EraSection({ data }: Props) {
           </div>
         </motion.div>
 
-        <motion.div className={styles.imageCol} variants={fadeUp}>
+        <div className={styles.imageCol}>
           <div className={styles.productWrap}>
             <img src={data.images.product} alt={data.title} className={styles.productImg} />
           </div>
-        </motion.div>
+        </div>
       </div>
-    </motion.section>
+    </section>
   );
 }

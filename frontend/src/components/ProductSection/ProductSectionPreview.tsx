@@ -4,7 +4,6 @@ import { cardReveal, easeOutQuart, listStagger } from '../../utils/motion';
 import type { ProductSectionSlide } from './productSectionData';
 
 const topFlourish = '/assets/top-flourish.png';
-const indicatorOffsets = [-1, 0, 1];
 
 type ProductSectionPreviewProps = {
   active: number;
@@ -23,18 +22,25 @@ export default function ProductSectionPreview({
   onPrevious,
   onSelect,
 }: ProductSectionPreviewProps) {
-  const previewOffsets = [-1, 0, 1];
-  const previewItems = previewOffsets.map((offset) => {
-    const index = (active + offset + slides.length) % slides.length;
-    return { index, item: slides[index], offset };
-  });
+  const previousIndex = (active - 1 + slides.length) % slides.length;
+  const nextIndex = (active + 1) % slides.length;
+  const hiddenIndex = slides.findIndex((_, index) => ![previousIndex, active, nextIndex].includes(index));
+  const repeatedIndex = hiddenIndex === -1 ? active : hiddenIndex;
 
-  const getThumbnailPositionClass = (offset: number) => {
-    if (offset === 0) {
+  const previewItems = [
+    { index: repeatedIndex, item: slides[repeatedIndex], slot: 0 },
+    { index: previousIndex, item: slides[previousIndex], slot: 1 },
+    { index: active, item: slides[active], slot: 2 },
+    { index: nextIndex, item: slides[nextIndex], slot: 3 },
+    { index: repeatedIndex, item: slides[repeatedIndex], slot: 4 },
+  ];
+
+  const getThumbnailPositionClass = (slot: number) => {
+    if (slot === 2) {
       return styles.thumbnailCenter;
     }
 
-    return Math.abs(offset) === 1 ? styles.thumbnailInner : styles.thumbnailOuter;
+    return slot === 1 || slot === 3 ? styles.thumbnailInner : styles.thumbnailOuter;
   };
 
   return (
@@ -68,14 +74,6 @@ export default function ProductSectionPreview({
         </motion.div>
       </div>
 
-      <div className={styles.previewIndicatorRail} aria-hidden="true">
-        {indicatorOffsets.map((offset) => (
-          <span
-            key={offset}
-            className={`${styles.previewIndicator} ${offset === 0 ? styles.previewIndicatorActive : ''}`}
-          />
-        ))}
-      </div>
 
       <div className={styles.previewControls}>
         <button
@@ -88,12 +86,12 @@ export default function ProductSectionPreview({
         </button>
 
         <div className={styles.thumbnailRail}>
-          {previewItems.map(({ item, index, offset }) => (
+          {previewItems.map(({ item, index, slot }) => (
             <button
-              key={`${item.id}-${offset}`}
+              key={`${item.id}-${slot}`}
               type="button"
-              className={`${styles.thumbnailButton} ${getThumbnailPositionClass(offset)} ${
-                offset === 0 ? styles.thumbnailActive : ''
+              className={`${styles.thumbnailButton} ${getThumbnailPositionClass(slot)} ${
+                slot === 2 ? styles.thumbnailActive : ''
               }`}
               onClick={() => onSelect(index)}
               aria-label={item.previewLabel}
@@ -114,12 +112,12 @@ export default function ProductSectionPreview({
       </div>
 
       <div className={styles.coinRow}>
-        {previewItems.map(({ item, index, offset }) => (
+        {previewItems.map(({ item, index, slot }) => (
           <button
-            key={`${item.id}-coin-${offset}`}
+            key={`${item.id}-coin-${slot}`}
             type="button"
-            className={`${styles.coinButton} ${Math.abs(offset) === 1 ? styles.coinInner : ''} ${
-              offset === 0 ? `${styles.coinActive} ${styles.coinCenter}` : ''
+            className={`${styles.coinButton} ${slot === 1 || slot === 3 ? styles.coinInner : ''} ${
+              slot === 2 ? `${styles.coinActive} ${styles.coinCenter}` : ''
             }`}
             onClick={() => onSelect(index)}
             aria-label={item.previewLabel}
@@ -129,7 +127,7 @@ export default function ProductSectionPreview({
         ))}
       </div>
 
-      <div className={styles.bottomPill} aria-hidden="true" />
+      <img className={styles.coinRowBottom} src="/assets/coinrow-bottom.png" alt="" aria-hidden="true" />
     </motion.div>
   );
 }
