@@ -162,9 +162,10 @@
 }
 
 .bst2 .cloudTop {
-  left: -6.1%;
-  top: -15%;
+  left: -10%;
+  top: -19.8%;
   opacity: 0.5;
+  width: 55%;
 }
 
 .bst2 .cloudBottom {
