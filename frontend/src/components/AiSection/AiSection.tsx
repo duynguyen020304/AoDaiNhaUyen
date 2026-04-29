@@ -50,15 +50,13 @@ const variants: AiVariant[] = [
 export default function AiSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeVariant = variants[activeIndex];
-  const isFirstSlide = activeIndex === 0;
-  const isLastSlide = activeIndex === variants.length - 1;
 
   const selectPrevious = () => {
-    setActiveIndex((current) => (current === 0 ? current : current - 1));
+    setActiveIndex((current) => (current - 1 + variants.length) % variants.length);
   };
 
   const selectNext = () => {
-    setActiveIndex((current) => (current === variants.length - 1 ? current : current + 1));
+    setActiveIndex((current) => (current + 1) % variants.length);
   };
 
   return (
@@ -116,7 +114,6 @@ export default function AiSection() {
             className={styles.navButton}
             onClick={selectPrevious}
             aria-label="Mẫu trước"
-            disabled={isFirstSlide}
           >
           </button>
           <img className={styles.slideDots} src="/assets/polygon.png" alt="" aria-hidden="true" />
@@ -125,7 +122,6 @@ export default function AiSection() {
             className={`${styles.navButton} ${styles.nextButton}`}
             onClick={selectNext}
             aria-label="Mẫu tiếp theo"
-            disabled={isLastSlide}
           >
           </button>
         </div>

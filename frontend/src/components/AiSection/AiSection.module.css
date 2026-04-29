@@ -88,11 +88,11 @@
 
 .fanHover {
   left: 33.96%;
-  top: 66%;
+  top: 68%;
   width: 111.36%;
   height: 119.67%;
   opacity: 0;
-  transform: translate3d(0, 0, 0) rotate(-156.07deg);
+  transform: translate3d(0, 0, 0) rotate(-150.07deg);
   transform-origin: center center;
   transition: opacity 220ms ease-out;
 }
@@ -110,7 +110,7 @@
 .cardCluster {
   position: absolute;
   z-index: 7;
-  left: 45px;
+  left: 4.8%;
   top: 64px;
   width: 700px;
   height: 420px;
@@ -178,8 +178,8 @@
 
 .plus {
   position: absolute;
-  left: 362px;
-  top: 118px;
+  left: 48%;
+  top: 30%;
   color: #ffffff;
   font-size: 64px;
   line-height: 1;
