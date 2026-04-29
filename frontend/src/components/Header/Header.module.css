@@ -1,8 +1,9 @@
 .siteHeader {
+  position: sticky;
+  top: 0;
   height: 79px;
   background: var(--burgundy);
-  position: relative;
-  z-index: 20;
+  z-index: 100;
 }
 
 .brandMark {

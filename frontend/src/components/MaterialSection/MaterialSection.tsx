@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import styles from './MaterialSection.module.css';
-import { easeOutQuart, sectionReveal, viewportOnce } from '../../utils/motion';
+import { easeOutQuart, viewportOnce } from '../../utils/motion';
 
 const materials = [
   {
@@ -34,13 +34,9 @@ export default function MaterialSection() {
   const [active, setActive] = useState(0);
 
   return (
-    <motion.section
+    <section
       className={`red-texture ${styles.materialSection}`}
       aria-labelledby="material-title"
-      variants={sectionReveal}
-      initial="hidden"
-      whileInView="show"
-      viewport={viewportOnce}
     >
       <div className={styles.backgroundBase} aria-hidden="true" />
       <div className={styles.backgroundBackdrop} aria-hidden="true" />
@@ -131,6 +127,6 @@ export default function MaterialSection() {
         alt=""
         aria-hidden="true"
       />
-    </motion.section>
+    </section>
   );
 }
