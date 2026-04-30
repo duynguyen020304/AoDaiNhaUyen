@@ -3,7 +3,9 @@
   min-height: 1080px;
   overflow: hidden;
   isolation: isolate;
-  background: linear-gradient(180deg, #c40c0a 0%, #970707 48%, #6a0909 100%);
+  background:
+    url("/assets/material-section-backdrop.svg") center bottom / cover no-repeat,
+    var(--deep-red);
 }
 
 .backgroundBase,
@@ -21,24 +23,23 @@
 .backgroundBase {
   inset: 0;
   z-index: 0;
-  background:
+  /* background:
     radial-gradient(circle at 17% 18%, rgba(255, 201, 183, 0.2), transparent 16%),
     radial-gradient(circle at 88% 24%, rgba(255, 211, 201, 0.24), transparent 18%),
     radial-gradient(circle at 10% 82%, rgba(255, 195, 178, 0.16), transparent 14%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(72, 6, 6, 0.18));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(72, 6, 6, 0.18)); */
 }
 
 .backgroundBackdrop {
   inset: 0;
   z-index: 1;
-  background: url("/assets/material-section-backdrop.svg") center bottom / cover no-repeat;
   opacity: 0.96;
 }
 
 .floralTexture {
   inset: 0;
   z-index: 1;
-  opacity: 0.25;
+  opacity: 0.1;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
     url("/assets/red-floral.png") center / cover no-repeat;

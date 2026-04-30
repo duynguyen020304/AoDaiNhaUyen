@@ -1,3 +1,32 @@
+.collectionTexture {
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+  background: 
+    url("/assets/collection-section-backdrop.svg") center bottom / cover no-repeat,
+    #980B04;
+  }
+
+.floralTexture {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: url("/assets/red-floral reverse.png") center / cover no-repeat;
+  pointer-events: none;
+  opacity: 0.1;
+}
+
+.collectionTexture::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(circle at 82% 52%, rgba(240, 64, 60, 0.26), transparent 24%),
+    radial-gradient(circle at 10% 76%, rgba(0, 0, 0, 0.24), transparent 28%);
+  pointer-events: none;
+}
+
 .collectionSection {
   min-height: 1080px;
   padding-top: 78px;
@@ -5,6 +34,7 @@
 
 .goldStar {
   position: absolute;
+  z-index: 2;
   left: 1168px;
   top: 27px;
   width: 72px;
@@ -12,6 +42,11 @@
   transform: rotate(27deg);
   background: var(--gold-gradient);
   clip-path: polygon(50% 0, 61% 38%, 100% 38%, 68% 60%, 79% 100%, 50% 76%, 21% 100%, 32% 60%, 0 38%, 39% 38%);
+}
+
+.collectionSection :global(.script-title) {
+  position: relative;
+  z-index: 2;
 }
 
 .categoryPills {

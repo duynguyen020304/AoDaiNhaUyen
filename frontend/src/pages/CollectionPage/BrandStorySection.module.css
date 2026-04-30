@@ -27,10 +27,10 @@
 
 .cloudDecor {
   position: absolute;
-  left: 3%;
-  top: -20%;
+  left: -4%;
+  top: -21%;
   z-index: 4;
-  width: 47.86%;
+  width: 60%;
   aspect-ratio: 737 / 194;
   object-fit: contain;
   pointer-events: none;

@@ -41,9 +41,9 @@ export default function MaterialSection() {
       <div className={styles.backgroundBase} aria-hidden="true" />
       <div className={styles.backgroundBackdrop} aria-hidden="true" />
       <div className={styles.floralTexture} aria-hidden="true" />
-      <div className={styles.dotTexture} aria-hidden="true" />
-      <div className={styles.leftGlow} aria-hidden="true" />
-      <div className={styles.rightGlow} aria-hidden="true" />
+      {/* <div className={styles.dotTexture} aria-hidden="true" /> */}
+      {/* <div className={styles.leftGlow} aria-hidden="true" />
+      <div className={styles.rightGlow} aria-hidden="true" /> */}
 
       <header className={styles.heading}>
         <h2 className="script-title" id="material-title">

@@ -14,7 +14,7 @@
   background:
     radial-gradient(circle at 18% 34%, rgba(255, 255, 255, 0.08), transparent 2px),
     radial-gradient(circle at 80% 24%, rgba(0, 0, 0, 0.18), transparent 2px),
-    linear-gradient(180deg, #931917 0%, #721311 100%);
+    linear-gradient(180deg, var(--deep-red) 0%, #721311 100%);
   isolation: isolate;
 }
 

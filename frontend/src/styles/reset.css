@@ -8,7 +8,6 @@ html {
 
 body {
   margin: 0;
-  background: var(--deep-red);
   color: var(--ink);
   overflow-x: hidden;
 }

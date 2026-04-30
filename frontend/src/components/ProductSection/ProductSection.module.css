@@ -1,9 +1,9 @@
 .productSection {
   position: relative;
-  min-height: min(100svh, 1080px);
+  min-height: min(105svh, 1080px);
   overflow: hidden;
   isolation: isolate;
-  background: linear-gradient(180deg, rgba(217, 13, 13, 0) 0%, #730707 100%);
+  background: #630606;
   color: var(--cream);
 }
 
@@ -232,8 +232,10 @@
 
 .heroImage {
   object-fit: cover;
-  object-position: center top;
+  object-position: top;
   border-radius: inherit;
+  top: -2%;
+  left: -1.5%;
 }
 
 .hotspotLayer {
@@ -732,9 +734,9 @@
 }
 .drumPattern {
   position: absolute;
-  bottom: 53%;
-  right: -10%;
-  width: 100%;
+  bottom: 51%;
+  right: -15%;
+  width: 50.4%;
   height: 100%;
   object-fit: cover;
   z-index: 2;

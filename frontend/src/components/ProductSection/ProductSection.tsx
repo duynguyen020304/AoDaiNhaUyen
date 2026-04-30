@@ -43,14 +43,12 @@ export default function ProductSection() {
     >
       <div className={styles.leftBackground} aria-hidden="true" />
       <div className={styles.middleBackground} aria-hidden="true" />
-      <div className={styles.rightBackground} aria-hidden="true">
-        <img
-          className={styles.drumPattern}
-          src="/assets/drum-pattern.svg"
-          alt=""
-          aria-hidden="true"
-        />
-      </div>
+      <img
+        className={styles.drumPattern}
+        src="/assets/drum-pattern.svg"
+        alt=""
+        aria-hidden="true"
+      />
       <div className={styles.noiseWash} aria-hidden="true" />
       <img className={styles.patternTextureTop} src="/assets/drum-pattern.svg" alt="" aria-hidden="true" />
       <img className={styles.patternTextureBottom} src="/assets/drum-pattern.svg" alt="" aria-hidden="true" />

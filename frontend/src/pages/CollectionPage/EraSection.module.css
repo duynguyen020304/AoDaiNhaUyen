@@ -88,7 +88,7 @@
 }
 
 .cloudDecor {
-  width: 47.86%;
+  width: 60%;
   height: auto;
   aspect-ratio: 737 / 194;
   object-fit: contain;
@@ -169,8 +169,8 @@
 }
 
 .bst2 .cloudBottom {
-  left: 50%;
-  bottom: -9%;
+  left: 45%;
+  bottom: -11%;
 }
 
 .bst3 .bgScene {
@@ -215,13 +215,13 @@
 }
 
 .bst3 .cloudTop {
-  left: 50%;
-  top: -18.4%;
+  left: 45%;
+  top: -23%;
 }
 
 .bst3 .cloudBottom {
-  left: 5.5%;
-  bottom: -9.5%;
+  left: -3%;
+  bottom: -11%;
 }
 
 .bst4 .bgScene {
@@ -267,12 +267,12 @@
 }
 
 .bst4 .cloudTop {
-  left: 5.5%;
-  top: -19%;
+  left: -3%;
+  top: -25%;
 }
 
 .bst4 .cloudBottom {
-  left: 49.7%;
+  left: 43%;
   bottom: -11.2%;
 }
 
@@ -315,13 +315,13 @@
 }
 
 .bst5 .cloudTop {
-  left: 49.7%;
-  top: -14.8%;
+  left: 43%;
+  top: -21%;
 }
 
 .bst5 .cloudBottom {
-  left: 3%;
-  bottom: -5.2%;
+  left: -4%;
+  bottom: -10%;
 }
 
 @media (max-width: 1100px) {

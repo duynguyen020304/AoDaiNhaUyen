@@ -46,7 +46,7 @@ export default function CollectionSection() {
 
   return (
     <motion.section
-      className={`red-texture ${styles.collectionSection}`}
+      className={`${styles.collectionTexture} ${styles.collectionSection}`}
       id="collection"
       aria-labelledby="collection-title"
       variants={sectionReveal}
@@ -54,6 +54,7 @@ export default function CollectionSection() {
       whileInView="show"
       viewport={viewportOnce}
     >
+      <div className={styles.floralTexture} aria-hidden="true" />
       <motion.div className={styles.goldStar} aria-hidden="true" variants={fadeScale} />
       <motion.h2 className="script-title" id="collection-title" variants={fadeUp}>
         Bộ sưu tập
