@@ -5,7 +5,7 @@
   isolation: isolate;
   background:
     url("/assets/material-section-backdrop.svg") center bottom / cover no-repeat,
-    var(--deep-red);
+    var(--deep-red, #730707);
 }
 
 .backgroundBase,
