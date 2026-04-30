@@ -43,12 +43,18 @@
 }
 
 .footerGrid p,
-.footerGrid a {
+.footerGrid a,
+.footerGrid section > button {
   display: block;
   margin: 0 0 8px;
+  padding: 0;
+  border: none;
+  background: none;
   color: rgba(255, 255, 255, 0.8);
+  font: inherit;
   font-size: 14px;
   line-height: 20px;
+  text-align: left;
 }
 
 .footerGrid section:first-child p {
