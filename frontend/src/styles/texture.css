@@ -2,8 +2,6 @@
   position: relative;
   overflow: hidden;
   color: #ffffff;
-  background:
-    linear-gradient(180deg, rgba(114, 19, 17, 0.86) 0%, #ce0400db 100%),
 }
 
 .red-texture::after {
