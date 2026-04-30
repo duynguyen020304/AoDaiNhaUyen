@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useAuthModal } from '../../auth/AuthModalContext';
 import { resetPassword } from '../../api/auth';
 import styles from './ResetPasswordPage.module.css';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
+  const { openAuthModal } = useAuthModal();
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const rawUserId = params.get('id');
   const token = params.get('token');
@@ -47,8 +49,11 @@ export default function ResetPasswordPage() {
 
     try {
       await resetPassword({ userId, token, newPassword: password });
-      setSuccess('Mật khẩu đã được cập nhật. Hệ thống sẽ chuyển bạn về trang đăng nhập.');
-      window.setTimeout(() => navigate('/login', { replace: true }), 1400);
+      setSuccess('Mật khẩu đã được cập nhật. Hệ thống sẽ mở hộp thoại đăng nhập.');
+      window.setTimeout(() => {
+        navigate('/', { replace: true });
+        openAuthModal();
+      }, 1400);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Không thể đặt lại mật khẩu.');
     } finally {
@@ -67,7 +72,9 @@ export default function ResetPasswordPage() {
         {invalidLink ? (
           <>
             <p className={styles.warning}>Liên kết đặt lại mật khẩu đã không còn hợp lệ hoặc đã bị thiếu thông tin.</p>
-            <Link className={styles.link} to="/login">Quay lại đăng nhập</Link>
+            <button className={styles.link} type="button" onClick={() => openAuthModal()}>
+              Quay lại đăng nhập
+            </button>
           </>
         ) : (
           <form className={styles.form} onSubmit={handleSubmit}>

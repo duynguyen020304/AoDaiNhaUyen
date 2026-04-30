@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { sectionReveal, fadeUp, viewportOnce } from '../../utils/motion';
 import { convertToSupportedFormat } from '../../utils/imageConversion';
+import { useAuthModal } from '../../auth/AuthModalContext';
 import { useAuth } from '../../auth/useAuth';
 import AccessoryPanel from './AccessoryPanel';
 import ClothingPanel from './ClothingPanel';
@@ -38,6 +39,7 @@ const DEFAULT_ACCESSORY_CATEGORIES: AiTryOnCatalogCategory[] = [
 export default function AiTryonPage() {
   const navigate = useNavigate();
   const { status } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const [garments, setGarments] = useState<AiTryOnCatalogItem[]>([]);
   const [accessories, setAccessories] = useState<AiTryOnCatalogItem[]>([]);
   const [garmentPage, setGarmentPage] = useState<AiTryOnCatalogPage>(EMPTY_CATALOG_PAGE);
@@ -416,7 +418,10 @@ export default function AiTryonPage() {
               <button
                 type="button"
                 className={styles.loginPromptPrimary}
-                onClick={() => navigate('/login', { state: { from: '/ai-tryon' } })}
+                onClick={() => {
+                  setShowLoginPrompt(false);
+                  openAuthModal({ from: '/ai-tryon' });
+                }}
               >
                 Đăng nhập
               </button>

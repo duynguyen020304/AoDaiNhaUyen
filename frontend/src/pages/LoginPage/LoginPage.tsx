@@ -1,16 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { forgotPassword, register } from '../../api/auth';
+import { type AuthTab } from '../../auth/AuthModalContext';
 import { useAuth } from '../../auth/useAuth';
 import { useToast } from '../../components/Toast/useToast';
 import styles from './LoginPage.module.css';
 
-export default function LoginPage() {
+interface LoginPageProps {
+  initialTab?: AuthTab;
+  redirectTo?: string;
+  onClose?: (options?: { skipNavigate?: boolean }) => void;
+}
+
+export default function LoginPage({ initialTab = 'login', redirectTo: redirectOverride, onClose }: LoginPageProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, startGoogleLogin, startZaloLogin, status } = useAuth();
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [activeTab, setActiveTab] = useState<AuthTab>(initialTab);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Login fields
@@ -30,7 +37,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
-  const redirectTo = location.state?.from || '/';
+  const redirectTo = redirectOverride ?? location.state?.from ?? '/';
   const verified = query.get('verified');
   const autoLogin = query.get('autologin');
   const verificationReason = query.get('reason');
@@ -70,7 +77,14 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(email, password);
-      navigate(redirectTo, { replace: true });
+      if (onClose) {
+        onClose({ skipNavigate: true });
+        if (redirectTo !== location.pathname) {
+          navigate(redirectTo, { replace: true });
+        }
+      } else {
+        navigate(redirectTo, { replace: true });
+      }
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Không thể đăng nhập.');
     } finally {
@@ -126,8 +140,13 @@ export default function LoginPage() {
   }
 
   return (
-    <section className={styles.page}>
+    <section className={onClose ? styles.modalContent : styles.page}>
       <div className={styles.container}>
+        {onClose ? (
+          <button className={styles.closeButton} type="button" onClick={() => onClose()} aria-label="Đóng">
+            ✕
+          </button>
+        ) : null}
         <div className={styles.tabs}>
           <button
             className={activeTab === 'login' ? styles.tabActive : styles.tab}

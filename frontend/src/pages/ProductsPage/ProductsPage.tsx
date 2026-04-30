@@ -10,6 +10,7 @@ import { getHeaderCategories, getProducts } from '../../api/catalog';
 import { addCartItem } from '../../api/cart';
 import { resolveAssetUrl } from '../../api/client';
 import { useToast } from '../../components/Toast/useToast';
+import { useAuthModal } from '../../auth/AuthModalContext';
 import { useAuth } from '../../auth/useAuth';
 import type { HeaderCategoryChild, ProductListItem } from '../../types/catalog';
 
@@ -68,6 +69,7 @@ export default function ProductsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { status } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const { showToast } = useToast();
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const activeCategorySlug = searchParams.get('category');
@@ -107,7 +109,7 @@ export default function ProductsPage() {
 
   const handleAddToCart = async (product: Product) => {
     if (status !== 'authenticated') {
-      navigate('/login');
+      openAuthModal({ from: location.pathname + location.search });
       return;
     }
 

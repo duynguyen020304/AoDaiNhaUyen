@@ -52,9 +52,10 @@ const DISMISSED_DROPDOWN_CLASS = 'headerDropdownDismissed';
 
 interface HeaderProps {
   onOpenAccount: () => void;
+  onOpenAuth: () => void;
 }
 
-export default function Header({ onOpenAccount }: HeaderProps) {
+export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { status, user, logout } = useAuth();
@@ -95,7 +96,7 @@ export default function Header({ onOpenAccount }: HeaderProps) {
 
   async function handleLogout() {
     await logout();
-    navigate('/login');
+    onOpenAuth();
   }
 
   return (
@@ -199,7 +200,7 @@ export default function Header({ onOpenAccount }: HeaderProps) {
             href="/login"
             onClick={(event) => {
               event.preventDefault();
-              navigate('/login');
+              onOpenAuth();
             }}
             variants={fadeUp}
             whileHover={{ y: -1, backgroundColor: 'rgba(255, 255, 255, 0.12)' }}

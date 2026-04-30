@@ -17,6 +17,13 @@ export function registerServiceWorker(): void {
     return;
   }
 
+  if (import.meta.env.DEV) {
+    window.addEventListener('load', () => {
+      void unregisterServiceWorkers();
+    });
+    return;
+  }
+
   window.addEventListener('load', async () => {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', {
@@ -40,6 +47,18 @@ export function registerServiceWorker(): void {
       localStorage.setItem(CACHE_VERSION_KEY, event.data.version);
     }
   });
+}
+
+async function unregisterServiceWorkers(): Promise<void> {
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.map((registration) => registration.unregister()));
+
+  const cacheNames = await caches.keys();
+  await Promise.all(
+    cacheNames
+      .filter((name) => name.startsWith('app-'))
+      .map((name) => caches.delete(name)),
+  );
 }
 
 export async function checkCacheVersion(): Promise<void> {

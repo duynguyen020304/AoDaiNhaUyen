@@ -30,7 +30,6 @@ export default function CartPage() {
 
   useEffect(() => {
     if (status === 'anonymous') {
-      navigate('/login');
       return;
     }
 
@@ -53,8 +52,9 @@ export default function CartPage() {
       })
       .catch((value: Error) => setError(value.message))
       .finally(() => setLoading(false));
-  }, [navigate, status]);
+  }, [status]);
 
+  const isLoadingCart = status === 'loading' || (status === 'authenticated' && loading);
   const shippingFee = useMemo(() => (cart && cart.items.length > 0 ? 25000 : 0), [cart]);
 
   async function handleUpdateQuantity(itemId: number, quantity: number) {
@@ -135,7 +135,7 @@ export default function CartPage() {
               <span className={styles.cardHeaderText}>Giỏ hàng &nbsp;({cart?.totalItemCount ?? 0} items)</span>
             </div>
             <div className={styles.cardContent}>
-              {loading ? <p>Đang tải giỏ hàng...</p> : null}
+              {isLoadingCart ? <p>Đang tải giỏ hàng...</p> : null}
               {error ? <p>{error}</p> : null}
               {cart?.items.map((item) => (
                 <div key={item.id}>
@@ -149,7 +149,7 @@ export default function CartPage() {
                   <div className={styles.separator} />
                 </div>
               ))}
-              {!loading && !error && cart && cart.items.length === 0 ? <p>Giỏ hàng đang trống.</p> : null}
+              {!isLoadingCart && !error && cart && cart.items.length === 0 ? <p>Giỏ hàng đang trống.</p> : null}
             </div>
           </motion.div>
 

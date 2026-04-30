@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { getHeaderCategories, getProducts } from '../../api/catalog';
 import { addCartItem } from '../../api/cart';
 import { resolveAssetUrl } from '../../api/client';
 import CategoryBanner from '../../components/CategoryBanner/CategoryBanner';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import { useToast } from '../../components/Toast/useToast';
+import { useAuthModal } from '../../auth/AuthModalContext';
 import { useAuth } from '../../auth/useAuth';
 import { sectionReveal, staggerContainer, viewportOnce } from '../../utils/motion';
 import type { HeaderCategoryChild, ProductListItem } from '../../types/catalog';
@@ -54,8 +55,8 @@ function mapProduct(product: ProductListItem, index: number): Product {
 
 export default function AccessoriesPage() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { status } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const { showToast } = useToast();
   const activeCategorySlug = useMemo(() => {
     return new URLSearchParams(location.search).get('category');
@@ -129,7 +130,7 @@ export default function AccessoriesPage() {
 
   const handleAddToCart = async (product: Product) => {
     if (status !== 'authenticated') {
-      navigate('/login');
+      openAuthModal({ from: location.pathname + location.search });
       return;
     }
 

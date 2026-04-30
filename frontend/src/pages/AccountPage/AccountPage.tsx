@@ -1,5 +1,5 @@
 import { useCallback, useEffect, type MouseEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAuthModal } from '../../auth/AuthModalContext';
 import { useAuth } from '../../auth/useAuth';
 import AccountSidebar from './AccountSidebar';
 import AccountInfo from './AccountInfo';
@@ -21,12 +21,13 @@ export default function AccountPage({
   onClose,
   onViewChange,
 }: AccountPageProps) {
-  const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { openAuthModal } = useAuthModal();
 
   async function handleLogout() {
     await logout();
-    navigate('/login', { replace: true });
+    onClose();
+    openAuthModal();
   }
 
   const handleClose = useCallback(() => {
