@@ -63,13 +63,29 @@
   padding: 3px 16px;
   border-radius: 999px;
   overflow: hidden;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.navLink:hover,
+.navLink:focus-visible {
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--deep-red);
 }
 
 .caret {
   display: inline-block;
-  margin-left: 4px;
-  font-size: 13px;
-  line-height: 1;
+  width: 7px;
+  height: 7px;
+  margin-left: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 180ms ease;
+}
+
+.navItem:hover .caret,
+.navItem:focus-within .caret {
+  transform: translateY(1px) rotate(45deg);
 }
 
 .dropdown {
@@ -129,9 +145,10 @@
 }
 
 .dropdownLink:hover,
+.dropdownLink:focus-visible,
 .dropdownActive {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff3f3;
+  background: #ffffff;
+  color: var(--deep-red);
 }
 
 .activePill {
@@ -156,6 +173,15 @@
   border: 1px solid #ffffff;
   border-radius: 999px;
   padding: 4px 14px;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
+}
+
+.loginLink:hover,
+.loginLink:focus-visible {
+  border-color: #ffffff;
+  background: #ffffff;
+  color: var(--deep-red) !important;
+  box-shadow: 0 10px 22px rgba(39, 8, 13, 0.2);
 }
 
 .authGroup {
@@ -189,6 +215,7 @@
 }
 
 .cartLink {
+  position: relative;
   width: 50px;
   height: 31px;
   display: inline-flex;
@@ -202,6 +229,23 @@
 .cartIcon {
   color: var(--deep-red);
   flex-shrink: 0;
+}
+
+.cartBadge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border: 2px solid var(--burgundy);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--deep-red);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
 }
 
 @media (max-width: 1400px) {

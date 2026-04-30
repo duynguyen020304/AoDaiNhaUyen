@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import styles from './Header.module.css';
 import { fadeUp, staggerContainer } from '../../utils/motion';
 import { getHeaderCategories } from '../../api/catalog';
+import { CART_UPDATED_EVENT, getCart } from '../../api/cart';
 import type { HeaderCategory } from '../../types/catalog';
 import { useAuth } from '../../auth/useAuth';
 
@@ -60,6 +61,7 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
   const navigate = useNavigate();
   const { status, user, logout } = useAuth();
   const [categories, setCategories] = useState<HeaderCategory[]>(NAV_FALLBACK_CATEGORIES);
+  const [cartItemCount, setCartItemCount] = useState(0);
 
   useEffect(() => {
     let ignore = false;
@@ -80,6 +82,40 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
       ignore = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      return;
+    }
+
+    let ignore = false;
+
+    function handleCartUpdated(event: Event) {
+      const nextCount = (event as CustomEvent<number>).detail;
+      if (typeof nextCount === 'number') {
+        setCartItemCount(nextCount);
+      }
+    }
+
+    window.addEventListener(CART_UPDATED_EVENT, handleCartUpdated);
+
+    getCart()
+      .then((cart) => {
+        if (!ignore) {
+          setCartItemCount(cart.totalItemCount);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setCartItemCount(0);
+        }
+      });
+
+    return () => {
+      ignore = true;
+      window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdated);
+    };
+  }, [status]);
 
   const categoriesBySlug = useMemo(() => {
     return new Map(categories.map((category) => [category.slug, category]));
@@ -150,7 +186,7 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
                 ) : null}
                 <span className={styles.navLabel}>
                   {link.label}
-                  {category ? <span className={styles.caret}>⌄</span> : null}
+                  {category ? <span className={styles.caret}></span> : null}
                 </span>
               </a>
               {category && category.children.length > 0 ? (
@@ -203,7 +239,7 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
               onOpenAuth();
             }}
             variants={fadeUp}
-            whileHover={{ y: -1, backgroundColor: 'rgba(255, 255, 255, 0.12)' }}
+            whileHover={{ y: -1 }}
             whileTap={{ scale: 0.97 }}
           >
             ĐĂNG NHẬP
@@ -212,7 +248,7 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
         <motion.a
           className={styles.cartLink}
           href="/cart"
-          aria-label="Giỏ hàng"
+          aria-label={status === 'authenticated' ? `Giỏ hàng, ${cartItemCount} sản phẩm` : 'Giỏ hàng'}
           onClick={(e) => { e.preventDefault(); navigate('/cart'); }}
           variants={fadeUp}
           whileHover={{ y: -1, scale: 1.03 }}
@@ -223,6 +259,9 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
             <circle cx="20" cy="21" r="1" />
             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
           </svg>
+          {status === 'authenticated' ? (
+            <span className={styles.cartBadge}>{cartItemCount}</span>
+          ) : null}
         </motion.a>
       </motion.nav>
     </motion.header>

@@ -15,8 +15,6 @@ import AccountPage, { type AccountView } from './pages/AccountPage/AccountPage';
 import AuthGoogleCallbackPage from './pages/AuthGoogleCallbackPage/AuthGoogleCallbackPage';
 import AuthZaloCallbackPage from './pages/AuthZaloCallbackPage/AuthZaloCallbackPage';
 import ResetPasswordPage from './pages/ResetPasswordPage/ResetPasswordPage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage/PrivacyPolicyPage';
-import DataDeletionPage from './pages/DataDeletionPage/DataDeletionPage';
 import { AuthModalProvider, type AuthTab } from './auth/AuthModalContext';
 import { useAuth } from './auth/useAuth';
 
@@ -119,8 +117,6 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/google/callback" element={<AuthGoogleCallbackPage />} />
         <Route path="/auth/callback/zalo" element={<AuthZaloCallbackPage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-        <Route path="/data-deletion" element={<DataDeletionPage />} />
         <Route path="/account/*" element={<HomePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

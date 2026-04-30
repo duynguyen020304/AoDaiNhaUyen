@@ -31,8 +31,8 @@ export default function Footer() {
         </motion.section>
         <motion.section variants={fadeUp} whileHover={cardHover.hover} transition={{ duration: 0.24, ease: 'easeOut' }}>
           <h3>Pháp Lý</h3>
-          <a href="/privacy-policy">Chính sách quyền riêng tư</a>
-          <a href="/data-deletion">Xóa dữ liệu người dùng</a>
+          <button type="button">Chính sách quyền riêng tư</button>
+          <button type="button">Xóa dữ liệu người dùng</button>
         </motion.section>
         <motion.section variants={fadeUp} whileHover={cardHover.hover} transition={{ duration: 0.24, ease: 'easeOut' }}>
           <h3>Liên Hệ</h3>
