@@ -3,9 +3,8 @@
   min-height: 1080px;
   overflow: hidden;
   isolation: isolate;
-  background:
-    url("/assets/material-section-backdrop.svg") center bottom / cover no-repeat,
-    var(--deep-red, #730707);
+  background: url("/assets/material-section-backdrop.svg") center bottom / cover no-repeat;
+  background-color: #730707;
 }
 
 .backgroundBase,
