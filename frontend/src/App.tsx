@@ -18,6 +18,22 @@ import ResetPasswordPage from './pages/ResetPasswordPage/ResetPasswordPage';
 import { AuthModalProvider, type AuthTab } from './auth/AuthModalContext';
 import { useAuth } from './auth/useAuth';
 
+function ScrollToTop() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [location.key]);
+
+  return null;
+}
+
 function resolveAccountView(pathname: string): AccountView {
   if (pathname.endsWith('/profile/edit')) {
     return 'profile/edit';
@@ -105,6 +121,7 @@ export default function App() {
 
   return (
     <AuthModalProvider value={authModalContext}>
+      <ScrollToTop />
       {!hideHeader && <Header onOpenAccount={() => openAccountModal('profile')} onOpenAuth={() => openAuthModal()} />}
       <Routes>
         <Route path="/" element={<HomePage />} />
