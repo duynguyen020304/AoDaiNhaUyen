@@ -13,13 +13,27 @@
   top: 16.58%;
   width: 99.95%;
   height: 100%;
+  overflow: hidden;
   pointer-events: none;
   z-index: 1;
 }
 
+.textureOverlay::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 10%;
+  /* backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 70%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 70%); */
+}
+
 .textureOverlay img {
   width: 100%;
-  height: 180.75%;
+  height: 100%;
   object-fit: cover;
   object-position: top center;
   opacity: 0.2;
