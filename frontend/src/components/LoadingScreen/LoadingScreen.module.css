@@ -1,0 +1,179 @@
+.loadingScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  cursor: default;
+  background: var(--burgundy);
+  color: #ffffff;
+}
+
+.markWrap {
+  position: absolute;
+  top: clamp(58px, 7.2vh, 78px);
+  left: 50%;
+  width: clamp(172px, 12.7vw, 244px);
+  height: clamp(140px, 10.4vw, 199px);
+  translate: -50% 0;
+  display: grid;
+  place-items: center;
+}
+
+.mark {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 22px 36px rgba(35, 3, 3, 0.22));
+}
+
+.markFallback {
+  font-family: "Italianno", cursive;
+  font-size: clamp(72px, 9vw, 152px);
+  line-height: 0.66;
+  color: yellow;
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.progress {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(1023px, calc(100vw - 64px));
+  height: clamp(16px, 3.3vw, 55px);
+  translate: -50% -50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.progress::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 1px;
+  content: "";
+  background: #121212;
+}
+
+.progress span {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: left center;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, #ffd400 0%, #e2d48e 42%, #f6d948 68%, #c7a92d 100%);
+}
+
+.progress span::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.72) 48%, transparent 100%);
+  animation: loadingSheen 1.05s ease-in-out infinite;
+}
+
+.copy {
+  position: relative;
+  z-index: 1;
+  width: min(1294px, calc(100vw - 48px));
+  min-height: 238px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.loadingText {
+  position: absolute;
+  top: calc(50% - 82px);
+  margin: 0;
+  font-size: clamp(24px, 2.1vw, 40px);
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+@keyframes loadingSheen {
+  0% {
+    translate: -120% 0;
+  }
+
+  100% {
+    translate: 120% 0;
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(52px, 6.67vw, 128px);
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.title span {
+  display: inline-block;
+  color: yellow;
+  font-family: "Italianno", cursive;
+  font-size: clamp(84px, 7.92vw, 152px);
+  line-height: 0.32;
+  font-weight: 400;
+  background: var(--gold-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+}
+
+.enterPrompt {
+  position: absolute;
+  top: calc(50% + 118px);
+  min-width: min(554px, calc(100vw - 48px));
+  min-height: 49px;
+  padding: 0 24px;
+  cursor: pointer;
+  color: #ffffff;
+  font: inherit;
+  font-size: clamp(20px, 2.1vw, 40px);
+  line-height: 1.2;
+  font-weight: 700;
+  text-align: center;
+  background: transparent;
+  border: 0;
+  transition:
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.enterPrompt:hover,
+.enterPrompt:focus-visible {
+  color: var(--gold);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 760px) {
+  .markWrap {
+    top: 74px;
+  }
+
+  .copy {
+    min-height: 190px;
+  }
+
+  .title {
+    display: grid;
+    gap: 10px;
+    line-height: 1.05;
+  }
+
+  .title span {
+    line-height: 0.72;
+  }
+
+  .enterPrompt {
+    top: calc(50% + 98px);
+  }
+}
