@@ -20,6 +20,7 @@ const ACCESSORIES = [
     hero: '/assets/accessories/hero-bag.png',
     thumb: '/assets/accessories/thumb-bag.png',
     alt: 'Túi xách trắng phối hoa nổi',
+    description: 'Được chế tác từ lụa tơ tằm cao cấp và da thuộc thủ công, phụ kiện Nhã Uyên tôn vinh cốt cách thanh cao của phụ nữ Việt.',
   },
   {
     variant: 'Frame 323',
@@ -28,6 +29,7 @@ const ACCESSORIES = [
     hero: '/assets/accessories/hero-shoes.png',
     thumb: '/assets/accessories/thumb-shoes.png',
     alt: 'Giày trắng quai mảnh',
+    description: 'Được chế tác từ sự thấu hiểu sâu sắc về nét đẹp mộc mạc và truyền thống, guốc gỗ Nhã Uyên là phụ kiện hoàn hảo giúp tôn vinh dáng vẻ thanh thoát của phụ nữ Việt trong tà áo dài.',
   },
   {
     variant: 'Frame 313',
@@ -36,6 +38,7 @@ const ACCESSORIES = [
     hero: '/assets/accessories/hero-tram-figma.png',
     thumb: '/assets/accessories/thumb-tram.png',
     alt: 'Trâm cài tóc xanh ngọc',
+    description: 'Được chế tác từ sự thấu hiểu sâu sắc về vẻ đẹp truyền thống, trâm cài tóc Nhã Uyên là phụ kiện hoàn hảo tôn vinh cốt cách kiêu sa của phụ nữ Việt khi diện tà áo dài.',
   },
   {
     variant: 'Frame 324',
@@ -44,6 +47,7 @@ const ACCESSORIES = [
     hero: '/assets/accessories/hero-fan.png',
     thumb: '/assets/accessories/thumb-fan.png',
     alt: 'Quạt cầm tay trắng',
+    description: 'Được chế tác từ sự thấu hiểu sâu sắc về nét đẹp duyên dáng và phong thái tự tại, quạt cầm tay Nhã Uyên là phụ kiện hoàn hảo giúp tôn vinh vẻ đẹp thanh cao của phụ nữ Việt khi diện tà áo dài.',
   },
 ];
 
@@ -89,12 +93,11 @@ export default function AccessorySection() {
             <motion.h2 id="accessory-title" className={styles.cardTitle} variants={carouselCopyItem}>
               {activeAccessory.title}
             </motion.h2>
+            <motion.p className={styles.cardDesc} variants={carouselCopyItem}>
+              {activeAccessory.description}
+            </motion.p>
           </motion.div>
         </AnimatePresence>
-        <p className={styles.cardDesc}>
-          Được chế tác từ lụa tơ tằm cao cấp và da thuộc thủ công, phụ kiện Nhã Uyên tôn vinh cốt
-          cách thanh cao của phụ nữ Việt.
-        </p>
       </motion.aside>
 
       <AnimatePresence mode="wait">
