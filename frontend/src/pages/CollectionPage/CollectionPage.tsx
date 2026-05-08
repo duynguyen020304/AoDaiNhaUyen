@@ -1,4 +1,7 @@
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { AnimatePresence, motion } from 'framer-motion';
 import styles from './CollectionPage.module.css';
 import { fadeUp, sectionReveal, viewportOnce } from '../../utils/motion';
 import { GOLD_GRADIENT, STORY_INTRO, IMG, ERAS } from './data';
@@ -8,6 +11,25 @@ import BrandStorySection from './BrandStorySection';
 import GallerySection from './GallerySection';
 
 export default function CollectionPage() {
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const updateBackToTopVisibility = () => {
+      setShowBackToTop(window.scrollY > 520);
+    };
+
+    updateBackToTopVisibility();
+    window.addEventListener('scroll', updateBackToTopVisibility, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', updateBackToTopVisibility);
+    };
+  }, []);
+
+  const scrollToPageTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className={styles.page}>
       {/* Hero banner */}
@@ -54,6 +76,26 @@ export default function CollectionPage() {
 
       {/* bst7–bst10 – Gallery */}
       <GallerySection />
+
+      <AnimatePresence>
+        {showBackToTop ? (
+          <motion.button
+            className={styles.backToTopButton}
+            type="button"
+            aria-label="Di chuyển lên đầu trang"
+            title="Di chuyển lên đầu trang"
+            onClick={scrollToPageTop}
+            initial={{ opacity: 0, y: 18, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.96 }}
+            whileHover={{ y: -3 }}
+            whileTap={{ scale: 0.94 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+          >
+            <FontAwesomeIcon icon={faArrowUp} />
+          </motion.button>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
