@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import styles from './LoadingScreen.module.css';
 import { easeOutQuart } from '../../utils/motion';
 
@@ -20,7 +20,7 @@ const greetings = [
 
 const ARTBOARD_SRC = '/assets/figma-loading/loading-artboard.png';
 const INITIAL_LOADING_DURATION = 1500;
-const GREETING_INTERVAL = 1500;
+const GREETING_INTERVAL = 250;
 
 export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
   const [step, setStep] = useState(0);
@@ -117,42 +117,25 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
 
       <div className={styles.copy} aria-live="polite">
         {!visibleReady && visibleStep === 0 ? (
-          <motion.p
-            className={styles.loadingText}
-            initial={{ opacity: 0.36 }}
-            animate={{ opacity: [0.36, 1, 1, 0.58] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-          >
+          <p className={styles.loadingText}>
             Loading ...
-          </motion.p>
+          </p>
         ) : null}
 
-        <AnimatePresence mode="wait">
-          {visibleStep > 0 ? (
-            <motion.h1
-              key={greetings[visibleStep]}
-              className={styles.title}
-              initial={{ opacity: 0, y: 34 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -24 }}
-              transition={{ duration: 0.78, ease: easeOutQuart }}
-            >
-              Nhã Uyên <span>{greetings[visibleStep]}</span>
-            </motion.h1>
-          ) : null}
-        </AnimatePresence>
+        {visibleStep > 0 ? (
+          <h1 className={styles.title}>
+            Nhã Uyên <span>{greetings[visibleStep]}</span>
+          </h1>
+        ) : null}
 
         {visibleReady ? (
-          <motion.button
+          <button
             className={styles.enterPrompt}
             type="button"
             onClick={onComplete}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.46, ease: easeOutQuart }}
           >
             Nhấn “Enter” để bắt đầu!
-          </motion.button>
+          </button>
         ) : null}
       </div>
     </motion.section>
