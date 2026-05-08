@@ -19,11 +19,11 @@ export default function HomePage() {
       return false;
     }
 
-    return window.sessionStorage.getItem(HOME_LOADING_STORAGE_KEY) !== 'true';
+    return window.localStorage.getItem(HOME_LOADING_STORAGE_KEY) !== 'true';
   });
 
   const handleLoadingComplete = useCallback(() => {
-    window.sessionStorage.setItem(HOME_LOADING_STORAGE_KEY, 'true');
+    window.localStorage.setItem(HOME_LOADING_STORAGE_KEY, 'true');
     setIsLoading(false);
   }, []);
 
