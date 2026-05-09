@@ -5,7 +5,12 @@ import { sectionReveal, viewportOnce } from '../../utils/motion';
 import ProductSectionCopy from './ProductSectionCopy';
 import ProductSectionHero from './ProductSectionHero';
 import ProductSectionPreview from './ProductSectionPreview';
-import { productSectionNotes, productSectionSlides, type ProductSectionNote } from './productSectionData';
+import {
+  productSectionNotes,
+  productSectionSlides,
+  type ProductSectionNote,
+  type ProductSectionNoteId,
+} from './productSectionData';
 
 const goldFlower = '/assets/gold-flower.svg';
 const redFloral = '/assets/red-floral.svg';
@@ -15,6 +20,11 @@ export default function ProductSection() {
   const [activeNote, setActiveNote] = useState<ProductSectionNote | null>(null);
   const prefersReducedMotion = useReducedMotion();
   const activeSlide = productSectionSlides[active];
+  const activeNotes = productSectionNotes.map((note) => {
+    const content = activeSlide.noteContent[note.id as ProductSectionNoteId];
+
+    return content ? { ...note, ...content } : note;
+  });
 
   const updateActive = (nextIndex: number) => {
     setActive(nextIndex);
@@ -60,7 +70,7 @@ export default function ProductSection() {
         <ProductSectionHero
           active={active}
           activeNote={activeNote}
-          notes={productSectionNotes}
+          notes={activeNotes}
           prefersReducedMotion={prefersReducedMotion}
           slide={activeSlide}
           slides={productSectionSlides}

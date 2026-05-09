@@ -15,6 +15,13 @@ export type ProductSectionSlide = {
   detailLines: string[];
   spotImages: Partial<Record<ProductSectionNoteId, string>>;
   notePlacements: Partial<Record<ProductSectionNoteId, ProductSectionNotePlacement>>;
+  noteContent: Partial<Record<ProductSectionNoteId, ProductSectionNoteContent>>;
+};
+
+export type ProductSectionNoteContent = {
+  label: string;
+  title: string;
+  lines: string[];
 };
 
 export type ProductSectionNotePlacement = {
@@ -121,6 +128,32 @@ export const productSectionSlides: ProductSectionSlide[] = [
       'bodice-form': `${productSectionAssetBase}/trắng 2.jpg`,
       'handbag-detail': `${productSectionAssetBase}/trắng 3.jpg`,
     },
+    noteContent: {
+      'embroidered-detail': {
+        label: 'Xem chi tiết thân áo trắng',
+        title: 'Thân áo trắng',
+        lines: [
+          'Cổ cao truyền thống và tay dài ôm nhẹ giữ tổng thể kín đáo, thanh thoát cho các bối cảnh lễ nghi.',
+          'Nền vải trắng tối giản giúp bó hoa ly trở thành điểm nhấn mềm mà không lấn át phom áo.',
+        ],
+      },
+      'bodice-form': {
+        label: 'Xem chi tiết quạt cầm tay',
+        title: 'Quạt cầm tay',
+        lines: [
+          'Quạt nan sáng màu tạo lớp phụ kiện cổ điển, cân bằng với sắc trắng tinh giản của áo dài.',
+          'Bề mặt nan quạt mảnh và nhịp xòe đều thêm chất duyên dáng cho khung hình lookbook ngoài trời.',
+        ],
+      },
+      'handbag-detail': {
+        label: 'Xem chi tiết giày trắng',
+        title: 'Giày trắng quai mảnh',
+        lines: [
+          'Đôi giày trắng quai mảnh giữ bảng màu sạch, giúp phần phối bộ đồng điệu với áo dài và quần lụa.',
+          'Chi tiết khóa nhỏ tạo điểm sáng nhẹ ở phần phụ kiện mà vẫn giữ tinh thần trang nhã.',
+        ],
+      },
+    },
     notePlacements: {
       'embroidered-detail': {
         hotspotX: '48%',
@@ -173,6 +206,32 @@ export const productSectionSlides: ProductSectionSlide[] = [
       'embroidered-detail': `${productSectionAssetBase}/đỏ 1.png`,
       'bodice-form': `${productSectionAssetBase}/đỏ 2.png`,
       'handbag-detail': `${productSectionAssetBase}/đỏ 3.jpg`,
+    },
+    noteContent: {
+      'embroidered-detail': {
+        label: 'Xem chi tiết trâm cài tóc',
+        title: 'Trâm cài tóc',
+        lines: [
+          'Trâm hoa dáng mảnh tạo điểm nhấn trên mái tóc, bổ sung nét cổ điển cho sắc đỏ trầm của bộ áo dài.',
+          'Các hạt rủ nhỏ bắt sáng nhẹ, giúp phần phụ kiện nổi bật khi nhìn gần mà không làm rối tổng thể.',
+        ],
+      },
+      'bodice-form': {
+        label: 'Xem chi tiết thân áo đỏ',
+        title: 'Thân áo đỏ thêu hạc',
+        lines: [
+          'Thân áo đỏ ôm gọn với cổ cao và tay dài, giữ dáng thanh lịch trên nền không gian gỗ ấm.',
+          'Mảng thêu hạc trắng chạy dọc thân áo tạo nhịp sáng sang trọng, đúng tinh thần lễ Tết.',
+        ],
+      },
+      'handbag-detail': {
+        label: 'Xem chi tiết túi gấm hồng',
+        title: 'Túi gấm hồng',
+        lines: [
+          'Túi gấm hồng thêu hoa làm mềm sắc đỏ, tạo điểm cân bằng ở nửa dưới bố cục.',
+          'Khung kim loại và tua rua nhỏ thêm cảm giác trang trọng cho cách phối phụ kiện truyền thống.',
+        ],
+      },
     },
     notePlacements: {
       'embroidered-detail': {
@@ -227,6 +286,32 @@ export const productSectionSlides: ProductSectionSlide[] = [
       'bodice-form': `${productSectionAssetBase}/Hồng 2.jpg`,
       'handbag-detail': `${productSectionAssetBase}/Hồng 3.jpg`,
     },
+    noteContent: {
+      'embroidered-detail': {
+        label: 'Xem chi tiết thân áo hồng thêu hoa',
+        title: 'Thân áo hồng thêu hoa',
+        lines: [
+          'Nền hồng phấn và mảng thêu hoa trải dọc thân áo tạo trọng tâm nữ tính, mềm mại cho mẫu chủ lực.',
+          'Tay loe nhẹ kết hợp phom dài giúp tổng thể sang trọng nhưng vẫn giữ độ bay khi chuyển động.',
+        ],
+      },
+      'bodice-form': {
+        label: 'Xem chi tiết quạt hoa',
+        title: 'Quạt hoa',
+        lines: [
+          'Quạt tròn in hoa hồng nhắc lại họa tiết trên áo, tạo liên kết màu sắc giữa trang phục và phụ kiện.',
+          'Cán quạt đỏ nhỏ là điểm nhấn tương phản, giúp khung hình thêm duyên mà không lấn át thân áo.',
+        ],
+      },
+      'handbag-detail': {
+        label: 'Xem chi tiết giày trắng',
+        title: 'Giày trắng quai mảnh',
+        lines: [
+          'Giày trắng quai mảnh giữ phần phối bộ nhẹ và sạch, phù hợp nền hồng phấn của áo dài.',
+          'Chi tiết khóa nhỏ tạo điểm sáng tinh tế, hoàn thiện tổng thể thanh lịch cho lookbook.',
+        ],
+      },
+    },
     notePlacements: {
       'embroidered-detail': {
         hotspotX: '50%',
@@ -279,6 +364,32 @@ export const productSectionSlides: ProductSectionSlide[] = [
       'embroidered-detail': `${productSectionAssetBase}/xanh 2.webp`,
       'bodice-form': `${productSectionAssetBase}/xanh 1.png`,
       'handbag-detail': `${productSectionAssetBase}/xanh 3.jpg`,
+    },
+    noteContent: {
+      'embroidered-detail': {
+        label: 'Xem chi tiết trâm cài tóc',
+        title: 'Trâm cài tóc',
+        lines: [
+          'Trâm hoa đặt sau búi tóc tạo điểm nhấn thanh mảnh, hợp với tinh thần nhẹ nhàng của áo dài xanh.',
+          'Dây rủ nhỏ và hạt sáng màu thêm chuyển động tinh tế quanh phần tóc mà không làm nặng tổng thể.',
+        ],
+      },
+      'bodice-form': {
+        label: 'Xem chi tiết thân áo xanh',
+        title: 'Thân áo xanh',
+        lines: [
+          'Thân áo xanh da trời dùng chất vải trơn, cổ cao và đường cắt ôm vừa để tạo cảm giác thanh, trẻ trung.',
+          'Độ rủ mềm giúp bề mặt ít gãy nếp, giữ phom áo gọn khi đứng trên bối cảnh bậc thang.',
+        ],
+      },
+      'handbag-detail': {
+        label: 'Xem chi tiết túi trắng',
+        title: 'Túi trắng quai vòng',
+        lines: [
+          'Túi trắng quai vòng tạo điểm nhấn hiện đại ở nửa dưới khung hình, cân bằng với sắc xanh dịu của áo.',
+          'Bề mặt xếp nếp và phần quai kim loại bắt sáng nhẹ giúp bộ phối thêm sang mà vẫn tiết chế.',
+        ],
+      },
     },
     notePlacements: {
       'embroidered-detail': {
