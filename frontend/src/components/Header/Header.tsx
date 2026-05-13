@@ -49,7 +49,6 @@ const NAV_FALLBACK_CATEGORIES: HeaderCategory[] = [
   },
 ];
 
-const DISMISSED_DROPDOWN_CLASS = 'headerDropdownDismissed';
 
 interface HeaderProps {
   onOpenAccount: () => void;
@@ -62,6 +61,7 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
   const { status, user, logout } = useAuth();
   const [categories, setCategories] = useState<HeaderCategory[]>(NAV_FALLBACK_CATEGORIES);
   const [cartItemCount, setCartItemCount] = useState(0);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -124,6 +124,8 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
   const activeCategory = new URLSearchParams(location.search).get('category');
 
   const handleClick = (link: NavLinkConfig, e: React.MouseEvent) => {
+    setOpenDropdown(null);
+
     if (location.pathname !== link.to) {
       e.preventDefault();
       navigate(link.to);
@@ -171,14 +173,21 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
           return (
             <motion.div
               key={link.to}
-              className={styles.navItem}
+              className={`${styles.navItem} ${openDropdown === link.to ? styles.dropdownOpen : ''}`}
               variants={fadeUp}
               whileHover={{ y: -1 }}
+              onMouseEnter={() => setOpenDropdown(category ? link.to : null)}
+              onMouseLeave={() => setOpenDropdown(null)}
+              onFocus={() => setOpenDropdown(category ? link.to : null)}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                  setOpenDropdown(null);
+                }
+              }}
             >
               <a
                 className={`${styles.navLink} ${isActive ? styles.isActive : ''}`}
                 href={link.to}
-                onMouseEnter={() => document.body.classList.remove(DISMISSED_DROPDOWN_CLASS)}
                 onClick={(e) => handleClick(link, e)}
               >
                 {isActive ? (
@@ -201,7 +210,7 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
                         href={target}
                         onClick={(event) => {
                           event.preventDefault();
-                          document.body.classList.add(DISMISSED_DROPDOWN_CLASS);
+                          setOpenDropdown(null);
                           navigate(target);
                         }}
                       >
