@@ -1,6 +1,6 @@
-# Áo Dài Nhã Uyên
+# Áo Dài Nhã Uyên (https://aodainhauyen.io.vn)
 
-Nền tảng thương mại điện tử áo dài Việt Nam: backend ASP.NET Core 10 + PostgreSQL, frontend React 19 + TypeScript + Vite. Chức năng chính: danh mục sản phẩm, giỏ hàng/thanh toán, đăng nhập Google/Zalo, AI try-on, chat tư vấn.
+Nền tảng thương mại điện tử áo dài Việt Nam: backend ASP.NET Core 10 + PostgreSQL, frontend React 19 + TypeScript + Vite. Chức năng chính: danh mục sản phẩm, giỏ hàng/thanh toán, đăng nhập Google, AI try-on, chat tư vấn.
 
 ## Yêu cầu hệ thống
 
