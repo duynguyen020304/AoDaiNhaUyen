@@ -1,9 +1,9 @@
 namespace AoDaiNhaUyen.Application.DTOs.Cart;
 
 public sealed record CartItemDto(
-  long Id,
-  long VariantId,
-  long ProductId,
+  Guid Id,
+  Guid VariantId,
+  Guid ProductId,
   string ProductName,
   string ProductSlug,
   string? Sku,

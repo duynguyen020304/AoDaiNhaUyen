@@ -1,8 +1,8 @@
 namespace AoDaiNhaUyen.Application.DTOs.User;
 
 public sealed record UserAddressDto(
-    long Id,
-    long UserId,
+    Guid Id,
+    Guid UserId,
     string RecipientName,
     string RecipientPhone,
     string Province,

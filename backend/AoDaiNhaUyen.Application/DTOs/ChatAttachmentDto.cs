@@ -1,7 +1,7 @@
 namespace AoDaiNhaUyen.Application.DTOs;
 
 public sealed record ChatAttachmentDto(
-  long Id,
+  Guid Id,
   string Kind,
   string FileUrl,
   string MimeType,

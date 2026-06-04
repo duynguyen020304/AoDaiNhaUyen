@@ -1,8 +1,8 @@
 namespace AoDaiNhaUyen.Application.DTOs;
 
 public sealed record AiTryOnCatalogItemDto(
-  long ProductId,
-  long? DefaultVariantId,
+  Guid ProductId,
+  Guid? DefaultVariantId,
   string Name,
   string ProductType,
   string CategorySlug,

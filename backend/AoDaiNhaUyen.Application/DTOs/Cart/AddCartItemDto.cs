@@ -1,5 +1,5 @@
 namespace AoDaiNhaUyen.Application.DTOs.Cart;
 
 public sealed record AddCartItemDto(
-  long VariantId,
+  Guid VariantId,
   int Quantity);

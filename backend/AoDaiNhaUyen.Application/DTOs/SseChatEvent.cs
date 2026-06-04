@@ -3,7 +3,7 @@ namespace AoDaiNhaUyen.Application.DTOs;
 public abstract record SseChatEvent
 {
   public sealed record Created(
-    long MessageId,
+    Guid MessageId,
     string Role,
     string Content,
     string? Intent,
@@ -15,7 +15,7 @@ public abstract record SseChatEvent
 
   public sealed record TextDelta(string Delta) : SseChatEvent;
 
-  public sealed record TextDone(string FullText, long MessageId, DateTime CreatedAt) : SseChatEvent;
+  public sealed record TextDone(string FullText, Guid MessageId, DateTime CreatedAt) : SseChatEvent;
 
   public sealed record StreamError(string Code, string Message) : SseChatEvent;
 

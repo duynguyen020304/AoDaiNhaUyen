@@ -40,14 +40,14 @@ public interface IAuthService
 
   Task LogoutAsync(string? refreshToken, CancellationToken cancellationToken = default);
 
-  Task<AuthUserDto?> GetCurrentUserAsync(long userId, CancellationToken cancellationToken = default);
+  Task<AuthUserDto?> GetCurrentUserAsync(Guid userId, CancellationToken cancellationToken = default);
 
   Task<AuthResult<AuthSessionDto>> VerifyEmailAsync(string token, CancellationToken cancellationToken = default);
 
   Task ForgotPasswordAsync(string email, CancellationToken cancellationToken = default);
 
   Task<AuthResult<string>> ResetPasswordAsync(
-    long userId,
+    Guid userId,
     string token,
     string newPassword,
     CancellationToken cancellationToken = default);

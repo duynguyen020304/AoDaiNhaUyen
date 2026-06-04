@@ -5,11 +5,11 @@ namespace AoDaiNhaUyen.Application.Interfaces.Repositories;
 
 public interface ICartRepository
 {
-  Task<Cart?> GetByUserIdAsync(long userId, CancellationToken cancellationToken = default);
-  Task<Cart?> GetByUserIdWithItemsAsync(long userId, CancellationToken cancellationToken = default);
-  Task<CartItem?> GetItemByIdAsync(long userId, long itemId, CancellationToken cancellationToken = default);
-  Task<ProductVariant?> GetVariantForCartAsync(long variantId, CancellationToken cancellationToken = default);
-  Task<Cart> CreateForUserAsync(long userId, CancellationToken cancellationToken = default);
+  Task<Cart?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+  Task<Cart?> GetByUserIdWithItemsAsync(Guid userId, CancellationToken cancellationToken = default);
+  Task<CartItem?> GetItemByIdAsync(Guid userId, Guid itemId, CancellationToken cancellationToken = default);
+  Task<ProductVariant?> GetVariantForCartAsync(Guid variantId, CancellationToken cancellationToken = default);
+  Task<Cart> CreateForUserAsync(Guid userId, CancellationToken cancellationToken = default);
   Task SaveChangesAsync(CancellationToken cancellationToken = default);
   CartDto MapCart(Cart cart);
 }

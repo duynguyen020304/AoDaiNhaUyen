@@ -11,7 +11,7 @@ public interface ICatalogStylingService
     string? materialKeyword,
     string? productType,
     int limit,
-    IReadOnlyList<long>? excludeProductIds = null,
+    IReadOnlyList<Guid>? excludeProductIds = null,
     CancellationToken cancellationToken = default);
 
   Task<IReadOnlyList<ChatRecommendationItemDto>> LookupAsync(
@@ -25,11 +25,11 @@ public interface ICatalogStylingService
     CancellationToken cancellationToken = default);
 
   Task<IReadOnlyList<ChatRecommendationItemDto>> CompareAsync(
-    IReadOnlyList<long> productIds,
+    IReadOnlyList<Guid> productIds,
     CancellationToken cancellationToken = default);
 
-  Task<IReadOnlyList<long>> ResolveProductReferencesAsync(
+  Task<IReadOnlyList<Guid>> ResolveProductReferencesAsync(
     string message,
-    IReadOnlyList<long> shortlistedProductIds,
+    IReadOnlyList<Guid> shortlistedProductIds,
     CancellationToken cancellationToken = default);
 }

@@ -1,7 +1,7 @@
 namespace AoDaiNhaUyen.Application.DTOs;
 
 public sealed record ChatMessageDto(
-  long Id,
+  Guid Id,
   string Role,
   string Content,
   string? Intent,

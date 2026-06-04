@@ -4,7 +4,7 @@ public interface IUploadStoragePathResolver
 {
   string UploadRootPath { get; }
 
-  string GetChatThreadDirectory(long threadId);
+  string GetChatThreadDirectory(Guid threadId);
 
   string GetAbsolutePathForRelativePath(string relativePath);
 

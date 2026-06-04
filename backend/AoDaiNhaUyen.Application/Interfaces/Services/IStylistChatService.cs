@@ -4,24 +4,24 @@ namespace AoDaiNhaUyen.Application.Interfaces.Services;
 public interface IStylistChatService
 {
   Task<IReadOnlyList<ChatThreadSummaryDto>> ListThreadsAsync(
-    long? userId,
+    Guid? userId,
     string? guestKey,
     CancellationToken cancellationToken = default);
 
   Task<ChatThreadDetailDto> CreateThreadAsync(
-    long? userId,
+    Guid? userId,
     string? guestKey,
     CancellationToken cancellationToken = default);
 
   Task<ChatThreadDetailDto> GetThreadAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
     CancellationToken cancellationToken = default);
 
   Task<ChatThreadDetailDto> AddMessageAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
     string message,
     string? clientMessageId,
@@ -29,8 +29,8 @@ public interface IStylistChatService
     CancellationToken cancellationToken = default);
 
   IAsyncEnumerable<SseChatEvent> AddMessageStreamAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
     string message,
     string? clientMessageId,
@@ -38,10 +38,10 @@ public interface IStylistChatService
     CancellationToken cancellationToken = default);
 
   Task<ChatMessageDto> ExecuteTryOnAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
-    long? garmentProductId,
-    IReadOnlyList<long> accessoryProductIds,
+    Guid? garmentProductId,
+    IReadOnlyList<Guid> accessoryProductIds,
     CancellationToken cancellationToken = default);
 }

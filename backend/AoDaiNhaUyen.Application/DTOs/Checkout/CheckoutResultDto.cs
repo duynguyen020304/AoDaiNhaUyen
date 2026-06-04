@@ -1,7 +1,7 @@
 namespace AoDaiNhaUyen.Application.DTOs.Checkout;
 
 public sealed record CheckoutResultDto(
-  long OrderId,
+  Guid OrderId,
   string OrderCode,
   string OrderStatus,
   string PaymentStatus,

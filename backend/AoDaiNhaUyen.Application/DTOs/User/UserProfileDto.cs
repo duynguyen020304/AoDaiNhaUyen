@@ -1,7 +1,7 @@
 namespace AoDaiNhaUyen.Application.DTOs.User;
 
 public sealed record UserProfileDto(
-    long Id,
+    Guid Id,
     string FullName,
     string? Email,
     string? Phone,

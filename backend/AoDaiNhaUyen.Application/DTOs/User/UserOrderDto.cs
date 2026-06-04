@@ -1,7 +1,7 @@
 namespace AoDaiNhaUyen.Application.DTOs.User;
 
 public sealed record UserOrderDto(
-    long Id,
+    Guid Id,
     string OrderCode,
     string RecipientName,
     string RecipientPhone,

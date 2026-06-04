@@ -1,7 +1,7 @@
 namespace AoDaiNhaUyen.Application.DTOs;
 
 public sealed record ImageCatalogEntry(
-    long AttachmentId,
+    Guid AttachmentId,
     string Kind,
     string Label,
     string? Description);
@@ -15,21 +15,21 @@ public sealed class ThreadMemoryStateDto
   public string? MaterialKeyword { get; set; }
   public string? ConversationStage { get; set; }
   public string? LastUserRequestType { get; set; }
-  public List<long> ShortlistedProductIds { get; set; } = [];
-  public List<long> GarmentShortlistedProductIds { get; set; } = [];
-  public List<long> AccessoryShortlistedProductIds { get; set; } = [];
-  public List<long> ShownProductIds { get; set; } = [];
-  public List<long> ShownGarmentProductIds { get; set; } = [];
-  public List<long> ShownAccessoryProductIds { get; set; } = [];
+  public List<Guid> ShortlistedProductIds { get; set; } = [];
+  public List<Guid> GarmentShortlistedProductIds { get; set; } = [];
+  public List<Guid> AccessoryShortlistedProductIds { get; set; } = [];
+  public List<Guid> ShownProductIds { get; set; } = [];
+  public List<Guid> ShownGarmentProductIds { get; set; } = [];
+  public List<Guid> ShownAccessoryProductIds { get; set; } = [];
   public List<string> ShownOutfitSignatures { get; set; } = [];
-  public List<long> RejectedProductIds { get; set; } = [];
-  public List<long> LikedProductIds { get; set; } = [];
+  public List<Guid> RejectedProductIds { get; set; } = [];
+  public List<Guid> LikedProductIds { get; set; } = [];
   public string? LastRecommendationStrategy { get; set; }
-  public long? SelectedGarmentProductId { get; set; }
-  public List<long> SelectedAccessoryProductIds { get; set; } = [];
-  public long? LatestPersonAttachmentId { get; set; }
-  public long? LatestTryOnResultAttachmentId { get; set; }
-  public long? LatestTryOnResultMessageId { get; set; }
+  public Guid? SelectedGarmentProductId { get; set; }
+  public List<Guid> SelectedAccessoryProductIds { get; set; } = [];
+  public Guid? LatestPersonAttachmentId { get; set; }
+  public Guid? LatestTryOnResultAttachmentId { get; set; }
+  public Guid? LatestTryOnResultMessageId { get; set; }
   public List<string> PendingTryOnRequirements { get; set; } = [];
   public List<string> RecentUserMessages { get; set; } = [];
   public List<string> RecentAssistantMessages { get; set; } = [];

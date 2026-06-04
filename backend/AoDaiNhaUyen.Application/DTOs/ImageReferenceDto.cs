@@ -1,7 +1,7 @@
 namespace AoDaiNhaUyen.Application.DTOs;
 
 public sealed record ImageReferenceDto(
-    long AttachmentId,
+    Guid AttachmentId,
     string Label,
     string Kind,
     string MimeType,

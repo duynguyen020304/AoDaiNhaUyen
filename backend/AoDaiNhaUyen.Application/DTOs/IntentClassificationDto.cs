@@ -7,7 +7,7 @@ public sealed record IntentClassificationDto(
   string? ColorFamily,
   string? MaterialKeyword,
   string? ProductType,
-  IReadOnlyList<long> ReferencedProductIds,
+  IReadOnlyList<Guid> ReferencedProductIds,
   bool RequiresPersonImage,
   bool HasImageAttachments = false,
   string? ResponseMode = null,
@@ -27,7 +27,7 @@ public sealed record IntentClassificationDto(
     string? colorFamily,
     string? materialKeyword,
     string? productType = null,
-    IReadOnlyList<long>? referencedProductIds = null,
+    IReadOnlyList<Guid>? referencedProductIds = null,
     bool requiresPersonImage = false,
     bool hasImageAttachments = false,
     string? stylistBrief = null) =>

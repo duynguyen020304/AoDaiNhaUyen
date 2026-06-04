@@ -1,8 +1,8 @@
 namespace AoDaiNhaUyen.Application.DTOs;
 
 public sealed record CategoryDto(
-	long Id,
-	long? Parent,
+	Guid Id,
+	Guid? Parent,
 	string Name,
 	string Slug,
 	string? Description,

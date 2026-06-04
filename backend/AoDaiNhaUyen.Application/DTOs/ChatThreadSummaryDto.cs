@@ -1,7 +1,7 @@
 namespace AoDaiNhaUyen.Application.DTOs;
 
 public sealed record ChatThreadSummaryDto(
-  long Id,
+  Guid Id,
   string Title,
   string? Preview,
   string Status,

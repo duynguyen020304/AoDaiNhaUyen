@@ -6,7 +6,7 @@ namespace AoDaiNhaUyen.Application.Interfaces.Repositories;
 
 public interface IUserProfileRepository
 {
-    Task<UserProfileDto?> GetUserProfileAsync(long userId, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<UserAddressDto>> GetUserAddressesAsync(long userId, CancellationToken cancellationToken = default);
-    Task<PagedResult<UserOrderDto>> GetUserOrdersAsync(long userId, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<UserProfileDto?> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<UserAddressDto>> GetUserAddressesAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<PagedResult<UserOrderDto>> GetUserOrdersAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default);
 }

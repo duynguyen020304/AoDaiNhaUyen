@@ -1,9 +1,9 @@
 namespace AoDaiNhaUyen.Application.DTOs.User;
 
 public sealed record OrderItemDto(
-    long Id,
-    long? ProductId,
-    long? VariantId,
+    Guid Id,
+    Guid? ProductId,
+    Guid? VariantId,
     string ProductName,
     string? Sku,
     string? Size,
@@ -13,6 +13,6 @@ public sealed record OrderItemDto(
     decimal LineTotal,
     string? ImageUrl,
     bool IsCustomTailoring,
-    long? MeasurementProfileId,
+    Guid? MeasurementProfileId,
     string? CustomMeasurementsJson,
     string? Note);

@@ -1,7 +1,7 @@
 namespace AoDaiNhaUyen.Application.DTOs;
 
 public sealed record ProductVariantDto(
-  long Id,
+  Guid Id,
   string Sku,
   string? VariantName,
   string? Size,

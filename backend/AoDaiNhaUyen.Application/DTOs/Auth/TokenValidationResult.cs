@@ -9,8 +9,8 @@ public enum TokenValidationStatus
 
 public sealed record EmailVerificationTokenValidationResult(
   TokenValidationStatus Status,
-  long? UserId);
+    Guid? UserId);
 
 public sealed record PasswordResetTokenValidationResult(
   TokenValidationStatus Status,
-  long? UserId);
+    Guid? UserId);

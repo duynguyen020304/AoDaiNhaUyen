@@ -19,12 +19,12 @@ public interface IThreadMemoryService
     ThreadMemoryStateDto memory,
     IntentClassificationDto classification,
     ChatStructuredPayloadDto? structuredPayload,
-    long? tryOnResultAttachmentId,
-    long? tryOnResultMessageId,
+    Guid? tryOnResultAttachmentId,
+    Guid? tryOnResultMessageId,
     string? assistantMessage = null);
 
   void Persist(
     ChatThread thread,
     ThreadMemoryStateDto memory,
-    long? lastMessageId);
+    Guid? lastMessageId);
 }

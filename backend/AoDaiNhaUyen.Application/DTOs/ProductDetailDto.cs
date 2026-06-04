@@ -1,7 +1,7 @@
 namespace AoDaiNhaUyen.Application.DTOs;
 
 public sealed record ProductDetailDto(
-  long Id,
+  Guid Id,
   string Name,
   string Slug,
   string ProductType,

@@ -4,9 +4,9 @@ public sealed record CatalogAiTryOnRequestDto(
   string? LegacyGarmentId,
   byte[] PersonImageBytes,
   string PersonImageMimeType,
-  long? GarmentProductId,
-  long? GarmentVariantId,
-  IReadOnlyList<long> AccessoryProductIds,
+  Guid? GarmentProductId,
+  Guid? GarmentVariantId,
+  IReadOnlyList<Guid> AccessoryProductIds,
   byte[]? LegacyGarmentImageBytes,
   string? LegacyGarmentImageMimeType,
   IReadOnlyList<AiTryOnAccessoryImageDto> LegacyAccessoryImages);
