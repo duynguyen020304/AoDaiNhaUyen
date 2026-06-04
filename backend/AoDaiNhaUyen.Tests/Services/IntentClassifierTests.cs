@@ -337,7 +337,7 @@ public sealed class IntentClassifierTests
 
     var memory = new ThreadMemoryStateDto
     {
-      ShortlistedProductIds = new List<long> { 101, 102 },
+      ShortlistedProductIds = new List<Guid> { 101, 102 },
       SelectedGarmentProductId = 101
     };
 

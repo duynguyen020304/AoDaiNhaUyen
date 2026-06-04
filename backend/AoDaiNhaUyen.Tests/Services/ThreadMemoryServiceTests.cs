@@ -52,11 +52,11 @@ public sealed class ThreadMemoryServiceTests
       BudgetCeiling = 4_000_000m,
       ColorFamily = "red",
       MaterialKeyword = "gấm",
-      ShortlistedProductIds = new List<long> { 11, 12 },
-      GarmentShortlistedProductIds = new List<long> { 11, 12 },
-      AccessoryShortlistedProductIds = new List<long> { 31, 32 },
+      ShortlistedProductIds = new List<Guid> { 11, 12 },
+      GarmentShortlistedProductIds = new List<Guid> { 11, 12 },
+      AccessoryShortlistedProductIds = new List<Guid> { 31, 32 },
       SelectedGarmentProductId = 11,
-      SelectedAccessoryProductIds = new List<long> { 31 },
+      SelectedAccessoryProductIds = new List<Guid> { 31 },
       PendingTryOnRequirements = new List<string> { "upload_person_image" }
     };
 
@@ -67,12 +67,12 @@ public sealed class ThreadMemoryServiceTests
     Assert.Equal(4_000_000m, loaded.BudgetCeiling);
     Assert.Equal("red", loaded.ColorFamily);
     Assert.Equal("gấm", loaded.MaterialKeyword);
-    Assert.Equal(new long[] { 11, 12 }, loaded.ShortlistedProductIds);
-    Assert.Equal(new long[] { 11, 12 }, loaded.GarmentShortlistedProductIds);
-    Assert.Equal(new long[] { 31, 32 }, loaded.AccessoryShortlistedProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid() }, loaded.ShortlistedProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid() }, loaded.GarmentShortlistedProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid() }, loaded.AccessoryShortlistedProductIds);
     Assert.Empty(loaded.ShownProductIds);
     Assert.Equal(11, loaded.SelectedGarmentProductId);
-    Assert.Equal(new long[] { 31 }, loaded.SelectedAccessoryProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid() }, loaded.SelectedAccessoryProductIds);
     Assert.Equal(new[] { "upload_person_image" }, loaded.PendingTryOnRequirements);
   }
 
@@ -81,7 +81,7 @@ public sealed class ThreadMemoryServiceTests
   {
     var memory = new ThreadMemoryStateDto
     {
-      ShownProductIds = new List<long> { 1, 2 }
+      ShownProductIds = new List<Guid> { 1, 2 }
     };
 
     service.ApplyAssistantTurn(
@@ -104,7 +104,7 @@ public sealed class ThreadMemoryServiceTests
       null,
       null);
 
-    Assert.Equal(new long[] { 1, 2, 101, 201 }, memory.ShownProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() }, memory.ShownProductIds);
   }
 
   [Fact]
@@ -112,8 +112,8 @@ public sealed class ThreadMemoryServiceTests
   {
     var memory = new ThreadMemoryStateDto
     {
-      ShortlistedProductIds = new List<long> { 101, 102 },
-      GarmentShortlistedProductIds = new List<long> { 101, 102 },
+      ShortlistedProductIds = new List<Guid> { 101, 102 },
+      GarmentShortlistedProductIds = new List<Guid> { 101, 102 },
       SelectedGarmentProductId = 101
     };
 
@@ -134,9 +134,9 @@ public sealed class ThreadMemoryServiceTests
       null,
       null);
 
-    Assert.Equal(new long[] { 101, 102 }, memory.ShortlistedProductIds);
-    Assert.Equal(new long[] { 101, 102 }, memory.GarmentShortlistedProductIds);
-    Assert.Equal(new long[] { 201 }, memory.AccessoryShortlistedProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid() }, memory.ShortlistedProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid() }, memory.GarmentShortlistedProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid() }, memory.AccessoryShortlistedProductIds);
   }
 
   [Fact]
@@ -159,15 +159,15 @@ public sealed class ThreadMemoryServiceTests
   {
     var memory = new ThreadMemoryStateDto
     {
-      GarmentShortlistedProductIds = new List<long> { 101, 102 },
-      AccessoryShortlistedProductIds = new List<long> { 201 }
+      GarmentShortlistedProductIds = new List<Guid> { 101, 102 },
+      AccessoryShortlistedProductIds = new List<Guid> { 201 }
     };
 
     service.ApplyUserConversationTurn(memory, "Mình thích mẫu này, lấy mẫu này nhé");
 
     Assert.Equal("selection_feedback", memory.LastUserRequestType);
     Assert.Equal("decide", memory.ConversationStage);
-    Assert.Equal(new long[] { 101, 102, 201 }, memory.LikedProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() }, memory.LikedProductIds);
   }
 
   [Fact]
@@ -214,11 +214,11 @@ public sealed class ThreadMemoryServiceTests
 
     for (var i = 0; i < 21; i++)
     {
-      service.ApplyUserConversationTurn(memory, $"short {i}");
+      service.ApplyUserConversationTurn(memory, $"Guid {i}");
     }
 
-    Assert.Equal("1. short 0\n2. short 1\n3. short 2\n4. short 3\n5. short 4\n6. short 5\n7. short 6\n8. short 7\n9. short 8\n10. short 9\n11. short 10\n12. short 11\n13. short 12\n14. short 13\n15. short 14\n16. short 15\n17. short 16\n18. short 17\n19. short 18\n20. short 19", memory.UserConversationSummary);
-    Assert.Equal(["short 20"], memory.RecentUserMessages);
+    Assert.Equal("1. Guid 0\n2. Guid 1\n3. Guid 2\n4. Guid 3\n5. Guid 4\n6. Guid 5\n7. Guid 6\n8. Guid 7\n9. Guid 8\n10. Guid 9\n11. Guid 10\n12. Guid 11\n13. Guid 12\n14. Guid 13\n15. Guid 14\n16. Guid 15\n17. Guid 16\n18. Guid 17\n19. Guid 18\n20. Guid 19", memory.UserConversationSummary);
+    Assert.Equal(["Guid 20"], memory.RecentUserMessages);
   }
 
   [Fact]
@@ -230,10 +230,10 @@ public sealed class ThreadMemoryServiceTests
       Scenario = "giao-vien",
       ConversationStage = "refine",
       LastUserRequestType = "alternative_request",
-      ShownProductIds = new List<long> { 101, 201 },
-      ShownGarmentProductIds = new List<long> { 101 },
-      ShownAccessoryProductIds = new List<long> { 201 },
-      LikedProductIds = new List<long> { 101 }
+      ShownProductIds = new List<Guid> { 101, 201 },
+      ShownGarmentProductIds = new List<Guid> { 101 },
+      ShownAccessoryProductIds = new List<Guid> { 201 },
+      LikedProductIds = new List<Guid> { 101 }
     };
 
     service.Persist(thread, state, 33);
@@ -241,10 +241,10 @@ public sealed class ThreadMemoryServiceTests
 
     Assert.Equal("refine", loaded.ConversationStage);
     Assert.Equal("alternative_request", loaded.LastUserRequestType);
-    Assert.Equal(new long[] { 101, 201 }, loaded.ShownProductIds);
-    Assert.Equal(new long[] { 101 }, loaded.ShownGarmentProductIds);
-    Assert.Equal(new long[] { 201 }, loaded.ShownAccessoryProductIds);
-    Assert.Equal(new long[] { 101 }, loaded.LikedProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid() }, loaded.ShownProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid() }, loaded.ShownGarmentProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid() }, loaded.ShownAccessoryProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid() }, loaded.LikedProductIds);
   }
 
   [Fact]
@@ -276,8 +276,8 @@ public sealed class ThreadMemoryServiceTests
       null,
       null);
 
-    Assert.Equal(new long[] { 101 }, memory.ShownGarmentProductIds);
-    Assert.Equal(new long[] { 201 }, memory.ShownAccessoryProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid() }, memory.ShownGarmentProductIds);
+    Assert.Equal(new Guid[] { Guid.NewGuid() }, memory.ShownAccessoryProductIds);
     Assert.Equal("relevance_first", memory.LastRecommendationStrategy);
     Assert.Equal("discovery", memory.ConversationStage);
   }

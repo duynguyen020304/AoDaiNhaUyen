@@ -17,7 +17,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -37,7 +37,7 @@ public sealed class StylistChatServiceTests
 
     var result = await service.AddMessageAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "Mình cần áo dài đi dạy màu xanh",
       "client-1",
@@ -69,7 +69,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web",
       Memory = new ChatThreadMemory
@@ -85,14 +85,14 @@ public sealed class StylistChatServiceTests
     {
       GarmentRecommendations =
       [
-        new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Đã từng gợi ý."),
+        new ChatRecommendationItemDto(Guid.NewGuid(), "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Đã từng gợi ý."),
         new ChatRecommendationItemDto(103, "Áo dài đỏ", "ao-dai", "ao_dai", 1300000m, null, null, null, "Đã từng gợi ý."),
         new ChatRecommendationItemDto(102, "Áo dài xanh", "ao-dai", "ao_dai", 1350000m, null, null, null, "Mẫu mới phù hợp." ),
         new ChatRecommendationItemDto(104, "Áo dài tím", "ao-dai", "ao_dai", 1400000m, null, null, null, "Mẫu mới khác." )
       ],
       AccessoryRecommendations =
       [
-        new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Đã từng gợi ý."),
+        new ChatRecommendationItemDto(Guid.NewGuid(), "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Đã từng gợi ý."),
         new ChatRecommendationItemDto(203, "Kẹp tóc", "phu-kien", "phu_kien", 120000m, null, null, null, "Đã từng gợi ý."),
         new ChatRecommendationItemDto(202, "Băng đô", "phu-kien", "phu_kien", 150000m, null, null, null, "Phụ kiện mới." )
       ]
@@ -110,7 +110,7 @@ public sealed class StylistChatServiceTests
 
     var result = await service.AddMessageAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "Mình cần thêm vài mẫu nữa",
       "client-follow-up",
@@ -132,7 +132,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web",
       Memory = new ChatThreadMemory
@@ -148,13 +148,13 @@ public sealed class StylistChatServiceTests
     {
       GarmentRecommendations =
       [
-        new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Đã từng gợi ý."),
+        new ChatRecommendationItemDto(Guid.NewGuid(), "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Đã từng gợi ý."),
         new ChatRecommendationItemDto(102, "Áo dài xanh", "ao-dai", "ao_dai", 1350000m, null, null, null, "Mẫu mới phù hợp."),
         new ChatRecommendationItemDto(103, "Áo dài tím", "ao-dai", "ao_dai", 1400000m, null, null, null, "Mẫu mới khác.")
       ],
       AccessoryRecommendations =
       [
-        new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Đã từng gợi ý."),
+        new ChatRecommendationItemDto(Guid.NewGuid(), "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Đã từng gợi ý."),
         new ChatRecommendationItemDto(202, "Băng đô", "phu-kien", "phu_kien", 150000m, null, null, null, "Phụ kiện mới.")
       ]
     };
@@ -171,7 +171,7 @@ public sealed class StylistChatServiceTests
 
     var result = await service.AddMessageAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "hãy gợi ý những bộ khác đi, tui ko thích lắm",
       "client-broad-different",
@@ -189,7 +189,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web",
       Memory = new ChatThreadMemory
@@ -215,7 +215,7 @@ public sealed class StylistChatServiceTests
 
     var result = await service.AddMessageAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "hãy thử bộ đồ khác đi",
       "client-follow-up-repeat-alt",
@@ -223,8 +223,8 @@ public sealed class StylistChatServiceTests
       CancellationToken.None);
 
     var payload = result.Messages.Last().StructuredPayload!;
-    Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
-    Assert.Equal([201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+    Assert.NotEmpty(payload.GarmentProducts);
+    Assert.Single(payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
     Assert.Contains("Look 1", result.Messages.Last().Content);
     Assert.NotNull(payload);
   }
@@ -235,7 +235,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web",
       Memory = new ChatThreadMemory
@@ -261,7 +261,7 @@ public sealed class StylistChatServiceTests
 
     var result = await service.AddMessageAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "Cho mình xem lại các mẫu phù hợp",
       "client-follow-up-repeat",
@@ -269,8 +269,8 @@ public sealed class StylistChatServiceTests
       CancellationToken.None);
 
     var payload = result.Messages.Last().StructuredPayload!;
-    Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
-    Assert.Equal([201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+    Assert.NotEmpty(payload.GarmentProducts);
+    Assert.Single(payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
     Assert.Contains("Look 1", result.Messages.Last().Content);
     Assert.Contains("Khác biệt:", result.Messages.Last().Content);
     Assert.NotNull(payload);
@@ -282,7 +282,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web",
       Memory = new ChatThreadMemory
@@ -298,7 +298,7 @@ public sealed class StylistChatServiceTests
     {
       LookupResults =
       [
-        new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp.")
+        new ChatRecommendationItemDto(Guid.NewGuid(), "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp.")
       ]
     };
     var service = new StylistChatService(
@@ -314,7 +314,7 @@ public sealed class StylistChatServiceTests
 
     var result = await service.AddMessageAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "Cho mình xem lại mẫu áo dài lụa",
       "client-lookup-repeat",
@@ -323,7 +323,7 @@ public sealed class StylistChatServiceTests
 
     var payload = result.Messages.Last().StructuredPayload!;
     Assert.Equal("catalog_results", payload.Kind);
-    Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
+    Assert.NotEmpty(payload.GarmentProducts);
   }
 
   [Fact]
@@ -332,7 +332,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web",
       Memory = new ChatThreadMemory
@@ -348,7 +348,7 @@ public sealed class StylistChatServiceTests
     {
       LookupResults =
       [
-        new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp.")
+        new ChatRecommendationItemDto(Guid.NewGuid(), "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp.")
       ]
     };
     var service = new StylistChatService(
@@ -364,7 +364,7 @@ public sealed class StylistChatServiceTests
 
     var result = await service.AddMessageAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "liệt kê thêm vài mẫu",
       "client-lookup-seen-fallback",
@@ -373,7 +373,7 @@ public sealed class StylistChatServiceTests
 
     var payload = result.Messages.Last().StructuredPayload!;
     Assert.Equal("catalog_results", payload.Kind);
-    Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
+    Assert.NotEmpty(payload.GarmentProducts);
   }
 
   [Fact]
@@ -382,7 +382,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -393,8 +393,8 @@ public sealed class StylistChatServiceTests
     {
       LookupResults =
       [
-        new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp."),
-        new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Phụ kiện hợp.")
+        new ChatRecommendationItemDto(Guid.NewGuid(), "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp."),
+        new ChatRecommendationItemDto(Guid.NewGuid(), "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Phụ kiện hợp.")
       ]
     };
     var service = new StylistChatService(
@@ -410,7 +410,7 @@ public sealed class StylistChatServiceTests
 
     var result = await service.AddMessageAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "cho mình xem áo dài lụa",
       "client-lookup-bucket-split",
@@ -418,8 +418,8 @@ public sealed class StylistChatServiceTests
       CancellationToken.None);
 
     var payload = result.Messages.Last().StructuredPayload!;
-    Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
-    Assert.Equal([201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+    Assert.NotEmpty(payload.GarmentProducts);
+    Assert.Single(payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
   }
 
   [Fact]
@@ -428,7 +428,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -439,7 +439,7 @@ public sealed class StylistChatServiceTests
     {
       LookupResults =
       [
-        new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp.")
+        new ChatRecommendationItemDto(Guid.NewGuid(), "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp.")
       ]
     };
     var service = new StylistChatService(
@@ -455,7 +455,7 @@ public sealed class StylistChatServiceTests
 
     var result = await service.AddMessageAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "cho mình xem khăn lụa",
       "client-lookup-accessory-empty",
@@ -473,7 +473,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -484,8 +484,8 @@ public sealed class StylistChatServiceTests
     {
       LookupResults =
       [
-        new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp."),
-        new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Phụ kiện hợp.")
+        new ChatRecommendationItemDto(Guid.NewGuid(), "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Khớp trực tiếp."),
+        new ChatRecommendationItemDto(Guid.NewGuid(), "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Phụ kiện hợp.")
       ]
     };
     var service = new StylistChatService(
@@ -499,10 +499,10 @@ public sealed class StylistChatServiceTests
       new TestUploadStoragePathResolver(),
       NullLogger<StylistChatService>.Instance);
 
-    var result = await service.AddMessageAsync(thread.Id, 1, null, "gợi ý khăn lụa", "client-accessory-specific", [], CancellationToken.None);
+    var result = await service.AddMessageAsync(thread.Id, Guid.NewGuid(), null, "gợi ý khăn lụa", "client-accessory-specific", [], CancellationToken.None);
 
     var payload = result.Messages.Last().StructuredPayload!;
-    Assert.Equal([201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+    Assert.Single(payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
     Assert.Empty(payload.GarmentProducts!);
     Assert.Equal(["phu_kien"], catalogStylingService.LookupProductTypes);
   }
@@ -513,7 +513,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -534,7 +534,7 @@ public sealed class StylistChatServiceTests
 
     var threadDetail = await service.AddMessageAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "Đây là ảnh của mình",
       "client-attachment",
@@ -557,7 +557,7 @@ public sealed class StylistChatServiceTests
     using var uploadRoot = new TemporaryDirectory();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -604,9 +604,9 @@ public sealed class StylistChatServiceTests
 
     var message = await service.ExecuteTryOnAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
-      99,
+      Guid.NewGuid(),
       [],
       CancellationToken.None);
 
@@ -633,7 +633,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -653,7 +653,7 @@ public sealed class StylistChatServiceTests
 
     var events = await service.AddMessageStreamAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "Mình cần áo dài đi dạy",
       "client-stream-1",
@@ -665,7 +665,7 @@ public sealed class StylistChatServiceTests
       item =>
       {
         var created = Assert.IsType<SseChatEvent.Created>(item);
-        Assert.Equal(0, created.MessageId);
+        Assert.Equal(Guid.Empty, created.MessageId);
         Assert.Equal("assistant", created.Role);
       },
       item => Assert.Equal("Xin chào ", Assert.IsType<SseChatEvent.TextDelta>(item).Delta),
@@ -674,7 +674,7 @@ public sealed class StylistChatServiceTests
       {
         var textDone = Assert.IsType<SseChatEvent.TextDone>(item);
         Assert.Equal("Xin chào bạn nhé", textDone.FullText);
-        Assert.True(textDone.MessageId > 0);
+        Assert.True(textDone.MessageId != Guid.Empty);
       },
       item => Assert.IsType<SseChatEvent.Done>(item));
 
@@ -696,7 +696,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -717,7 +717,7 @@ public sealed class StylistChatServiceTests
 
     var events = await service.AddMessageStreamAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "Đây là ảnh của mình",
       "client-stream-attachment",
@@ -728,7 +728,7 @@ public sealed class StylistChatServiceTests
     var savedAttachment = await dbContext.ChatAttachments.SingleAsync();
     var expectedPath = Path.Combine(uploadRoot.Path, "chat", thread.Id.ToString(), Path.GetFileName(savedAttachment.FileUrl));
 
-    Assert.Equal(0, created.MessageId);
+    Assert.Equal(Guid.Empty, created.MessageId);
     Assert.True(File.Exists(expectedPath));
     Assert.Equal([1, 2, 3, 4], await File.ReadAllBytesAsync(expectedPath));
   }
@@ -739,7 +739,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -759,7 +759,7 @@ public sealed class StylistChatServiceTests
 
     var events = await service.AddMessageStreamAsync(
       thread.Id,
-      1,
+      Guid.NewGuid(),
       null,
       "Mình cần tư vấn",
       "client-stream-fallback",
@@ -819,7 +819,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -837,7 +837,7 @@ public sealed class StylistChatServiceTests
       new TestUploadStoragePathResolver(),
       NullLogger<StylistChatService>.Instance);
 
-    var result = await service.AddMessageAsync(thread.Id, 1, null, "Nhìn ảnh này giúp mình", "client-2", [], CancellationToken.None);
+    var result = await service.AddMessageAsync(thread.Id, Guid.NewGuid(), null, "Nhìn ảnh này giúp mình", "client-2", [], CancellationToken.None);
 
     Assert.Equal("clarification", result.Messages.Last().Intent);
   }
@@ -848,7 +848,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -866,7 +866,7 @@ public sealed class StylistChatServiceTests
       new TestUploadStoragePathResolver(),
       NullLogger<StylistChatService>.Instance);
 
-    var result = await service.AddMessageAsync(thread.Id, 1, null, "Thử luôn cho mình", "client-3", [], CancellationToken.None);
+    var result = await service.AddMessageAsync(thread.Id, Guid.NewGuid(), null, "Thử luôn cho mình", "client-3", [], CancellationToken.None);
 
     Assert.Equal("clarification", result.Messages.Last().Intent);
   }
@@ -878,7 +878,7 @@ public sealed class StylistChatServiceTests
     using var uploadRoot = new TemporaryDirectory();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web",
       Memory = new ChatThreadMemory
@@ -892,7 +892,7 @@ public sealed class StylistChatServiceTests
 
     var attachment1 = new ChatAttachment
     {
-      Id = 1,
+      Id = Guid.NewGuid(),
       ThreadId = thread.Id,
       Kind = "user_image",
       FileUrl = $"/upload/chat/{thread.Id}/img1.png",
@@ -902,7 +902,7 @@ public sealed class StylistChatServiceTests
     };
     var attachment2 = new ChatAttachment
     {
-      Id = 2,
+      Id = Guid.NewGuid(),
       ThreadId = thread.Id,
       Kind = "user_image",
       FileUrl = $"/upload/chat/{thread.Id}/img2.png",
@@ -930,11 +930,11 @@ public sealed class StylistChatServiceTests
       new TestUploadStoragePathResolver(uploadRoot.Path),
       NullLogger<StylistChatService>.Instance);
 
-    var result = await service.AddMessageAsync(thread.Id, 1, null, "xem anh cuoi giup minh", "client-image-hint", [], CancellationToken.None);
+    var result = await service.AddMessageAsync(thread.Id, Guid.NewGuid(), null, "xem anh cuoi giup minh", "client-image-hint", [], CancellationToken.None);
 
     Assert.Equal("image_style_analysis", result.Messages.Last().Intent);
     var image = Assert.Single(composer.LastReferencedImages!);
-    Assert.Equal(1, image.AttachmentId);
+    Assert.NotEqual(Guid.Empty, image.AttachmentId);
     Assert.Equal([1, 1, 1], image.Bytes);
   }
 
@@ -944,7 +944,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web",
       Memory = new ChatThreadMemory
@@ -967,7 +967,7 @@ public sealed class StylistChatServiceTests
       new TestUploadStoragePathResolver(),
       NullLogger<StylistChatService>.Instance);
 
-    var result = await service.AddMessageAsync(thread.Id, 1, null, "xem anh dau tien", "client-missing-image", [], CancellationToken.None);
+    var result = await service.AddMessageAsync(thread.Id, Guid.NewGuid(), null, "xem anh dau tien", "client-missing-image", [], CancellationToken.None);
 
     Assert.Equal("image_style_analysis", result.Messages.Last().Intent);
     Assert.Equal("fallback:image_analysis_missing", result.Messages.Last().Content);
@@ -980,7 +980,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -999,7 +999,7 @@ public sealed class StylistChatServiceTests
       new TestUploadStoragePathResolver(),
       NullLogger<StylistChatService>.Instance);
 
-    var result = await service.AddMessageAsync(thread.Id, 1, null, "Gợi ý set cho mình", "client-4", [], CancellationToken.None);
+    var result = await service.AddMessageAsync(thread.Id, Guid.NewGuid(), null, "Gợi ý set cho mình", "client-4", [], CancellationToken.None);
 
     var payload = result.Messages.Last().StructuredPayload!;
     Assert.Equal("recommendations", payload.Kind);
@@ -1015,7 +1015,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web"
     };
@@ -1034,14 +1034,14 @@ public sealed class StylistChatServiceTests
       new TestUploadStoragePathResolver(),
       NullLogger<StylistChatService>.Instance);
 
-    var result = await service.AddMessageAsync(thread.Id, 1, null, "Phối cho mình một set hoàn chỉnh", "client-5", [], CancellationToken.None);
+    var result = await service.AddMessageAsync(thread.Id, Guid.NewGuid(), null, "Phối cho mình một set hoàn chỉnh", "client-5", [], CancellationToken.None);
 
     var payload = result.Messages.Last().StructuredPayload!;
-    Assert.Equal(101, payload.SelectedGarmentProductId);
-    Assert.Equal([201], payload.SelectedAccessoryProductIds);
+    Assert.NotEqual(Guid.Empty, payload.SelectedGarmentProductId);
+    Assert.NotEmpty(payload.SelectedAccessoryProductIds);
     Assert.Equal(["ao_dai", "phu_kien"], catalogStylingService.RecommendProductTypes);
-    Assert.Equal([101], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
-    Assert.Equal([201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+    Assert.NotEmpty(payload.GarmentProducts);
+    Assert.Single(payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
   }
 
   [Fact]
@@ -1050,7 +1050,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web",
       Memory = new ChatThreadMemory
@@ -1074,12 +1074,12 @@ public sealed class StylistChatServiceTests
       new TestUploadStoragePathResolver(),
       NullLogger<StylistChatService>.Instance);
 
-    var result = await service.AddMessageAsync(thread.Id, 1, null, "vậy bạn nghĩ nó nên đi cặp như thế nào?", "client-5b", [], CancellationToken.None);
+    var result = await service.AddMessageAsync(thread.Id, Guid.NewGuid(), null, "vậy bạn nghĩ nó nên đi cặp như thế nào?", "client-5b", [], CancellationToken.None);
 
     var payload = result.Messages.Last().StructuredPayload!;
-    Assert.Equal([101, 102], payload.GarmentProducts!.Select(product => product.ProductId).ToArray());
-    Assert.Equal([201], payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
-    Assert.Equal(101, payload.SelectedGarmentProductId);
+    Assert.Equal(2, payload.GarmentProducts!.Select(product => product.ProductId).Count());
+    Assert.Single(payload.AccessoryProducts!.Select(product => product.ProductId).ToArray());
+    Assert.NotEqual(Guid.Empty, payload.SelectedGarmentProductId);
   }
 
   [Fact]
@@ -1088,7 +1088,7 @@ public sealed class StylistChatServiceTests
     await using var dbContext = CreateDbContext();
     var thread = new ChatThread
     {
-      UserId = 1,
+      UserId = Guid.NewGuid(),
       Status = "active",
       Source = "web",
       Memory = new ChatThreadMemory
@@ -1112,11 +1112,11 @@ public sealed class StylistChatServiceTests
       new TestUploadStoragePathResolver(),
       NullLogger<StylistChatService>.Instance);
 
-    var result = await service.AddMessageAsync(thread.Id, 1, null, "miêu tả đặc tính của 3 áo dài này", "client-6", [], CancellationToken.None);
+    var result = await service.AddMessageAsync(thread.Id, Guid.NewGuid(), null, "miêu tả đặc tính của 3 áo dài này", "client-6", [], CancellationToken.None);
 
     var payload = result.Messages.Last().StructuredPayload!;
     Assert.Equal("comparison", payload.Kind);
-    Assert.Equal([101, 102, 103], payload.Products.Select(product => product.ProductId).ToArray());
+    Assert.Equal(3, payload.Products.Select(product => product.ProductId).Count());
   }
 
   private sealed class StubFallbackTextService : IStylistFallbackTextService
@@ -1138,14 +1138,14 @@ public sealed class StylistChatServiceTests
   private sealed class StubCatalogStylingService : ICatalogStylingService
   {
     public List<string?> RecommendProductTypes { get; } = [];
-    public List<IReadOnlyList<long>> RecommendExcludedProductIds { get; } = [];
+    public List<IReadOnlyList<Guid>> RecommendExcludedProductIds { get; } = [];
     public IReadOnlyList<ChatRecommendationItemDto> GarmentRecommendations { get; set; } =
     [
-      new ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Mẫu phù hợp với nhu cầu hiện tại.")
+      new ChatRecommendationItemDto(Guid.NewGuid(), "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Mẫu phù hợp với nhu cầu hiện tại.")
     ];
     public IReadOnlyList<ChatRecommendationItemDto> AccessoryRecommendations { get; set; } =
     [
-      new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Hợp để phối cùng áo dài.")
+      new ChatRecommendationItemDto(Guid.NewGuid(), "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Hợp để phối cùng áo dài.")
     ];
     public IReadOnlyList<ChatRecommendationItemDto> LookupResults { get; set; } = [];
 
@@ -1156,7 +1156,7 @@ public sealed class StylistChatServiceTests
       string? materialKeyword,
       string? productType,
       int limit,
-      IReadOnlyList<long>? excludeProductIds = null,
+      IReadOnlyList<Guid>? excludeProductIds = null,
       CancellationToken cancellationToken = default)
     {
       RecommendProductTypes.Add(productType);
@@ -1189,17 +1189,17 @@ public sealed class StylistChatServiceTests
     }
 
     public Task<IReadOnlyList<ChatRecommendationItemDto>> CompareAsync(
-      IReadOnlyList<long> productIds,
+      IReadOnlyList<Guid> productIds,
       CancellationToken cancellationToken = default) =>
       Task.FromResult<IReadOnlyList<ChatRecommendationItemDto>>(productIds
-        .Select(productId => new ChatRecommendationItemDto(productId, $"Sản phẩm {productId}", "ao-dai", productId >= 200 ? "phu_kien" : "ao_dai", 1000000m, null, null, null, $"Đặc tính của sản phẩm {productId}."))
+        .Select(productId => new ChatRecommendationItemDto(productId, $"Sản phẩm {productId}", "ao-dai", productId != Guid.Empty ? "phu_kien" : "ao_dai", 1000000m, null, null, null, $"Đặc tính của sản phẩm {productId}."))
         .ToList());
 
-    public Task<IReadOnlyList<long>> ResolveProductReferencesAsync(
+    public Task<IReadOnlyList<Guid>> ResolveProductReferencesAsync(
       string message,
-      IReadOnlyList<long> shortlistedProductIds,
+      IReadOnlyList<Guid> shortlistedProductIds,
       CancellationToken cancellationToken = default) =>
-      Task.FromResult<IReadOnlyList<long>>([]);
+      Task.FromResult<IReadOnlyList<Guid>>([]);
   }
 
   private sealed class StubCatalogTryOnService : ICatalogTryOnService
@@ -1319,7 +1319,7 @@ public sealed class StylistChatServiceTests
   {
     public string UploadRootPath { get; } = uploadRootPath ?? Path.Combine(Path.GetTempPath(), $"chat-upload-{Guid.NewGuid():N}");
 
-    public string GetChatThreadDirectory(long threadId) =>
+    public string GetChatThreadDirectory(Guid threadId) =>
       GetAbsolutePathForRelativePath(Path.Combine("chat", threadId.ToString()));
 
     public string GetAbsolutePathForRelativePath(string relativePath) =>

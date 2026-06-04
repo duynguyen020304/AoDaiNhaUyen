@@ -70,7 +70,7 @@ public sealed class CatalogStylingServiceTests
   }
 
   private static Product BuildProduct(
-    long productId,
+    Guid productId,
     string name,
     Category category,
     bool isFeatured,

@@ -90,8 +90,8 @@ public sealed class ConcurrencyLimitedStylistChatServiceTests
     public int StartedCalls { get; private set; }
 
     public Task<ChatThreadDetailDto> AddMessageAsync(
-      long threadId,
-      long? userId,
+      Guid threadId,
+      Guid? userId,
       string? guestKey,
       string message,
       string? clientMessageId,
@@ -109,8 +109,8 @@ public sealed class ConcurrencyLimitedStylistChatServiceTests
     }
 
     public async IAsyncEnumerable<SseChatEvent> AddMessageStreamAsync(
-      long threadId,
-      long? userId,
+      Guid threadId,
+      Guid? userId,
       string? guestKey,
       string message,
       string? clientMessageId,
@@ -128,30 +128,30 @@ public sealed class ConcurrencyLimitedStylistChatServiceTests
     }
 
     public Task<IReadOnlyList<ChatThreadSummaryDto>> ListThreadsAsync(
-      long? userId,
+      Guid? userId,
       string? guestKey,
       CancellationToken cancellationToken = default) =>
       Task.FromResult<IReadOnlyList<ChatThreadSummaryDto>>([]);
 
     public Task<ChatThreadDetailDto> CreateThreadAsync(
-      long? userId,
+      Guid? userId,
       string? guestKey,
       CancellationToken cancellationToken = default) =>
       Task.FromResult(CreateThread());
 
     public Task<ChatThreadDetailDto> GetThreadAsync(
-      long threadId,
-      long? userId,
+      Guid threadId,
+      Guid? userId,
       string? guestKey,
       CancellationToken cancellationToken = default) =>
       Task.FromResult(CreateThread());
 
     public Task<ChatMessageDto> ExecuteTryOnAsync(
-      long threadId,
-      long? userId,
+      Guid threadId,
+      Guid? userId,
       string? guestKey,
-      long? garmentProductId,
-      IReadOnlyList<long> accessoryProductIds,
+      Guid? garmentProductId,
+      IReadOnlyList<Guid> accessoryProductIds,
       CancellationToken cancellationToken = default) =>
       Task.FromResult(new ChatMessageDto(1, "assistant", "try-on", null, DateTime.UtcNow, [], null));
 

@@ -165,25 +165,25 @@ public sealed class ChatControllerTests
       DateTime.UtcNow,
       []);
 
-    public Task<IReadOnlyList<ChatThreadSummaryDto>> ListThreadsAsync(long? userId, string? guestKey, CancellationToken cancellationToken = default) =>
+    public Task<IReadOnlyList<ChatThreadSummaryDto>> ListThreadsAsync(Guid? userId, string? guestKey, CancellationToken cancellationToken = default) =>
       Task.FromResult<IReadOnlyList<ChatThreadSummaryDto>>([]);
 
-    public Task<ChatThreadDetailDto> CreateThreadAsync(long? userId, string? guestKey, CancellationToken cancellationToken = default) =>
+    public Task<ChatThreadDetailDto> CreateThreadAsync(Guid? userId, string? guestKey, CancellationToken cancellationToken = default) =>
       Task.FromResult(ThreadDetail);
 
-    public Task<ChatThreadDetailDto> GetThreadAsync(long threadId, long? userId, string? guestKey, CancellationToken cancellationToken = default) =>
+    public Task<ChatThreadDetailDto> GetThreadAsync(Guid threadId, Guid? userId, string? guestKey, CancellationToken cancellationToken = default) =>
       Task.FromResult(ThreadDetail);
 
-    public Task<ChatThreadDetailDto> AddMessageAsync(long threadId, long? userId, string? guestKey, string message, string? clientMessageId, IReadOnlyList<IncomingChatAttachmentDto> attachments, CancellationToken cancellationToken = default) =>
+    public Task<ChatThreadDetailDto> AddMessageAsync(Guid threadId, Guid? userId, string? guestKey, string message, string? clientMessageId, IReadOnlyList<IncomingChatAttachmentDto> attachments, CancellationToken cancellationToken = default) =>
       Task.FromResult(ThreadDetail);
 
-    public async IAsyncEnumerable<SseChatEvent> AddMessageStreamAsync(long threadId, long? userId, string? guestKey, string message, string? clientMessageId, IReadOnlyList<IncomingChatAttachmentDto> attachments, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<SseChatEvent> AddMessageStreamAsync(Guid threadId, Guid? userId, string? guestKey, string message, string? clientMessageId, IReadOnlyList<IncomingChatAttachmentDto> attachments, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
       yield return new SseChatEvent.Done();
       await Task.CompletedTask;
     }
 
-    public Task<ChatMessageDto> ExecuteTryOnAsync(long threadId, long? userId, string? guestKey, long? garmentProductId, IReadOnlyList<long> accessoryProductIds, CancellationToken cancellationToken = default) =>
+    public Task<ChatMessageDto> ExecuteTryOnAsync(Guid threadId, Guid? userId, string? guestKey, Guid? garmentProductId, IReadOnlyList<Guid> accessoryProductIds, CancellationToken cancellationToken = default) =>
       Task.FromResult(new ChatMessageDto(1, "assistant", "done", "tryon_execute", DateTime.UtcNow, [], null));
   }
 }

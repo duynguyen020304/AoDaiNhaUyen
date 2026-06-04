@@ -196,9 +196,9 @@ public sealed class AuthServiceTests
   private sealed class StubJwtTokenService : IJwtTokenService
   {
     public string GenerateAccessToken(AoDaiNhaUyen.Domain.Entities.User user, IReadOnlyList<string> roles) => "token";
-    public string GenerateEmailVerificationToken(long userId) => "verification-token";
+    public string GenerateEmailVerificationToken(Guid userId) => "verification-token";
     public EmailVerificationTokenValidationResult ValidateEmailVerificationToken(string token) => new(TokenValidationStatus.Invalid, null);
-    public string GeneratePasswordResetToken(long userId, string secretKey) => "password-reset-token";
+    public string GeneratePasswordResetToken(Guid userId, string secretKey) => "password-reset-token";
     public PasswordResetTokenValidationResult ValidatePasswordResetToken(string token, string secretKey) => new(TokenValidationStatus.Invalid, null);
   }
 
