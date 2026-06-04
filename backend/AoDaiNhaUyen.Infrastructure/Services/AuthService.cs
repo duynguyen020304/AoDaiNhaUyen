@@ -428,7 +428,7 @@ public sealed class AuthService(
     await dbContext.SaveChangesAsync(cancellationToken);
   }
 
-  public async Task<AuthUserDto?> GetCurrentUserAsync(long userId, CancellationToken cancellationToken = default)
+  public async Task<AuthUserDto?> GetCurrentUserAsync(Guid userId, CancellationToken cancellationToken = default)
   {
     var user = await dbContext.Users
       .Include(x => x.UserRoles)
@@ -521,7 +521,7 @@ public sealed class AuthService(
   }
 
   public async Task<AuthResult<string>> ResetPasswordAsync(
-    long userId,
+    Guid userId,
     string token,
     string newPassword,
     CancellationToken cancellationToken = default)
@@ -619,7 +619,7 @@ public sealed class AuthService(
     return $"{emailSettings.ApiBaseUrl.TrimEnd('/')}/api/auth/verify-email?token={Uri.EscapeDataString(token)}";
   }
 
-  private string BuildPasswordResetLink(long userId, string token)
+  private string BuildPasswordResetLink(Guid userId, string token)
   {
     return $"{emailSettings.FrontendBaseUrl.TrimEnd('/')}/reset-password?id={userId}&token={Uri.EscapeDataString(token)}";
   }

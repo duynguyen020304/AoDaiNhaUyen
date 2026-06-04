@@ -53,7 +53,7 @@ internal static partial class ChatTextUtils
     };
   }
 
-  public static IReadOnlyList<long> ResolveOrdinalReferences(string message, IReadOnlyList<long> shortlist)
+  public static IReadOnlyList<Guid> ResolveOrdinalReferences(string message, IReadOnlyList<Guid> shortlist)
   {
     if (shortlist.Count == 0)
     {
@@ -61,7 +61,7 @@ internal static partial class ChatTextUtils
     }
 
     var normalized = Normalize(message);
-    var results = new List<long>();
+    var results = new List<Guid>();
 
     if (normalized.Contains("dau tien") || normalized.Contains("thu nhat"))
     {

@@ -29,7 +29,7 @@ public sealed class StylistChatService(
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
   public async Task<IReadOnlyList<ChatThreadSummaryDto>> ListThreadsAsync(
-    long? userId,
+    Guid? userId,
     string? guestKey,
     CancellationToken cancellationToken = default)
   {
@@ -44,7 +44,7 @@ public sealed class StylistChatService(
   }
 
   public async Task<ChatThreadDetailDto> CreateThreadAsync(
-    long? userId,
+    Guid? userId,
     string? guestKey,
     CancellationToken cancellationToken = default)
   {
@@ -76,8 +76,8 @@ public sealed class StylistChatService(
   }
 
   public async Task<ChatThreadDetailDto> GetThreadAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
     CancellationToken cancellationToken = default)
   {
@@ -87,8 +87,8 @@ public sealed class StylistChatService(
   }
 
   public async Task<ChatThreadDetailDto> AddMessageAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
     string message,
     string? clientMessageId,
@@ -173,11 +173,11 @@ public sealed class StylistChatService(
   }
 
   public async Task<ChatMessageDto> ExecuteTryOnAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
-    long? garmentProductId,
-    IReadOnlyList<long> accessoryProductIds,
+    Guid? garmentProductId,
+    IReadOnlyList<Guid> accessoryProductIds,
     CancellationToken cancellationToken = default)
   {
     await ClaimGuestThreadsAsync(userId, guestKey, cancellationToken);
@@ -269,8 +269,8 @@ public sealed class StylistChatService(
   }
 
   public async IAsyncEnumerable<SseChatEvent> AddMessageStreamAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
     string message,
     string? clientMessageId,
@@ -322,7 +322,7 @@ public sealed class StylistChatService(
     var imageCatalogText = BuildImageCatalogText(memory);
 
     yield return new SseChatEvent.Created(
-      0,
+      Guid.Empty,
       AssistantRole,
       "",
       classification.Intent,
@@ -373,7 +373,7 @@ public sealed class StylistChatService(
     yield return new SseChatEvent.Done();
   }
 
-  private async Task ClaimGuestThreadsAsync(long? userId, string? guestKey, CancellationToken cancellationToken)
+  private async Task ClaimGuestThreadsAsync(Guid? userId, string? guestKey, CancellationToken cancellationToken)
   {
     if (!userId.HasValue || string.IsNullOrWhiteSpace(guestKey))
     {
@@ -401,15 +401,15 @@ public sealed class StylistChatService(
     await dbContext.SaveChangesAsync(cancellationToken);
   }
 
-  private IQueryable<ChatThread> BuildOwnedThreadQuery(long? userId, string? guestHash)
+  private IQueryable<ChatThread> BuildOwnedThreadQuery(Guid? userId, string? guestHash)
   {
     return dbContext.ChatThreads.AsQueryable().Where(thread =>
       userId.HasValue ? thread.UserId == userId.Value : thread.GuestKeyHash == guestHash);
   }
 
   private async Task<ChatThread> LoadOwnedThreadAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
     CancellationToken cancellationToken)
   {
@@ -427,7 +427,7 @@ public sealed class StylistChatService(
     return thread;
   }
 
-  private async Task<IReadOnlyList<long>> ResolveReferencedProductIdsAsync(
+  private async Task<IReadOnlyList<Guid>> ResolveReferencedProductIdsAsync(
     string message,
     IntentClassificationDto classification,
     ThreadMemoryStateDto memory,
@@ -873,12 +873,12 @@ public sealed class StylistChatService(
     CancellationToken cancellationToken)
   {
     var selectedGarmentProductId = classification.ReferencedProductIds.FirstOrDefault();
-    if (selectedGarmentProductId == 0)
+    if (selectedGarmentProductId == Guid.Empty)
     {
       selectedGarmentProductId = memory.SelectedGarmentProductId ?? memory.ShortlistedProductIds.FirstOrDefault();
     }
 
-    if (selectedGarmentProductId == 0)
+    if (selectedGarmentProductId == Guid.Empty)
     {
       return new AssistantTurn(
         fallbackTextService.Pick("tryon_need_garment"),
@@ -935,8 +935,8 @@ public sealed class StylistChatService(
   }
 
   private async Task<IReadOnlyList<ChatAttachment>> SaveIncomingAttachmentsAsync(
-    long threadId,
-    long messageId,
+    Guid threadId,
+    Guid messageId,
     IReadOnlyList<IncomingChatAttachmentDto> attachments,
     CancellationToken cancellationToken)
   {
@@ -984,7 +984,7 @@ public sealed class StylistChatService(
   }
 
   private async Task<ChatAttachment> SaveGeneratedTryOnAttachmentAsync(
-    long threadId,
+    Guid threadId,
     AiTryOnResultDto result,
     CancellationToken cancellationToken)
   {
@@ -1222,9 +1222,9 @@ public sealed class StylistChatService(
     ThreadMemoryStateDto memory,
     bool preferUnseenAlternatives,
     int limit,
-    IReadOnlyList<long>? recentlyUsedProductIds = null,
+    IReadOnlyList<Guid>? recentlyUsedProductIds = null,
     ISet<string>? usedOutfitSignatures = null,
-    long? anchorProductId = null,
+    Guid? anchorProductId = null,
     bool allowSeenFallback = true)
   {
     var rejectedProductIds = memory.RejectedProductIds.ToHashSet();
@@ -1298,7 +1298,7 @@ public sealed class StylistChatService(
     return $"Mình đã đi hết các mẫu áo dài chưa lặp lại cho bối cảnh {scenarioLabel}. Nếu bạn muốn, mình có thể chuyển sang hướng màu khác, khoảng giá khác hoặc phối lại phụ kiện trên các mẫu đã xem.";
   }
 
-  private static string BuildOutfitSignature(long garmentProductId, IReadOnlyList<long> accessoryProductIds)
+  private static string BuildOutfitSignature(Guid garmentProductId, IReadOnlyList<Guid> accessoryProductIds)
   {
     var normalizedAccessoryIds = accessoryProductIds.Distinct().OrderBy(id => id);
     return $"{garmentProductId}:{string.Join('-', normalizedAccessoryIds)}";
@@ -1314,8 +1314,8 @@ public sealed class StylistChatService(
     string? scenario,
     bool canTryOn,
     bool requiresPersonImage,
-    long? selectedGarmentProductId,
-    IReadOnlyList<long> selectedAccessoryProductIds,
+    Guid? selectedGarmentProductId,
+    IReadOnlyList<Guid> selectedAccessoryProductIds,
     IReadOnlyList<string> pendingTryOnRequirements,
     IReadOnlyList<ChatRecommendationItemDto> garmentProducts,
     IReadOnlyList<ChatRecommendationItemDto> accessoryProducts,
@@ -1377,7 +1377,7 @@ public sealed class StylistChatService(
       : string.Join(", ", memory.ImageCatalog.Select(e => $"{e.Label} ({e.Kind})"));
   }
 
-  private static long? ResolveReferencedPersonImageId(IntentClassificationDto classification, ThreadMemoryStateDto memory)
+  private static Guid? ResolveReferencedPersonImageId(IntentClassificationDto classification, ThreadMemoryStateDto memory)
   {
     if (string.IsNullOrWhiteSpace(classification.ReferencedImageHint))
     {

@@ -112,7 +112,7 @@ public sealed class CatalogTryOnService(
     var defaultVariantId = product.Variants
       .OrderByDescending(variant => variant.IsDefault)
       .ThenBy(variant => variant.Id)
-      .Select(variant => (long?)variant.Id)
+      .Select(variant => (Guid?)variant.Id)
       .FirstOrDefault();
 
     return new AiTryOnCatalogItemDto(
@@ -168,7 +168,7 @@ public sealed class CatalogTryOnService(
   }
 
   private async Task<IReadOnlyList<AiTryOnAccessoryImageDto>> ResolveAccessorySelectionsAsync(
-    IReadOnlyList<long> accessoryProductIds,
+    IReadOnlyList<Guid> accessoryProductIds,
     CancellationToken cancellationToken)
   {
     if (accessoryProductIds.Count == 0)
@@ -255,7 +255,7 @@ public sealed class CatalogTryOnService(
     return await File.ReadAllBytesAsync(filePath, cancellationToken);
   }
 
-  private static ProductAiAsset? SelectAiAsset(Product product, string assetKind, long? variantId = null)
+  private static ProductAiAsset? SelectAiAsset(Product product, string assetKind, Guid? variantId = null)
   {
     var candidateKinds = assetKind switch
     {

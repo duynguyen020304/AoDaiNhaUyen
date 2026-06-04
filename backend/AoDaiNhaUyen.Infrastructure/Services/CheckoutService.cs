@@ -14,7 +14,7 @@ public sealed class CheckoutService(
   ICartRepository cartRepository,
   IEmailService emailService) : ICheckoutService
 {
-  public async Task<AuthResult<CheckoutResultDto>> CheckoutAsync(long userId, CheckoutRequestDto request, CancellationToken cancellationToken = default)
+  public async Task<AuthResult<CheckoutResultDto>> CheckoutAsync(Guid userId, CheckoutRequestDto request, CancellationToken cancellationToken = default)
   {
     if (!string.Equals(request.PaymentMethod, "cash", StringComparison.OrdinalIgnoreCase)
       && !string.Equals(request.PaymentMethod, "cod", StringComparison.OrdinalIgnoreCase))
@@ -157,7 +157,7 @@ public sealed class CheckoutService(
     return $"AD-{now:yyyyMMddHHmmss}";
   }
 
-  private async Task<ResolvedAddress?> ResolveAddressAsync(long userId, CheckoutRequestDto request, CancellationToken cancellationToken)
+  private async Task<ResolvedAddress?> ResolveAddressAsync(Guid userId, CheckoutRequestDto request, CancellationToken cancellationToken)
   {
     if (request.AddressId.HasValue)
     {
@@ -238,7 +238,7 @@ public sealed class CheckoutService(
   }
 
   private sealed record ResolvedAddress(
-    long? AddressId,
+    Guid? AddressId,
     string RecipientName,
     string RecipientPhone,
     string Province,

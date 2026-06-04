@@ -9,7 +9,7 @@ namespace AoDaiNhaUyen.Infrastructure.Repositories;
 
 public sealed class UserProfileRepository(AppDbContext dbContext) : IUserProfileRepository
 {
-    public async Task<UserProfileDto?> GetUserProfileAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<UserProfileDto?> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = await dbContext.Users
             .AsNoTracking()
@@ -33,7 +33,7 @@ public sealed class UserProfileRepository(AppDbContext dbContext) : IUserProfile
         return user;
     }
 
-    public async Task<IReadOnlyList<UserAddressDto>> GetUserAddressesAsync(long userId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<UserAddressDto>> GetUserAddressesAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await dbContext.UserAddresses
             .AsNoTracking()
@@ -54,7 +54,7 @@ public sealed class UserProfileRepository(AppDbContext dbContext) : IUserProfile
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<PagedResult<UserOrderDto>> GetUserOrdersAsync(long userId, int page, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<UserOrderDto>> GetUserOrdersAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         var query = dbContext.Orders
             .AsNoTracking()

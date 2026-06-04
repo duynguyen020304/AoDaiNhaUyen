@@ -9,7 +9,7 @@ public sealed class UploadStoragePathResolver(string uploadRootPath) : IUploadSt
 
   public string UploadRootPath => uploadRootPath;
 
-  public string GetChatThreadDirectory(long threadId) =>
+  public string GetChatThreadDirectory(Guid threadId) =>
     GetAbsolutePathForRelativePath(Path.Combine("chat", threadId.ToString()));
 
   public string GetAbsolutePathForRelativePath(string relativePath)

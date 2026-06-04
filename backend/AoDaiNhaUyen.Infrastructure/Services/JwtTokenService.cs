@@ -51,7 +51,7 @@ public sealed class JwtTokenService(IOptions<JwtSettings> jwtSettings) : IJwtTok
     return new JwtSecurityTokenHandler().WriteToken(token);
   }
 
-  public string GenerateEmailVerificationToken(long userId)
+  public string GenerateEmailVerificationToken(Guid userId)
   {
     return WriteToken(
       new List<Claim>
@@ -76,7 +76,7 @@ public sealed class JwtTokenService(IOptions<JwtSettings> jwtSettings) : IJwtTok
       () => new EmailVerificationTokenValidationResult(TokenValidationStatus.Invalid, null));
   }
 
-  public string GeneratePasswordResetToken(long userId, string secretKey)
+  public string GeneratePasswordResetToken(Guid userId, string secretKey)
   {
     return WriteToken(
       new List<Claim>
@@ -120,8 +120,8 @@ public sealed class JwtTokenService(IOptions<JwtSettings> jwtSettings) : IJwtTok
     string token,
     string secretKey,
     string expectedTokenType,
-    Func<long, T> onValid,
-    Func<long?, T> onExpired,
+    Func<Guid, T> onValid,
+    Func<Guid?, T> onExpired,
     Func<T> onInvalid)
   {
     if (string.IsNullOrWhiteSpace(token))
@@ -182,9 +182,9 @@ public sealed class JwtTokenService(IOptions<JwtSettings> jwtSettings) : IJwtTok
     };
   }
 
-  private static long? GetUserId(ClaimsPrincipal principal)
+  private static Guid? GetUserId(ClaimsPrincipal principal)
   {
     var raw = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-    return long.TryParse(raw, out var userId) ? userId : null;
+    return Guid.TryParse(raw, out var userId) ? userId : null;
   }
 }

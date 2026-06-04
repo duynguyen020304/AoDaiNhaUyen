@@ -15,7 +15,7 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     string? materialKeyword,
     string? productType,
     int limit,
-    IReadOnlyList<long>? excludeProductIds = null,
+    IReadOnlyList<Guid>? excludeProductIds = null,
     CancellationToken cancellationToken = default)
   {
     var excludedIds = excludeProductIds?.Count > 0 ? excludeProductIds.ToHashSet() : null;
@@ -203,7 +203,7 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
   }
 
   public async Task<IReadOnlyList<ChatRecommendationItemDto>> CompareAsync(
-    IReadOnlyList<long> productIds,
+    IReadOnlyList<Guid> productIds,
     CancellationToken cancellationToken = default)
   {
     if (productIds.Count == 0)
@@ -221,9 +221,9 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
       .ToList();
   }
 
-  public async Task<IReadOnlyList<long>> ResolveProductReferencesAsync(
+  public async Task<IReadOnlyList<Guid>> ResolveProductReferencesAsync(
     string message,
-    IReadOnlyList<long> shortlistedProductIds,
+    IReadOnlyList<Guid> shortlistedProductIds,
     CancellationToken cancellationToken = default)
   {
     var ordinalMatches = ChatTextUtils.ResolveOrdinalReferences(message, shortlistedProductIds);

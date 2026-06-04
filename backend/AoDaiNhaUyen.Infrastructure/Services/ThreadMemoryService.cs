@@ -123,8 +123,8 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     ThreadMemoryStateDto memory,
     IntentClassificationDto classification,
     ChatStructuredPayloadDto? structuredPayload,
-    long? tryOnResultAttachmentId,
-    long? tryOnResultMessageId,
+    Guid? tryOnResultAttachmentId,
+    Guid? tryOnResultMessageId,
     string? assistantMessage = null)
   {
     if (!string.IsNullOrWhiteSpace(classification.Scenario))
@@ -260,7 +260,7 @@ public sealed class ThreadMemoryService : IThreadMemoryService
   public void Persist(
     ChatThread thread,
     ThreadMemoryStateDto memory,
-    long? lastMessageId)
+    Guid? lastMessageId)
   {
     thread.Memory ??= new ChatThreadMemory
     {
@@ -360,7 +360,7 @@ public sealed class ThreadMemoryService : IThreadMemoryService
       : combined[^MaxConversationSummaryChars..];
   }
 
-  private static string? BuildOutfitSignature(long selectedGarmentProductId, IReadOnlyList<long> selectedAccessoryProductIds)
+  private static string? BuildOutfitSignature(Guid selectedGarmentProductId, IReadOnlyList<Guid> selectedAccessoryProductIds)
   {
     var accessoryIds = selectedAccessoryProductIds
       .Distinct()
@@ -420,11 +420,11 @@ public sealed class ThreadMemoryService : IThreadMemoryService
     public string? ConversationStage { get; set; }
     public string? LastUserRequestType { get; set; }
     public string? LastRecommendationStrategy { get; set; }
-    public long? SelectedGarmentProductId { get; set; }
-    public List<long>? SelectedAccessoryProductIds { get; set; }
-    public long? LatestPersonAttachmentId { get; set; }
-    public long? LatestTryOnResultAttachmentId { get; set; }
-    public long? LatestTryOnResultMessageId { get; set; }
+    public Guid? SelectedGarmentProductId { get; set; }
+    public List<Guid>? SelectedAccessoryProductIds { get; set; }
+    public Guid? LatestPersonAttachmentId { get; set; }
+    public Guid? LatestTryOnResultAttachmentId { get; set; }
+    public Guid? LatestTryOnResultMessageId { get; set; }
     public List<string>? PendingTryOnRequirements { get; set; }
     public List<string>? RecentUserMessages { get; set; }
     public List<string>? RecentAssistantMessages { get; set; }
@@ -435,14 +435,14 @@ public sealed class ThreadMemoryService : IThreadMemoryService
 
   private sealed class StoredRefs
   {
-    public List<long>? LastShortlistProductIds { get; set; }
-    public List<long>? LastGarmentShortlistProductIds { get; set; }
-    public List<long>? LastAccessoryShortlistProductIds { get; set; }
-    public List<long>? ShownProductIds { get; set; }
-    public List<long>? ShownGarmentProductIds { get; set; }
-    public List<long>? ShownAccessoryProductIds { get; set; }
+    public List<Guid>? LastShortlistProductIds { get; set; }
+    public List<Guid>? LastGarmentShortlistProductIds { get; set; }
+    public List<Guid>? LastAccessoryShortlistProductIds { get; set; }
+    public List<Guid>? ShownProductIds { get; set; }
+    public List<Guid>? ShownGarmentProductIds { get; set; }
+    public List<Guid>? ShownAccessoryProductIds { get; set; }
     public List<string>? ShownOutfitSignatures { get; set; }
-    public List<long>? RejectedProductIds { get; set; }
-    public List<long>? LikedProductIds { get; set; }
+    public List<Guid>? RejectedProductIds { get; set; }
+    public List<Guid>? LikedProductIds { get; set; }
   }
 }

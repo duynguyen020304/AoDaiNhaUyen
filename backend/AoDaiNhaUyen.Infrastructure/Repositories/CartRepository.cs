@@ -8,13 +8,13 @@ namespace AoDaiNhaUyen.Infrastructure.Repositories;
 
 public sealed class CartRepository(AppDbContext dbContext) : ICartRepository
 {
-  public async Task<Cart?> GetByUserIdAsync(long userId, CancellationToken cancellationToken = default)
+  public async Task<Cart?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
   {
     return await dbContext.Carts
       .FirstOrDefaultAsync(cart => cart.UserId == userId, cancellationToken);
   }
 
-  public async Task<Cart?> GetByUserIdWithItemsAsync(long userId, CancellationToken cancellationToken = default)
+  public async Task<Cart?> GetByUserIdWithItemsAsync(Guid userId, CancellationToken cancellationToken = default)
   {
     return await dbContext.Carts
       .Include(cart => cart.Items)
@@ -30,7 +30,7 @@ public sealed class CartRepository(AppDbContext dbContext) : ICartRepository
       .FirstOrDefaultAsync(cart => cart.UserId == userId, cancellationToken);
   }
 
-  public async Task<CartItem?> GetItemByIdAsync(long userId, long itemId, CancellationToken cancellationToken = default)
+  public async Task<CartItem?> GetItemByIdAsync(Guid userId, Guid itemId, CancellationToken cancellationToken = default)
   {
     return await dbContext.CartItems
       .Include(item => item.Cart)
@@ -44,7 +44,7 @@ public sealed class CartRepository(AppDbContext dbContext) : ICartRepository
       .FirstOrDefaultAsync(item => item.Id == itemId && item.Cart.UserId == userId, cancellationToken);
   }
 
-  public async Task<ProductVariant?> GetVariantForCartAsync(long variantId, CancellationToken cancellationToken = default)
+  public async Task<ProductVariant?> GetVariantForCartAsync(Guid variantId, CancellationToken cancellationToken = default)
   {
     return await dbContext.ProductVariants
       .Include(variant => variant.Product)
@@ -53,7 +53,7 @@ public sealed class CartRepository(AppDbContext dbContext) : ICartRepository
       .FirstOrDefaultAsync(variant => variant.Id == variantId, cancellationToken);
   }
 
-  public async Task<Cart> CreateForUserAsync(long userId, CancellationToken cancellationToken = default)
+  public async Task<Cart> CreateForUserAsync(Guid userId, CancellationToken cancellationToken = default)
   {
     var cart = new Cart
     {

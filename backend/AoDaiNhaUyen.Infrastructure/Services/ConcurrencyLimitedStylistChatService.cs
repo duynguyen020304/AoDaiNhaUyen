@@ -53,7 +53,7 @@ public sealed class ConcurrencyLimitedStylistChatService : IStylistChatService, 
   }
 
   public async Task<IReadOnlyList<ChatThreadSummaryDto>> ListThreadsAsync(
-    long? userId,
+    Guid? userId,
     string? guestKey,
     CancellationToken cancellationToken = default)
   {
@@ -63,7 +63,7 @@ public sealed class ConcurrencyLimitedStylistChatService : IStylistChatService, 
   }
 
   public async Task<ChatThreadDetailDto> CreateThreadAsync(
-    long? userId,
+    Guid? userId,
     string? guestKey,
     CancellationToken cancellationToken = default)
   {
@@ -73,8 +73,8 @@ public sealed class ConcurrencyLimitedStylistChatService : IStylistChatService, 
   }
 
   public async Task<ChatThreadDetailDto> GetThreadAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
     CancellationToken cancellationToken = default)
   {
@@ -84,8 +84,8 @@ public sealed class ConcurrencyLimitedStylistChatService : IStylistChatService, 
   }
 
   public async Task<ChatThreadDetailDto> AddMessageAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
     string message,
     string? clientMessageId,
@@ -113,8 +113,8 @@ public sealed class ConcurrencyLimitedStylistChatService : IStylistChatService, 
   }
 
   public async IAsyncEnumerable<SseChatEvent> AddMessageStreamAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
     string message,
     string? clientMessageId,
@@ -148,11 +148,11 @@ public sealed class ConcurrencyLimitedStylistChatService : IStylistChatService, 
   }
 
   public async Task<ChatMessageDto> ExecuteTryOnAsync(
-    long threadId,
-    long? userId,
+    Guid threadId,
+    Guid? userId,
     string? guestKey,
-    long? garmentProductId,
-    IReadOnlyList<long> accessoryProductIds,
+    Guid? garmentProductId,
+    IReadOnlyList<Guid> accessoryProductIds,
     CancellationToken cancellationToken = default)
   {
     var inner = createInner();

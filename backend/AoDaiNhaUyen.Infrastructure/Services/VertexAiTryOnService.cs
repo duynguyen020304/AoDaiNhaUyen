@@ -311,7 +311,7 @@ public sealed class VertexAiTryOnService(
     }
     catch (JsonException)
     {
-      // Fall back to a short raw provider message below.
+      // Fall back to a Guid raw provider message below.
     }
 
     return responseBody.Length <= 500
