@@ -65,6 +65,10 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
 
     try
     {
+      var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+      Guid? userId = Guid.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : null;
+      string? guestKeyHash = userId is null ? ComputeGuestKeyHash(HttpContext) : null;
+
       var result = await catalogTryOnService.CreateAsync(
         new CatalogAiTryOnRequestDto(
           garmentId?.Trim(),
@@ -75,7 +79,9 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
           accessoryProductIds ?? [],
           garmentImage is null ? null : await ReadFileAsync(garmentImage, cancellationToken),
           garmentImage?.ContentType,
-          await ReadAccessoryImagesAsync(accessoryImages ?? [], accessoryIds ?? [], cancellationToken)),
+          await ReadAccessoryImagesAsync(accessoryImages ?? [], accessoryIds ?? [], cancellationToken),
+          userId,
+          guestKeyHash),
         cancellationToken);
 
       return Ok(ApiResponseFactory.Success(result, "Tạo ảnh thử đồ thành công"));
@@ -232,5 +238,14 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
     }
 
     return results;
+  }
+
+  private static string? ComputeGuestKeyHash(HttpContext context)
+  {
+    var guestKey = context.Request.Headers["X-Guest-Key"].FirstOrDefault()
+      ?? context.Connection.RemoteIpAddress?.ToString();
+    if (string.IsNullOrWhiteSpace(guestKey)) return null;
+    var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(guestKey.Trim()));
+    return Convert.ToHexString(bytes).ToLowerInvariant();
   }
 }
