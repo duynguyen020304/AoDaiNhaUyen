@@ -11,7 +11,7 @@ namespace AoDaiNhaUyen.Api.Controllers;
 
 [ApiController]
 [Route("api/users/me/orders")]
-[Authorize]
+[Authorize(Policy = "RequireAdminOrCustomer")]
 public sealed class UserOrderController(
     IUserService userService,
     ILogger<UserOrderController> logger) : ControllerBase
@@ -20,7 +20,7 @@ public sealed class UserOrderController(
     public async Task<IActionResult> GetOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
         var userId = GetCurrentUserId();
-        if (userId == 0)
+        if (userId == Guid.Empty)
         {
             return Unauthorized(ApiResponseFactory.Failure(
                 "Không có quyền truy cập",
@@ -47,9 +47,9 @@ public sealed class UserOrderController(
             result.Value.TotalCount));
     }
 
-    private long GetCurrentUserId()
+    private Guid GetCurrentUserId()
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return long.TryParse(userIdClaim, out var userId) ? userId : 0;
+        return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
     }
 }

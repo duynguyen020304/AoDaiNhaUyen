@@ -9,7 +9,7 @@ namespace AoDaiNhaUyen.Api.Controllers;
 
 [ApiController]
 [Route("api/users/me/cart")]
-[Authorize]
+[Authorize(Policy = "RequireAdminOrCustomer")]
 public sealed class UserCartController(ICartService cartService) : ControllerBase
 {
   [HttpGet]
@@ -31,8 +31,8 @@ public sealed class UserCartController(ICartService cartService) : ControllerBas
     return Ok(ApiResponseFactory.Success(result.Value, "Cap nhat gio hang thanh cong."));
   }
 
-  [HttpPut("items/{itemId:long}")]
-  public async Task<IActionResult> UpdateItem(long itemId, [FromBody] UpdateCartItemDto request, CancellationToken cancellationToken)
+  [HttpPut("items/{itemId:guid}")]
+  public async Task<IActionResult> UpdateItem(Guid itemId, [FromBody] UpdateCartItemDto request, CancellationToken cancellationToken)
   {
     var result = await cartService.UpdateItemAsync(GetCurrentUserId(), itemId, request, cancellationToken);
     if (!result.Succeeded || result.Value is null)
@@ -43,8 +43,8 @@ public sealed class UserCartController(ICartService cartService) : ControllerBas
     return Ok(ApiResponseFactory.Success(result.Value, "Cap nhat gio hang thanh cong."));
   }
 
-  [HttpDelete("items/{itemId:long}")]
-  public async Task<IActionResult> RemoveItem(long itemId, CancellationToken cancellationToken)
+  [HttpDelete("items/{itemId:guid}")]
+  public async Task<IActionResult> RemoveItem(Guid itemId, CancellationToken cancellationToken)
   {
     var result = await cartService.RemoveItemAsync(GetCurrentUserId(), itemId, cancellationToken);
     if (!result.Succeeded || result.Value is null)
@@ -67,9 +67,9 @@ public sealed class UserCartController(ICartService cartService) : ControllerBas
     return Ok(ApiResponseFactory.Success(true, "Xoa gio hang thanh cong."));
   }
 
-  private long GetCurrentUserId()
+  private Guid GetCurrentUserId()
   {
     var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-    return long.TryParse(userIdClaim, out var userId) ? userId : 0;
+    return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
   }
 }

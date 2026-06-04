@@ -10,7 +10,7 @@ namespace AoDaiNhaUyen.Api.Controllers;
 
 [ApiController]
 [Route("api/users/me/addresses")]
-[Authorize]
+[Authorize(Policy = "RequireAdminOrCustomer")]
 public sealed class UserAddressController(
     IUserService userService,
     ILogger<UserAddressController> logger) : ControllerBase
@@ -19,7 +19,7 @@ public sealed class UserAddressController(
     public async Task<IActionResult> GetAddresses(CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId == 0)
+        if (userId == Guid.Empty)
         {
             return Unauthorized(ApiResponseFactory.Failure(
                 "Không có quyền truy cập",
@@ -46,7 +46,7 @@ public sealed class UserAddressController(
     public async Task<IActionResult> CreateAddress([FromBody] CreateAddressDto address, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId == 0)
+        if (userId == Guid.Empty)
         {
             return Unauthorized(ApiResponseFactory.Failure(
                 "Không có quyền truy cập",
@@ -69,11 +69,11 @@ public sealed class UserAddressController(
         return Ok(ApiResponseFactory.Success(result.Value, "Tạo địa chỉ thành công."));
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteAddress(long id, CancellationToken cancellationToken)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteAddress(Guid id, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId == 0)
+        if (userId == Guid.Empty)
         {
             return Unauthorized(ApiResponseFactory.Failure(
                 "Không có quyền truy cập",
@@ -96,9 +96,9 @@ public sealed class UserAddressController(
         return Ok(ApiResponseFactory.Success(true, "Xóa địa chỉ thành công."));
     }
 
-    private long GetCurrentUserId()
+    private Guid GetCurrentUserId()
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return long.TryParse(userIdClaim, out var userId) ? userId : 0;
+        return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
     }
 }

@@ -235,10 +235,10 @@ public sealed class AuthController(
     return HttpContext.Connection.RemoteIpAddress?.ToString();
   }
 
-  private long? GetCurrentUserId()
+  private Guid? GetCurrentUserId()
   {
     var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-    return long.TryParse(claimValue, out var userId) ? userId : null;
+    return Guid.TryParse(claimValue, out var userId) ? userId : null;
   }
 
   private string BuildFrontendRedirect(params string[] queryParts)
@@ -260,7 +260,7 @@ public sealed class AuthController(
     string ConfirmPassword);
   public sealed record LoginRequest(string Email, string Password);
   public sealed record ForgotPasswordRequest(string Email);
-  public sealed record ResetPasswordRequest(long UserId, string Token, string NewPassword);
+  public sealed record ResetPasswordRequest(Guid UserId, string Token, string NewPassword);
   public sealed record GoogleLoginRequest(string Code);
   public sealed record ZaloLoginRequest(string Code, string CodeVerifier);
 }

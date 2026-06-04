@@ -34,8 +34,8 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     return Ok(ApiResponseFactory.Success(thread, "Tạo cuộc trò chuyện thành công"));
   }
 
-  [HttpGet("{threadId:long}")]
-  public async Task<IActionResult> Get(long threadId, CancellationToken cancellationToken)
+  [HttpGet("{threadId:guid}")]
+  public async Task<IActionResult> Get(Guid threadId, CancellationToken cancellationToken)
   {
     try
     {
@@ -49,10 +49,10 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     }
   }
 
-  [HttpPost("{threadId:long}/messages")]
+  [HttpPost("{threadId:guid}/messages")]
   [RequestSizeLimit(MaxAttachmentBytes * MaxAttachments)]
   public async Task<IActionResult> AddMessage(
-    long threadId,
+    Guid threadId,
     [FromForm] string? message,
     [FromForm] string? clientMessageId,
     [FromForm] List<IFormFile>? attachments,
@@ -82,10 +82,10 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     }
   }
 
-  [HttpPost("{threadId:long}/messages/stream")]
+  [HttpPost("{threadId:guid}/messages/stream")]
   [RequestSizeLimit(MaxAttachmentBytes * MaxAttachments)]
   public async Task<IActionResult> AddMessageStream(
-    long threadId,
+    Guid threadId,
     [FromForm] string? message,
     [FromForm] string? clientMessageId,
     [FromForm] List<IFormFile>? attachments,
@@ -173,9 +173,9 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     await Response.Body.FlushAsync(cancellationToken);
   }
 
-  [HttpPost("{threadId:long}/try-on")]
+  [HttpPost("{threadId:guid}/try-on")]
   public async Task<IActionResult> ExecuteTryOn(
-    long threadId,
+    Guid threadId,
     [FromBody] ExecuteTryOnRequest? request,
     CancellationToken cancellationToken)
   {
@@ -268,10 +268,10 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     }
   }
 
-  private long? GetCurrentUserId()
+  private Guid? GetCurrentUserId()
   {
     var raw = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-    return long.TryParse(raw, out var userId) ? userId : null;
+    return Guid.TryParse(raw, out var userId) ? userId : null;
   }
 
   private static CookieOptions BuildGuestCookieOptions() => new()
@@ -283,5 +283,5 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     Expires = DateTimeOffset.UtcNow.AddDays(30)
   };
 
-  public sealed record ExecuteTryOnRequest(long? GarmentProductId, IReadOnlyList<long>? AccessoryProductIds);
+  public sealed record ExecuteTryOnRequest(Guid? GarmentProductId, IReadOnlyList<Guid>? AccessoryProductIds);
 }

@@ -1,0 +1,51 @@
+@baseUrl = http://localhost:5043
+
+### Health check (public)
+GET {{baseUrl}}/health
+
+### List admin products (requires admin JWT via cookie)
+GET {{baseUrl}}/api/admin/products?page=1&pageSize=10
+
+### List admin products with search
+GET {{baseUrl}}/api/admin/products?search=áo&status=active&page=1&pageSize=10
+
+### Get single product by ID
+GET {{baseUrl}}/api/admin/products/1
+
+### Create a new product
+POST {{baseUrl}}/api/admin/products
+Content-Type: application/json
+
+{
+  "name": "Áo dài test RBAC",
+  "slug": "ao-dai-test-rbac",
+  "productType": "ao-dai",
+  "categoryId": 1,
+  "shortDescription": "Sản phẩm test RBAC",
+  "status": "draft",
+  "isFeatured": false
+}
+
+### Update product
+PUT {{baseUrl}}/api/admin/products/1
+Content-Type: application/json
+
+{
+  "name": "Áo dài test cập nhật",
+  "slug": "ao-dai-test-rbac",
+  "productType": "ao-dai",
+  "categoryId": 1,
+  "status": "active",
+  "isFeatured": true
+}
+
+### Toggle product status
+PATCH {{baseUrl}}/api/admin/products/1/status
+Content-Type: application/json
+
+{
+  "status": "inactive"
+}
+
+### Delete product (soft-delete)
+DELETE {{baseUrl}}/api/admin/products/1

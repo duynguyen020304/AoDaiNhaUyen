@@ -41,11 +41,11 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
     [FromForm] IFormFile? personImage,
     [FromForm] IFormFile? garmentImage,
     [FromForm] string? garmentId,
-    [FromForm] long? garmentProductId,
-    [FromForm] long? garmentVariantId,
+    [FromForm] Guid? garmentProductId,
+    [FromForm] Guid? garmentVariantId,
     [FromForm] List<IFormFile>? accessoryImages,
     [FromForm] List<string>? accessoryIds,
-    [FromForm] List<long>? accessoryProductIds,
+    [FromForm] List<Guid>? accessoryProductIds,
     CancellationToken cancellationToken)
   {
     var validationError = Validate(
@@ -128,7 +128,7 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
     IFormFile? personImage,
     IFormFile? garmentImage,
     string? garmentId,
-    long? garmentProductId,
+    Guid? garmentProductId,
     IReadOnlyList<IFormFile>? accessoryImages,
     IReadOnlyList<string>? accessoryIds)
   {

@@ -9,7 +9,7 @@ namespace AoDaiNhaUyen.Api.Controllers;
 
 [ApiController]
 [Route("api/users/me/checkout")]
-[Authorize]
+[Authorize(Policy = "RequireAdminOrCustomer")]
 public sealed class CheckoutController(ICheckoutService checkoutService) : ControllerBase
 {
   [HttpPost]
@@ -24,9 +24,9 @@ public sealed class CheckoutController(ICheckoutService checkoutService) : Contr
     return Ok(ApiResponseFactory.Success(result.Value, "Thanh toan thanh cong."));
   }
 
-  private long GetCurrentUserId()
+  private Guid GetCurrentUserId()
   {
     var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-    return long.TryParse(userIdClaim, out var userId) ? userId : 0;
+    return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
   }
 }

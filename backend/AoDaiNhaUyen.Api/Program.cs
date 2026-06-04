@@ -5,6 +5,7 @@ using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Infrastructure.Services;
 using DotNetEnv;
 using Microsoft.Extensions.FileProviders;
+using System.Security.Claims;
 
 var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env");
 if (File.Exists(envPath))
@@ -40,9 +41,12 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
-app.UseHttpsRedirection();
 app.UseCors("Frontend");
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 
 var uploadStoragePathResolver = app.Services.GetRequiredService<IUploadStoragePathResolver>();
@@ -55,6 +59,18 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.Use(async (context, next) =>
+{
+    await next(context);
+    if (context.Response.StatusCode == 403)
+    {
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
+        var roles = string.Join(",", context.User.FindAll(ClaimTypes.Role).Select(c => c.Value));
+        logger.LogWarning("[AuthZ] {UserId} (roles: {Roles}) denied on {Path} {Method}",
+            userId, roles, context.Request.Path, context.Request.Method);
+    }
+});
 app.MapControllers();
 
 if (app.Configuration.GetValue<bool>("RunMigrationsAndSeedOnStartup"))
@@ -93,6 +109,8 @@ static string[] GetFrontendOrigins(IConfiguration configuration)
   [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
     "https://aodainhauyen.io.vn",
     "https://backup.aodainhauyen.io.vn"
   ];

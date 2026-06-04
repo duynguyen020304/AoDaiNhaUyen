@@ -6,6 +6,7 @@ using AoDaiNhaUyen.Application.Interfaces.Repositories;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
 using AoDaiNhaUyen.Application.Services;
+using AoDaiNhaUyen.Domain.Constants;
 using AoDaiNhaUyen.Infrastructure.Configuration;
 using AoDaiNhaUyen.Infrastructure.Data;
 using AoDaiNhaUyen.Infrastructure.Repositories;
@@ -105,12 +106,23 @@ public static class ServiceRegistration
         };
       });
 
+    services.AddAuthorizationBuilder()
+      .AddPolicy("RequireAdminRole", policy =>
+        policy.RequireRole(RoleNames.Admin))
+      .AddPolicy("RequireCustomerRole", policy =>
+        policy.RequireRole(RoleNames.Customer))
+      .AddPolicy("RequireAdminOrCustomer", policy =>
+        policy.RequireRole(RoleNames.Admin, RoleNames.Customer));
+
     services.AddScoped<ICategoryRepository, CategoryRepository>();
     services.AddScoped<ICartRepository, CartRepository>();
     services.AddScoped<IProductRepository, ProductRepository>();
     services.AddScoped<IUserProfileRepository, UserProfileRepository>();
 
     services.AddScoped<ICatalogService, CatalogService>();
+    services.AddScoped<IAdminProductService, AdminProductService>();
+    services.AddScoped<IAdminUserService, AdminUserService>();
+    services.AddScoped<IAdminRoleService, AdminRoleService>();
     services.AddScoped<ICartService, CartService>();
     services.AddScoped<ICheckoutService, CheckoutService>();
     services.AddScoped<IUserService, UserService>();

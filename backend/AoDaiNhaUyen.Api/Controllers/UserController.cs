@@ -10,7 +10,7 @@ namespace AoDaiNhaUyen.Api.Controllers;
 
 [ApiController]
 [Route("api/users/me")]
-[Authorize]
+[Authorize(Policy = "RequireAdminOrCustomer")]
 public sealed class UserController(
     IUserService userService,
     ILogger<UserController> logger) : ControllerBase
@@ -19,7 +19,7 @@ public sealed class UserController(
     public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId == 0)
+        if (userId == Guid.Empty)
         {
             return Unauthorized(ApiResponseFactory.Failure(
                 "Không có quyền truy cập",
@@ -46,7 +46,7 @@ public sealed class UserController(
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileDto profile, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId == 0)
+        if (userId == Guid.Empty)
         {
             return Unauthorized(ApiResponseFactory.Failure(
                 "Không có quyền truy cập",
@@ -69,9 +69,9 @@ public sealed class UserController(
         return Ok(ApiResponseFactory.Success(result.Value, "Cập nhật hồ sơ thành công."));
     }
 
-    private long GetCurrentUserId()
+    private Guid GetCurrentUserId()
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return long.TryParse(userIdClaim, out var userId) ? userId : 0;
+        return Guid.TryParse(userIdClaim, out var userId) ? userId : Guid.Empty;
     }
 }
