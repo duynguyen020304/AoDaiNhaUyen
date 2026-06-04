@@ -4,7 +4,6 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class Order : BaseEntity
 {
-  public Guid Id { get; set; }
   public required string OrderCode { get; set; }
   public Guid UserId { get; set; }
   public Guid? AddressId { get; set; }
@@ -24,8 +23,6 @@ public sealed class Order : BaseEntity
   public DateTime? ConfirmedAt { get; set; }
   public DateTime? CompletedAt { get; set; }
   public DateTime? CancelledAt { get; set; }
-  public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-  public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
   public User User { get; set; } = null!;
   public UserAddress? Address { get; set; }

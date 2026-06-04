@@ -4,7 +4,6 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class OrderItem : BaseEntity
 {
-  public Guid Id { get; set; }
   public Guid OrderId { get; set; }
   public Guid? ProductId { get; set; }
   public Guid? VariantId { get; set; }

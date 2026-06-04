@@ -1,8 +1,9 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class ProductVariant
+public sealed class ProductVariant : BaseEntity
 {
-  public Guid Id { get; set; }
   public Guid ProductId { get; set; }
   public required string Sku { get; set; }
   public string? VariantName { get; set; }
@@ -14,8 +15,7 @@ public sealed class ProductVariant
   public int? WeightGram { get; set; }
   public bool IsDefault { get; set; }
   public string Status { get; set; } = "active";
-  public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-  public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
 
   public Product Product { get; set; } = null!;
   public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();

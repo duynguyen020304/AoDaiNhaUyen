@@ -4,7 +4,6 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class ChatAttachment : BaseEntity
 {
-  public Guid Id { get; set; }
   public Guid ThreadId { get; set; }
   public Guid? MessageId { get; set; }
   public string Kind { get; set; } = "user_image";
@@ -13,7 +12,6 @@ public sealed class ChatAttachment : BaseEntity
   public string? OriginalFileName { get; set; }
   public long FileSizeBytes { get; set; }
   public string? MetadataJsonb { get; set; }
-  public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
   public ChatThread Thread { get; set; } = null!;
   public ChatMessage? Message { get; set; }

@@ -4,7 +4,6 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class MeasurementProfile : BaseEntity
 {
-  public Guid Id { get; set; }
   public Guid UserId { get; set; }
   public required string ProfileName { get; set; }
   public decimal? HeightCm { get; set; }
@@ -17,8 +16,6 @@ public sealed class MeasurementProfile : BaseEntity
   public decimal? DressLengthCm { get; set; }
   public string? Notes { get; set; }
   public bool IsDefault { get; set; }
-  public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-  public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
   public User User { get; set; } = null!;
 }

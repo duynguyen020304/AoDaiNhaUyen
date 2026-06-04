@@ -4,14 +4,11 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class ChatThread : BaseEntity
 {
-  public Guid Id { get; set; }
   public Guid? UserId { get; set; }
   public string? GuestKeyHash { get; set; }
   public string Status { get; set; } = "active";
   public string Source { get; set; } = "web";
   public DateTime? ClaimedAt { get; set; }
-  public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-  public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
   public User? User { get; set; }
   public ICollection<ChatMessage> Messages { get; set; } = new List<ChatMessage>();

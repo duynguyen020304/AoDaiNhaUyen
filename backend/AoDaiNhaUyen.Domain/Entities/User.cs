@@ -1,8 +1,9 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class User
+public sealed class User : BaseEntity
 {
-  public Guid Id { get; set; }
   public required string FullName { get; set; }
   public string? Email { get; set; }
   public string? Phone { get; set; }
@@ -13,8 +14,7 @@ public sealed class User
   public DateTime? EmailVerifiedAt { get; set; }
   public DateTime? PhoneVerifiedAt { get; set; }
   public DateTime? LastLoginAt { get; set; }
-  public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-  public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
 
   public ICollection<UserAccount> UserAccounts { get; set; } = new List<UserAccount>();
   public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();

@@ -1,8 +1,9 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class Role
+public sealed class Role : BaseEntity
 {
-  public Guid Id { get; set; }
   public required string Name { get; set; }
   public string? Description { get; set; }
 
