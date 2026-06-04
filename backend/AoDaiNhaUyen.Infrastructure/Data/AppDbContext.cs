@@ -38,6 +38,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<Shipment> Shipments => Set<Shipment>();
   public DbSet<Review> Reviews => Set<Review>();
   public DbSet<ImageValidationCacheEntry> ImageValidationCacheEntries => Set<ImageValidationCacheEntry>();
+  public DbSet<UserGeneratedImage> UserGeneratedImages => Set<UserGeneratedImage>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
@@ -555,6 +556,23 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.LastUsedAt);
       builder.HasIndex(x => x.Sha256Hash).IsUnique();
       builder.HasIndex(x => x.ExpiresAt).HasDatabaseName("idx_image_validation_cache_entries_expires_at");
+    });
+
+    modelBuilder.Entity<UserGeneratedImage>(builder =>
+    {
+      builder.ToTable("user_generated_images");
+      builder.Property(x => x.ObjectKey).HasMaxLength(500).IsRequired();
+      builder.Property(x => x.Url).HasMaxLength(1000).IsRequired();
+      builder.Property(x => x.Kind).HasMaxLength(40).IsRequired().HasDefaultValue("user_image");
+      builder.Property(x => x.MimeType).HasMaxLength(100).IsRequired();
+      builder.Property(x => x.OriginalFileName).HasMaxLength(255);
+      builder.Property(x => x.SourceType).HasMaxLength(20).IsRequired().HasDefaultValue("chat");
+      builder.Property(x => x.GuestKeyHash).HasMaxLength(128);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.UserId).HasDatabaseName("idx_user_generated_images_user_id");
+      builder.HasIndex(x => x.GuestKeyHash).HasDatabaseName("idx_user_generated_images_guest_key");
+      builder.HasIndex(x => x.SourceType).HasDatabaseName("idx_user_generated_images_source_type");
+      builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
     });
 
     ApplySnakeCaseColumnNames(modelBuilder);
