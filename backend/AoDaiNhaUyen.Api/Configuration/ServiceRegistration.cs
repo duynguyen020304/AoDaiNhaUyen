@@ -1,3 +1,6 @@
+using Amazon;
+using Amazon.S3;
+using AoDaiNhaUyen.Api.Configuration;
 using System.Security.Claims;
 using System.Text;
 using AoDaiNhaUyen.Api.Services;
@@ -128,6 +131,45 @@ public static class ServiceRegistration
     services.AddScoped<ICheckoutService, CheckoutService>();
     services.AddScoped<IUserService, UserService>();
     services.AddScoped<ISeedDataService, SeedDataService>();
+
+
+
+    // S3 Storage
+
+    services.Configure<S3StorageSettings>(configuration.GetSection(S3StorageSettings.SectionName));
+
+    services.AddSingleton<IAmazonS3>(sp =>
+
+    {
+
+      var s3Settings = sp.GetRequiredService<IOptions<S3StorageSettings>>().Value;
+
+      var config = new AmazonS3Config { ForcePathStyle = s3Settings.UsePathStyle };
+
+
+
+      if (!string.IsNullOrWhiteSpace(s3Settings.ServiceUrl))
+
+        config.ServiceURL = s3Settings.ServiceUrl;
+
+      else if (!string.IsNullOrWhiteSpace(s3Settings.Region))
+
+        config.RegionEndpoint = RegionEndpoint.GetBySystemName(s3Settings.Region);
+
+
+
+      if (!string.IsNullOrWhiteSpace(s3Settings.AccessKey) && !string.IsNullOrWhiteSpace(s3Settings.SecretKey))
+
+        return new AmazonS3Client(s3Settings.AccessKey, s3Settings.SecretKey, config);
+
+
+
+      return new AmazonS3Client(config);
+
+    });
+
+    services.AddScoped<IStorageService, S3StorageService>();
+    services.AddScoped<IAdminMediaService, AdminMediaService>();
     services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
     services.AddScoped<IRefreshTokenService, RefreshTokenService>();
     services.AddScoped<IJwtTokenService, JwtTokenService>();

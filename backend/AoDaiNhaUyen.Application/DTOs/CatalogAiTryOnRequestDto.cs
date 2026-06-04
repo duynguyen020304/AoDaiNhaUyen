@@ -9,4 +9,6 @@ public sealed record CatalogAiTryOnRequestDto(
   IReadOnlyList<Guid> AccessoryProductIds,
   byte[]? LegacyGarmentImageBytes,
   string? LegacyGarmentImageMimeType,
-  IReadOnlyList<AiTryOnAccessoryImageDto> LegacyAccessoryImages);
+  IReadOnlyList<AiTryOnAccessoryImageDto> LegacyAccessoryImages,
+  Guid? UserId = null,
+  string? GuestKeyHash = null);

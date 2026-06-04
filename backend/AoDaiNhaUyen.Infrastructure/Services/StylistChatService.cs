@@ -20,6 +20,8 @@ public sealed class StylistChatService(
   IStylistResponseComposer stylistResponseComposer,
   IStylistFallbackTextService fallbackTextService,
   IUploadStoragePathResolver uploadStoragePathResolver,
+  IStorageService storageService,
+  IHttpClientFactory httpClientFactory,
   ILogger<StylistChatService> logger) : IStylistChatService
 {
   private const string AssistantRole = "assistant";
@@ -83,7 +85,7 @@ public sealed class StylistChatService(
   {
     await ClaimGuestThreadsAsync(userId, guestKey, cancellationToken);
     var thread = await LoadOwnedThreadAsync(threadId, userId, guestKey, cancellationToken);
-    return MapThreadDetail(thread);
+    return await MapThreadDetailAsync(thread, cancellationToken);
   }
 
   public async Task<ChatThreadDetailDto> AddMessageAsync(
@@ -111,7 +113,7 @@ public sealed class StylistChatService(
     dbContext.ChatMessages.Add(userMessage);
     await dbContext.SaveChangesAsync(cancellationToken);
 
-    var savedAttachments = await SaveIncomingAttachmentsAsync(thread.Id, userMessage.Id, attachments, cancellationToken);
+    var savedAttachments = await SaveIncomingAttachmentsAsync(thread.Id, userMessage.Id, attachments, userId, HashGuestKey(guestKey), cancellationToken);
     threadMemoryService.ApplyUserTurn(memory, savedAttachments);
     threadMemoryService.ApplyUserConversationTurn(memory, userMessage.Content);
     var previousAssistantMessage = memory.RecentAssistantMessages.LastOrDefault();
@@ -216,7 +218,7 @@ public sealed class StylistChatService(
         []),
       cancellationToken);
 
-    var generatedAttachment = await SaveGeneratedTryOnAttachmentAsync(thread.Id, result, cancellationToken);
+    var generatedAttachment = await SaveGeneratedTryOnAttachmentAsync(thread.Id, result, userId, HashGuestKey(guestKey), cancellationToken);
     var structuredPayload = new ChatStructuredPayloadDto(
       "tryon_result",
       memory.Scenario,
@@ -265,7 +267,7 @@ public sealed class StylistChatService(
     thread.UpdatedAt = DateTime.UtcNow;
     await dbContext.SaveChangesAsync(cancellationToken);
 
-    return MapMessage(assistantMessage, [generatedAttachment]);
+    return await MapMessageAsync(assistantMessage, [generatedAttachment], cancellationToken);
   }
 
   public async IAsyncEnumerable<SseChatEvent> AddMessageStreamAsync(
@@ -293,7 +295,7 @@ public sealed class StylistChatService(
     dbContext.ChatMessages.Add(userMessage);
     await dbContext.SaveChangesAsync(cancellationToken);
 
-    var savedAttachments = await SaveIncomingAttachmentsAsync(thread.Id, userMessage.Id, attachments, cancellationToken);
+    var savedAttachments = await SaveIncomingAttachmentsAsync(thread.Id, userMessage.Id, attachments, userId, HashGuestKey(guestKey), cancellationToken);
     threadMemoryService.ApplyUserTurn(memory, savedAttachments);
     threadMemoryService.ApplyUserConversationTurn(memory, userMessage.Content);
     var previousAssistantMessage = memory.RecentAssistantMessages.LastOrDefault();
@@ -938,6 +940,8 @@ public sealed class StylistChatService(
     Guid threadId,
     Guid messageId,
     IReadOnlyList<IncomingChatAttachmentDto> attachments,
+    Guid? userId,
+    string? guestKeyHash,
     CancellationToken cancellationToken)
   {
     if (attachments.Count == 0)
@@ -961,22 +965,34 @@ public sealed class StylistChatService(
       }
 
       var fileName = $"{Guid.NewGuid():N}{extension}";
-      var absoluteDirectory = uploadStoragePathResolver.GetChatThreadDirectory(threadId);
-      Directory.CreateDirectory(absoluteDirectory);
-      await File.WriteAllBytesAsync(Path.Combine(absoluteDirectory, fileName), attachment.Bytes, cancellationToken);
+      using var stream = new MemoryStream(attachment.Bytes);
+      var result = await storageService.UploadAsync(stream, fileName, attachment.MimeType, $"chat/{threadId}", cancellationToken);
 
       var entity = new ChatAttachment
       {
         ThreadId = threadId,
         MessageId = messageId,
         Kind = attachment.Kind,
-        FileUrl = $"/upload/chat/{threadId}/{fileName}",
+        FileUrl = result.ObjectKey,
         MimeType = attachment.MimeType,
         OriginalFileName = attachment.OriginalFileName,
         FileSizeBytes = attachment.Bytes.LongLength
       };
       dbContext.ChatAttachments.Add(entity);
       saved.Add(entity);
+
+      dbContext.UserGeneratedImages.Add(new UserGeneratedImage
+      {
+        UserId = userId,
+        GuestKeyHash = guestKeyHash,
+        ObjectKey = result.ObjectKey,
+        Url = result.Url,
+        Kind = attachment.Kind,
+        MimeType = attachment.MimeType,
+        OriginalFileName = attachment.OriginalFileName,
+        FileSizeBytes = attachment.Bytes.LongLength,
+        SourceType = "chat"
+      });
     }
 
     await dbContext.SaveChangesAsync(cancellationToken);
@@ -986,9 +1002,24 @@ public sealed class StylistChatService(
   private async Task<ChatAttachment> SaveGeneratedTryOnAttachmentAsync(
     Guid threadId,
     AiTryOnResultDto result,
+    Guid? userId,
+    string? guestKeyHash,
     CancellationToken cancellationToken)
   {
-    var (mimeType, bytes) = DecodeDataUrl(result.ResultImageUrl);
+    byte[] bytes;
+    string mimeType;
+
+    if (result.ResultImageUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+    {
+      (mimeType, bytes) = DecodeDataUrl(result.ResultImageUrl);
+    }
+    else
+    {
+      mimeType = result.MimeType;
+      using var httpClient = httpClientFactory.CreateClient();
+      bytes = await httpClient.GetByteArrayAsync(result.ResultImageUrl, cancellationToken);
+    }
+
     var extension = mimeType switch
     {
       "image/jpeg" => ".jpg",
@@ -996,37 +1027,58 @@ public sealed class StylistChatService(
       _ => ".png"
     };
     var fileName = $"tryon-{Guid.NewGuid():N}{extension}";
-    var absoluteDirectory = uploadStoragePathResolver.GetChatThreadDirectory(threadId);
-    Directory.CreateDirectory(absoluteDirectory);
-    await File.WriteAllBytesAsync(Path.Combine(absoluteDirectory, fileName), bytes, cancellationToken);
+    using var stream = new MemoryStream(bytes);
+    var uploadResult = await storageService.UploadAsync(stream, fileName, mimeType, $"chat/{threadId}", cancellationToken);
 
     var attachment = new ChatAttachment
     {
       ThreadId = threadId,
       Kind = "tryon_result",
-      FileUrl = $"/upload/chat/{threadId}/{fileName}",
+      FileUrl = uploadResult.ObjectKey,
       MimeType = mimeType,
       OriginalFileName = fileName,
       FileSizeBytes = bytes.LongLength
     };
     dbContext.ChatAttachments.Add(attachment);
+
+    dbContext.UserGeneratedImages.Add(new UserGeneratedImage
+    {
+      UserId = userId,
+      GuestKeyHash = guestKeyHash,
+      ObjectKey = uploadResult.ObjectKey,
+      Url = uploadResult.Url,
+      Kind = "tryon_result",
+      MimeType = mimeType,
+      OriginalFileName = fileName,
+      FileSizeBytes = bytes.LongLength,
+      SourceType = "ai_tryon"
+    });
+
     await dbContext.SaveChangesAsync(cancellationToken);
     return attachment;
   }
 
   private async Task<byte[]> ReadStoredAttachmentBytesAsync(string fileUrl, CancellationToken cancellationToken)
   {
-    if (!uploadStoragePathResolver.TryGetAbsolutePathForRequestPath(fileUrl, out var absolutePath))
+    if (fileUrl.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase))
     {
-      throw new InvalidOperationException("Đường dẫn ảnh đã lưu trong chat không hợp lệ.");
+      if (!uploadStoragePathResolver.TryGetAbsolutePathForRequestPath(fileUrl, out var absolutePath))
+      {
+        throw new InvalidOperationException("Đường dẫn ảnh đã lưu trong chat không hợp lệ.");
+      }
+
+      if (!File.Exists(absolutePath))
+      {
+        throw new InvalidOperationException("Không tìm thấy ảnh người mặc đã lưu trên máy chủ. Vui lòng gửi lại ảnh.");
+      }
+
+      return await File.ReadAllBytesAsync(absolutePath, cancellationToken);
     }
 
-    if (!File.Exists(absolutePath))
-    {
-      throw new InvalidOperationException("Không tìm thấy ảnh người mặc đã lưu trên máy chủ. Vui lòng gửi lại ảnh.");
-    }
-
-    return await File.ReadAllBytesAsync(absolutePath, cancellationToken);
+    using var s3Stream = await storageService.DownloadAsync(fileUrl, cancellationToken);
+    using var ms = new MemoryStream();
+    await s3Stream.CopyToAsync(ms, cancellationToken);
+    return ms.ToArray();
   }
 
   private static (string MimeType, byte[] Bytes) DecodeDataUrl(string dataUrl)
@@ -1055,17 +1107,21 @@ public sealed class StylistChatService(
     return new ChatThreadSummaryDto(thread.Id, title, preview, thread.Status, thread.UpdatedAt);
   }
 
-  private static ChatThreadDetailDto MapThreadDetail(ChatThread thread)
+  private async Task<ChatThreadDetailDto> MapThreadDetailAsync(
+    ChatThread thread,
+    CancellationToken cancellationToken)
   {
     var groupedAttachments = thread.Attachments
       .Where(attachment => attachment.MessageId.HasValue)
       .GroupBy(attachment => attachment.MessageId!.Value)
       .ToDictionary(group => group.Key, group => group.ToList() as IReadOnlyList<ChatAttachment>);
 
-    var messages = thread.Messages
-      .OrderBy(message => message.CreatedAt)
-      .Select(message => MapMessage(message, groupedAttachments.TryGetValue(message.Id, out var attachments) ? attachments : []))
-      .ToList();
+    var messages = new List<ChatMessageDto>(thread.Messages.Count);
+    foreach (var message in thread.Messages.OrderBy(m => m.CreatedAt))
+    {
+      var attachments = groupedAttachments.TryGetValue(message.Id, out var list) ? list : [];
+      messages.Add(await MapMessageAsync(message, attachments, cancellationToken));
+    }
 
     return new ChatThreadDetailDto(
       thread.Id,
@@ -1077,7 +1133,10 @@ public sealed class StylistChatService(
       messages);
   }
 
-  private static ChatMessageDto MapMessage(ChatMessage message, IReadOnlyList<ChatAttachment> attachments)
+  private async Task<ChatMessageDto> MapMessageAsync(
+    ChatMessage message,
+    IReadOnlyList<ChatAttachment> attachments,
+    CancellationToken cancellationToken)
   {
     ChatStructuredPayloadDto? payload = null;
     if (!string.IsNullOrWhiteSpace(message.StructuredPayloadJsonb))
@@ -1098,7 +1157,7 @@ public sealed class StylistChatService(
       message.Content,
       message.Intent,
       message.CreatedAt,
-      attachments.Select(MapAttachment).ToList(),
+      await MapAttachmentsAsync(attachments, cancellationToken),
       payload);
   }
 
@@ -1110,6 +1169,39 @@ public sealed class StylistChatService(
       attachment.MimeType,
       attachment.OriginalFileName,
       attachment.CreatedAt);
+
+  private async Task<IReadOnlyList<ChatAttachmentDto>> MapAttachmentsAsync(
+    IReadOnlyList<ChatAttachment> attachments,
+    CancellationToken cancellationToken)
+  {
+    if (attachments.Count == 0) return [];
+
+    var dtos = new ChatAttachmentDto[attachments.Count];
+    for (var i = 0; i < attachments.Count; i++)
+    {
+      var a = attachments[i];
+      string fileUrl;
+      if (a.FileUrl.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase))
+      {
+        fileUrl = a.FileUrl;
+      }
+      else
+      {
+        try
+        {
+          fileUrl = await storageService.GeneratePresignedGetUrlAsync(a.FileUrl, 3600, cancellationToken);
+        }
+        catch
+        {
+          fileUrl = a.FileUrl;
+        }
+      }
+
+      dtos[i] = new ChatAttachmentDto(a.Id, a.Kind, fileUrl, a.MimeType, a.OriginalFileName, a.CreatedAt);
+    }
+
+    return dtos;
+  }
 
   private static string BuildThreadTitle(IEnumerable<ChatMessage> messages)
   {

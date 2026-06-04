@@ -11,7 +11,8 @@ public sealed class CatalogTryOnService(
   IAiTryOnService aiTryOnService,
   ICachedImageValidationService imageValidationService,
   IHttpClientFactory httpClientFactory,
-  IUploadStoragePathResolver uploadStoragePathResolver) : ICatalogTryOnService
+  IUploadStoragePathResolver uploadStoragePathResolver,
+  IStorageService storageService) : ICatalogTryOnService
 {
   private const string CuratedGarmentAssetKind = "tryon_garment_curated";
   private const string GarmentAssetKind = "tryon_garment";
@@ -92,7 +93,42 @@ public sealed class CatalogTryOnService(
       garmentSelection.MimeType,
       accessorySelections);
 
-    return await aiTryOnService.GenerateAsync(aiRequest, cancellationToken);
+    var aiResult = await aiTryOnService.GenerateAsync(aiRequest, cancellationToken);
+
+    if (!string.IsNullOrEmpty(aiResult.ResultImageUrl) && aiResult.ResultImageUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+    {
+      var (mimeType, bytes) = DecodeDataUrl(aiResult.ResultImageUrl);
+      var extension = mimeType switch
+      {
+        "image/jpeg" => ".jpg",
+        "image/webp" => ".webp",
+        _ => ".png"
+      };
+      var fileName = $"tryon-{Guid.NewGuid():N}{extension}";
+      using var stream = new MemoryStream(bytes);
+      var uploadResult = await storageService.UploadAsync(stream, fileName, mimeType, "ai-tryon", cancellationToken);
+
+      var presignedUrl = await storageService.GeneratePresignedGetUrlAsync(uploadResult.ObjectKey, 3600, cancellationToken);
+
+      var imageRecord = new UserGeneratedImage
+      {
+        UserId = request.UserId,
+        GuestKeyHash = request.GuestKeyHash,
+        ObjectKey = uploadResult.ObjectKey,
+        Url = uploadResult.Url,
+        Kind = "tryon_result",
+        MimeType = mimeType,
+        OriginalFileName = fileName,
+        FileSizeBytes = bytes.LongLength,
+        SourceType = "ai_tryon"
+      };
+      dbContext.UserGeneratedImages.Add(imageRecord);
+      await dbContext.SaveChangesAsync(cancellationToken);
+
+      return new AiTryOnResultDto(presignedUrl, mimeType);
+    }
+
+    return aiResult;
   }
 
   private static AiTryOnCatalogItemDto? MapCatalogItem(Product product, string assetKind)
@@ -370,6 +406,14 @@ public sealed class CatalogTryOnService(
           .Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
           .Select(word => $"{char.ToUpperInvariant(word[0])}{word[1..]}"))
     };
+  }
+
+  private static (string MimeType, byte[] Bytes) DecodeDataUrl(string dataUrl)
+  {
+    var separator = dataUrl.IndexOf(',', StringComparison.Ordinal);
+    var header = dataUrl[..separator];
+    var mimeType = header.Split(';', StringSplitOptions.RemoveEmptyEntries)[0].Replace("data:", string.Empty, StringComparison.OrdinalIgnoreCase);
+    return (mimeType, Convert.FromBase64String(dataUrl[(separator + 1)..]));
   }
 
   private sealed record ResolvedTryOnImage(
