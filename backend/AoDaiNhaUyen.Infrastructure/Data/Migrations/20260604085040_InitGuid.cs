@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -12,9 +12,19 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterDatabase()
-                .Annotation("Npgsql:Enum:public.order_status", "pending,confirmed,processing,shipping,completed,cancelled,returned")
-                .Annotation("Npgsql:Enum:public.shipping_status", "pending,packed,shipped,delivered,failed,returned");
+            // Use raw SQL with IF NOT EXISTS guard so migration is idempotent.
+            // AlterDatabase().Annotation() would fail with "type already exists" on re-run.
+            migrationBuilder.Sql("""
+                DO $$ BEGIN
+                    CREATE TYPE public.order_status AS ENUM ('pending','confirmed','processing','shipping','completed','cancelled','returned');
+                EXCEPTION WHEN duplicate_object THEN null;
+                END $$;
+                
+                DO $$ BEGIN
+                    CREATE TYPE public.shipping_status AS ENUM ('pending','packed','shipped','delivered','failed','returned');
+                EXCEPTION WHEN duplicate_object THEN null;
+                END $$;
+                """);
 
             migrationBuilder.CreateTable(
                 name: "categories",

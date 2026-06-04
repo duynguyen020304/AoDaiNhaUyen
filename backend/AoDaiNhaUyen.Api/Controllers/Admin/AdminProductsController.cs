@@ -19,12 +19,13 @@ public sealed class AdminProductsController(IAdminProductService adminProductSer
         [FromQuery] string? status,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] bool includeDeleted = false,
         CancellationToken cancellationToken = default)
     {
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 20;
 
-        var (items, totalCount) = await adminProductService.GetPagedAsync(search, status, page, pageSize, cancellationToken);
+        var (items, totalCount) = await adminProductService.GetPagedAsync(search, status, page, pageSize, includeDeleted, cancellationToken);
 
         return Ok(ApiResponseFactory.PaginatedSuccess(items, page, pageSize, totalCount));
     }
@@ -115,9 +116,28 @@ public sealed class AdminProductsController(IAdminProductService adminProductSer
             return NotFound(ApiResponseFactory.Failure(
                 "Không tìm thấy sản phẩm.",
                 "not_found",
-                "Sản phẩm không tồn tại."));
+                "Sản phẩm không tồn tại hoặc đã bị xóa."));
         }
 
         return NoContent();
+    }
+
+    /// <summary>Restore a soft-deleted product.</summary>
+    [HttpPatch("{id:guid}/restore")]
+    public async Task<ActionResult<ApiResponse<object>>> Restore(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var success = await adminProductService.RestoreAsync(id, cancellationToken);
+
+        if (!success)
+        {
+            return NotFound(ApiResponseFactory.Failure(
+                "Không tìm thấy sản phẩm.",
+                "not_found",
+                "Sản phẩm không tồn tại hoặc chưa bị xóa."));
+        }
+
+        return Ok(ApiResponseFactory.Success<object?>(null, "Khôi phục sản phẩm thành công."));
     }
 }

@@ -12,6 +12,7 @@ public sealed record AdminProductListItemResponse(
     string Status,
     bool IsFeatured,
     int VariantCount,
+    bool IsDeleted,
     DateTimeOffset CreatedAt);
 
 /// <summary>Full product detail returned for admin edit forms.</summary>

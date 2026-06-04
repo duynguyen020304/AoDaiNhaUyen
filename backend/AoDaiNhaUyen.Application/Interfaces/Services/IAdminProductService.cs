@@ -11,6 +11,7 @@ public interface IAdminProductService
         string? status,
         int page,
         int pageSize,
+        bool includeDeleted = false,
         CancellationToken cancellationToken = default);
 
     /// <summary>Get a single product by ID for admin editing.</summary>
@@ -25,6 +26,9 @@ public interface IAdminProductService
     /// <summary>Toggle product status (active/draft/inactive).</summary>
     Task<bool> ToggleStatusAsync(Guid id, string newStatus, CancellationToken cancellationToken = default);
 
-    /// <summary>Soft-delete a product (set status to "deleted").</summary>
+    /// <summary>Soft-delete a product by setting IsDeleted flag.</summary>
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>Restore a soft-deleted product.</summary>
+    Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken = default);
 }

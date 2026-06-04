@@ -2,25 +2,31 @@ using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
 /// <summary>Admin product management service implementation.</summary>
-public sealed class AdminProductService(AppDbContext dbContext) : IAdminProductService
+public sealed class AdminProductService(AppDbContext dbContext, ILogger<AdminProductService> logger) : IAdminProductService
 {
     public async Task<(IReadOnlyList<AdminProductListItemResponse> Items, int TotalCount)> GetPagedAsync(
         string? search,
         string? status,
         int page,
         int pageSize,
+        bool includeDeleted = false,
         CancellationToken cancellationToken = default)
     {
         var query = dbContext.Products
             .AsNoTracking()
             .Include(p => p.Category)
             .Include(p => p.Variants)
-            .Where(p => p.Status != "deleted")
             .AsQueryable();
+
+        if (includeDeleted)
+        {
+            query = query.IgnoreQueryFilters();
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -50,6 +56,7 @@ public sealed class AdminProductService(AppDbContext dbContext) : IAdminProductS
                 p.Status,
                 p.IsFeatured,
                 p.Variants.Count,
+                p.IsDeleted,
                 new DateTimeOffset(p.CreatedAt, TimeSpan.Zero)))
             .ToListAsync(cancellationToken);
 
@@ -63,7 +70,7 @@ public sealed class AdminProductService(AppDbContext dbContext) : IAdminProductS
             .Include(p => p.Category)
             .Include(p => p.Variants)
             .Include(p => p.Images)
-            .FirstOrDefaultAsync(p => p.Id == id && p.Status != "deleted", cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
         if (product is null) return null;
 
@@ -93,7 +100,7 @@ public sealed class AdminProductService(AppDbContext dbContext) : IAdminProductS
         dbContext.Products.Add(product);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        // Reload with navigation properties
+        logger.LogInformation("Admin created product {ProductId} ({Name})", product.Id, product.Name);
         return (await GetByIdAsync(product.Id, cancellationToken))!;
     }
 
@@ -103,7 +110,7 @@ public sealed class AdminProductService(AppDbContext dbContext) : IAdminProductS
             .Include(p => p.Category)
             .Include(p => p.Variants)
             .Include(p => p.Images)
-            .FirstOrDefaultAsync(p => p.Id == id && p.Status != "deleted", cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
         if (product is null) return null;
 
@@ -123,14 +130,14 @@ public sealed class AdminProductService(AppDbContext dbContext) : IAdminProductS
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        // Reload with navigation properties
+        logger.LogInformation("Admin updated product {ProductId}", product.Id);
         return (await GetByIdAsync(product.Id, cancellationToken))!;
     }
 
     public async Task<bool> ToggleStatusAsync(Guid id, string newStatus, CancellationToken cancellationToken = default)
     {
         var product = await dbContext.Products
-            .FirstOrDefaultAsync(p => p.Id == id && p.Status != "deleted", cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
         if (product is null) return false;
 
@@ -138,20 +145,41 @@ public sealed class AdminProductService(AppDbContext dbContext) : IAdminProductS
         product.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        logger.LogInformation("Admin toggled product {ProductId} status to {Status}", product.Id, newStatus);
         return true;
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var product = await dbContext.Products
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
-        if (product is null) return false;
+        if (product is null || product.IsDeleted) return false;
 
-        product.Status = "deleted";
+        product.IsDeleted = true;
+        product.DeletedAt = DateTime.UtcNow;
         product.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        logger.LogInformation("Admin soft-deleted product {ProductId} ({Name})", product.Id, product.Name);
+        return true;
+    }
+
+    public async Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var product = await dbContext.Products
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+
+        if (product is null || !product.IsDeleted) return false;
+
+        product.IsDeleted = false;
+        product.DeletedAt = null;
+        product.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Admin restored product {ProductId} ({Name})", product.Id, product.Name);
         return true;
     }
 

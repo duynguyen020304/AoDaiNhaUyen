@@ -10,6 +10,7 @@ interface UserState {
   currentPage: number
   pageSize: number
   search: string
+  includeDeleted: boolean
   loading: boolean
   error: string | null
   fetchUsers: (search?: string, page?: number) => Promise<void>
@@ -19,7 +20,9 @@ interface UserState {
   updateUserRole: (id: string, roleId: string) => Promise<void>
   updateUserStatus: (id: string, status: string) => Promise<void>
   deleteUser: (id: string) => Promise<void>
+  restoreUser: (id: string) => Promise<void>
   setSearch: (search: string) => void
+  setIncludeDeleted: (value: boolean) => void
   clearError: () => void
 }
 
@@ -31,6 +34,7 @@ export const useUserStore = create<UserState>((set, get) => ({
   currentPage: 1,
   pageSize: 20,
   search: '',
+  includeDeleted: false,
   loading: false,
   error: null,
 
@@ -39,7 +43,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     const p = page ?? get().currentPage
     set({ loading: true, error: null })
     try {
-      const result = await adminApi.getUsers(s || undefined, p, get().pageSize)
+      const result = await adminApi.getUsers(s || undefined, p, get().pageSize, get().includeDeleted)
       set({
         users: result.data,
         totalPages: result.totalPage,
@@ -123,6 +127,19 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
   },
 
+  restoreUser: async (id: string) => {
+    set({ error: null })
+    try {
+      await adminApi.restoreUser(id)
+      await get().fetchUsers()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể khôi phục người dùng.'
+      set({ error: message })
+      throw err
+    }
+  },
+
   setSearch: (search: string) => set({ search }),
+  setIncludeDeleted: (value: boolean) => set({ includeDeleted: value }),
   clearError: () => set({ error: null }),
 }))

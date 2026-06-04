@@ -2,11 +2,19 @@ import { request, requestPaginated } from './client'
 import type { PaginatedApiEnvelope } from '@/types/api'
 import type {
   AdminUserListItem,
+  AdminProductListItem,
+  AdminProductDetail,
+  CategoryListItem,
+  CategoryDetail,
   RoleDto,
   CreateUserRequest,
   UpdateUserRequest,
   UpdateUserRoleRequest,
   UpdateUserStatusRequest,
+  CreateProductRequest,
+  UpdateProductRequest,
+  CreateCategoryRequest,
+  UpdateCategoryRequest,
   CreateRoleRequest,
   UpdateRoleRequest,
 } from '@/types/admin'
@@ -17,11 +25,13 @@ export async function getUsers(
   search?: string,
   page = 1,
   pageSize = 20,
+  includeDeleted = false,
 ): Promise<PaginatedApiEnvelope<AdminUserListItem[]>> {
   const params = new URLSearchParams()
   if (search) params.set('search', search)
   params.set('page', String(page))
   params.set('pageSize', String(pageSize))
+  if (includeDeleted) params.set('includeDeleted', 'true')
   return requestPaginated<AdminUserListItem[]>(`/api/admin/users?${params}`)
 }
 
@@ -61,6 +71,10 @@ export async function deleteUser(id: string): Promise<void> {
   await request<void>(`/api/admin/users/${id}`, { method: 'DELETE' })
 }
 
+export async function restoreUser(id: string): Promise<void> {
+  await request<void>(`/api/admin/users/${id}/restore`, { method: 'PATCH' })
+}
+
 // ── Roles ──
 
 export async function getRoles(): Promise<RoleDto[]> {
@@ -84,3 +98,88 @@ export async function updateRole(id: string, data: UpdateRoleRequest): Promise<R
 export async function deleteRole(id: string): Promise<void> {
   await request<void>(`/api/admin/roles/${id}`, { method: 'DELETE' })
 }
+// ── Products ──
+
+export async function getProducts(params?: {
+  search?: string
+  status?: string
+  page?: number
+  pageSize?: number
+  includeDeleted?: boolean
+}): Promise<PaginatedApiEnvelope<AdminProductListItem[]>> {
+  const qs = new URLSearchParams()
+  if (params?.search) qs.set('search', params.search)
+  if (params?.status) qs.set('status', params.status)
+  qs.set('page', String(params?.page ?? 1))
+  qs.set('pageSize', String(params?.pageSize ?? 20))
+  if (params?.includeDeleted) qs.set('includeDeleted', 'true')
+  return requestPaginated<AdminProductListItem[]>(`/api/admin/products?${qs}`)
+}
+
+export async function getProduct(id: string): Promise<AdminProductDetail> {
+  return request<AdminProductDetail>(`/api/admin/products/${id}`)
+}
+
+export async function createProduct(data: CreateProductRequest): Promise<AdminProductDetail> {
+  return request<AdminProductDetail>('/api/admin/products', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateProduct(id: string, data: UpdateProductRequest): Promise<AdminProductDetail> {
+  return request<AdminProductDetail>(`/api/admin/products/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function toggleProductStatus(id: string, status: string): Promise<void> {
+  await request<void>(`/api/admin/products/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  })
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+  await request<void>(`/api/admin/products/${id}`, { method: 'DELETE' })
+}
+
+export async function restoreProduct(id: string): Promise<void> {
+  await request<void>(`/api/admin/products/${id}/restore`, { method: 'PATCH' })
+}
+
+// ── Categories ──
+
+export async function getCategories(includeDeleted = false): Promise<CategoryListItem[]> {
+  const qs = new URLSearchParams()
+  if (includeDeleted) qs.set('includeDeleted', 'true')
+  return request<CategoryListItem[]>(`/api/admin/categories?${qs}`)
+}
+
+export async function getCategory(id: string): Promise<CategoryDetail> {
+  return request<CategoryDetail>(`/api/admin/categories/${id}`)
+}
+
+export async function createCategory(data: CreateCategoryRequest): Promise<CategoryDetail> {
+  return request<CategoryDetail>('/api/admin/categories', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateCategory(id: string, data: UpdateCategoryRequest): Promise<CategoryDetail> {
+  return request<CategoryDetail>(`/api/admin/categories/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  await request<void>(`/api/admin/categories/${id}`, { method: 'DELETE' })
+}
+
+export async function restoreCategory(id: string): Promise<void> {
+  await request<void>(`/api/admin/categories/${id}/restore`, { method: 'PATCH' })
+}
+

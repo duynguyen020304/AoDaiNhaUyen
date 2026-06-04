@@ -24,6 +24,8 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error('Không thể kết nối đến máy chủ.')
   }
 
+  if (response.status === 204) return undefined as T
+
   let payload: ApiEnvelope<T>
   try {
     payload = await response.json() as ApiEnvelope<T>

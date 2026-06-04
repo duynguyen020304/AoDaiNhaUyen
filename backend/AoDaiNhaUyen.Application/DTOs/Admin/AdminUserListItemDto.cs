@@ -9,4 +9,5 @@ public sealed record AdminUserListItemDto(
     string Status,
     IReadOnlyList<string> Roles,
     DateTime CreatedAt,
-    DateTime? LastLoginAt);
+    DateTime? LastLoginAt,
+    bool IsDeleted = false);

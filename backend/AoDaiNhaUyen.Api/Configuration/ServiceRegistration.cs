@@ -123,6 +123,7 @@ public static class ServiceRegistration
     services.AddScoped<IAdminProductService, AdminProductService>();
     services.AddScoped<IAdminUserService, AdminUserService>();
     services.AddScoped<IAdminRoleService, AdminRoleService>();
+    services.AddScoped<IAdminCategoryService, AdminCategoryService>();
     services.AddScoped<ICartService, CartService>();
     services.AddScoped<ICheckoutService, CheckoutService>();
     services.AddScoped<IUserService, UserService>();

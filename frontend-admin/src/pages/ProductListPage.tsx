@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, Search, Package } from 'lucide-react'
-import { useProducts } from '@/hooks/useProducts'
+import { Plus, Pencil, Trash2, RotateCcw, ChevronLeft, ChevronRight, Search, Package, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { useProductStore } from '@/stores/productStore'
+import type { AdminProductListItem } from '@/types/admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
@@ -14,46 +15,71 @@ function statusBadge(status: string) {
     case 'active': return <Badge variant="success">Đang bán</Badge>
     case 'draft': return <Badge variant="warning">Bản nháp</Badge>
     case 'inactive': return <Badge className="bg-gray-100 text-gray-500 border border-gray-200">Ngừng bán</Badge>
-    default: return null
+    case 'out_of_stock': return <Badge variant="outline" className="border-orange-300 text-orange-600">Hết hàng</Badge>
+    default: return <Badge variant="outline">{status}</Badge>
+  }
+}
+
+function typeBadge(productType: string) {
+  switch (productType) {
+    case 'ao_dai': return <Badge variant="outline" className="border-burgundy/30 text-burgundy">Áo dài</Badge>
+    case 'phu_kien': return <Badge variant="outline" className="border-burgundy/30 text-burgundy">Phụ kiện</Badge>
+    default: return <Badge variant="outline">{productType}</Badge>
   }
 }
 
 export function ProductListPage() {
-  const { products, allProducts, deleteProduct, reorderProducts, filterType, setFilterType, filterStatus, setFilterStatus, search, setSearch } = useProducts()
-  const [confirmId, setConfirmId] = useState<string | null>(null)
+  const {
+    products, totalPages, totalItems, currentPage, search, statusFilter, includeDeleted, loading, error,
+    fetchProducts, deleteProduct, restoreProduct, setSearch, setStatusFilter, setIncludeDeleted, clearError,
+  } = useProductStore()
 
-  const handleDelete = () => {
-    if (confirmId) {
-      deleteProduct(confirmId)
-      setConfirmId(null)
-    }
+  const [searchInput, setSearchInput] = useState(search)
+  const [productTypeFilter, setProductTypeFilter] = useState('')
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AdminProductListItem | null>(null)
+  const [restoreTarget, setRestoreTarget] = useState<AdminProductListItem | null>(null)
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
+
+  const filteredProducts = useMemo(() => {
+    let result = products
+    if (productTypeFilter) result = result.filter((p) => p.productType === productTypeFilter)
+    return result
+  }, [products, productTypeFilter])
+
+  function handleToggleDeleted() {
+    const next = !includeDeleted
+    setIncludeDeleted(next)
+    fetchProducts(undefined, 1)
   }
 
-  const moveUp = (id: string) => {
-    const items = [...products]
-    const idx = items.findIndex(p => p.id === id)
-    if (idx <= 0) return
-    const prev = items[idx - 1]
-    const current = items[idx]
-    reorderProducts([
-      { id: current.id, sortOrder: prev.sortOrder },
-      { id: prev.id, sortOrder: current.sortOrder },
-    ])
+  function handleSearchInput(value: string) {
+    setSearchInput(value)
+    if (searchTimer.current) clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => {
+      setSearch(value)
+      fetchProducts(value, 1)
+    }, 300)
   }
 
-  const moveDown = (id: string) => {
-    const items = [...products]
-    const idx = items.findIndex(p => p.id === id)
-    if (idx < 0 || idx >= items.length - 1) return
-    const next = items[idx + 1]
-    const current = items[idx]
-    reorderProducts([
-      { id: current.id, sortOrder: next.sortOrder },
-      { id: next.id, sortOrder: current.sortOrder },
-    ])
+  function handlePageChange(page: number) {
+    fetchProducts(undefined, page)
   }
 
-  const showReorder = filterType === 'phu-kien'
+  async function handleDelete() {
+    if (!deleteTarget) return
+    await deleteProduct(deleteTarget.id)
+    setDeleteTarget(null)
+  }
+
+  async function handleRestore() {
+    if (!restoreTarget) return
+    await restoreProduct(restoreTarget.id)
+    setRestoreTarget(null)
+  }
 
   return (
     <div>
@@ -66,29 +92,58 @@ export function ProductListPage() {
         </Link>
       </div>
 
+      {error && (
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive mb-4">
+          <span className="flex-1">{error}</span>
+          <button onClick={clearError} className="underline shrink-0">Đóng</button>
+        </div>
+      )}
+
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-4">
-        <Select className="w-40" value={filterType} onChange={e => setFilterType(e.target.value)}>
-          <option value="all">Tất cả loại</option>
-          <option value="ao-dai">Áo dài</option>
-          <option value="phu-kien">Phụ kiện</option>
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <Select
+          className="w-40"
+          value={productTypeFilter}
+          onChange={(e) => setProductTypeFilter(e.target.value)}
+        >
+          <option value="">Tất cả loại</option>
+          <option value="ao_dai">Áo dài</option>
+          <option value="phu_kien">Phụ kiện</option>
         </Select>
-        <Select className="w-44" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-          <option value="all">Tất cả trạng thái</option>
+        <Select
+          className="w-40"
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); fetchProducts(undefined, 1) }}
+        >
+          <option value="">Tất cả trạng thái</option>
           <option value="active">Đang bán</option>
           <option value="draft">Bản nháp</option>
           <option value="inactive">Ngừng bán</option>
+          <option value="out_of_stock">Hết hàng</option>
         </Select>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="pl-9 w-60" placeholder="Tìm theo tên..." value={search} onChange={e => setSearch(e.target.value)} />
+          <Input className="pl-9 w-60" placeholder="Tìm theo tên..." value={searchInput} onChange={(e) => handleSearchInput(e.target.value)} />
         </div>
-        {showReorder && <span className="text-sm text-muted-foreground self-center ml-auto">Dùng mũi tên ↑↓ để sắp xếp thứ tự hiển thị</span>}
+        <Button
+          variant={includeDeleted ? 'default' : 'outline'}
+          size="sm"
+          onClick={handleToggleDeleted}
+          className="gap-1.5 shrink-0"
+        >
+          {includeDeleted ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          {includeDeleted ? 'Ẩn đã xóa' : 'Hiện đã xóa'}
+        </Button>
       </div>
 
       {/* Table */}
       <Card className="overflow-hidden">
-        {products.length === 0 ? (
+        {loading && filteredProducts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Loader2 className="size-8 animate-spin text-primary mb-2" />
+            <p className="text-muted-foreground">Đang tải...</p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Package className="size-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground mb-2">Chưa có sản phẩm nào</p>
@@ -100,65 +155,46 @@ export function ProductListPage() {
           <Table>
             <TableHeader className="bg-burgundy [&_th]:text-white [&_th]:font-medium">
               <TableRow>
-                <TableHead className="w-[80px]">Ảnh</TableHead>
                 <TableHead>Tên sản phẩm</TableHead>
                 <TableHead>Loại</TableHead>
-                <TableHead>Giá gốc</TableHead>
-                <TableHead>Tồn kho</TableHead>
+                <TableHead>Danh mục</TableHead>
+                <TableHead>Biến thể</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                {showReorder && <TableHead className="w-[120px]">Thứ tự</TableHead>}
+                <TableHead>Nổi bật</TableHead>
                 <TableHead className="w-[100px] text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((p, i) => (
-                <TableRow key={p.id} className={i % 2 === 0 ? 'bg-white' : 'bg-cream/50'}>
+              {filteredProducts.map((p, i) => (
+                <TableRow key={p.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-cream/50'} ${p.isDeleted ? 'opacity-60 bg-muted/30' : ''}`}>
                   <TableCell>
-                    {p.images[0] ? (
-                      <img src={p.images[0].url} alt={p.name} className="size-14 object-cover rounded-md" />
-                    ) : (
-                      <div className="size-14 rounded-md bg-muted flex items-center justify-center">
-                        <Package className="size-6 text-muted-foreground" />
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium text-ink">{p.name}</div>
+                    <div className="font-medium text-ink">
+                      {p.name}
+                      {p.isDeleted && <Badge variant="outline" className="ml-2 text-xs text-destructive border-destructive/40">Đã xóa</Badge>}
+                    </div>
                     <div className="text-xs text-muted-foreground">{p.slug}</div>
                   </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="border-burgundy/30 text-burgundy">
-                      {p.type === 'ao-dai' ? 'Áo dài' : 'Phụ kiện'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-mono tabular-nums">
-                    {p.variants[0]?.price.toLocaleString('vi-VN')}₫
-                  </TableCell>
-                  <TableCell>
-                    {p.variants.reduce((sum, v) => sum + v.stockQty, 0)}
-                  </TableCell>
-                  <TableCell>{statusBadge(p.status)}</TableCell>
-                  {showReorder && (
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="size-7" onClick={() => moveUp(p.id)}>
-                          <ChevronUp className="size-3" />
-                        </Button>
-                        <span className="w-6 text-center tabular-nums text-sm">{p.sortOrder}</span>
-                        <Button variant="ghost" size="icon" className="size-7" onClick={() => moveDown(p.id)}>
-                          <ChevronDown className="size-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  )}
+                  <TableCell>{typeBadge(p.productType)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{p.categoryName || '—'}</TableCell>
+                  <TableCell className="font-mono tabular-nums">{p.variantCount}</TableCell>
+                  <TableCell>{p.isDeleted ? <span className="text-xs text-muted-foreground">—</span> : statusBadge(p.status)}</TableCell>
+                  <TableCell>{p.isFeatured ? <Badge variant="success">Nổi bật</Badge> : '—'}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
-                      <Link to={`/admin/products/${p.id}/edit`} aria-label={`Sửa ${p.name}`} className="inline-flex items-center justify-center size-8 rounded-lg hover:bg-muted transition-colors">
-                        <Pencil className="size-4" />
-                      </Link>
-                      <Button variant="ghost" size="icon" className="size-8 text-destructive hover:text-destructive" onClick={() => setConfirmId(p.id)} aria-label={`Xóa ${p.name}`}>
-                        <Trash2 className="size-4" />
-                      </Button>
+                      {p.isDeleted ? (
+                        <Button variant="ghost" size="icon" onClick={() => setRestoreTarget(p)} aria-label="Khôi phục" title="Khôi phục">
+                          <RotateCcw className="size-4 text-green-600" />
+                        </Button>
+                      ) : (
+                        <>
+                          <Link to={`/admin/products/${p.id}/edit`} aria-label={`Sửa ${p.name}`} className="inline-flex items-center justify-center size-8 rounded-lg hover:bg-muted transition-colors">
+                            <Pencil className="size-4" />
+                          </Link>
+                          <Button variant="ghost" size="icon" className="size-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(p)} aria-label={`Xóa ${p.name}`}>
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -168,17 +204,62 @@ export function ProductListPage() {
         )}
       </Card>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-muted-foreground mt-4">
+          <span>Tổng: {totalItems} sản phẩm</span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={currentPage <= 1}
+              onClick={() => handlePageChange(currentPage - 1)}
+              aria-label="Trang trước"
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <span>Trang {currentPage} / {totalPages}</span>
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={currentPage >= totalPages}
+              onClick={() => handlePageChange(currentPage + 1)}
+              aria-label="Trang sau"
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Delete confirmation dialog */}
-      {confirmId && (
+      {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/40" onClick={() => setConfirmId(null)} />
+          <div className="fixed inset-0 bg-black/40" onClick={() => setDeleteTarget(null)} />
           <div className="relative bg-white rounded-xl shadow-lg p-6 w-full max-w-sm mx-4">
             <h2 className="text-lg font-semibold mb-2">Xác nhận xóa</h2>
-            <p className="text-muted-foreground text-sm mb-4">Bạn có chắc muốn xóa sản phẩm "{allProducts.find(p => p.id === confirmId)?.name}"? Hành động này không thể hoàn tác.</p>
+            <p className="text-muted-foreground text-sm mb-4">Bạn có chắc muốn xóa sản phẩm "{deleteTarget.name}"?</p>
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setConfirmId(null)}>Hủy</Button>
+              <Button variant="outline" onClick={() => setDeleteTarget(null)}>Hủy</Button>
               <Button variant="destructive" onClick={handleDelete}>
                 <Trash2 className="size-4" /> Xóa
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Restore confirmation dialog */}
+      {restoreTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/40" onClick={() => setRestoreTarget(null)} />
+          <div className="relative bg-white rounded-xl shadow-lg p-6 w-full max-w-sm mx-4">
+            <h2 className="text-lg font-semibold mb-2">Khôi phục sản phẩm</h2>
+            <p className="text-muted-foreground text-sm mb-4">Bạn có muốn khôi phục "{restoreTarget.name}"?</p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setRestoreTarget(null)}>Hủy</Button>
+              <Button onClick={handleRestore}>
+                <RotateCcw className="size-4" /> Khôi phục
               </Button>
             </div>
           </div>

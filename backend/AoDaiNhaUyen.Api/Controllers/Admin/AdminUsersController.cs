@@ -18,12 +18,13 @@ public sealed class AdminUsersController(IAdminUserService adminUserService) : C
         [FromQuery] string? search,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] bool includeDeleted = false,
         CancellationToken cancellationToken = default)
     {
         if (page < 1) page = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 20;
 
-        var result = await adminUserService.GetUsersAsync(search, page, pageSize, cancellationToken);
+        var result = await adminUserService.GetUsersAsync(search, page, pageSize, includeDeleted, cancellationToken);
 
         return Ok(ApiResponseFactory.PaginatedSuccess(result.Items, page, pageSize, result.TotalCount));
     }
@@ -134,9 +135,28 @@ public sealed class AdminUsersController(IAdminUserService adminUserService) : C
             return NotFound(ApiResponseFactory.Failure(
                 "Không tìm thấy người dùng.",
                 "not_found",
-                "Người dùng không tồn tại."));
+                "Người dùng không tồn tại hoặc đã bị xóa."));
         }
 
         return NoContent();
+    }
+
+    /// <summary>Restore a soft-deleted user.</summary>
+    [HttpPatch("{id:guid}/restore")]
+    public async Task<ActionResult<ApiResponse<object>>> Restore(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var success = await adminUserService.RestoreUserAsync(id, cancellationToken);
+
+        if (!success)
+        {
+            return NotFound(ApiResponseFactory.Failure(
+                "Không tìm thấy người dùng.",
+                "not_found",
+                "Người dùng không tồn tại hoặc chưa bị xóa."));
+        }
+
+        return Ok(ApiResponseFactory.Success<object?>(null, "Khôi phục người dùng thành công."));
     }
 }

@@ -1,5 +1,7 @@
+using AoDaiNhaUyen.Domain.Common;
 using AoDaiNhaUyen.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 using System.Net;
 
 namespace AoDaiNhaUyen.Infrastructure.Data;
@@ -69,8 +71,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("active").IsRequired();
       builder.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
       builder.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("NOW()");
-      builder.HasIndex(x => x.Email).IsUnique();
-      builder.HasIndex(x => x.Phone).IsUnique();
+      builder.Property(x => x.IsDeleted).HasDefaultValue(false);
+      builder.Property(x => x.IsActive).HasDefaultValue(true);
+      builder.Property(x => x.DeletedAt);
+      builder.HasIndex(x => x.Email).IsUnique().HasFilter("NOT is_deleted");
+      builder.HasIndex(x => x.Phone).IsUnique().HasFilter("NOT is_deleted");
       builder.ToTable(t => t.HasCheckConstraint("ck_users_status", "status IN ('active', 'inactive', 'blocked')"));
     });
 
@@ -553,6 +558,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     });
 
     ApplySnakeCaseColumnNames(modelBuilder);
+    ApplyGlobalSoftDeleteQueryFilters(modelBuilder);
   }
 
   private static void ApplySnakeCaseColumnNames(ModelBuilder modelBuilder)
@@ -562,6 +568,27 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       foreach (var property in entityType.GetProperties())
       {
         property.SetColumnName(ToSnakeCase(property.Name));
+      }
+    }
+  }
+
+  private static void ApplyGlobalSoftDeleteQueryFilters(ModelBuilder modelBuilder)
+  {
+    foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+    {
+      if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
+      {
+        var parameter = Expression.Parameter(entityType.ClrType, "e");
+        var isDeleted = Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted));
+        var filter = Expression.Lambda(Expression.Not(isDeleted), parameter);
+        entityType.SetQueryFilter(filter);
+
+        modelBuilder.Entity(entityType.ClrType).Property(nameof(ISoftDeletable.IsDeleted)).HasDefaultValue(false);
+      }
+
+      if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+      {
+        modelBuilder.Entity(entityType.ClrType).Property(nameof(BaseEntity.IsActive)).HasDefaultValue(true);
       }
     }
   }

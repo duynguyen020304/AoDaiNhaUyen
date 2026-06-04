@@ -8,6 +8,7 @@ import { AdminLayout } from '@/components/AdminLayout'
 import { LoginPage } from '@/pages/LoginPage'
 import { ProductListPage } from '@/pages/ProductListPage'
 import { ProductFormPage } from '@/pages/ProductFormPage'
+import { CategoriesPage } from '@/pages/CategoriesPage'
 import { UsersPage } from '@/pages/UsersPage'
 import { RolesPage } from '@/pages/RolesPage'
 
@@ -42,6 +43,7 @@ export function App() {
             <Route path="products" element={<ProductListPage />} />
             <Route path="products/new" element={<ProductFormPage />} />
             <Route path="products/:id/edit" element={<ProductFormPage />} />
+            <Route path="categories" element={<CategoriesPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="roles" element={<RolesPage />} />
           </Route>
