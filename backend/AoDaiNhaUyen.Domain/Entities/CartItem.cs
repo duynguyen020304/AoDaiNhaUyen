@@ -2,9 +2,9 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class CartItem
 {
-  public long Id { get; set; }
-  public long CartId { get; set; }
-  public long VariantId { get; set; }
+  public Guid Id { get; set; }
+  public Guid CartId { get; set; }
+  public Guid VariantId { get; set; }
   public int Quantity { get; set; }
   public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
   public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

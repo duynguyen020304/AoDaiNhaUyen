@@ -2,8 +2,8 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class ChatMessage
 {
-  public long Id { get; set; }
-  public long ThreadId { get; set; }
+  public Guid Id { get; set; }
+  public Guid ThreadId { get; set; }
   public string Role { get; set; } = "user";
   public string Content { get; set; } = string.Empty;
   public string? Intent { get; set; }

@@ -2,8 +2,8 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class ProductStyleProfile
 {
-  public long Id { get; set; }
-  public long ProductId { get; set; }
+  public Guid Id { get; set; }
+  public Guid ProductId { get; set; }
   public string? StyleKeywordsJsonb { get; set; }
   public string? Formality { get; set; }
   public string? Silhouette { get; set; }

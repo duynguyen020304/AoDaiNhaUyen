@@ -2,10 +2,10 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class ProductPairing
 {
-  public long Id { get; set; }
-  public long BaseProductId { get; set; }
-  public long PairedProductId { get; set; }
-  public long? ScenarioId { get; set; }
+  public Guid Id { get; set; }
+  public Guid BaseProductId { get; set; }
+  public Guid PairedProductId { get; set; }
+  public Guid? ScenarioId { get; set; }
   public decimal Score { get; set; }
   public string? Notes { get; set; }
   public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

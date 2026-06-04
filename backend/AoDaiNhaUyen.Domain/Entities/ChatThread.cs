@@ -2,8 +2,8 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class ChatThread
 {
-  public long Id { get; set; }
-  public long? UserId { get; set; }
+  public Guid Id { get; set; }
+  public Guid? UserId { get; set; }
   public string? GuestKeyHash { get; set; }
   public string Status { get; set; } = "active";
   public string Source { get; set; } = "web";

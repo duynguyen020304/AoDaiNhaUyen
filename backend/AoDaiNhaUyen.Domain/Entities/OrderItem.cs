@@ -2,10 +2,10 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class OrderItem
 {
-  public long Id { get; set; }
-  public long OrderId { get; set; }
-  public long? ProductId { get; set; }
-  public long? VariantId { get; set; }
+  public Guid Id { get; set; }
+  public Guid OrderId { get; set; }
+  public Guid? ProductId { get; set; }
+  public Guid? VariantId { get; set; }
   public required string ProductName { get; set; }
   public string? Sku { get; set; }
   public string? Size { get; set; }
@@ -14,7 +14,7 @@ public sealed class OrderItem
   public int Quantity { get; set; }
   public decimal LineTotal { get; set; }
   public bool IsCustomTailoring { get; set; }
-  public long? MeasurementProfileId { get; set; }
+  public Guid? MeasurementProfileId { get; set; }
   public string? CustomMeasurementsJson { get; set; }
   public string? Note { get; set; }
 

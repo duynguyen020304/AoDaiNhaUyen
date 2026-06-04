@@ -2,8 +2,8 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class MeasurementProfile
 {
-  public long Id { get; set; }
-  public long UserId { get; set; }
+  public Guid Id { get; set; }
+  public Guid UserId { get; set; }
   public required string ProfileName { get; set; }
   public decimal? HeightCm { get; set; }
   public decimal? WeightKg { get; set; }

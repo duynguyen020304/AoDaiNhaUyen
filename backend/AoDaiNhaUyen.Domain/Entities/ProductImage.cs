@@ -2,9 +2,9 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class ProductImage
 {
-  public long Id { get; set; }
-  public long ProductId { get; set; }
-  public long? VariantId { get; set; }
+  public Guid Id { get; set; }
+  public Guid ProductId { get; set; }
+  public Guid? VariantId { get; set; }
   public required string ImageUrl { get; set; }
   public string? AltText { get; set; }
   public int SortOrder { get; set; }

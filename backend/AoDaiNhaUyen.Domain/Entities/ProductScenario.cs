@@ -2,8 +2,9 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class ProductScenario
 {
-  public long ProductId { get; set; }
-  public long ScenarioId { get; set; }
+  public Guid Id { get; set; }
+  public Guid ProductId { get; set; }
+  public Guid ScenarioId { get; set; }
   public decimal Score { get; set; }
   public string? Notes { get; set; }
   public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

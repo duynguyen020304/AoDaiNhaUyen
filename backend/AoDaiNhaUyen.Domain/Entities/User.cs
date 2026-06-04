@@ -2,7 +2,7 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class User
 {
-  public long Id { get; set; }
+  public Guid Id { get; set; }
   public required string FullName { get; set; }
   public string? Email { get; set; }
   public string? Phone { get; set; }

@@ -2,9 +2,9 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class ProductAiAsset
 {
-  public long Id { get; set; }
-  public long ProductId { get; set; }
-  public long? VariantId { get; set; }
+  public Guid Id { get; set; }
+  public Guid ProductId { get; set; }
+  public Guid? VariantId { get; set; }
   public required string AssetKind { get; set; }
   public required string FileUrl { get; set; }
   public required string MimeType { get; set; }

@@ -2,8 +2,8 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class Shipment
 {
-  public long Id { get; set; }
-  public long OrderId { get; set; }
+  public Guid Id { get; set; }
+  public Guid OrderId { get; set; }
   public string? Carrier { get; set; }
   public string? TrackingNumber { get; set; }
   public string ShippingStatus { get; set; } = "pending";

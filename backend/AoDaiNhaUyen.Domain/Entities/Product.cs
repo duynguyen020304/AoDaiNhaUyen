@@ -2,8 +2,8 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class Product
 {
-  public long Id { get; set; }
-  public long CategoryId { get; set; }
+  public Guid Id { get; set; }
+  public Guid CategoryId { get; set; }
   public required string Name { get; set; }
   public required string Slug { get; set; }
   public required string ProductType { get; set; }

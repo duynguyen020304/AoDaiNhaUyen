@@ -2,9 +2,9 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class ChatAttachment
 {
-  public long Id { get; set; }
-  public long ThreadId { get; set; }
-  public long? MessageId { get; set; }
+  public Guid Id { get; set; }
+  public Guid ThreadId { get; set; }
+  public Guid? MessageId { get; set; }
   public string Kind { get; set; } = "user_image";
   public string FileUrl { get; set; } = string.Empty;
   public string MimeType { get; set; } = "image/png";

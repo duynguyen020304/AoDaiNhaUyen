@@ -2,8 +2,8 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class Category
 {
-  public long Id { get; set; }
-  public long? Parent { get; set; }
+  public Guid Id { get; set; }
+  public Guid? Parent { get; set; }
   public required string Name { get; set; }
   public required string Slug { get; set; }
   public string? Description { get; set; }

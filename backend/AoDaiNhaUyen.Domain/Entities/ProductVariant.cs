@@ -2,8 +2,8 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class ProductVariant
 {
-  public long Id { get; set; }
-  public long ProductId { get; set; }
+  public Guid Id { get; set; }
+  public Guid ProductId { get; set; }
   public required string Sku { get; set; }
   public string? VariantName { get; set; }
   public string? Size { get; set; }

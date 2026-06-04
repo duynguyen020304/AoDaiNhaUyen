@@ -2,7 +2,7 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class ImageValidationCacheEntry
 {
-  public long Id { get; set; }
+  public Guid Id { get; set; }
   public string Sha256Hash { get; set; } = string.Empty;
   public string MimeType { get; set; } = string.Empty;
   public long FileSizeBytes { get; set; }

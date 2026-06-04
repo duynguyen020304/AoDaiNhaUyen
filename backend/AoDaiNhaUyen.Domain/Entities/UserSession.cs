@@ -2,8 +2,8 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class UserSession
 {
-  public long Id { get; set; }
-  public long UserId { get; set; }
+  public Guid Id { get; set; }
+  public Guid UserId { get; set; }
   public required string RefreshTokenHash { get; set; }
   public string? UserAgent { get; set; }
   public string? IpAddress { get; set; }

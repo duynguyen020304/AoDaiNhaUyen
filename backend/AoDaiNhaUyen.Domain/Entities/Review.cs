@@ -2,10 +2,10 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class Review
 {
-  public long Id { get; set; }
-  public long UserId { get; set; }
-  public long ProductId { get; set; }
-  public long? OrderItemId { get; set; }
+  public Guid Id { get; set; }
+  public Guid UserId { get; set; }
+  public Guid ProductId { get; set; }
+  public Guid? OrderItemId { get; set; }
   public int Rating { get; set; }
   public string? Comment { get; set; }
   public bool IsVisible { get; set; } = true;

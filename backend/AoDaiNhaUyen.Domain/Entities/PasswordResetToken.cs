@@ -2,8 +2,8 @@ namespace AoDaiNhaUyen.Domain.Entities;
 
 public sealed class PasswordResetToken
 {
-  public long Id { get; set; }
-  public long UserId { get; set; }
+  public Guid Id { get; set; }
+  public Guid UserId { get; set; }
   public required string Token { get; set; }
   public DateTime ExpiresAt { get; set; }
   public DateTime? UsedAt { get; set; }
