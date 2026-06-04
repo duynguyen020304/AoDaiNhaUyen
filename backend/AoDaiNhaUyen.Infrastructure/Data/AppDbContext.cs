@@ -54,7 +54,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     {
       builder.ToTable("roles");
       builder.HasKey(x => x.Id);
-      builder.Property(x => x.Id).UseIdentityAlwaysColumn();
       builder.Property(x => x.Name).HasMaxLength(30).IsRequired();
       builder.HasIndex(x => x.Name).IsUnique();
     });
@@ -93,7 +92,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     modelBuilder.Entity<UserRole>(builder =>
     {
       builder.ToTable("user_roles");
-      builder.HasKey(x => new { x.UserId, x.RoleId });
+      builder.HasKey(x => x.Id);
+      builder.HasIndex(x => new { x.UserId, x.RoleId }).IsUnique();
       builder.HasOne(x => x.User).WithMany(x => x.UserRoles).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
       builder.HasOne(x => x.Role).WithMany(x => x.UserRoles).HasForeignKey(x => x.RoleId).OnDelete(DeleteBehavior.Restrict);
     });
@@ -276,7 +276,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     modelBuilder.Entity<ProductScenario>(builder =>
     {
       builder.ToTable("product_scenarios");
-      builder.HasKey(x => new { x.ProductId, x.ScenarioId });
+      builder.HasKey(x => x.Id);
+      builder.HasIndex(x => new { x.ProductId, x.ScenarioId }).IsUnique();
       builder.Property(x => x.Score).HasColumnType("numeric(5,2)");
       builder.Property(x => x.Notes).HasMaxLength(500);
       builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
@@ -398,7 +399,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     modelBuilder.Entity<ChatThreadMemory>(builder =>
     {
       builder.ToTable("chat_thread_memory");
-      builder.HasKey(x => x.ThreadId);
+      builder.HasKey(x => x.Id);
+      builder.HasIndex(x => x.ThreadId).IsUnique();
       builder.Property(x => x.Summary).HasMaxLength(2000);
       builder.Property(x => x.FactsJsonb).HasColumnType("jsonb");
       builder.Property(x => x.ResolvedRefsJsonb).HasColumnType("jsonb");

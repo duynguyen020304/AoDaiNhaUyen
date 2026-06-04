@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Net;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitGuid : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -21,9 +20,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "categories",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    parent = table.Column<long>(type: "bigint", nullable: true),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    parent = table.Column<Guid>(type: "uuid", nullable: true),
                     name = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
                     slug = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
                     description = table.Column<string>(type: "text", nullable: true),
@@ -44,12 +42,37 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "image_validation_cache_entries",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    sha256_hash = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    mime_type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    file_size_bytes = table.Column<long>(type: "bigint", nullable: false),
+                    width = table.Column<int>(type: "integer", nullable: false),
+                    height = table.Column<int>(type: "integer", nullable: false),
+                    is_valid = table.Column<bool>(type: "boolean", nullable: false),
+                    reason = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    category = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: true),
+                    confidence = table.Column<decimal>(type: "numeric(5,4)", nullable: true),
+                    provider = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
+                    model = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    expires_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    last_used_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_image_validation_cache_entries", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "roles",
                 columns: table => new
                 {
-                    id = table.Column<short>(type: "smallint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityAlwaysColumn),
-                    name = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false)
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    name = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    description = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -57,15 +80,30 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "style_scenarios",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    slug = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
+                    name = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
+                    description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_style_scenarios", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "users",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
                     full_name = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
                     email = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: true),
                     phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
-                    password_hash = table.Column<string>(type: "text", nullable: false),
                     gender = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: true),
                     date_of_birth = table.Column<DateOnly>(type: "date", nullable: true),
                     avatar_url = table.Column<string>(type: "text", nullable: true),
@@ -79,7 +117,6 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_users", x => x.id);
-                    table.CheckConstraint("ck_users_contact", "email IS NOT NULL OR phone IS NOT NULL");
                     table.CheckConstraint("ck_users_status", "status IN ('active', 'inactive', 'blocked')");
                 });
 
@@ -87,9 +124,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "products",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    category_id = table.Column<long>(type: "bigint", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    category_id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     slug = table.Column<string>(type: "character varying(220)", maxLength: 220, nullable: false),
                     product_type = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
@@ -121,9 +157,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "carts",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    user_id = table.Column<long>(type: "bigint", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
                 },
@@ -139,12 +174,35 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "chat_threads",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    guest_key_hash = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
+                    status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false, defaultValue: "active"),
+                    source = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false, defaultValue: "web"),
+                    claimed_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_chat_threads", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_chat_threads_users_user_id",
+                        column: x => x.user_id,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "email_verification_tokens",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    user_id = table.Column<long>(type: "bigint", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
                     token = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     expires_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     used_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -165,9 +223,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "measurement_profiles",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    user_id = table.Column<long>(type: "bigint", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
                     profile_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     height_cm = table.Column<decimal>(type: "numeric(5,2)", nullable: true),
                     weight_kg = table.Column<decimal>(type: "numeric(5,2)", nullable: true),
@@ -197,9 +254,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "password_reset_tokens",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    user_id = table.Column<long>(type: "bigint", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
                     token = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     expires_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     used_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
@@ -217,12 +273,35 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "user_accounts",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    provider = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    provider_account_id = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    password_hash = table.Column<string>(type: "text", nullable: true),
+                    is_verified = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_user_accounts", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_user_accounts_users_user_id",
+                        column: x => x.user_id,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "user_addresses",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    user_id = table.Column<long>(type: "bigint", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
                     recipient_name = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
                     recipient_phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     province = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
@@ -247,12 +326,13 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "user_roles",
                 columns: table => new
                 {
-                    user_id = table.Column<long>(type: "bigint", nullable: false),
-                    role_id = table.Column<short>(type: "smallint", nullable: false)
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    role_id = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_user_roles", x => new { x.user_id, x.role_id });
+                    table.PrimaryKey("PK_user_roles", x => x.id);
                     table.ForeignKey(
                         name: "FK_user_roles_roles_role_id",
                         column: x => x.role_id,
@@ -271,9 +351,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "user_sessions",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    user_id = table.Column<long>(type: "bigint", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
                     refresh_token_hash = table.Column<string>(type: "text", nullable: false),
                     user_agent = table.Column<string>(type: "text", nullable: true),
                     ip_address = table.Column<IPAddress>(type: "inet", nullable: true),
@@ -293,12 +372,102 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "product_pairings",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    base_product_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    paired_product_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    scenario_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    score = table.Column<decimal>(type: "numeric(5,2)", nullable: false),
+                    notes = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_product_pairings", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_product_pairings_products_base_product_id",
+                        column: x => x.base_product_id,
+                        principalTable: "products",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_product_pairings_products_paired_product_id",
+                        column: x => x.paired_product_id,
+                        principalTable: "products",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_product_pairings_style_scenarios_scenario_id",
+                        column: x => x.scenario_id,
+                        principalTable: "style_scenarios",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "product_scenarios",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    product_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    scenario_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    score = table.Column<decimal>(type: "numeric(5,2)", nullable: false),
+                    notes = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_product_scenarios", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_product_scenarios_products_product_id",
+                        column: x => x.product_id,
+                        principalTable: "products",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_product_scenarios_style_scenarios_scenario_id",
+                        column: x => x.scenario_id,
+                        principalTable: "style_scenarios",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "product_style_profiles",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    product_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    style_keywords_jsonb = table.Column<string>(type: "jsonb", nullable: true),
+                    formality = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: true),
+                    silhouette = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: true),
+                    notes = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    primary_color_family = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    secondary_color_family = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_product_style_profiles", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_product_style_profiles_products_product_id",
+                        column: x => x.product_id,
+                        principalTable: "products",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "product_variants",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    product_id = table.Column<long>(type: "bigint", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    product_id = table.Column<Guid>(type: "uuid", nullable: false),
                     sku = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false),
                     variant_name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: true),
                     size = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
@@ -328,14 +497,41 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "chat_messages",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    thread_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    role = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false, defaultValue: "user"),
+                    content = table.Column<string>(type: "text", nullable: false),
+                    intent = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    client_message_id = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: true),
+                    prompt_version = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: true),
+                    usage_jsonb = table.Column<string>(type: "jsonb", nullable: true),
+                    finish_reason = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: true),
+                    tool_calls_jsonb = table.Column<string>(type: "jsonb", nullable: true),
+                    structured_payload_jsonb = table.Column<string>(type: "jsonb", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_chat_messages", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_chat_messages_chat_threads_thread_id",
+                        column: x => x.thread_id,
+                        principalTable: "chat_threads",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "orders",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
                     order_code = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
-                    user_id = table.Column<long>(type: "bigint", nullable: false),
-                    address_id = table.Column<long>(type: "bigint", nullable: true),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    address_id = table.Column<Guid>(type: "uuid", nullable: true),
                     recipient_name = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
                     recipient_phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     province = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
@@ -381,10 +577,9 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "cart_items",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    cart_id = table.Column<long>(type: "bigint", nullable: false),
-                    variant_id = table.Column<long>(type: "bigint", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    cart_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    variant_id = table.Column<Guid>(type: "uuid", nullable: false),
                     quantity = table.Column<int>(type: "integer", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
                     updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
@@ -408,13 +603,43 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "product_ai_assets",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    product_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    variant_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    asset_kind = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    file_url = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    mime_type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    is_active = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_product_ai_assets", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_product_ai_assets_product_variants_variant_id",
+                        column: x => x.variant_id,
+                        principalTable: "product_variants",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_product_ai_assets_products_product_id",
+                        column: x => x.product_id,
+                        principalTable: "products",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "product_images",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    product_id = table.Column<long>(type: "bigint", nullable: false),
-                    variant_id = table.Column<long>(type: "bigint", nullable: true),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    product_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    variant_id = table.Column<Guid>(type: "uuid", nullable: true),
                     image_url = table.Column<string>(type: "text", nullable: false),
                     alt_text = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     sort_order = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
@@ -439,14 +664,75 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "chat_attachments",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    thread_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    message_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    kind = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false, defaultValue: "user_image"),
+                    file_url = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    mime_type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    original_file_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    file_size_bytes = table.Column<long>(type: "bigint", nullable: false),
+                    metadata_jsonb = table.Column<string>(type: "jsonb", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_chat_attachments", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_chat_attachments_chat_messages_message_id",
+                        column: x => x.message_id,
+                        principalTable: "chat_messages",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_chat_attachments_chat_threads_thread_id",
+                        column: x => x.thread_id,
+                        principalTable: "chat_threads",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "chat_thread_memory",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    thread_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    summary = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    facts_jsonb = table.Column<string>(type: "jsonb", nullable: true),
+                    resolved_refs_jsonb = table.Column<string>(type: "jsonb", nullable: true),
+                    last_message_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_chat_thread_memory", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_chat_thread_memory_chat_messages_last_message_id",
+                        column: x => x.last_message_id,
+                        principalTable: "chat_messages",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_chat_thread_memory_chat_threads_thread_id",
+                        column: x => x.thread_id,
+                        principalTable: "chat_threads",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "order_items",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    order_id = table.Column<long>(type: "bigint", nullable: false),
-                    product_id = table.Column<long>(type: "bigint", nullable: true),
-                    variant_id = table.Column<long>(type: "bigint", nullable: true),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    order_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    product_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    variant_id = table.Column<Guid>(type: "uuid", nullable: true),
                     product_name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     sku = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: true),
                     size = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
@@ -455,7 +741,7 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     quantity = table.Column<int>(type: "integer", nullable: false),
                     line_total = table.Column<decimal>(type: "numeric(12,2)", nullable: false),
                     is_custom_tailoring = table.Column<bool>(type: "boolean", nullable: false),
-                    measurement_profile_id = table.Column<long>(type: "bigint", nullable: true),
+                    measurement_profile_id = table.Column<Guid>(type: "uuid", nullable: true),
                     custom_measurements_json = table.Column<string>(type: "jsonb", nullable: true),
                     note = table.Column<string>(type: "text", nullable: true)
                 },
@@ -495,9 +781,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "payments",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    order_id = table.Column<long>(type: "bigint", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    order_id = table.Column<Guid>(type: "uuid", nullable: false),
                     amount = table.Column<decimal>(type: "numeric(12,2)", nullable: false),
                     paid_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "NOW()"),
                     note = table.Column<string>(type: "text", nullable: true),
@@ -519,9 +804,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "shipments",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    order_id = table.Column<long>(type: "bigint", nullable: false),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    order_id = table.Column<Guid>(type: "uuid", nullable: false),
                     carrier = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     tracking_number = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: true),
                     shipping_status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false, defaultValue: "pending"),
@@ -545,11 +829,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "reviews",
                 columns: table => new
                 {
-                    id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    user_id = table.Column<long>(type: "bigint", nullable: false),
-                    product_id = table.Column<long>(type: "bigint", nullable: false),
-                    order_item_id = table.Column<long>(type: "bigint", nullable: true),
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    product_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    order_item_id = table.Column<Guid>(type: "uuid", nullable: true),
                     rating = table.Column<int>(type: "integer", nullable: false),
                     comment = table.Column<string>(type: "text", nullable: true),
                     is_visible = table.Column<bool>(type: "boolean", nullable: false),
@@ -609,6 +892,42 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "idx_chat_attachments_thread_id",
+                table: "chat_attachments",
+                column: "thread_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_chat_attachments_message_id",
+                table: "chat_attachments",
+                column: "message_id");
+
+            migrationBuilder.CreateIndex(
+                name: "idx_chat_messages_thread_id",
+                table: "chat_messages",
+                column: "thread_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_chat_thread_memory_last_message_id",
+                table: "chat_thread_memory",
+                column: "last_message_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_chat_thread_memory_thread_id",
+                table: "chat_thread_memory",
+                column: "thread_id",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "idx_chat_threads_guest_key_hash",
+                table: "chat_threads",
+                column: "guest_key_hash");
+
+            migrationBuilder.CreateIndex(
+                name: "idx_chat_threads_user_id",
+                table: "chat_threads",
+                column: "user_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_email_verification_tokens_token",
                 table: "email_verification_tokens",
                 column: "token",
@@ -618,6 +937,17 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "IX_email_verification_tokens_user_id",
                 table: "email_verification_tokens",
                 column: "user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "idx_image_validation_cache_entries_expires_at",
+                table: "image_validation_cache_entries",
+                column: "expires_at");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_image_validation_cache_entries_sha256_hash",
+                table: "image_validation_cache_entries",
+                column: "sha256_hash",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_measurement_profiles_user_id",
@@ -688,6 +1018,21 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "idx_product_ai_assets_lookup",
+                table: "product_ai_assets",
+                columns: new[] { "product_id", "asset_kind", "is_active" });
+
+            migrationBuilder.CreateIndex(
+                name: "idx_product_ai_assets_product_id",
+                table: "product_ai_assets",
+                column: "product_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_product_ai_assets_variant_id",
+                table: "product_ai_assets",
+                column: "variant_id");
+
+            migrationBuilder.CreateIndex(
                 name: "idx_product_images_product_id",
                 table: "product_images",
                 column: "product_id");
@@ -696,6 +1041,39 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "IX_product_images_variant_id",
                 table: "product_images",
                 column: "variant_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_product_pairings_base_product_id_paired_product_id_scenario~",
+                table: "product_pairings",
+                columns: new[] { "base_product_id", "paired_product_id", "scenario_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_product_pairings_paired_product_id",
+                table: "product_pairings",
+                column: "paired_product_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_product_pairings_scenario_id",
+                table: "product_pairings",
+                column: "scenario_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_product_scenarios_product_id_scenario_id",
+                table: "product_scenarios",
+                columns: new[] { "product_id", "scenario_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_product_scenarios_scenario_id",
+                table: "product_scenarios",
+                column: "scenario_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_product_style_profiles_product_id",
+                table: "product_style_profiles",
+                column: "product_id",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "idx_product_variants_product_id",
@@ -768,6 +1146,23 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 column: "order_id");
 
             migrationBuilder.CreateIndex(
+                name: "IX_style_scenarios_slug",
+                table: "style_scenarios",
+                column: "slug",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_user_accounts_provider_provider_account_id",
+                table: "user_accounts",
+                columns: new[] { "provider", "provider_account_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_user_accounts_user_id",
+                table: "user_accounts",
+                column: "user_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_user_addresses_user_id",
                 table: "user_addresses",
                 column: "user_id");
@@ -776,6 +1171,12 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "IX_user_roles_role_id",
                 table: "user_roles",
                 column: "role_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_user_roles_user_id_role_id",
+                table: "user_roles",
+                columns: new[] { "user_id", "role_id" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_user_sessions_user_id",
@@ -802,7 +1203,16 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "cart_items");
 
             migrationBuilder.DropTable(
+                name: "chat_attachments");
+
+            migrationBuilder.DropTable(
+                name: "chat_thread_memory");
+
+            migrationBuilder.DropTable(
                 name: "email_verification_tokens");
+
+            migrationBuilder.DropTable(
+                name: "image_validation_cache_entries");
 
             migrationBuilder.DropTable(
                 name: "password_reset_tokens");
@@ -811,13 +1221,28 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "payments");
 
             migrationBuilder.DropTable(
+                name: "product_ai_assets");
+
+            migrationBuilder.DropTable(
                 name: "product_images");
+
+            migrationBuilder.DropTable(
+                name: "product_pairings");
+
+            migrationBuilder.DropTable(
+                name: "product_scenarios");
+
+            migrationBuilder.DropTable(
+                name: "product_style_profiles");
 
             migrationBuilder.DropTable(
                 name: "reviews");
 
             migrationBuilder.DropTable(
                 name: "shipments");
+
+            migrationBuilder.DropTable(
+                name: "user_accounts");
 
             migrationBuilder.DropTable(
                 name: "user_roles");
@@ -829,10 +1254,19 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 name: "carts");
 
             migrationBuilder.DropTable(
+                name: "chat_messages");
+
+            migrationBuilder.DropTable(
+                name: "style_scenarios");
+
+            migrationBuilder.DropTable(
                 name: "order_items");
 
             migrationBuilder.DropTable(
                 name: "roles");
+
+            migrationBuilder.DropTable(
+                name: "chat_threads");
 
             migrationBuilder.DropTable(
                 name: "measurement_profiles");

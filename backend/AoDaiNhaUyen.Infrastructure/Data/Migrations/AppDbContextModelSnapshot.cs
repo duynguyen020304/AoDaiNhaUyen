@@ -27,12 +27,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.Cart", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -46,8 +44,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
@@ -60,15 +58,13 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.CartItem", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("CartId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("CartId")
+                        .HasColumnType("uuid")
                         .HasColumnName("cart_id");
 
                     b.Property<DateTime>("CreatedAt")
@@ -87,8 +83,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
 
-                    b.Property<long>("VariantId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("VariantId")
+                        .HasColumnType("uuid")
                         .HasColumnName("variant_id");
 
                     b.HasKey("Id");
@@ -106,12 +102,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.Category", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -139,8 +133,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(120)")
                         .HasColumnName("name");
 
-                    b.Property<long?>("Parent")
-                        .HasColumnType("bigint")
+                    b.Property<Guid?>("Parent")
+                        .HasColumnType("uuid")
                         .HasColumnName("parent");
 
                     b.Property<string>("Slug")
@@ -168,12 +162,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatAttachment", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -199,8 +191,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasDefaultValue("user_image")
                         .HasColumnName("kind");
 
-                    b.Property<long?>("MessageId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid?>("MessageId")
+                        .HasColumnType("uuid")
                         .HasColumnName("message_id");
 
                     b.Property<string>("MetadataJsonb")
@@ -218,8 +210,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("original_file_name");
 
-                    b.Property<long>("ThreadId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("ThreadId")
+                        .HasColumnType("uuid")
                         .HasColumnName("thread_id");
 
                     b.HasKey("Id");
@@ -234,12 +226,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatMessage", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("ClientMessageId")
                         .HasMaxLength(80)
@@ -284,8 +274,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("structured_payload_jsonb");
 
-                    b.Property<long>("ThreadId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("ThreadId")
+                        .HasColumnType("uuid")
                         .HasColumnName("thread_id");
 
                     b.Property<string>("ToolCallsJsonb")
@@ -306,12 +296,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatThread", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime?>("ClaimedAt")
                         .HasColumnType("timestamp with time zone")
@@ -350,8 +338,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
 
-                    b.Property<long?>("UserId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
@@ -367,9 +355,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ChatThreadMemory", b =>
                 {
-                    b.Property<long>("ThreadId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("thread_id");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -381,8 +370,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("facts_jsonb");
 
-                    b.Property<long?>("LastMessageId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid?>("LastMessageId")
+                        .HasColumnType("uuid")
                         .HasColumnName("last_message_id");
 
                     b.Property<string>("ResolvedRefsJsonb")
@@ -394,27 +383,32 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("summary");
 
+                    b.Property<Guid>("ThreadId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("thread_id");
+
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
 
-                    b.HasKey("ThreadId");
+                    b.HasKey("Id");
 
                     b.HasIndex("LastMessageId");
+
+                    b.HasIndex("ThreadId")
+                        .IsUnique();
 
                     b.ToTable("chat_thread_memory", (string)null);
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.EmailVerificationToken", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -436,8 +430,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("used_at");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
@@ -452,12 +446,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ImageValidationCacheEntry", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Category")
                         .HasMaxLength(80)
@@ -541,12 +533,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.MeasurementProfile", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<decimal?>("BustCm")
                         .HasColumnType("numeric(5,2)")
@@ -598,8 +588,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.Property<decimal?>("WaistCm")
@@ -619,15 +609,13 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.Order", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<long?>("AddressId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid?>("AddressId")
+                        .HasColumnType("uuid")
                         .HasColumnName("address_id");
 
                     b.Property<string>("AddressLine")
@@ -731,8 +719,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.Property<string>("Ward")
@@ -772,12 +760,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.OrderItem", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Color")
                         .HasMaxLength(50)
@@ -796,20 +782,20 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("line_total");
 
-                    b.Property<long?>("MeasurementProfileId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid?>("MeasurementProfileId")
+                        .HasColumnType("uuid")
                         .HasColumnName("measurement_profile_id");
 
                     b.Property<string>("Note")
                         .HasColumnType("text")
                         .HasColumnName("note");
 
-                    b.Property<long>("OrderId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
                         .HasColumnName("order_id");
 
-                    b.Property<long?>("ProductId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uuid")
                         .HasColumnName("product_id");
 
                     b.Property<string>("ProductName")
@@ -836,8 +822,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("unit_price");
 
-                    b.Property<long?>("VariantId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid?>("VariantId")
+                        .HasColumnType("uuid")
                         .HasColumnName("variant_id");
 
                     b.HasKey("Id");
@@ -863,12 +849,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.PasswordResetToken", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -890,8 +874,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("used_at");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
@@ -906,12 +890,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.Payment", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric(12,2)")
@@ -927,8 +909,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("note");
 
-                    b.Property<long>("OrderId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
                         .HasColumnName("order_id");
 
                     b.Property<DateTime>("PaidAt")
@@ -951,12 +933,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.Product", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Brand")
                         .HasMaxLength(120)
@@ -967,8 +947,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("care_instruction");
 
-                    b.Property<long>("CategoryId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid")
                         .HasColumnName("category_id");
 
                     b.Property<DateTime>("CreatedAt")
@@ -1055,12 +1035,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductAiAsset", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("AssetKind")
                         .IsRequired()
@@ -1092,8 +1070,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("mime_type");
 
-                    b.Property<long>("ProductId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
                         .HasColumnName("product_id");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -1102,8 +1080,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
 
-                    b.Property<long?>("VariantId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid?>("VariantId")
+                        .HasColumnType("uuid")
                         .HasColumnName("variant_id");
 
                     b.HasKey("Id");
@@ -1121,12 +1099,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductImage", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("AltText")
                         .HasMaxLength(255)
@@ -1148,8 +1124,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_primary");
 
-                    b.Property<long>("ProductId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
                         .HasColumnName("product_id");
 
                     b.Property<int>("SortOrder")
@@ -1158,8 +1134,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasDefaultValue(0)
                         .HasColumnName("sort_order");
 
-                    b.Property<long?>("VariantId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid?>("VariantId")
+                        .HasColumnType("uuid")
                         .HasColumnName("variant_id");
 
                     b.HasKey("Id");
@@ -1174,15 +1150,13 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductPairing", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("BaseProductId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("BaseProductId")
+                        .HasColumnType("uuid")
                         .HasColumnName("base_product_id");
 
                     b.Property<DateTime>("CreatedAt")
@@ -1196,12 +1170,12 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("notes");
 
-                    b.Property<long>("PairedProductId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("PairedProductId")
+                        .HasColumnType("uuid")
                         .HasColumnName("paired_product_id");
 
-                    b.Property<long?>("ScenarioId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid?>("ScenarioId")
+                        .HasColumnType("uuid")
                         .HasColumnName("scenario_id");
 
                     b.Property<decimal>("Score")
@@ -1228,13 +1202,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductScenario", b =>
                 {
-                    b.Property<long>("ProductId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("product_id");
-
-                    b.Property<long>("ScenarioId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("scenario_id");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -1247,6 +1218,14 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("notes");
 
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<Guid>("ScenarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("scenario_id");
+
                     b.Property<decimal>("Score")
                         .HasColumnType("numeric(5,2)")
                         .HasColumnName("score");
@@ -1257,21 +1236,22 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
 
-                    b.HasKey("ProductId", "ScenarioId");
+                    b.HasKey("Id");
 
                     b.HasIndex("ScenarioId");
+
+                    b.HasIndex("ProductId", "ScenarioId")
+                        .IsUnique();
 
                     b.ToTable("product_scenarios", (string)null);
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductStyleProfile", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -1294,8 +1274,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("primary_color_family");
 
-                    b.Property<long>("ProductId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
                         .HasColumnName("product_id");
 
                     b.Property<string>("SecondaryColorFamily")
@@ -1328,12 +1308,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.ProductVariant", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Color")
                         .HasMaxLength(50)
@@ -1354,8 +1332,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("price");
 
-                    b.Property<long>("ProductId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
                         .HasColumnName("product_id");
 
                     b.Property<decimal?>("SalePrice")
@@ -1430,12 +1408,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.Review", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Comment")
                         .HasColumnType("text")
@@ -1451,12 +1427,12 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_visible");
 
-                    b.Property<long?>("OrderItemId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid?>("OrderItemId")
+                        .HasColumnType("uuid")
                         .HasColumnName("order_item_id");
 
-                    b.Property<long>("ProductId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
                         .HasColumnName("product_id");
 
                     b.Property<int>("Rating")
@@ -1469,8 +1445,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
@@ -1491,12 +1467,14 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.Role", b =>
                 {
-                    b.Property<short>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("smallint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<short>("Id"));
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1514,12 +1492,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.Shipment", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Carrier")
                         .HasMaxLength(100)
@@ -1536,8 +1512,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("delivered_at");
 
-                    b.Property<long>("OrderId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
                         .HasColumnName("order_id");
 
                     b.Property<DateTime?>("ShippedAt")
@@ -1570,12 +1546,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.StyleScenario", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -1622,12 +1596,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.User", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("AvatarUrl")
                         .HasColumnType("text")
@@ -1706,12 +1678,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.UserAccount", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -1747,8 +1717,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
@@ -1763,12 +1733,10 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.UserAddress", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("AddressLine")
                         .IsRequired()
@@ -1809,8 +1777,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("recipient_phone");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.Property<string>("Ward")
@@ -1827,29 +1795,35 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.UserRole", b =>
                 {
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("user_id");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
-                    b.Property<short>("RoleId")
-                        .HasColumnType("smallint")
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid")
                         .HasColumnName("role_id");
 
-                    b.HasKey("UserId", "RoleId");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("RoleId");
+
+                    b.HasIndex("UserId", "RoleId")
+                        .IsUnique();
 
                     b.ToTable("user_roles", (string)null);
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.UserSession", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
+                        .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -1878,8 +1852,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("user_agent");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");

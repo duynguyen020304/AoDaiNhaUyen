@@ -19,6 +19,7 @@ public sealed class SeedDataService(
     await dbContext.Database.MigrateAsync();
 
     await SeedRolesAsync();
+    await SeedAdminAsync();
     await SeedCustomersAsync();
     await SeedCategoriesAsync();
     await SeedProductsAsync();
@@ -37,6 +38,59 @@ public sealed class SeedDataService(
       {
         dbContext.Roles.Add(new Role { Name = roleName });
       }
+    }
+
+    await dbContext.SaveChangesAsync();
+  }
+
+  private async Task SeedAdminAsync()
+  {
+    var adminEmail = Environment.GetEnvironmentVariable("AdminSeed__Email")?.Trim();
+    var adminPassword = Environment.GetEnvironmentVariable("AdminSeed__Password")?.Trim();
+
+    if (string.IsNullOrEmpty(adminEmail) || string.IsNullOrEmpty(adminPassword))
+      return;
+
+    var adminRole = await dbContext.Roles.FirstAsync(x => x.Name == "admin");
+    var normalizedEmail = adminEmail.Trim().ToLowerInvariant();
+
+    var user = await dbContext.Users
+      .Include(x => x.UserRoles)
+      .FirstOrDefaultAsync(x => x.Email == normalizedEmail);
+
+    if (user is null)
+    {
+      user = new User
+      {
+        FullName = "Admin",
+        Email = normalizedEmail,
+        Phone = "",
+        Gender = "other",
+        Status = "active",
+        EmailVerifiedAt = DateTime.UtcNow
+      };
+      dbContext.Users.Add(user);
+    }
+
+    if (!user.UserRoles.Any(x => x.RoleId == adminRole.Id))
+    {
+      user.UserRoles.Add(new UserRole { User = user, RoleId = adminRole.Id });
+    }
+
+    var credentialsAccount = await dbContext.UserAccounts.FirstOrDefaultAsync(
+      x => x.Provider == "credentials" && x.ProviderAccountId == normalizedEmail,
+      CancellationToken.None);
+
+    if (credentialsAccount is null)
+    {
+      dbContext.UserAccounts.Add(new UserAccount
+      {
+        User = user,
+        Provider = "credentials",
+        ProviderAccountId = normalizedEmail,
+        PasswordHash = passwordHasher.HashPassword(adminPassword),
+        IsVerified = true
+      });
     }
 
     await dbContext.SaveChangesAsync();
@@ -376,7 +430,7 @@ public sealed class SeedDataService(
       var assetKind = product.ProductType == "ao_dai" ? "tryon_garment" : "tryon_accessory";
       var curatedAssetKind = product.ProductType == "ao_dai" ? "tryon_garment_curated" : "tryon_accessory_curated";
       var defaultVariantId = product.ProductType == "ao_dai"
-        ? product.Variants.OrderByDescending(variant => variant.IsDefault).ThenBy(variant => variant.Id).Select(variant => (long?)variant.Id).FirstOrDefault()
+        ? product.Variants.OrderByDescending(variant => variant.IsDefault).ThenBy(variant => (Guid?)variant.Id).Select(variant => (Guid?)variant.Id).FirstOrDefault()
         : null;
       var mimeType = ResolveMimeType(primaryImageUrl);
 
@@ -397,7 +451,7 @@ public sealed class SeedDataService(
     string assetKind,
     string fileUrl,
     string mimeType,
-    long? defaultVariantId)
+    Guid? defaultVariantId)
   {
     var existingAsset = product.AiAssets.FirstOrDefault(asset =>
       asset.AssetKind == assetKind &&
