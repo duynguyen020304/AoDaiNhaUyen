@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { Package, Users, Shield, FolderTree, LogOut, Menu } from 'lucide-react'
+import { Package, Users, Shield, FolderTree, LogOut, Menu, Image } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetHeader, SheetTrigger } from '@/components/ui/sheet'
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: '/admin/categories', icon: FolderTree, label: 'Danh mục', end: false },
   { to: '/admin/users', icon: Users, label: 'Người dùng', end: false },
   { to: '/admin/roles', icon: Shield, label: 'Vai trò', end: false },
+  { to: '/admin/media', icon: Image, label: 'Hình ảnh', end: false },
 ] as const
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {

@@ -11,6 +11,7 @@ import { ProductFormPage } from '@/pages/ProductFormPage'
 import { CategoriesPage } from '@/pages/CategoriesPage'
 import { UsersPage } from '@/pages/UsersPage'
 import { RolesPage } from '@/pages/RolesPage'
+import { MediaPage } from '@/pages/MediaPage'
 
 export function App() {
   const status = useAuthStore((s) => s.status)
@@ -46,6 +47,7 @@ export function App() {
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="roles" element={<RolesPage />} />
+            <Route path="media" element={<MediaPage />} />
           </Route>
         </Route>
 
