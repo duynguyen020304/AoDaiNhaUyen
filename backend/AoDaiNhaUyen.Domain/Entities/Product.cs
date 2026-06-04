@@ -1,6 +1,8 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class Product
+public sealed class Product : BaseEntity
 {
   public Guid Id { get; set; }
   public Guid CategoryId { get; set; }

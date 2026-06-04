@@ -1,6 +1,8 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class CartItem
+public sealed class CartItem : BaseEntity
 {
   public Guid Id { get; set; }
   public Guid CartId { get; set; }

@@ -1,6 +1,8 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class Order
+public sealed class Order : BaseEntity
 {
   public Guid Id { get; set; }
   public required string OrderCode { get; set; }

@@ -1,6 +1,8 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class ChatMessage
+public sealed class ChatMessage : BaseEntity
 {
   public Guid Id { get; set; }
   public Guid ThreadId { get; set; }

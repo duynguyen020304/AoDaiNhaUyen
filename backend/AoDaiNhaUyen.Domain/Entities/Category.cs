@@ -1,6 +1,8 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class Category
+public sealed class Category : BaseEntity
 {
   public Guid Id { get; set; }
   public Guid? Parent { get; set; }

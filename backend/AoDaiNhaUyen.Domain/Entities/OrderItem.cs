@@ -1,6 +1,8 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class OrderItem
+public sealed class OrderItem : BaseEntity
 {
   public Guid Id { get; set; }
   public Guid OrderId { get; set; }

@@ -1,6 +1,8 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class Payment
+public sealed class Payment : BaseEntity
 {
   public Guid Id { get; set; }
   public Guid OrderId { get; set; }

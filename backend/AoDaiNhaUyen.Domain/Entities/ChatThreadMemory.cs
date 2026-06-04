@@ -1,6 +1,8 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class ChatThreadMemory
+public sealed class ChatThreadMemory : BaseEntity
 {
   public Guid Id { get; set; }
   public Guid ThreadId { get; set; }

@@ -1,6 +1,8 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class ImageValidationCacheEntry
+public sealed class ImageValidationCacheEntry : BaseEntity
 {
   public Guid Id { get; set; }
   public string Sha256Hash { get; set; } = string.Empty;

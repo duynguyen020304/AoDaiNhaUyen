@@ -1,6 +1,8 @@
+using AoDaiNhaUyen.Domain.Common;
+
 namespace AoDaiNhaUyen.Domain.Entities;
 
-public sealed class ChatAttachment
+public sealed class ChatAttachment : BaseEntity
 {
   public Guid Id { get; set; }
   public Guid ThreadId { get; set; }
