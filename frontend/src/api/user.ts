@@ -25,7 +25,7 @@ export function createAddress(payload: CreateAddressPayload): Promise<UserAddres
   });
 }
 
-export function deleteAddress(id: number): Promise<void> {
+export function deleteAddress(id: string): Promise<void> {
   return request<void>(`/api/users/me/addresses/${id}`, { method: 'DELETE' });
 }
 

@@ -2,7 +2,7 @@ export type Badge = 'HOT' | 'MỚI' | 'BÁN CHẠY';
 
 export interface Product {
   id: string;
-  variantId: number | null;
+  variantId: string | null;
   name: string;
   image: string;
   badge?: Badge;

@@ -24,27 +24,27 @@ const navLinks: NavLinkConfig[] = [
 
 const NAV_FALLBACK_CATEGORIES: HeaderCategory[] = [
   {
-    id: 1,
+    id: '1',
     name: 'Áo dài',
     slug: 'ao-dai',
     sortOrder: 1,
     children: [
-      { id: 3, name: 'Áo dài truyền thống', slug: 'ao-dai-truyen-thong', sortOrder: 1 },
-      { id: 4, name: 'Áo dài cách tân', slug: 'ao-dai-cach-tan', sortOrder: 2 },
-      { id: 5, name: 'Áo dài lụa trơn', slug: 'ao-dai-lua-tron', sortOrder: 3 },
-      { id: 6, name: 'Áo dài thêu hoa', slug: 'ao-dai-theu-hoa', sortOrder: 4 },
+      { id: '3', name: 'Áo dài truyền thống', slug: 'ao-dai-truyen-thong', sortOrder: 1 },
+      { id: '4', name: 'Áo dài cách tân', slug: 'ao-dai-cach-tan', sortOrder: 2 },
+      { id: '5', name: 'Áo dài lụa trơn', slug: 'ao-dai-lua-tron', sortOrder: 3 },
+      { id: '6', name: 'Áo dài thêu hoa', slug: 'ao-dai-theu-hoa', sortOrder: 4 },
     ],
   },
   {
-    id: 2,
+    id: '2',
     name: 'Phụ kiện',
     slug: 'phu-kien',
     sortOrder: 2,
     children: [
-      { id: 7, name: 'Trâm cài', slug: 'tram-cai', sortOrder: 1 },
-      { id: 8, name: 'Túi sách', slug: 'tui-sach', sortOrder: 2 },
-      { id: 9, name: 'Quạt', slug: 'quat', sortOrder: 3 },
-      { id: 10, name: 'Giày', slug: 'giay', sortOrder: 4 },
+      { id: '7', name: 'Trâm cài', slug: 'tram-cai', sortOrder: 1 },
+      { id: '8', name: 'Túi sách', slug: 'tui-sach', sortOrder: 2 },
+      { id: '9', name: 'Quạt', slug: 'quat', sortOrder: 3 },
+      { id: '10', name: 'Giày', slug: 'giay', sortOrder: 4 },
     ],
   },
 ];

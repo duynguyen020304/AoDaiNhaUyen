@@ -7,8 +7,8 @@ interface CartSummaryProps {
   shippingFee: number;
   totalItemCount: number;
   addresses: UserAddress[];
-  selectedAddressId: number | null;
-  onSelectAddress: (addressId: number) => void;
+  selectedAddressId: string | null;
+  onSelectAddress: (addressId: string) => void;
   onCheckout: () => void;
   checkingOut: boolean;
   disabled: boolean;
@@ -74,7 +74,7 @@ export default function CartSummary({
             id="cart-address-select"
             className={styles.promoInput}
             value={selectedAddressId ?? ''}
-            onChange={(event) => onSelectAddress(Number(event.target.value))}
+            onChange={(event) => onSelectAddress(event.target.value)}
           >
             <option value="" disabled>Chọn địa chỉ</option>
             {addresses.map((address) => (

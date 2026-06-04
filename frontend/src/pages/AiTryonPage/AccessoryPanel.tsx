@@ -11,7 +11,7 @@ interface AccessoryPanelProps {
   accessoryPage: AiTryOnCatalogPage;
   categories: AiTryOnCatalogCategory[];
   selectedCategory: string;
-  selectedAccessories: number[];
+  selectedAccessories: string[];
   onCategoryChange: (key: string) => void;
   onPageChange: (page: number) => void;
   onToggleAccessory: (item: AiTryOnCatalogItem) => void;

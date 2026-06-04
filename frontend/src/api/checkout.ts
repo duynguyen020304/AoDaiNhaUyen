@@ -1,7 +1,7 @@
 import { request } from './client';
 
 export interface CheckoutPayload {
-  addressId?: number;
+  addressId?: string;
   address?: {
     recipientName: string;
     recipientPhone: string;
@@ -15,7 +15,7 @@ export interface CheckoutPayload {
 }
 
 export interface CheckoutResult {
-  orderId: number;
+  orderId: string;
   orderCode: string;
   orderStatus: string;
   paymentStatus: string;

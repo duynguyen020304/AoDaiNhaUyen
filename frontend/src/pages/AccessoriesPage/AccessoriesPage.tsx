@@ -47,7 +47,7 @@ function mapProduct(product: ProductListItem, index: number): Product {
     name: product.name,
     image: resolveAssetUrl(product.primaryImageUrl) ?? '/assets/products/product-truyen-thong-1.png',
     badge: getBadge(product, index),
-    reviews: 28 + ((product.id * 5) % 31),
+    reviews: 28 + ((Number(product.id) * 5) % 31),
     price: formatPrice(product.salePrice ?? product.price),
     originalPrice: product.salePrice ? formatPrice(product.price) : undefined,
   };

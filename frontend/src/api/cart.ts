@@ -16,7 +16,7 @@ export async function addCartItem(payload: AddCartItemPayload): Promise<Cart> {
   return cart;
 }
 
-export async function updateCartItem(itemId: number, payload: UpdateCartItemPayload): Promise<Cart> {
+export async function updateCartItem(itemId: string, payload: UpdateCartItemPayload): Promise<Cart> {
   const cart = await request<Cart>(`/api/users/me/cart/items/${itemId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
@@ -25,7 +25,7 @@ export async function updateCartItem(itemId: number, payload: UpdateCartItemPayl
   return cart;
 }
 
-export async function removeCartItem(itemId: number): Promise<Cart> {
+export async function removeCartItem(itemId: string): Promise<Cart> {
   const cart = await request<Cart>(`/api/users/me/cart/items/${itemId}`, {
     method: 'DELETE',
   });

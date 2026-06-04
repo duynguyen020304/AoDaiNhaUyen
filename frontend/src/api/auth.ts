@@ -15,7 +15,7 @@ export interface RegisterPayload {
 }
 
 export interface ResetPasswordPayload {
-  userId: number;
+  userId: string;
   token: string;
   newPassword: string;
 }

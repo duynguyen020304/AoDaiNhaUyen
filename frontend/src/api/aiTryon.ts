@@ -1,8 +1,8 @@
 import { request } from './client';
 
 export interface AiTryOnCatalogItem {
-  productId: number;
-  defaultVariantId: number | null;
+  productId: string;
+  defaultVariantId: string | null;
   name: string;
   productType: string;
   categorySlug: string;
@@ -38,9 +38,9 @@ export interface AiTryOnResponse {
 
 interface SubmitAiTryOnParams {
   personImage: File;
-  garmentProductId: number;
-  garmentVariantId?: number | null;
-  accessoryProductIds?: number[];
+  garmentProductId: string;
+  garmentVariantId?: string | null;
+  accessoryProductIds?: string[];
 }
 
 interface GetAiTryOnCatalogParams {
@@ -77,14 +77,14 @@ export function submitAiTryOn({
 }: SubmitAiTryOnParams): Promise<AiTryOnResponse> {
   const formData = new FormData();
   formData.append('personImage', personImage);
-  formData.append('garmentProductId', String(garmentProductId));
+  formData.append('garmentProductId', garmentProductId);
 
-  if (typeof garmentVariantId === 'number') {
-    formData.append('garmentVariantId', String(garmentVariantId));
+  if (typeof garmentVariantId === 'string') {
+    formData.append('garmentVariantId', garmentVariantId);
   }
 
   accessoryProductIds.forEach((productId) => {
-    formData.append('accessoryProductIds', String(productId));
+    formData.append('accessoryProductIds', productId);
   });
 
   return request<AiTryOnResponse>('/api/v1/ai-tryon', {

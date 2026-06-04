@@ -1,14 +1,14 @@
 import type { PaginatedApiEnvelope } from './api';
 
 export interface HeaderCategoryChild {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   sortOrder: number;
 }
 
 export interface HeaderCategory {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   sortOrder: number;
@@ -16,7 +16,7 @@ export interface HeaderCategory {
 }
 
 export interface ProductListItem {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   productType: string;
@@ -28,7 +28,7 @@ export interface ProductListItem {
   isFeatured: boolean;
   stockQty: number;
   primaryImageUrl: string | null;
-  primaryVariantId: number | null;
+  primaryVariantId: string | null;
   primaryVariantSku: string | null;
 }
 

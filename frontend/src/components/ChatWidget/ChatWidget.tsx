@@ -31,8 +31,8 @@ export default function ChatWidget() {
   const [submitting, setSubmitting] = useState(false);
   const [queuePosition, setQueuePosition] = useState<number | null>(null);
   const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
-  const [pendingTryOnByThread, setPendingTryOnByThread] = useState<Record<number, ChatMessage>>({});
-  const [usedTryOnMessageByThread, setUsedTryOnMessageByThread] = useState<Record<number, number>>({});
+  const [pendingTryOnByThread, setPendingTryOnByThread] = useState<Record<string, ChatMessage>>({});
+  const [usedTryOnMessageByThread, setUsedTryOnMessageByThread] = useState<Record<string, string>>({});
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -125,17 +125,17 @@ export default function ChatWidget() {
 
   const isTryOnPending = activeThread ? Boolean(pendingTryOnByThread[activeThread.id]) : false;
 
-  const updateThreadSummaryEntry = (threadId: number, preview: string | null, updatedAt: string) => {
+  const updateThreadSummaryEntry = (threadId: string, preview: string | null, updatedAt: string) => {
     setThreads((current) => current.map((thread) => thread.id === threadId
       ? { ...thread, preview, updatedAt }
       : thread));
   };
 
-  const addPendingTryOnMessage = (threadId: number, message: ChatMessage) => {
+  const addPendingTryOnMessage = (threadId: string, message: ChatMessage) => {
     setPendingTryOnByThread((current) => ({ ...current, [threadId]: message }));
   };
 
-  const clearPendingTryOnMessage = (threadId: number) => {
+  const clearPendingTryOnMessage = (threadId: string) => {
     setPendingTryOnByThread((current) => {
       const next = { ...current };
       delete next[threadId];
@@ -185,7 +185,7 @@ export default function ChatWidget() {
     }
   };
 
-  const handleSelectThread = async (threadId: number) => {
+  const handleSelectThread = async (threadId: string) => {
     streamAbortControllerRef.current?.abort();
     setStreamingMessage(null);
     setQueuePosition(null);
@@ -208,13 +208,13 @@ export default function ChatWidget() {
     setSubmitting(true);
 
     const userMessage: ChatMessage = {
-      id: -Date.now(),
+      id: String(-Date.now()),
       role: 'user',
       content: capturedMessage,
       intent: null,
       createdAt: new Date().toISOString(),
       attachments: capturedFiles.map((f, i) => ({
-        id: -(i + 1),
+        id: String(-(i + 1)),
         kind: 'user_image',
         fileUrl: URL.createObjectURL(f),
         mimeType: f.type,
@@ -318,7 +318,7 @@ export default function ChatWidget() {
 
     const threadId = activeThread.id;
     const sourceMessageId = latestTryOnPayload.id;
-    const placeholderId = -Date.now();
+    const placeholderId = String(-Date.now());
     const placeholderMessage: ChatMessage = {
       id: placeholderId,
       role: 'assistant',

@@ -52,9 +52,9 @@ export default function AiTryonPage() {
   const [userPhotoFile, setUserPhotoFile] = useState<File | null>(null);
   const [userFileName, setUserFileName] = useState<string | null>(null);
   const [userPhotoSource, setUserPhotoSource] = useState<UserPhotoSource>('file');
-  const [selectedAccessories, setSelectedAccessories] = useState<number[]>([]);
-  const [selectedAccessoryItems, setSelectedAccessoryItems] = useState<Record<number, AiTryOnCatalogItem>>({});
-  const [selectedGarment, setSelectedGarment] = useState<number | null>(null);
+  const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
+  const [selectedAccessoryItems, setSelectedAccessoryItems] = useState<Record<string, AiTryOnCatalogItem>>({});
+  const [selectedGarment, setSelectedGarment] = useState<string | null>(null);
   const [selectedGarmentItem, setSelectedGarmentItem] = useState<AiTryOnCatalogItem | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedAccessoryCategory, setSelectedAccessoryCategory] = useState('all');
@@ -247,7 +247,7 @@ export default function AiTryonPage() {
     ].filter((item): item is AiTryOnCatalogItem => Boolean(item));
 
     const purchasableItems = selectedItems.filter(
-      (item) => typeof item.defaultVariantId === 'number',
+      (item) => typeof item.defaultVariantId === 'string' && item.defaultVariantId.length > 0,
     );
 
     if (purchasableItems.length === 0) {
@@ -260,7 +260,7 @@ export default function AiTryonPage() {
 
     try {
       for (const item of purchasableItems) {
-        await addCartItem({ variantId: item.defaultVariantId as number, quantity: 1 });
+        await addCartItem({ variantId: item.defaultVariantId!, quantity: 1 });
       }
 
       navigate('/cart');

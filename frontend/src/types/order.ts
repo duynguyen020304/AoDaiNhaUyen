@@ -1,7 +1,7 @@
 import type { PaginatedApiEnvelope } from './api';
 
 export interface OrderItem {
-  id: number;
+  id: string;
   productName: string;
   sku: string | null;
   size: string | null;
@@ -13,7 +13,7 @@ export interface OrderItem {
 }
 
 export interface UserOrder {
-  id: number;
+  id: string;
   orderCode: string;
   recipientName: string;
   recipientPhone: string;

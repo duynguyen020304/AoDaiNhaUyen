@@ -21,12 +21,12 @@ export default function CartPage() {
   const { showToast } = useToast();
   const [cart, setCart] = useState<Cart | null>(null);
   const [addresses, setAddresses] = useState<UserAddress[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
-  const [updatingItemId, setUpdatingItemId] = useState<number | null>(null);
+  const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'anonymous') {
@@ -57,7 +57,7 @@ export default function CartPage() {
   const isLoadingCart = status === 'loading' || (status === 'authenticated' && loading);
   const shippingFee = useMemo(() => (cart && cart.items.length > 0 ? 25000 : 0), [cart]);
 
-  async function handleUpdateQuantity(itemId: number, quantity: number) {
+  async function handleUpdateQuantity(itemId: string, quantity: number) {
     try {
       setUpdatingItemId(itemId);
       const nextCart = await updateCartItem(itemId, { quantity });
@@ -75,7 +75,7 @@ export default function CartPage() {
     }
   }
 
-  async function handleRemoveItem(itemId: number) {
+  async function handleRemoveItem(itemId: string) {
     try {
       setUpdatingItemId(itemId);
       const nextCart = await removeCartItem(itemId);

@@ -44,7 +44,7 @@ export default function AddressList() {
     }
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: string) {
     try {
       await deleteAddress(id);
       setAddresses((prev) => prev.filter((a) => a.id !== id));

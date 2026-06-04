@@ -10,7 +10,7 @@ export default function ResetPasswordPage() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const rawUserId = params.get('id');
   const token = params.get('token');
-  const userId = rawUserId ? Number(rawUserId) : Number.NaN;
+  const userId = rawUserId ?? '';
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,7 +24,7 @@ export default function ResetPasswordPage() {
     }
   }, [rawUserId, token]);
 
-  const invalidLink = !token || !Number.isFinite(userId) || userId <= 0;
+  const invalidLink = !token || !userId;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

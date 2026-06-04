@@ -1,7 +1,7 @@
 import { request, API_BASE_URL } from './client';
 
 export interface ChatAttachment {
-  id: number;
+  id: string;
   kind: string;
   fileUrl: string;
   mimeType: string;
@@ -10,14 +10,14 @@ export interface ChatAttachment {
 }
 
 export interface ChatRecommendationItem {
-  productId: number;
+  productId: string;
   name: string;
   categorySlug: string;
   productType: string;
   price: number;
   salePrice: number | null;
   primaryImageUrl: string | null;
-  primaryVariantId: number | null;
+  primaryVariantId: string | null;
   rationale: string;
 }
 
@@ -26,8 +26,8 @@ export interface ChatStructuredPayload {
   scenario: string | null;
   canTryOn: boolean;
   requiresPersonImage: boolean;
-  selectedGarmentProductId: number | null;
-  selectedAccessoryProductIds: number[];
+  selectedGarmentProductId: string | null;
+  selectedAccessoryProductIds: string[];
   pendingTryOnRequirements: string[];
   products: ChatRecommendationItem[];
   garmentProducts?: ChatRecommendationItem[] | null;
@@ -35,7 +35,7 @@ export interface ChatStructuredPayload {
 }
 
 export interface ChatMessage {
-  id: number;
+  id: string;
   role: string;
   content: string;
   intent: string | null;
@@ -45,7 +45,7 @@ export interface ChatMessage {
 }
 
 export interface ChatThreadSummary {
-  id: number;
+  id: string;
   title: string;
   preview: string | null;
   status: string;
@@ -53,7 +53,7 @@ export interface ChatThreadSummary {
 }
 
 export interface ChatThreadDetail {
-  id: number;
+  id: string;
   title: string;
   status: string;
   source: string;
@@ -70,12 +70,12 @@ export function createChatThread(): Promise<ChatThreadDetail> {
   return request<ChatThreadDetail>('/api/v1/chat/threads', { method: 'POST' });
 }
 
-export function getChatThread(threadId: number): Promise<ChatThreadDetail> {
+export function getChatThread(threadId: string): Promise<ChatThreadDetail> {
   return request<ChatThreadDetail>(`/api/v1/chat/threads/${threadId}`);
 }
 
 export async function sendChatMessage(
-  threadId: number,
+  threadId: string,
   message: string,
   attachments: File[] = [],
 ): Promise<ChatThreadDetail> {
@@ -90,9 +90,9 @@ export async function sendChatMessage(
 }
 
 export function executeChatTryOn(
-  threadId: number,
-  garmentProductId?: number | null,
-  accessoryProductIds: number[] = [],
+  threadId: string,
+  garmentProductId?: string | null,
+  accessoryProductIds: string[] = [],
 ): Promise<ChatMessage> {
   return request<ChatMessage>(`/api/v1/chat/threads/${threadId}/try-on`, {
     method: 'POST',
@@ -104,7 +104,7 @@ export function executeChatTryOn(
 }
 
 export interface SseCreatedEvent {
-  messageId: number;
+  messageId: string;
   role: string;
   content: string;
   intent: string | null;
@@ -123,7 +123,7 @@ export interface SseTextDeltaEvent {
 
 export interface SseTextDoneEvent {
   fullText: string;
-  messageId: number;
+  messageId: string;
   createdAt: string;
 }
 
@@ -141,7 +141,7 @@ export type SseChatEvent =
   | { type: 'done'; data: undefined };
 
 export async function* streamChatMessage(
-  threadId: number,
+  threadId: string,
   message: string,
   attachments: File[] = [],
   signal?: AbortSignal,

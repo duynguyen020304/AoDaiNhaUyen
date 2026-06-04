@@ -8,7 +8,7 @@ import styles from './ClothingPanel.module.css';
 
 interface ClothingPanelProps {
   selectedCategory: string;
-  selectedGarment: number | null;
+  selectedGarment: string | null;
   garments: AiTryOnCatalogItem[];
   garmentPage: AiTryOnCatalogPage;
   categories: AiTryOnCatalogCategory[];
