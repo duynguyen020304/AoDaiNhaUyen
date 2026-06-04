@@ -6,9 +6,10 @@ import AccountInfo from './AccountInfo';
 import AccountEditForm from './AccountEditForm';
 import OrderList from './OrderList';
 import AddressList from './AddressList';
+import ImageHistory from './ImageHistory';
 import styles from './AccountPage.module.css';
 
-export type AccountView = 'profile' | 'profile/edit' | 'orders' | 'addresses';
+export type AccountView = 'profile' | 'profile/edit' | 'orders' | 'addresses' | 'images';
 
 interface AccountPageProps {
   activeView: AccountView;
@@ -60,6 +61,7 @@ export default function AccountPage({
     'profile/edit': <AccountEditForm onSaved={() => onViewChange('profile')} />,
     orders: <OrderList />,
     addresses: <AddressList />,
+    images: <ImageHistory />,
   }[activeView];
 
   return (

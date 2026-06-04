@@ -47,6 +47,10 @@ function resolveAccountView(pathname: string): AccountView {
     return 'addresses';
   }
 
+  if (pathname.endsWith('/images')) {
+    return 'images';
+  }
+
   return 'profile';
 }
 

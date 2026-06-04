@@ -15,6 +15,7 @@ const NAV_ITEMS: { view: AccountView; label: string }[] = [
   { view: 'profile', label: 'Thông tin tài khoản' },
   { view: 'orders', label: 'Quản lý đơn hàng' },
   { view: 'addresses', label: 'Danh sách địa chỉ' },
+  { view: 'images', label: 'Hình ảnh của tôi' },
 ];
 
 export default function AccountSidebar({
