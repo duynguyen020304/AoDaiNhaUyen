@@ -772,6 +772,7 @@ jobs:
           # 2. Ensure Deployment Directories Exist
           # ==========================================
           mkdir -p /root/AoDaiNhaUyen/frontend
+          mkdir -p /root/AoDaiNhaUyen/frontend-admin
           mkdir -p /root/AoDaiNhaUyen/backend
 
           # ==========================================
@@ -844,6 +845,18 @@ jobs:
           fi
           mv /tmp/aodai-frontend-deploy dist
           rm -rf /tmp/aodai-frontend-deploy
+
+          # ==========================================
+          # 6b. Deploy Admin Frontend
+          # ==========================================
+          echo "[${SERVER_NAME}] Deploying Admin Frontend..."
+          mkdir -p /root/AoDaiNhaUyen/frontend-admin
+          cd /root/AoDaiNhaUyen/frontend-admin
+          if [ -d "dist" ]; then
+            mv dist dist.backup.$(date +%Y%m%d_%H%M%S) || true
+          fi
+          mv /tmp/aodai-admin-deploy dist
+          rm -rf /tmp/aodai-admin-deploy
 
           # ==========================================
           # 7. Deploy Backend
