@@ -124,6 +124,28 @@ public sealed class S3StorageService : IStorageService
   }
 
 
+
+  public async Task PutObjectWithKeyAsync(
+    string objectKey,
+    Stream stream,
+    string contentType,
+    CancellationToken ct = default)
+  {
+    EnsureConfigured();
+    var normalizedKey = NormalizeObjectKey(objectKey);
+
+    var request = new PutObjectRequest
+    {
+      BucketName = _settings.BucketName,
+      Key = normalizedKey,
+      InputStream = stream,
+      ContentType = contentType
+    };
+
+    await _amazonS3.PutObjectAsync(request, ct);
+
+    _logger.LogInformation("Uploaded to S3 key {ObjectKey}", normalizedKey);
+  }
   public async Task<bool> ExistsAsync(string objectKey, CancellationToken ct = default)
   {
     EnsureConfigured();

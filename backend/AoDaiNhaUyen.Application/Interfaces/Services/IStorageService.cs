@@ -39,6 +39,16 @@ public interface IStorageService
     string objectKey,
     CancellationToken ct = default);
   /// <summary>
+  /// Upload file to S3 at a specific object key (no GUID prefix).
+  /// Used for deterministic seed keys.
+  /// </summary>
+  Task PutObjectWithKeyAsync(
+    string objectKey,
+    Stream stream,
+    string contentType,
+    CancellationToken ct = default);
+
+  /// <summary>
   /// Check whether an object exists in S3.
   /// </summary>
   Task<bool> ExistsAsync(

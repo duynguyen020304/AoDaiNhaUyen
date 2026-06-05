@@ -68,7 +68,7 @@ public sealed class SeedDataService(
         }
 
         using var stream = File.OpenRead(localPath);
-        await storageService.UploadAsync(stream, fileName, "image/webp", "private/products");
+        await storageService.PutObjectWithKeyAsync(objectKey, stream, "image/webp", ct: CancellationToken.None);
       }
     }
   }
