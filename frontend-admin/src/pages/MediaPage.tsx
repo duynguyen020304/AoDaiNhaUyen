@@ -199,7 +199,7 @@ export function MediaPage() {
                     {image.originalFileName ?? image.objectKey}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={image.sourceType === 'ai_tryon' ? 'default' : 'secondary'}>
+                    <Badge variant={image.sourceType === 'ai_tryon' ? 'default' : 'outline'}>
                       {image.sourceType === 'ai_tryon' ? 'AI Try-On' : 'Chat'}
                     </Badge>
                   </TableCell>
