@@ -12,6 +12,9 @@ namespace AoDaiNhaUyen.Api.Services;
 public sealed class S3StorageService : IStorageService
 {
   private const string ObjectKeyRootPrefix = "aodainhauyen";
+  private const string PrivatePrefix = "aodainhauyen/private";
+  private const string PublicPrefix = "aodainhauyen/public";
+  private const string PublicProductsPrefix = "aodainhauyen/public/products";
   private const long MultipartUploadThresholdBytes = 50L * 1024 * 1024;
   private const long MultipartPartSizeBytes = 10L * 1024 * 1024;
 
@@ -155,6 +158,34 @@ public sealed class S3StorageService : IStorageService
     }
 
     return $"https://{_settings.BucketName}.s3.{_settings.Region}.amazonaws.com/{encodedKey}";
+  }
+
+  public async Task<string> CopyToPublicAsync(string objectKey, CancellationToken ct = default)
+  {
+    EnsureConfigured();
+    var normalizedKey = NormalizeObjectKey(objectKey);
+
+    var fileName = normalizedKey[(normalizedKey.IndexOf("private/", StringComparison.Ordinal) + "private/".Length)..];
+    var publicKey = $"{PublicProductsPrefix}/{fileName}";
+
+    var copyRequest = new CopyObjectRequest
+    {
+      SourceBucket = _settings.BucketName,
+      SourceKey = normalizedKey,
+      DestinationBucket = _settings.BucketName,
+      DestinationKey = publicKey
+    };
+    await _amazonS3.CopyObjectAsync(copyRequest, ct);
+
+    _logger.LogInformation("Copied {SourceKey} to public key {PublicKey}", normalizedKey, publicKey);
+
+    return BuildCanonicalUrl(publicKey);
+  }
+
+  public bool IsConfigured()
+  {
+    return !string.IsNullOrWhiteSpace(_settings.BucketName)
+      && (!string.IsNullOrWhiteSpace(_settings.Region) || !string.IsNullOrWhiteSpace(_settings.ServiceUrl));
   }
 
   private async Task<UploadedFileResult> UploadMultipartAsync(

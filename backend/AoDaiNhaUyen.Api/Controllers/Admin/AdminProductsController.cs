@@ -1,4 +1,5 @@
 using AoDaiNhaUyen.Api.Responses;
+using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +11,9 @@ namespace AoDaiNhaUyen.Api.Controllers.Admin;
 [ApiController]
 [Route("api/admin/products")]
 [Authorize(Policy = "RequireAdminRole")]
-public sealed class AdminProductsController(IAdminProductService adminProductService) : ControllerBase
+public sealed class AdminProductsController(
+  IAdminProductService adminProductService,
+  IImageVisibilityService imageVisibilityService) : ControllerBase
 {
     /// <summary>Get a paginated list of all products for admin.</summary>
     [HttpGet]
@@ -139,5 +142,27 @@ public sealed class AdminProductsController(IAdminProductService adminProductSer
         }
 
         return Ok(ApiResponseFactory.Success<object?>(null, "Khôi phục sản phẩm thành công."));
+    }
+
+    /// <summary>Promote a product image to public (accessible via direct URL).</summary>
+    [HttpPost("{productId:guid}/images/{imageId:guid}/make-public")]
+    public async Task<ActionResult<ApiResponse<ProductImageVisibilityDto>>> MakeImagePublic(
+        Guid productId,
+        Guid imageId,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await imageVisibilityService.MakePublicAsync(imageId, productId, cancellationToken);
+        return Ok(ApiResponseFactory.Success(result, "Chuyển ảnh sang công khai thành công."));
+    }
+
+    /// <summary>Demote a product image to private (accessible via presigned URL only).</summary>
+    [HttpPost("{productId:guid}/images/{imageId:guid}/make-private")]
+    public async Task<ActionResult<ApiResponse<ProductImageVisibilityDto>>> MakeImagePrivate(
+        Guid productId,
+        Guid imageId,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await imageVisibilityService.MakePrivateAsync(imageId, productId, cancellationToken);
+        return Ok(ApiResponseFactory.Success(result, "Chuyển ảnh sang riêng tư thành công."));
     }
 }

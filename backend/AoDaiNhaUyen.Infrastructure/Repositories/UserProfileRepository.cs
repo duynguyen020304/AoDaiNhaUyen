@@ -1,13 +1,14 @@
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.User;
 using AoDaiNhaUyen.Application.Interfaces.Repositories;
+using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace AoDaiNhaUyen.Infrastructure.Repositories;
 
-public sealed class UserProfileRepository(AppDbContext dbContext) : IUserProfileRepository
+public sealed class UserProfileRepository(AppDbContext dbContext, IImageVisibilityService imageVisibilityService) : IUserProfileRepository
 {
     public async Task<UserProfileDto?> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default)
     {
@@ -74,8 +75,36 @@ public sealed class UserProfileRepository(AppDbContext dbContext) : IUserProfile
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        var orders = orderEntities
-            .Select(o => new UserOrderDto(
+        var orders = new List<UserOrderDto>();
+        foreach (var o in orderEntities)
+        {
+            var items = new List<OrderItemDto>();
+            foreach (var oi in o.Items)
+            {
+                var rawImageUrl = ResolveOrderItemImage(oi);
+                var imageUrl = rawImageUrl is not null && !rawImageUrl.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase)
+                    ? await imageVisibilityService.ResolveUrlAsync(rawImageUrl, false, null, cancellationToken)
+                    : rawImageUrl;
+
+                items.Add(new OrderItemDto(
+                    oi.Id,
+                    oi.ProductId,
+                    oi.VariantId,
+                    oi.ProductName,
+                    oi.Sku,
+                    oi.Size,
+                    oi.Color,
+                    oi.UnitPrice,
+                    oi.Quantity,
+                    oi.LineTotal,
+                    imageUrl,
+                    oi.IsCustomTailoring,
+                    oi.MeasurementProfileId,
+                    oi.CustomMeasurementsJson,
+                    oi.Note));
+            }
+
+            orders.Add(new UserOrderDto(
                 o.Id,
                 o.OrderCode,
                 o.RecipientName,
@@ -97,28 +126,13 @@ public sealed class UserProfileRepository(AppDbContext dbContext) : IUserProfile
                 o.CancelledAt,
                 o.CreatedAt,
                 o.UpdatedAt,
-                o.Items.Select(oi => new OrderItemDto(
-                    oi.Id,
-                    oi.ProductId,
-                    oi.VariantId,
-                    oi.ProductName,
-                    oi.Sku,
-                    oi.Size,
-                    oi.Color,
-                    oi.UnitPrice,
-                    oi.Quantity,
-                    oi.LineTotal,
-                    ResolveOrderItemImageUrl(oi),
-                    oi.IsCustomTailoring,
-                    oi.MeasurementProfileId,
-                    oi.CustomMeasurementsJson,
-                    oi.Note)).ToList()))
-            .ToList();
+                items));
+        }
 
         return new PagedResult<UserOrderDto>(orders, totalCount, page, pageSize);
     }
 
-    private static string? ResolveOrderItemImageUrl(OrderItem orderItem)
+    private static string? ResolveOrderItemImage(OrderItem orderItem)
     {
         if (orderItem.Variant != null)
         {

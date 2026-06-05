@@ -1,12 +1,13 @@
 using AoDaiNhaUyen.Application.DTOs.Cart;
 using AoDaiNhaUyen.Application.Interfaces.Repositories;
+using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace AoDaiNhaUyen.Infrastructure.Repositories;
 
-public sealed class CartRepository(AppDbContext dbContext) : ICartRepository
+public sealed class CartRepository(AppDbContext dbContext, IImageVisibilityService imageVisibilityService) : ICartRepository
 {
   public async Task<Cart?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
   {
@@ -72,38 +73,40 @@ public sealed class CartRepository(AppDbContext dbContext) : ICartRepository
     await dbContext.SaveChangesAsync(cancellationToken);
   }
 
-  public CartDto MapCart(Cart cart)
+  public async Task<CartDto> MapCartAsync(Cart cart, CancellationToken cancellationToken = default)
   {
-    var items = cart.Items
-      .OrderBy(item => item.CreatedAt)
-      .Select(item =>
-      {
-        var variant = item.Variant;
-        var imageUrl =
-          variant.Images.OrderBy(image => image.SortOrder).FirstOrDefault(image => image.IsPrimary)?.ImageUrl ??
-          variant.Images.OrderBy(image => image.SortOrder).FirstOrDefault()?.ImageUrl ??
-          variant.Product.Images.OrderBy(image => image.SortOrder).FirstOrDefault(image => image.IsPrimary)?.ImageUrl ??
-          variant.Product.Images.OrderBy(image => image.SortOrder).FirstOrDefault()?.ImageUrl;
+    var items = new List<CartItemDto>();
+    foreach (var item in cart.Items.OrderBy(i => i.CreatedAt))
+    {
+      var variant = item.Variant;
+      var primaryImage =
+        variant.Images.OrderBy(image => image.SortOrder).FirstOrDefault(image => image.IsPrimary) ??
+        variant.Images.OrderBy(image => image.SortOrder).FirstOrDefault() ??
+        variant.Product.Images.OrderBy(image => image.SortOrder).FirstOrDefault(image => image.IsPrimary) ??
+        variant.Product.Images.OrderBy(image => image.SortOrder).FirstOrDefault();
 
-        var activePrice = variant.SalePrice ?? variant.Price;
+      var imageUrl = primaryImage is not null
+        ? await imageVisibilityService.ResolveUrlAsync(primaryImage.ImageUrl, primaryImage.IsPublic, primaryImage.PublicObjectKey, cancellationToken)
+        : null;
 
-        return new CartItemDto(
-          item.Id,
-          variant.Id,
-          variant.ProductId,
-          variant.Product.Name,
-          variant.Product.Slug,
-          variant.Sku,
-          variant.VariantName,
-          variant.Size,
-          variant.Color,
-          imageUrl,
-          variant.Price,
-          variant.SalePrice,
-          item.Quantity,
-          activePrice * item.Quantity);
-      })
-      .ToList();
+      var activePrice = variant.SalePrice ?? variant.Price;
+
+      items.Add(new CartItemDto(
+        item.Id,
+        variant.Id,
+        variant.ProductId,
+        variant.Product.Name,
+        variant.Product.Slug,
+        variant.Sku,
+        variant.VariantName,
+        variant.Size,
+        variant.Color,
+        imageUrl,
+        variant.Price,
+        variant.SalePrice,
+        item.Quantity,
+        activePrice * item.Quantity));
+    }
 
     return new CartDto(
       cart.Id,

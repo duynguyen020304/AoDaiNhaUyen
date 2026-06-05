@@ -55,7 +55,8 @@ public sealed record AdminImageResponse(
     string ImageUrl,
     string? AltText,
     int SortOrder,
-    bool IsPrimary);
+    bool IsPrimary,
+    bool IsPublic);
 
 /// <summary>Payload for creating a new product.</summary>
 public sealed record CreateProductRequest

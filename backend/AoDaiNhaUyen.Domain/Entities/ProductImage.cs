@@ -10,6 +10,8 @@ public sealed class ProductImage : BaseEntity
   public string? AltText { get; set; }
   public int SortOrder { get; set; }
   public bool IsPrimary { get; set; }
+  public bool IsPublic { get; set; }
+  public string? PublicObjectKey { get; set; }
 
 
   public Product Product { get; set; } = null!;

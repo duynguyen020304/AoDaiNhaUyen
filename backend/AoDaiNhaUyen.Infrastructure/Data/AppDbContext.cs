@@ -241,6 +241,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasKey(x => x.Id);
       builder.Property(x => x.AltText).HasMaxLength(255);
       builder.Property(x => x.SortOrder).HasDefaultValue(0).IsRequired();
+      builder.Property(x => x.IsPublic).HasDefaultValue(false).IsRequired();
+      builder.Property(x => x.PublicObjectKey).HasMaxLength(500);
       builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
       builder.HasIndex(x => x.ProductId).HasDatabaseName("idx_product_images_product_id");
       builder.HasOne(x => x.Product).WithMany(x => x.Images).HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);

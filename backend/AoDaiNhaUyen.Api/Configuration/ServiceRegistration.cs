@@ -170,6 +170,7 @@ public static class ServiceRegistration
 
     services.AddScoped<IStorageService, S3StorageService>();
     services.AddScoped<IAdminMediaService, AdminMediaService>();
+    services.AddScoped<IImageVisibilityService, ImageVisibilityService>();
     services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
     services.AddScoped<IRefreshTokenService, RefreshTokenService>();
     services.AddScoped<IJwtTokenService, JwtTokenService>();

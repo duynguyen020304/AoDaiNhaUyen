@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
 /// <summary>Admin product management service implementation.</summary>
-public sealed class AdminProductService(AppDbContext dbContext, ILogger<AdminProductService> logger) : IAdminProductService
+public sealed class AdminProductService(AppDbContext dbContext, IImageVisibilityService imageVisibilityService, ILogger<AdminProductService> logger) : IAdminProductService
 {
     public async Task<(IReadOnlyList<AdminProductListItemResponse> Items, int TotalCount)> GetPagedAsync(
         string? search,
@@ -74,7 +74,7 @@ public sealed class AdminProductService(AppDbContext dbContext, ILogger<AdminPro
 
         if (product is null) return null;
 
-        return MapToDetail(product);
+        return await MapToDetailAsync(product, cancellationToken);
     }
 
     public async Task<AdminProductDetailResponse> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default)
@@ -183,26 +183,35 @@ public sealed class AdminProductService(AppDbContext dbContext, ILogger<AdminPro
         return true;
     }
 
-    private static AdminProductDetailResponse MapToDetail(Domain.Entities.Product p) => new(
-        p.Id,
-        p.Name,
-        p.Slug,
-        p.ProductType,
-        p.CategoryId,
-        p.Category.Name,
-        p.ShortDescription,
-        p.Description,
-        p.Material,
-        p.Brand,
-        p.Origin,
-        p.CareInstruction,
-        p.Status,
-        p.IsFeatured,
-        new DateTimeOffset(p.CreatedAt, TimeSpan.Zero),
-        new DateTimeOffset(p.UpdatedAt, TimeSpan.Zero),
-        p.Variants.Select(v => new AdminVariantResponse(
-            v.Id, v.Sku, v.VariantName, v.Size, v.Color,
-            v.Price, v.SalePrice, v.StockQty, v.IsDefault, v.Status)).ToList(),
-        p.Images.Select(i => new AdminImageResponse(
-            i.Id, i.ImageUrl, i.AltText, i.SortOrder, i.IsPrimary)).ToList());
+    private async Task<AdminProductDetailResponse> MapToDetailAsync(Domain.Entities.Product p, CancellationToken cancellationToken)
+    {
+        var resolvedImages = new List<AdminImageResponse>();
+        foreach (var i in p.Images)
+        {
+            var resolvedUrl = await imageVisibilityService.ResolveUrlAsync(i.ImageUrl, i.IsPublic, i.PublicObjectKey, cancellationToken);
+            resolvedImages.Add(new AdminImageResponse(i.Id, resolvedUrl, i.AltText, i.SortOrder, i.IsPrimary, i.IsPublic));
+        }
+
+        return new AdminProductDetailResponse(
+            p.Id,
+            p.Name,
+            p.Slug,
+            p.ProductType,
+            p.CategoryId,
+            p.Category.Name,
+            p.ShortDescription,
+            p.Description,
+            p.Material,
+            p.Brand,
+            p.Origin,
+            p.CareInstruction,
+            p.Status,
+            p.IsFeatured,
+            new DateTimeOffset(p.CreatedAt, TimeSpan.Zero),
+            new DateTimeOffset(p.UpdatedAt, TimeSpan.Zero),
+            p.Variants.Select(v => new AdminVariantResponse(
+                v.Id, v.Sku, v.VariantName, v.Size, v.Color,
+                v.Price, v.SalePrice, v.StockQty, v.IsDefault, v.Status)).ToList(),
+            resolvedImages);
+    }
 }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
-public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStylingService
+public sealed class CatalogStylingService(AppDbContext dbContext, IImageVisibilityService imageVisibilityService) : ICatalogStylingService
 {
   public async Task<IReadOnlyList<ChatRecommendationItemDto>> RecommendAsync(
     string? scenario,
@@ -21,7 +21,7 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     var excludedIds = excludeProductIds?.Count > 0 ? excludeProductIds.ToHashSet() : null;
     var products = await LoadProductsAsync(productType ?? "ao_dai", cancellationToken);
 
-    return products
+    var ranked = products
       .Where(product => excludedIds is null || !excludedIds.Contains(product.Id))
       .Select(product => new
       {
@@ -37,6 +37,8 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
       .Take(limit)
       .Select(item => MapProduct(item.Product, BuildRationale(item.Product, scenario, budgetCeiling, colorFamily, materialKeyword, item.CoverageBoost)))
       .ToList();
+
+    return await ResolveImageUrlsAsync(ranked, cancellationToken);
   }
 
   public async Task<IReadOnlyList<ChatRecommendationItemDto>> LookupAsync(
@@ -62,7 +64,7 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     var primaryResults = RankLookupCandidates(primaryCandidates, normalizedQuery, queryTokens, scenario, budgetCeiling, colorFamily, materialKeyword, limit, strictMatches.Count > 0);
     if (primaryResults.Count > 0)
     {
-      return primaryResults;
+      return await ResolveImageUrlsAsync(primaryResults, cancellationToken);
     }
 
     if (!string.IsNullOrWhiteSpace(materialKeyword))
@@ -70,7 +72,7 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
       var withoutMaterial = RankLookupCandidates(products, normalizedQuery, queryTokens, scenario, budgetCeiling, colorFamily, null, limit, false);
       if (withoutMaterial.Count > 0)
       {
-        return withoutMaterial;
+        return await ResolveImageUrlsAsync(withoutMaterial, cancellationToken);
       }
     }
 
@@ -79,7 +81,7 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
       var withoutScenario = RankLookupCandidates(products, normalizedQuery, queryTokens, null, budgetCeiling, colorFamily, null, limit, false);
       if (withoutScenario.Count > 0)
       {
-        return withoutScenario;
+        return await ResolveImageUrlsAsync(withoutScenario, cancellationToken);
       }
     }
 
@@ -88,11 +90,11 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
       var withoutBudget = RankLookupCandidates(products, normalizedQuery, queryTokens, null, null, colorFamily, null, limit, false);
       if (withoutBudget.Count > 0)
       {
-        return withoutBudget;
+        return await ResolveImageUrlsAsync(withoutBudget, cancellationToken);
       }
     }
 
-    return RankLookupCandidates(products, normalizedQuery, queryTokens, null, null, null, null, limit, false);
+    return await ResolveImageUrlsAsync(RankLookupCandidates(products, normalizedQuery, queryTokens, null, null, null, null, limit, false), cancellationToken);
   }
 
   private static List<Product> GetStrictMatches(IReadOnlyList<Product> products, string normalizedQuery)
@@ -214,11 +216,12 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     var products = await LoadProductsAsync(null, cancellationToken);
     var order = productIds.Select((id, index) => new { id, index }).ToDictionary(item => item.id, item => item.index);
 
-    return products
-      .Where(product => order.ContainsKey(product.Id))
-      .OrderBy(product => order[product.Id])
-      .Select(product => MapProduct(product, BuildComparisonRationale(product)))
-      .ToList();
+    return await ResolveImageUrlsAsync(
+      products
+        .Where(product => order.ContainsKey(product.Id))
+        .OrderBy(product => order[product.Id])
+        .Select(product => MapProduct(product, BuildComparisonRationale(product)))
+        .ToList(), cancellationToken);
   }
 
   public async Task<IReadOnlyList<Guid>> ResolveProductReferencesAsync(
@@ -350,6 +353,34 @@ public sealed class CatalogStylingService(AppDbContext dbContext) : ICatalogStyl
     }
 
     return score;
+  }
+
+  private async Task<IReadOnlyList<ChatRecommendationItemDto>> ResolveImageUrlsAsync(
+    List<ChatRecommendationItemDto> items, CancellationToken cancellationToken)
+  {
+    if (items.Count == 0) return items;
+
+    var resolved = new List<ChatRecommendationItemDto>(items.Count);
+    foreach (var item in items)
+    {
+      if (item.PrimaryImageUrl is null)
+      {
+        resolved.Add(item);
+        continue;
+      }
+
+      // Legacy /upload/ path — pass through
+      if (item.PrimaryImageUrl.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase))
+      {
+        resolved.Add(item);
+        continue;
+      }
+
+      var resolvedUrl = await imageVisibilityService.ResolveUrlAsync(item.PrimaryImageUrl, false, null, cancellationToken);
+      resolved.Add(item with { PrimaryImageUrl = resolvedUrl });
+    }
+
+    return resolved;
   }
 
   private static ChatRecommendationItemDto MapProduct(Product product, string rationale)

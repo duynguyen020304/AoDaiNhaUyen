@@ -50,4 +50,15 @@ public interface IStorageService
   /// Build public canonical URL for an object key.
   /// </summary>
   string BuildCanonicalUrl(string objectKey);
+
+  /// <summary>
+  /// Copy object from private prefix to public products prefix (keep both).
+  /// Returns canonical URL of public object.
+  /// </summary>
+  Task<string> CopyToPublicAsync(string objectKey, CancellationToken ct = default);
+
+  /// <summary>
+  /// Check whether S3 is properly configured (BucketName + Region/ServiceUrl).
+  /// </summary>
+  bool IsConfigured();
 }

@@ -12,7 +12,8 @@ public sealed class CatalogTryOnService(
   ICachedImageValidationService imageValidationService,
   IHttpClientFactory httpClientFactory,
   IUploadStoragePathResolver uploadStoragePathResolver,
-  IStorageService storageService) : ICatalogTryOnService
+  IStorageService storageService,
+  IImageVisibilityService imageVisibilityService) : ICatalogTryOnService
 {
   private const string CuratedGarmentAssetKind = "tryon_garment_curated";
   private const string GarmentAssetKind = "tryon_garment";
@@ -41,19 +42,21 @@ public sealed class CatalogTryOnService(
       .ThenBy(product => product.Name)
       .ToListAsync(cancellationToken);
 
-    var allGarments = products
-      .Where(product => product.ProductType == "ao_dai")
-      .Select(product => MapCatalogItem(product, GarmentAssetKind))
-      .Where(item => item is not null)
-      .Cast<AiTryOnCatalogItemDto>()
-      .ToList();
+    var allGarments = await ResolveCatalogImageUrlsAsync(
+      products
+        .Where(product => product.ProductType == "ao_dai")
+        .Select(product => MapCatalogItem(product, GarmentAssetKind))
+        .Where(item => item is not null)
+        .Cast<AiTryOnCatalogItemDto>()
+        .ToList(), cancellationToken);
 
-    var allAccessories = products
-      .Where(product => product.ProductType == "phu_kien")
-      .Select(product => MapCatalogItem(product, AccessoryAssetKind))
-      .Where(item => item is not null)
-      .Cast<AiTryOnCatalogItemDto>()
-      .ToList();
+    var allAccessories = await ResolveCatalogImageUrlsAsync(
+      products
+        .Where(product => product.ProductType == "phu_kien")
+        .Select(product => MapCatalogItem(product, AccessoryAssetKind))
+        .Where(item => item is not null)
+        .Cast<AiTryOnCatalogItemDto>()
+        .ToList(), cancellationToken);
 
     var filteredGarments = FilterCatalogItems(allGarments, garmentCategory, supportsFeatured: true);
     var filteredAccessories = FilterCatalogItems(allAccessories, accessoryCategory, supportsFeatured: false);
@@ -106,7 +109,7 @@ public sealed class CatalogTryOnService(
       };
       var fileName = $"tryon-{Guid.NewGuid():N}{extension}";
       using var stream = new MemoryStream(bytes);
-      var uploadResult = await storageService.UploadAsync(stream, fileName, mimeType, "ai-tryon", cancellationToken);
+      var uploadResult = await storageService.UploadAsync(stream, fileName, mimeType, "private/ai-tryon", cancellationToken);
 
       var presignedUrl = await storageService.GeneratePresignedGetUrlAsync(uploadResult.ObjectKey, 3600, cancellationToken);
 
@@ -135,6 +138,27 @@ public sealed class CatalogTryOnService(
     }
 
     return aiResult;
+  }
+
+  private async Task<IReadOnlyList<AiTryOnCatalogItemDto>> ResolveCatalogImageUrlsAsync(
+    List<AiTryOnCatalogItemDto> items, CancellationToken cancellationToken)
+  {
+    if (items.Count == 0) return items;
+
+    var resolved = new List<AiTryOnCatalogItemDto>(items.Count);
+    foreach (var item in items)
+    {
+      if (item.ThumbnailUrl is null || item.ThumbnailUrl.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase))
+      {
+        resolved.Add(item);
+        continue;
+      }
+
+      var resolvedUrl = await imageVisibilityService.ResolveUrlAsync(item.ThumbnailUrl, false, null, cancellationToken);
+      resolved.Add(item with { ThumbnailUrl = resolvedUrl });
+    }
+
+    return resolved;
   }
 
   private static AiTryOnCatalogItemDto? MapCatalogItem(Product product, string assetKind)

@@ -11,5 +11,5 @@ public interface ICartRepository
   Task<ProductVariant?> GetVariantForCartAsync(Guid variantId, CancellationToken cancellationToken = default);
   Task<Cart> CreateForUserAsync(Guid userId, CancellationToken cancellationToken = default);
   Task SaveChangesAsync(CancellationToken cancellationToken = default);
-  CartDto MapCart(Cart cart);
+  Task<CartDto> MapCartAsync(Cart cart, CancellationToken cancellationToken = default);
 }

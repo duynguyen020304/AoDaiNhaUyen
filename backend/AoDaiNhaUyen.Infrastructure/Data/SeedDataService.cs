@@ -10,7 +10,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data;
 public sealed class SeedDataService(
   AppDbContext dbContext,
   IPasswordHasher passwordHasher,
-  IUploadStoragePathResolver uploadStoragePathResolver) : ISeedDataService
+  IUploadStoragePathResolver uploadStoragePathResolver,
+  IStorageService storageService) : ISeedDataService
 {
   private const string CuratedTryOnRoot = "upload/tryon-curated";
 
@@ -18,15 +19,58 @@ public sealed class SeedDataService(
   {
     await dbContext.Database.MigrateAsync();
 
+    ValidateS3Configuration();
+
     await SeedRolesAsync();
     await SeedAdminAsync();
     await SeedCustomersAsync();
     await SeedCategoriesAsync();
+    await SeedProductImagesToS3Async();
     await SeedProductsAsync();
     await SeedStyleScenariosAsync();
     await SeedProductStyleDataAsync();
     await SeedProductAiAssetsAsync();
     await RemoveStaleCategoriesAsync();
+  }
+
+  private void ValidateS3Configuration()
+  {
+    if (!storageService.IsConfigured())
+    {
+      throw new InvalidOperationException(
+        "S3Storage chưa được cấu hình. Vui lòng đặt S3Storage__BucketName, S3Storage__Region (hoặc S3Storage__ServiceUrl) trong .env trước khi chạy seed.");
+    }
+  }
+
+  private async Task SeedProductImagesToS3Async()
+  {
+    var uploadRoot = uploadStoragePathResolver.UploadRootPath;
+
+    foreach (var product in DefaultProducts.Items)
+    {
+      foreach (var image in product.Images)
+      {
+        // image.ImageUrl now stores S3 object key like "aodainhauyen/private/products/{slug}.webp"
+        var objectKey = image.ImageUrl;
+
+        // Extract slug from object key: aodainhauyen/private/products/{slug}.webp
+        var fileName = Path.GetFileName(objectKey);
+        var localPath = Path.Combine(uploadRoot, fileName);
+
+        if (!File.Exists(localPath))
+        {
+          continue; // Skip if local file doesn't exist (already migrated or missing)
+        }
+
+        if (await storageService.ExistsAsync(objectKey))
+        {
+          continue; // Already uploaded
+        }
+
+        using var stream = File.OpenRead(localPath);
+        await storageService.UploadAsync(stream, fileName, "image/webp", "private/products");
+      }
+    }
   }
 
   private async Task SeedRolesAsync()

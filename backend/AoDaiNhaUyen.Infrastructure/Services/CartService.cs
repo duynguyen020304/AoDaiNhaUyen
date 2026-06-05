@@ -11,7 +11,7 @@ public sealed class CartService(ICartRepository cartRepository) : ICartService
   public async Task<AuthResult<CartDto>> GetCartAsync(Guid userId, CancellationToken cancellationToken = default)
   {
     var cart = await EnsureCartLoadedAsync(userId, cancellationToken);
-    return AuthResult<CartDto>.Success(cartRepository.MapCart(cart));
+    return AuthResult<CartDto>.Success(await cartRepository.MapCartAsync(cart, cancellationToken));
   }
 
   public async Task<AuthResult<CartDto>> AddItemAsync(Guid userId, AddCartItemDto request, CancellationToken cancellationToken = default)
@@ -58,7 +58,7 @@ public sealed class CartService(ICartRepository cartRepository) : ICartService
     await cartRepository.SaveChangesAsync(cancellationToken);
 
     cart = await EnsureCartLoadedAsync(userId, cancellationToken);
-    return AuthResult<CartDto>.Success(cartRepository.MapCart(cart));
+    return AuthResult<CartDto>.Success(await cartRepository.MapCartAsync(cart, cancellationToken));
   }
 
   public async Task<AuthResult<CartDto>> UpdateItemAsync(Guid userId, Guid itemId, UpdateCartItemDto request, CancellationToken cancellationToken = default)
@@ -90,7 +90,7 @@ public sealed class CartService(ICartRepository cartRepository) : ICartService
     await cartRepository.SaveChangesAsync(cancellationToken);
 
     var cart = await EnsureCartLoadedAsync(userId, cancellationToken);
-    return AuthResult<CartDto>.Success(cartRepository.MapCart(cart));
+    return AuthResult<CartDto>.Success(await cartRepository.MapCartAsync(cart, cancellationToken));
   }
 
   public async Task<AuthResult<CartDto>> RemoveItemAsync(Guid userId, Guid itemId, CancellationToken cancellationToken = default)
@@ -106,7 +106,7 @@ public sealed class CartService(ICartRepository cartRepository) : ICartService
     await cartRepository.SaveChangesAsync(cancellationToken);
 
     var cart = await EnsureCartLoadedAsync(userId, cancellationToken);
-    return AuthResult<CartDto>.Success(cartRepository.MapCart(cart));
+    return AuthResult<CartDto>.Success(await cartRepository.MapCartAsync(cart, cancellationToken));
   }
 
   public async Task<AuthResult<bool>> ClearCartAsync(Guid userId, CancellationToken cancellationToken = default)

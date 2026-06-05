@@ -966,7 +966,7 @@ public sealed class StylistChatService(
 
       var fileName = $"{Guid.NewGuid():N}{extension}";
       using var stream = new MemoryStream(attachment.Bytes);
-      var result = await storageService.UploadAsync(stream, fileName, attachment.MimeType, $"chat/{threadId}", cancellationToken);
+      var result = await storageService.UploadAsync(stream, fileName, attachment.MimeType, $"private/chat/{threadId}", cancellationToken);
 
       var entity = new ChatAttachment
       {
@@ -1028,7 +1028,7 @@ public sealed class StylistChatService(
     };
     var fileName = $"tryon-{Guid.NewGuid():N}{extension}";
     using var stream = new MemoryStream(bytes);
-    var uploadResult = await storageService.UploadAsync(stream, fileName, mimeType, $"chat/{threadId}", cancellationToken);
+    var uploadResult = await storageService.UploadAsync(stream, fileName, mimeType, $"private/chat/{threadId}", cancellationToken);
 
     var attachment = new ChatAttachment
     {

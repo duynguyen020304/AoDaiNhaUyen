@@ -6,7 +6,8 @@ namespace AoDaiNhaUyen.Application.Services;
 
 public sealed class CatalogService(
   ICategoryRepository categoryRepository,
-  IProductRepository productRepository) : ICatalogService
+  IProductRepository productRepository,
+  IImageVisibilityService imageVisibilityService) : ICatalogService
 {
   public async Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default)
   {
@@ -86,29 +87,46 @@ public sealed class CatalogService(
           .ThenBy(v => v.Id)
           .FirstOrDefault();
 
-      var primaryImage = p.Images
+      var primaryImageEntity = p.Images
         .OrderBy(i => i.SortOrder)
-        .FirstOrDefault(i => i.IsPrimary)?.ImageUrl ??
-        p.Images.OrderBy(i => i.SortOrder).FirstOrDefault()?.ImageUrl;
+        .FirstOrDefault(i => i.IsPrimary) ??
+        p.Images.OrderBy(i => i.SortOrder).FirstOrDefault();
 
-      return new ProductListItemDto(
-        p.Id,
-        p.Name,
-        p.Slug,
-        p.ProductType,
-        p.Status,
-        p.ShortDescription,
-        primaryVariant?.Price ?? 0,
-        primaryVariant?.SalePrice,
-        p.Category.Slug,
-        p.IsFeatured,
-        primaryVariant?.StockQty ?? 0,
-        primaryImage,
-        primaryVariant?.Id,
-        primaryVariant?.Sku);
+      var primaryImage = primaryImageEntity?.ImageUrl;
+
+      return new { Entity = p, PrimaryVariant = primaryVariant, PrimaryImageEntity = primaryImageEntity, PrimaryImage = primaryImage };
     }).ToList();
 
-    return new PagedResult<ProductListItemDto>(mapped, totalCount, validatedPage, validatedPageSize);
+    // Resolve image URLs via visibility service
+    var resolvedItems = new List<ProductListItemDto>();
+    foreach (var p in mapped)
+    {
+      var resolvedUrl = p.PrimaryImage is not null
+        ? await imageVisibilityService.ResolveUrlAsync(
+            p.PrimaryImage,
+            p.PrimaryImageEntity?.IsPublic ?? false,
+            p.PrimaryImageEntity?.PublicObjectKey,
+            cancellationToken)
+        : null;
+
+      resolvedItems.Add(new ProductListItemDto(
+        p.Entity.Id,
+        p.Entity.Name,
+        p.Entity.Slug,
+        p.Entity.ProductType,
+        p.Entity.Status,
+        p.Entity.ShortDescription,
+        p.PrimaryVariant?.Price ?? 0,
+        p.PrimaryVariant?.SalePrice,
+        p.Entity.Category.Slug,
+        p.Entity.IsFeatured,
+        p.PrimaryVariant?.StockQty ?? 0,
+        resolvedUrl,
+        p.PrimaryVariant?.Id,
+        p.PrimaryVariant?.Sku));
+    }
+
+    return new PagedResult<ProductListItemDto>(resolvedItems, totalCount, validatedPage, validatedPageSize);
   }
 
   public async Task<ProductDetailDto?> GetProductBySlugAsync(string slug, CancellationToken cancellationToken = default)
@@ -121,8 +139,19 @@ public sealed class CatalogService(
 
     var images = product.Images
       .OrderBy(i => i.SortOrder)
-      .Select(i => new ProductImageDto(i.ImageUrl, i.AltText, i.SortOrder, i.IsPrimary))
+      .Select(i => new { Entity = i })
       .ToList();
+
+    var resolvedImages = new List<ProductImageDto>();
+    foreach (var img in images)
+    {
+      var resolvedUrl = await imageVisibilityService.ResolveUrlAsync(
+        img.Entity.ImageUrl,
+        img.Entity.IsPublic,
+        img.Entity.PublicObjectKey,
+        cancellationToken);
+      resolvedImages.Add(new ProductImageDto(resolvedUrl, img.Entity.AltText, img.Entity.SortOrder, img.Entity.IsPrimary));
+    }
 
     var variants = product.Variants
       .OrderByDescending(v => v.IsDefault)
@@ -158,6 +187,6 @@ public sealed class CatalogService(
       product.CreatedAt,
       product.UpdatedAt,
       variants,
-      images);
+      resolvedImages);
   }
 }

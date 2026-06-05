@@ -2,7 +2,7 @@ namespace AoDaiNhaUyen.Domain.SeedData;
 
 public static class DefaultProducts
 {
-  private const string UploadPath = "/upload";
+  private const string S3PrivateProductsPrefix = "aodainhauyen/private/products";
 
   public static readonly IReadOnlyList<SeedProduct> Items =
   [
@@ -534,7 +534,7 @@ public static class DefaultProducts
 
   private static SeedProductImage CreateImage(string slug, string altText)
   {
-    return new SeedProductImage($"{UploadPath}/{slug}.webp", altText, 1, true);
+    return new SeedProductImage($"{S3PrivateProductsPrefix}/{slug}.webp", altText, 1, true);
   }
 
   private static SeedProductVariant CreateVariant(
