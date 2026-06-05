@@ -218,9 +218,9 @@ public sealed class IntentClassifierTests
 
     var memory = new ThreadMemoryStateDto
     {
-      ImageCatalog = [new ImageCatalogEntry(11, "user_image", "Ảnh 1", null)],
-      SelectedGarmentProductId = 101,
-      LatestPersonAttachmentId = 11
+      ImageCatalog = [new ImageCatalogEntry(Guid.NewGuid(), "user_image", "Ảnh 1", null)],
+      SelectedGarmentProductId = Guid.NewGuid(),
+      LatestPersonAttachmentId = Guid.NewGuid()
     };
 
     var result = await classifier.ClassifyAsync(
@@ -245,7 +245,7 @@ public sealed class IntentClassifierTests
 
     var memory = new ThreadMemoryStateDto
     {
-      ImageCatalog = [new ImageCatalogEntry(11, "user_image", "Ảnh 1", null)]
+      ImageCatalog = [new ImageCatalogEntry(Guid.NewGuid(), "user_image", "Ảnh 1", null)]
     };
 
     var result = await classifier.ClassifyAsync(
@@ -270,7 +270,7 @@ public sealed class IntentClassifierTests
 
     var memory = new ThreadMemoryStateDto
     {
-      ImageCatalog = [new ImageCatalogEntry(11, "user_image", "Ảnh 1", null)]
+      ImageCatalog = [new ImageCatalogEntry(Guid.NewGuid(), "user_image", "Ảnh 1", null)]
     };
 
     var result = await classifier.ClassifyAsync(
@@ -294,7 +294,7 @@ public sealed class IntentClassifierTests
 
     var memory = new ThreadMemoryStateDto
     {
-      ImageCatalog = [new ImageCatalogEntry(11, "user_image", "Ảnh 1", null)]
+      ImageCatalog = [new ImageCatalogEntry(Guid.NewGuid(), "user_image", "Ảnh 1", null)]
     };
 
     var result = await classifier.ClassifyAsync(
@@ -337,8 +337,8 @@ public sealed class IntentClassifierTests
 
     var memory = new ThreadMemoryStateDto
     {
-      ShortlistedProductIds = new List<Guid> { 101, 102 },
-      SelectedGarmentProductId = 101
+      ShortlistedProductIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() },
+      SelectedGarmentProductId = Guid.NewGuid()
     };
 
     var result = await classifier.ClassifyAsync(

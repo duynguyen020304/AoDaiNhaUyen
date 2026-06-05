@@ -37,41 +37,74 @@ public sealed class AdminMediaService(
     var normalizedPageSize = Math.Clamp(pageSize, 1, 100);
     var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)normalizedPageSize));
 
-    var items = await query
+    var rows = await query
       .OrderByDescending(x => x.CreatedAt)
       .Skip((normalizedPage - 1) * normalizedPageSize)
       .Take(normalizedPageSize)
-      .Select(x => new UserImageDto(
+      .Select(x => new
+      {
         x.Id,
         x.ObjectKey,
-        x.Url,
         x.Kind,
         x.MimeType,
         x.OriginalFileName,
         x.FileSizeBytes,
         x.SourceType,
-        new DateTimeOffset(x.CreatedAt, TimeSpan.Zero)))
+        CreatedAt = new DateTimeOffset(x.CreatedAt, TimeSpan.Zero)
+      })
       .ToListAsync(ct);
+
+    // Generate presigned GET URLs so images render in admin UI even when bucket is private.
+    var items = new List<UserImageDto>(rows.Count);
+    foreach (var row in rows)
+    {
+      var presignedUrl = await storageService.GeneratePresignedGetUrlAsync(row.ObjectKey, 3600, ct);
+      items.Add(new UserImageDto(
+        row.Id,
+        row.ObjectKey,
+        presignedUrl,
+        row.Kind,
+        row.MimeType,
+        row.OriginalFileName,
+        row.FileSizeBytes,
+        row.SourceType,
+        row.CreatedAt));
+    }
 
     return new UserImageListDto(items, normalizedPage, normalizedPageSize, totalItems, totalPages);
   }
 
   public async Task<UserImageDto?> GetByIdAsync(Guid id, CancellationToken ct = default)
   {
-    return await dbContext.UserGeneratedImages
+    var row = await dbContext.UserGeneratedImages
       .AsNoTracking()
       .Where(x => x.Id == id && !x.IsDeleted)
-      .Select(x => new UserImageDto(
+      .Select(x => new
+      {
         x.Id,
         x.ObjectKey,
-        x.Url,
         x.Kind,
         x.MimeType,
         x.OriginalFileName,
         x.FileSizeBytes,
         x.SourceType,
-        new DateTimeOffset(x.CreatedAt, TimeSpan.Zero)))
+        CreatedAt = new DateTimeOffset(x.CreatedAt, TimeSpan.Zero)
+      })
       .FirstOrDefaultAsync(ct);
+
+    if (row is null) return null;
+
+    var presignedUrl = await storageService.GeneratePresignedGetUrlAsync(row.ObjectKey, 3600, ct);
+    return new UserImageDto(
+      row.Id,
+      row.ObjectKey,
+      presignedUrl,
+      row.Kind,
+      row.MimeType,
+      row.OriginalFileName,
+      row.FileSizeBytes,
+      row.SourceType,
+      row.CreatedAt);
   }
 
   public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)

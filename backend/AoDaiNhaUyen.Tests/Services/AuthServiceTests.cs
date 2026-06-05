@@ -88,7 +88,7 @@ public sealed class AuthServiceTests
       ProviderAccountId = "zalo-user",
       IsVerified = true
     });
-    user.UserRoles.Add(new UserRole { RoleId = 1 });
+    user.UserRoles.Add(new UserRole { RoleId = Guid.NewGuid() });
     dbContext.Users.Add(user);
     await dbContext.SaveChangesAsync();
 
@@ -114,7 +114,7 @@ public sealed class AuthServiceTests
     var dbContext = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
       .UseInMemoryDatabase(Guid.NewGuid().ToString())
       .Options);
-    dbContext.Roles.Add(new Role { Id = 1, Name = "customer" });
+    dbContext.Roles.Add(new Role { Id = Guid.NewGuid(), Name = "customer" });
     dbContext.SaveChanges();
     return dbContext;
   }

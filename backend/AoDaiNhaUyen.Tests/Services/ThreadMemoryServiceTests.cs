@@ -12,6 +12,7 @@ public sealed class ThreadMemoryServiceTests
   [Fact]
   public void ApplyUserTurn_OnlyTracksLatestPersonAttachment()
   {
+    var attachmentId = Guid.NewGuid();
     var memory = new ThreadMemoryStateDto
     {
       Scenario = "du-tiec",
@@ -23,7 +24,7 @@ public sealed class ThreadMemoryServiceTests
     {
       new ChatAttachment
       {
-        Id = 12,
+        Id = attachmentId,
         Kind = "user_image",
         FileUrl = "/upload/chat/1/test.png",
         MimeType = "image/png"
@@ -36,52 +37,59 @@ public sealed class ThreadMemoryServiceTests
     Assert.Equal("pink", memory.ColorFamily);
     Assert.Equal("gấm", memory.MaterialKeyword);
     Assert.Equal(2_500_000m, memory.BudgetCeiling);
-    Assert.Equal(12, memory.LatestPersonAttachmentId);
+    Assert.Equal(attachmentId, memory.LatestPersonAttachmentId);
   }
 
   [Fact]
   public void Persist_RoundTripsStructuredMemory()
   {
-    var thread = new ChatThread
-    {
-      Id = 7
-    };
+    var threadId = Guid.NewGuid();
+    var thread = new ChatThread { Id = threadId };
+    var garment1 = Guid.NewGuid();
+    var garment2 = Guid.NewGuid();
+    var accessory1 = Guid.NewGuid();
+    var accessory2 = Guid.NewGuid();
+    var msgId = Guid.NewGuid();
     var state = new ThreadMemoryStateDto
     {
       Scenario = "le-tet",
       BudgetCeiling = 4_000_000m,
       ColorFamily = "red",
       MaterialKeyword = "gấm",
-      ShortlistedProductIds = new List<Guid> { 11, 12 },
-      GarmentShortlistedProductIds = new List<Guid> { 11, 12 },
-      AccessoryShortlistedProductIds = new List<Guid> { 31, 32 },
-      SelectedGarmentProductId = 11,
-      SelectedAccessoryProductIds = new List<Guid> { 31 },
+      ShortlistedProductIds = new List<Guid> { garment1, garment2 },
+      GarmentShortlistedProductIds = new List<Guid> { garment1, garment2 },
+      AccessoryShortlistedProductIds = new List<Guid> { accessory1, accessory2 },
+      SelectedGarmentProductId = garment1,
+      SelectedAccessoryProductIds = new List<Guid> { accessory1 },
       PendingTryOnRequirements = new List<string> { "upload_person_image" }
     };
 
-    service.Persist(thread, state, 101);
+    service.Persist(thread, state, msgId);
     var loaded = service.Read(thread.Memory);
 
     Assert.Equal("le-tet", loaded.Scenario);
     Assert.Equal(4_000_000m, loaded.BudgetCeiling);
     Assert.Equal("red", loaded.ColorFamily);
     Assert.Equal("gấm", loaded.MaterialKeyword);
-    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid() }, loaded.ShortlistedProductIds);
-    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid() }, loaded.GarmentShortlistedProductIds);
-    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid() }, loaded.AccessoryShortlistedProductIds);
+    Assert.Equal(new[] { garment1, garment2 }, loaded.ShortlistedProductIds);
+    Assert.Equal(new[] { garment1, garment2 }, loaded.GarmentShortlistedProductIds);
+    Assert.Equal(new[] { accessory1, accessory2 }, loaded.AccessoryShortlistedProductIds);
     Assert.Empty(loaded.ShownProductIds);
-    Assert.Equal(11, loaded.SelectedGarmentProductId);
-    Assert.Equal(new Guid[] { Guid.NewGuid() }, loaded.SelectedAccessoryProductIds);
+    Assert.Equal(garment1, loaded.SelectedGarmentProductId);
+    Assert.Equal(new[] { accessory1 }, loaded.SelectedAccessoryProductIds);
     Assert.Equal(new[] { "upload_person_image" }, loaded.PendingTryOnRequirements);
   }
 
   [Fact]
   public void ApplyAssistantTurn_AccumulatesShownProductIds()
   {
+    var shown1 = Guid.NewGuid();
+    var shown2 = Guid.NewGuid();
+    var garment1 = Guid.NewGuid();
+    var accessory1 = Guid.NewGuid();
     var memory = new ThreadMemoryStateDto
     {
-      ShownProductIds = new List<Guid> { 1, 2 }
+      ShownProductIds = new List<Guid> { shown1, shown2 }
     };
 
     service.ApplyAssistantTurn(
@@ -92,29 +100,32 @@ public sealed class ThreadMemoryServiceTests
         null,
         false,
         false,
-        101,
-        [201],
+        garment1,
+        [accessory1],
         [],
-        [new ChatRecommendationItemDto(101, "Áo dài A", "ao-dai", "ao_dai", 1200000m, null, null, null, "Phù hợp.")],
-        [new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Đi kèm.")],
+        [new ChatRecommendationItemDto(garment1, "Áo dài A", "ao-dai", "ao_dai", 1200000m, null, null, null, "Phù hợp.")],
+        [new ChatRecommendationItemDto(accessory1, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Đi kèm.")],
         [
-          new ChatRecommendationItemDto(101, "Áo dài A", "ao-dai", "ao_dai", 1200000m, null, null, null, "Phù hợp."),
-          new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Đi kèm.")
+          new ChatRecommendationItemDto(garment1, "Áo dài A", "ao-dai", "ao_dai", 1200000m, null, null, null, "Phù hợp."),
+          new ChatRecommendationItemDto(accessory1, "Khăn lụa", "phu-kien", "phu_kien", 200000m, null, null, null, "Đi kèm.")
         ]),
       null,
       null);
 
-    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() }, memory.ShownProductIds);
+    Assert.Equal(new[] { shown1, shown2, garment1, accessory1 }, memory.ShownProductIds);
   }
 
   [Fact]
   public void ApplyAssistantTurn_PreservesGarmentShortlist_WhenPayloadOnlyContainsAccessories()
   {
+    var garment1 = Guid.NewGuid();
+    var garment2 = Guid.NewGuid();
+    var accessory1 = Guid.NewGuid();
     var memory = new ThreadMemoryStateDto
     {
-      ShortlistedProductIds = new List<Guid> { 101, 102 },
-      GarmentShortlistedProductIds = new List<Guid> { 101, 102 },
-      SelectedGarmentProductId = 101
+      ShortlistedProductIds = new List<Guid> { garment1, garment2 },
+      GarmentShortlistedProductIds = new List<Guid> { garment1, garment2 },
+      SelectedGarmentProductId = garment1
     };
 
     service.ApplyAssistantTurn(
@@ -125,18 +136,18 @@ public sealed class ThreadMemoryServiceTests
         null,
         false,
         false,
-        101,
-        [201],
+        garment1,
+        [accessory1],
         [],
-        [new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200_000m, null, null, null, "Đi kèm nhẹ nhàng.")],
+        [new ChatRecommendationItemDto(accessory1, "Khăn lụa", "phu-kien", "phu_kien", 200_000m, null, null, null, "Đi kèm nhẹ nhàng.")],
         [],
-        [new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200_000m, null, null, null, "Đi kèm nhẹ nhàng.")]),
+        [new ChatRecommendationItemDto(accessory1, "Khăn lụa", "phu-kien", "phu_kien", 200_000m, null, null, null, "Đi kèm nhẹ nhàng.")]),
       null,
       null);
 
-    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid() }, memory.ShortlistedProductIds);
-    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid() }, memory.GarmentShortlistedProductIds);
-    Assert.Equal(new Guid[] { Guid.NewGuid() }, memory.AccessoryShortlistedProductIds);
+    Assert.Equal(new[] { garment1, garment2 }, memory.ShortlistedProductIds);
+    Assert.Equal(new[] { garment1, garment2 }, memory.GarmentShortlistedProductIds);
+    Assert.Equal(new[] { accessory1 }, memory.AccessoryShortlistedProductIds);
   }
 
   [Fact]
@@ -157,17 +168,20 @@ public sealed class ThreadMemoryServiceTests
   [Fact]
   public void ApplyUserConversationTurn_MarksLikedProductsAsDecisionStage()
   {
+    var garment1 = Guid.NewGuid();
+    var garment2 = Guid.NewGuid();
+    var accessory1 = Guid.NewGuid();
     var memory = new ThreadMemoryStateDto
     {
-      GarmentShortlistedProductIds = new List<Guid> { 101, 102 },
-      AccessoryShortlistedProductIds = new List<Guid> { 201 }
+      GarmentShortlistedProductIds = new List<Guid> { garment1, garment2 },
+      AccessoryShortlistedProductIds = new List<Guid> { accessory1 }
     };
 
     service.ApplyUserConversationTurn(memory, "Mình thích mẫu này, lấy mẫu này nhé");
 
     Assert.Equal("selection_feedback", memory.LastUserRequestType);
     Assert.Equal("decide", memory.ConversationStage);
-    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() }, memory.LikedProductIds);
+    Assert.Equal(new[] { garment1, garment2, accessory1 }, memory.LikedProductIds);
   }
 
   [Fact]
@@ -224,32 +238,38 @@ public sealed class ThreadMemoryServiceTests
   [Fact]
   public void Persist_RoundTripsExtendedTurnState()
   {
-    var thread = new ChatThread { Id = 9 };
+    var threadId = Guid.NewGuid();
+    var thread = new ChatThread { Id = threadId };
+    var garment1 = Guid.NewGuid();
+    var accessory1 = Guid.NewGuid();
+    var msgId = Guid.NewGuid();
     var state = new ThreadMemoryStateDto
     {
       Scenario = "giao-vien",
       ConversationStage = "refine",
       LastUserRequestType = "alternative_request",
-      ShownProductIds = new List<Guid> { 101, 201 },
-      ShownGarmentProductIds = new List<Guid> { 101 },
-      ShownAccessoryProductIds = new List<Guid> { 201 },
-      LikedProductIds = new List<Guid> { 101 }
+      ShownProductIds = new List<Guid> { garment1, accessory1 },
+      ShownGarmentProductIds = new List<Guid> { garment1 },
+      ShownAccessoryProductIds = new List<Guid> { accessory1 },
+      LikedProductIds = new List<Guid> { garment1 }
     };
 
-    service.Persist(thread, state, 33);
+    service.Persist(thread, state, msgId);
     var loaded = service.Read(thread.Memory);
 
     Assert.Equal("refine", loaded.ConversationStage);
     Assert.Equal("alternative_request", loaded.LastUserRequestType);
-    Assert.Equal(new Guid[] { Guid.NewGuid(), Guid.NewGuid() }, loaded.ShownProductIds);
-    Assert.Equal(new Guid[] { Guid.NewGuid() }, loaded.ShownGarmentProductIds);
-    Assert.Equal(new Guid[] { Guid.NewGuid() }, loaded.ShownAccessoryProductIds);
-    Assert.Equal(new Guid[] { Guid.NewGuid() }, loaded.LikedProductIds);
+    Assert.Equal(new[] { garment1, accessory1 }, loaded.ShownProductIds);
+    Assert.Equal(new[] { garment1 }, loaded.ShownGarmentProductIds);
+    Assert.Equal(new[] { accessory1 }, loaded.ShownAccessoryProductIds);
+    Assert.Equal(new[] { garment1 }, loaded.LikedProductIds);
   }
 
   [Fact]
   public void ApplyAssistantTurn_TracksShownGarmentsAccessories_AndConversationStage()
   {
+    var garment1 = Guid.NewGuid();
+    var accessory1 = Guid.NewGuid();
     var memory = new ThreadMemoryStateDto();
 
     service.ApplyAssistantTurn(
@@ -260,24 +280,24 @@ public sealed class ThreadMemoryServiceTests
         "le-tet",
         false,
         false,
-        101,
-        [201],
+        garment1,
+        [accessory1],
         [],
         [
-          new ChatRecommendationItemDto(101, "Áo dài A", "ao-dai", "ao_dai", 1_200_000m, null, null, null, "Phù hợp."),
-          new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200_000m, null, null, null, "Đi kèm.")
+          new ChatRecommendationItemDto(garment1, "Áo dài A", "ao-dai", "ao_dai", 1_200_000m, null, null, null, "Phù hợp."),
+          new ChatRecommendationItemDto(accessory1, "Khăn lụa", "phu-kien", "phu_kien", 200_000m, null, null, null, "Đi kèm.")
         ],
         [
-          new ChatRecommendationItemDto(101, "Áo dài A", "ao-dai", "ao_dai", 1_200_000m, null, null, null, "Phù hợp.")
+          new ChatRecommendationItemDto(garment1, "Áo dài A", "ao-dai", "ao_dai", 1_200_000m, null, null, null, "Phù hợp.")
         ],
         [
-          new ChatRecommendationItemDto(201, "Khăn lụa", "phu-kien", "phu_kien", 200_000m, null, null, null, "Đi kèm.")
+          new ChatRecommendationItemDto(accessory1, "Khăn lụa", "phu-kien", "phu_kien", 200_000m, null, null, null, "Đi kèm.")
         ]),
       null,
       null);
 
-    Assert.Equal(new Guid[] { Guid.NewGuid() }, memory.ShownGarmentProductIds);
-    Assert.Equal(new Guid[] { Guid.NewGuid() }, memory.ShownAccessoryProductIds);
+    Assert.Equal(new[] { garment1 }, memory.ShownGarmentProductIds);
+    Assert.Equal(new[] { accessory1 }, memory.ShownAccessoryProductIds);
     Assert.Equal("relevance_first", memory.LastRecommendationStrategy);
     Assert.Equal("discovery", memory.ConversationStage);
   }

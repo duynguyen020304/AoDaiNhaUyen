@@ -110,20 +110,26 @@ public sealed class CatalogTryOnService(
 
       var presignedUrl = await storageService.GeneratePresignedGetUrlAsync(uploadResult.ObjectKey, 3600, cancellationToken);
 
-      var imageRecord = new UserGeneratedImage
+      // Only persist a UserGeneratedImage row when caller provides user context.
+      // Chat callers leave UserId/GuestKeyHash null and persist their own row
+      // (with correct user tracking) via SaveGeneratedTryOnAttachmentAsync.
+      // Skipping here avoids double-save for the same try-on result.
+      if (request.UserId is not null || !string.IsNullOrWhiteSpace(request.GuestKeyHash))
       {
-        UserId = request.UserId,
-        GuestKeyHash = request.GuestKeyHash,
-        ObjectKey = uploadResult.ObjectKey,
-        Url = uploadResult.Url,
-        Kind = "tryon_result",
-        MimeType = mimeType,
-        OriginalFileName = fileName,
-        FileSizeBytes = bytes.LongLength,
-        SourceType = "ai_tryon"
-      };
-      dbContext.UserGeneratedImages.Add(imageRecord);
-      await dbContext.SaveChangesAsync(cancellationToken);
+        dbContext.UserGeneratedImages.Add(new UserGeneratedImage
+        {
+          UserId = request.UserId,
+          GuestKeyHash = request.GuestKeyHash,
+          ObjectKey = uploadResult.ObjectKey,
+          Url = uploadResult.Url,
+          Kind = "tryon_result",
+          MimeType = mimeType,
+          OriginalFileName = fileName,
+          FileSizeBytes = bytes.LongLength,
+          SourceType = "ai_tryon"
+        });
+        await dbContext.SaveChangesAsync(cancellationToken);
+      }
 
       return new AiTryOnResultDto(presignedUrl, mimeType);
     }

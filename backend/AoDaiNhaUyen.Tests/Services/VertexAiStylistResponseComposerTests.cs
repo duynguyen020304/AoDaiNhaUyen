@@ -227,10 +227,10 @@ public sealed class VertexAiStylistResponseComposerTests
       null,
       !requiresPersonImage,
       requiresPersonImage,
-      101,
+      Guid.NewGuid(),
       [],
       requiresPersonImage ? ["upload_person_image"] : [],
-      [new AoDaiNhaUyen.Application.DTOs.ChatRecommendationItemDto(101, "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Hợp.")]);
+      [new AoDaiNhaUyen.Application.DTOs.ChatRecommendationItemDto(Guid.NewGuid(), "Áo dài lụa", "ao-dai", "ao_dai", 1200000m, null, null, null, "Hợp.")]);
 
   private static VertexAiStylistResponseComposer CreateComposer(HttpMessageHandler handler)
   {

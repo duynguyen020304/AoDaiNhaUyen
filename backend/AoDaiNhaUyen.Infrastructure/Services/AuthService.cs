@@ -642,7 +642,8 @@ public sealed class AuthService(
   private static IReadOnlyList<string> GetRoles(User user)
   {
     return user.UserRoles
-      .Select(x => x.Role.Name)
+      .Where(x => x.Role != null)
+      .Select(x => x.Role!.Name)
       .Where(x => !string.IsNullOrWhiteSpace(x))
       .Distinct(StringComparer.OrdinalIgnoreCase)
       .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)

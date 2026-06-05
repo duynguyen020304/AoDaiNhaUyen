@@ -16,10 +16,11 @@ public sealed class ConcurrencyLimitedStylistChatServiceTests
     var inner = new BlockingStylistChatService();
     using var service = CreateService(inner, 1);
 
-    var first = service.AddMessageAsync(1, null, "guest", "first", null, []);
+    var threadId = Guid.NewGuid();
+    var first = service.AddMessageAsync(threadId, null, "guest", "first", null, []);
     await inner.WaitForStartedCallsAsync(1);
 
-    var second = service.AddMessageAsync(1, null, "guest", "second", null, []);
+    var second = service.AddMessageAsync(threadId, null, "guest", "second", null, []);
     Assert.False(second.IsCompleted);
 
     inner.CompleteOne();
@@ -36,10 +37,11 @@ public sealed class ConcurrencyLimitedStylistChatServiceTests
     var inner = new BlockingStylistChatService();
     using var service = CreateService(inner, 1);
 
-    var first = service.AddMessageAsync(1, null, "guest", "first", null, []);
+    var threadId2 = Guid.NewGuid();
+    var first = service.AddMessageAsync(threadId2, null, "guest", "first", null, []);
     await inner.WaitForStartedCallsAsync(1);
 
-    await using var enumerator = service.AddMessageStreamAsync(1, null, "guest", "stream", null, []).GetAsyncEnumerator();
+    await using var enumerator = service.AddMessageStreamAsync(threadId2, null, "guest", "stream", null, []).GetAsyncEnumerator();
 
     Assert.True(await enumerator.MoveNextAsync());
     var queued = Assert.IsType<SseChatEvent.Queued>(enumerator.Current);
@@ -59,13 +61,14 @@ public sealed class ConcurrencyLimitedStylistChatServiceTests
     var inner = new BlockingStylistChatService();
     using var service = CreateService(inner, 1);
 
-    var first = service.AddMessageAsync(1, null, "guest", "first", null, []);
+    var threadId3 = Guid.NewGuid();
+    var first = service.AddMessageAsync(threadId3, null, "guest", "first", null, []);
     await inner.WaitForStartedCallsAsync(1);
 
     await service.ListThreadsAsync(null, "guest");
     await service.CreateThreadAsync(null, "guest");
-    await service.GetThreadAsync(1, null, "guest");
-    await service.ExecuteTryOnAsync(1, null, "guest", null, []);
+    await service.GetThreadAsync(threadId3, null, "guest");
+    await service.ExecuteTryOnAsync(threadId3, null, "guest", null, []);
 
     inner.CompleteOne();
     await first;
@@ -153,7 +156,7 @@ public sealed class ConcurrencyLimitedStylistChatServiceTests
       Guid? garmentProductId,
       IReadOnlyList<Guid> accessoryProductIds,
       CancellationToken cancellationToken = default) =>
-      Task.FromResult(new ChatMessageDto(1, "assistant", "try-on", null, DateTime.UtcNow, [], null));
+      Task.FromResult(new ChatMessageDto(Guid.NewGuid(), "assistant", "try-on", null, DateTime.UtcNow, [], null));
 
     public async Task WaitForStartedCallsAsync(int expectedCalls)
     {
@@ -191,7 +194,7 @@ public sealed class ConcurrencyLimitedStylistChatServiceTests
     }
 
     private static ChatThreadDetailDto CreateThread() =>
-      new(1, "Thread", "active", "web", DateTime.UtcNow, DateTime.UtcNow, []);
+      new(Guid.NewGuid(), "Thread", "active", "web", DateTime.UtcNow, DateTime.UtcNow, []);
 
     private static TaskCompletionSource<bool> CreateSignal() =>
       new(TaskCreationOptions.RunContinuationsAsynchronously);

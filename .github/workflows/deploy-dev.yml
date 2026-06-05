@@ -100,10 +100,68 @@ jobs:
           retention-days: 1
 
   # ==========================================
+  # Build Admin Frontend for HK1
+  # ==========================================
+  build-admin-hk1:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install & Build Admin Frontend
+        run: |
+          cd frontend-admin
+          bun install
+          VITE_API_BASE_URL=${{ secrets.HK1_VITE_API_BASE_URL }} \
+          bun run build
+
+      - name: Upload Admin Frontend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-dist-hk1
+          path: frontend-admin/dist
+          retention-days: 1
+
+  # ==========================================
+  # Build Admin Frontend for US1
+  # ==========================================
+  build-admin-us1:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install & Build Admin Frontend
+        run: |
+          cd frontend-admin
+          bun install
+          VITE_API_BASE_URL=${{ secrets.US1_VITE_API_BASE_URL }} \
+          bun run build
+
+      - name: Upload Admin Frontend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-dist-us1
+          path: frontend-admin/dist
+          retention-days: 1
+
+  # ==========================================
   # Deploy to HK1 Server
   # ==========================================
   deploy-hk1:
-    needs: [build-frontend-hk1, build-backend]
+    needs: [build-frontend-hk1, build-backend, build-admin-hk1]
     runs-on: ubuntu-latest
     environment: HK1
 
@@ -133,6 +191,12 @@ jobs:
         with:
           name: backend-publish
           path: backend/publish
+
+      - name: Download Admin Frontend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-dist-hk1
+          path: frontend-admin/dist
 
       # ------------------------------------------
       # Resolve SSH transport & prepare client tools
@@ -270,6 +334,14 @@ jobs:
           echo "[${SERVER_NAME}] Deploying frontend..."
           rsync -avzr --delete -e "ssh -F $SSH_CONFIG_FILE" frontend/dist/ ${SSH_ALIAS}:/tmp/aodai-frontend-deploy
 
+      - name: Deploy Admin Frontend to Server
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+          echo "[${SERVER_NAME}] Deploying admin frontend..."
+          rsync -avzr --delete -e "ssh -F $SSH_CONFIG_FILE" frontend-admin/dist/ ${SSH_ALIAS}:/tmp/aodai-admin-deploy
+
       - name: Deploy Backend to Server
         shell: bash
         run: |
@@ -350,6 +422,14 @@ jobs:
           export GoogleCloud__TimeoutSeconds='${{ secrets.HK1_GCLOUD_TIMEOUT_SECONDS }}'
           export CacheSettings__Version='${{ secrets.HK1_CACHE_SETTINGS_VERSION }}'
           export FrontendOrigins='${{ secrets.HK1_FRONTEND_ORIGINS }}'
+          export S3Storage__BucketName='${{ secrets.HK1_S3_BUCKET_NAME }}'
+          export S3Storage__Region='${{ secrets.HK1_S3_REGION }}'
+          export S3Storage__AccessKey='${{ secrets.HK1_S3_ACCESS_KEY }}'
+          export S3Storage__SecretKey='${{ secrets.HK1_S3_SECRET_KEY }}'
+          export S3Storage__ServiceUrl='${{ secrets.HK1_S3_SERVICE_URL }}'
+          export S3Storage__UsePathStyle='${{ secrets.HK1_S3_USE_PATH_STYLE }}'
+          export AdminSeed__Email='${{ secrets.HK1_ADMIN_SEED_EMAIL }}'
+          export AdminSeed__Password='${{ secrets.HK1_ADMIN_SEED_PASSWORD }}'
           EOF
           chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
 
@@ -358,6 +438,7 @@ jobs:
           # ==========================================
           echo "[${SERVER_NAME}] Stopping PM2 processes..."
           /root/.bun/bin/pm2 stop aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 stop aodai-admin 2>/dev/null || true
           /root/.bun/bin/pm2 stop aodai-frontend 2>/dev/null || true
 
           # ==========================================
@@ -378,6 +459,18 @@ jobs:
           fi
           mv /tmp/aodai-frontend-deploy dist
           rm -rf /tmp/aodai-frontend-deploy
+
+          # ==========================================
+          # 6b. Deploy Admin Frontend
+          # ==========================================
+          echo "[${SERVER_NAME}] Deploying Admin Frontend..."
+          mkdir -p /root/AoDaiNhaUyen/frontend-admin
+          cd /root/AoDaiNhaUyen/frontend-admin
+          if [ -d "dist" ]; then
+            mv dist dist.backup.$(date +%Y%m%d_%H%M%S) || true
+          fi
+          mv /tmp/aodai-admin-deploy dist
+          rm -rf /tmp/aodai-admin-deploy
 
           # ==========================================
           # 7. Deploy Backend
@@ -413,15 +506,24 @@ jobs:
           EOF
           chmod +x /root/AoDaiNhaUyen/frontend/start.sh
 
+          cat > /root/AoDaiNhaUyen/frontend-admin/start.sh << EOF
+          #!/bin/bash
+          cd /root/AoDaiNhaUyen/frontend-admin/dist
+          /root/.bun/bin/serve -s -l ${{ secrets.HK1_ADMIN_FRONTEND_PORT }} .
+          EOF
+          chmod +x /root/AoDaiNhaUyen/frontend-admin/start.sh
+
           # ==========================================
           # 8. Restart PM2 Processes
           # ==========================================
           echo "[${SERVER_NAME}] Restarting PM2 processes..."
           /root/.bun/bin/pm2 delete aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 delete aodai-admin 2>/dev/null || true
           /root/.bun/bin/pm2 delete aodai-frontend 2>/dev/null || true
 
           /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/backend/start.sh --name "aodai-api"
           /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/frontend/start.sh --name "aodai-frontend"
+          /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/frontend-admin/start.sh --name "aodai-admin"
 
           /root/.bun/bin/pm2 save
 
@@ -444,7 +546,7 @@ jobs:
   # Deploy to US1 Server
   # ==========================================
   deploy-us1:
-    needs: [build-frontend-us1, build-backend]
+    needs: [build-frontend-us1, build-backend, build-admin-us1]
     runs-on: ubuntu-latest
     environment: US1
 
@@ -474,6 +576,12 @@ jobs:
         with:
           name: backend-publish
           path: backend/publish
+
+      - name: Download Admin Frontend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-dist-us1
+          path: frontend-admin/dist
 
       # ------------------------------------------
       # Resolve SSH transport & prepare client tools
@@ -611,6 +719,14 @@ jobs:
           echo "[${SERVER_NAME}] Deploying frontend..."
           rsync -avzr --delete -e "ssh -F $SSH_CONFIG_FILE" frontend/dist/ ${SSH_ALIAS}:/tmp/aodai-frontend-deploy
 
+      - name: Deploy Admin Frontend to Server
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+          echo "[${SERVER_NAME}] Deploying admin frontend..."
+          rsync -avzr --delete -e "ssh -F $SSH_CONFIG_FILE" frontend-admin/dist/ ${SSH_ALIAS}:/tmp/aodai-admin-deploy
+
       - name: Deploy Backend to Server
         shell: bash
         run: |
@@ -691,6 +807,14 @@ jobs:
           export GoogleCloud__TimeoutSeconds='${{ secrets.US1_GCLOUD_TIMEOUT_SECONDS }}'
           export CacheSettings__Version='${{ secrets.US1_CACHE_SETTINGS_VERSION }}'
           export FrontendOrigins='${{ secrets.US1_FRONTEND_ORIGINS }}'
+          export S3Storage__BucketName='${{ secrets.US1_S3_BUCKET_NAME }}'
+          export S3Storage__Region='${{ secrets.US1_S3_REGION }}'
+          export S3Storage__AccessKey='${{ secrets.US1_S3_ACCESS_KEY }}'
+          export S3Storage__SecretKey='${{ secrets.US1_S3_SECRET_KEY }}'
+          export S3Storage__ServiceUrl='${{ secrets.US1_S3_SERVICE_URL }}'
+          export S3Storage__UsePathStyle='${{ secrets.US1_S3_USE_PATH_STYLE }}'
+          export AdminSeed__Email='${{ secrets.US1_ADMIN_SEED_EMAIL }}'
+          export AdminSeed__Password='${{ secrets.US1_ADMIN_SEED_PASSWORD }}'
           EOF
           chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
 
@@ -699,6 +823,7 @@ jobs:
           # ==========================================
           echo "[${SERVER_NAME}] Stopping PM2 processes..."
           /root/.bun/bin/pm2 stop aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 stop aodai-admin 2>/dev/null || true
           /root/.bun/bin/pm2 stop aodai-frontend 2>/dev/null || true
 
           # ==========================================
@@ -754,15 +879,24 @@ jobs:
           EOF
           chmod +x /root/AoDaiNhaUyen/frontend/start.sh
 
+          cat > /root/AoDaiNhaUyen/frontend-admin/start.sh << EOF
+          #!/bin/bash
+          cd /root/AoDaiNhaUyen/frontend-admin/dist
+          /root/.bun/bin/serve -s -l ${{ secrets.US1_ADMIN_FRONTEND_PORT }} .
+          EOF
+          chmod +x /root/AoDaiNhaUyen/frontend-admin/start.sh
+
           # ==========================================
           # 8. Restart PM2 Processes
           # ==========================================
           echo "[${SERVER_NAME}] Restarting PM2 processes..."
           /root/.bun/bin/pm2 delete aodai-api 2>/dev/null || true
+          /root/.bun/bin/pm2 delete aodai-admin 2>/dev/null || true
           /root/.bun/bin/pm2 delete aodai-frontend 2>/dev/null || true
 
           /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/backend/start.sh --name "aodai-api"
           /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/frontend/start.sh --name "aodai-frontend"
+          /root/.bun/bin/pm2 start /root/AoDaiNhaUyen/frontend-admin/start.sh --name "aodai-admin"
 
           /root/.bun/bin/pm2 save
 

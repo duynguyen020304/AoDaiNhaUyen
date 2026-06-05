@@ -13,16 +13,18 @@ public sealed class CatalogStylingServiceTests
   public async Task RecommendAsync_PrefersInStockBroaderCoverageProduct_WhenScoresTie()
   {
     await using var dbContext = CreateDbContext();
+    var categoryId = Guid.Parse("00000000-0000-0000-0000-000000000001");
     var category = new Category
     {
-      Id = 1,
+      Id = categoryId,
       Name = "Áo dài",
       Slug = "ao-dai"
     };
 
+    var scenarioId = Guid.Parse("00000000-0000-0000-0000-000000000002");
     var scenario = new StyleScenario
     {
-      Id = 1,
+      Id = scenarioId,
       Name = "Giáo viên",
       Slug = "giao-vien"
     };
@@ -30,8 +32,9 @@ public sealed class CatalogStylingServiceTests
     dbContext.Categories.Add(category);
     dbContext.StyleScenarios.Add(scenario);
 
+    var featuredProductId = Guid.Parse("00000000-0000-0000-0000-000000000101");
     var featuredProduct = BuildProduct(
-      101,
+      featuredProductId,
       "Áo dài featured",
       category,
       isFeatured: true,
@@ -43,8 +46,9 @@ public sealed class CatalogStylingServiceTests
         Formality = "medium"
       });
 
+    var coverageProductId = Guid.Parse("00000000-0000-0000-0000-000000000102");
     var coverageProduct = BuildProduct(
-      102,
+      coverageProductId,
       "Áo dài coverage",
       category,
       isFeatured: false,
@@ -65,7 +69,7 @@ public sealed class CatalogStylingServiceTests
 
     var results = await service.RecommendAsync("giao-vien", null, "blue", null, "ao_dai", 2, cancellationToken: CancellationToken.None);
 
-    Assert.Equal([102, 101], results.Select(item => item.ProductId).ToArray());
+    Assert.Equal([coverageProductId, featuredProductId], results.Select(item => item.ProductId).ToArray());
     Assert.Contains("trùng", results[0].Rationale);
   }
 
@@ -92,7 +96,7 @@ public sealed class CatalogStylingServiceTests
       [
         new ProductVariant
         {
-          Id = productId * 10,
+          Id = Guid.NewGuid(),
           ProductId = productId,
           Sku = $"SKU-{productId}",
           Price = 1_500_000m,

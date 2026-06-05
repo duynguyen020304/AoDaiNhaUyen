@@ -54,7 +54,8 @@ public sealed class CatalogTryOnServiceTests
       aiTryOnService,
       imageValidationService,
       new StubHttpClientFactory(),
-      new UploadStoragePathResolver(uploadRoot.Path));
+      new UploadStoragePathResolver(uploadRoot.Path),
+      new StubStorageService());
 
     await service.CreateAsync(
       new CatalogAiTryOnRequestDto(
@@ -87,14 +88,15 @@ public sealed class CatalogTryOnServiceTests
       aiTryOnService,
       new StubImageValidationService(new ImageValidationResultDto(false, "Ảnh không có người phù hợp để thử đồ.", "object_only", 0.9m)),
       new StubHttpClientFactory(),
-      new UploadStoragePathResolver(uploadRoot.Path));
+      new UploadStoragePathResolver(uploadRoot.Path),
+      new StubStorageService());
 
     var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(
       new CatalogAiTryOnRequestDto(
         null,
         [1, 2, 3],
         "image/png",
-        123,
+        Guid.NewGuid(),
         null,
         [],
         null,
@@ -148,6 +150,20 @@ public sealed class CatalogTryOnServiceTests
   {
     public HttpClient CreateClient(string name) =>
       new(new ThrowingHttpMessageHandler());
+  }
+
+  private sealed class StubStorageService : IStorageService
+  {
+    public Task<UploadedFileResult> UploadAsync(Stream stream, string fileName, string contentType, string? folder = null, CancellationToken ct = default) =>
+      Task.FromResult(new UploadedFileResult($"stub-{Guid.NewGuid():N}", "https://stub.example/o", null, contentType, stream.Length, fileName));
+
+    public Task<string> GeneratePresignedGetUrlAsync(string objectKey, int expirationSeconds = 3600, CancellationToken ct = default) =>
+      Task.FromResult($"https://presigned.stub/{objectKey}");
+
+    public Task DeleteAsync(string objectKey, CancellationToken ct = default) => Task.CompletedTask;
+    public Task<Stream> DownloadAsync(string objectKey, CancellationToken ct = default) => Task.FromResult<Stream>(new MemoryStream());
+    public Task<bool> ExistsAsync(string objectKey, CancellationToken ct = default) => Task.FromResult(false);
+    public string BuildCanonicalUrl(string objectKey) => $"https://canonical.stub/{objectKey}";
   }
 
   private sealed class ThrowingHttpMessageHandler : HttpMessageHandler
