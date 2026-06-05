@@ -141,6 +141,13 @@ public sealed class S3StorageService : IStorageService
     {
       return false;
     }
+    catch (Amazon.S3.AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+    {
+      // IAM/bucket policy lacks s3:GetObject — treat as "unknown, skip exists check"
+      _logger.LogWarning("Forbidden checking existence of {ObjectKey}: {Message}. Check IAM policy has s3:GetObject on {BucketName}/*.",
+        normalizedKey, ex.Message, _settings.BucketName);
+      return false;
+    }
   }
 
   public string BuildCanonicalUrl(string objectKey)
