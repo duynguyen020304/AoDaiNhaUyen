@@ -116,6 +116,19 @@ public sealed class CommentService(
       summary.RatingDistribution);
   }
 
+  public async Task<IReadOnlyDictionary<Guid, ReviewSummaryDto>> GetReviewSummariesAsync(
+    IEnumerable<Guid> productIds,
+    CancellationToken cancellationToken = default)
+  {
+    var summaries = await commentRepository.GetReviewSummariesAsync(productIds, cancellationToken);
+    return summaries.ToDictionary(
+      kvp => kvp.Key,
+      kvp => new ReviewSummaryDto(
+        kvp.Value.AverageRating,
+        kvp.Value.TotalReviews,
+        kvp.Value.RatingDistribution));
+  }
+
   public async Task<ReviewDto> CreateReviewAsync(
     Guid userId,
     Guid productId,

@@ -14,4 +14,6 @@ public sealed record ProductListItemDto(
   int StockQty,
   string? PrimaryImageUrl,
   Guid? PrimaryVariantId,
-  string? PrimaryVariantSku);
+  string? PrimaryVariantSku,
+  double AverageRating,
+  int TotalReviews);

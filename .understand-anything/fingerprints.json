@@ -1,58 +1,8 @@
 {
   "version": "1.0.0",
-  "gitCommitHash": "a32dc979034be30f6b79a7231d9b9a94095ef34b",
-  "generatedAt": "2026-06-06T07:25:45.579Z",
+  "gitCommitHash": "HEAD",
+  "generatedAt": "2026-06-06T14:08:26.016Z",
   "files": {
-    ".github/AGENTS.md": {
-      "filePath": ".github/AGENTS.md",
-      "contentHash": "09458759f6ff722d0b6fff772781d3cee6b284d80a6998778618f85b0a3d25cb",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 24,
-      "hasStructuralAnalysis": true
-    },
-    ".github/workflows/AGENTS.md": {
-      "filePath": ".github/workflows/AGENTS.md",
-      "contentHash": "da557cfdb310c615fa6ba59aefd38eb331f63d9ee5e05f5f62f78d1ec36757bf",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 30,
-      "hasStructuralAnalysis": true
-    },
-    ".github/workflows/deploy-dev.yml": {
-      "filePath": ".github/workflows/deploy-dev.yml",
-      "contentHash": "8be40c76bc9f0e1930407f0369041f03b0a009bbcc29e094a7c43ec221503c40",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 930,
-      "hasStructuralAnalysis": true
-    },
-    ".understand-anything/.understandignore": {
-      "filePath": ".understand-anything/.understandignore",
-      "contentHash": "c3bb12af8397a0554e6f594c18fd594fa8ecddfb4524d807c7068adf9531514f",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 28,
-      "hasStructuralAnalysis": false
-    },
-    ".understand-anything/config.json": {
-      "filePath": ".understand-anything/config.json",
-      "contentHash": "4b66f98f8a815dfeb2d3a29eeb73418e07c40ed020a1498c07e908b2254f0c8c",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 2,
-      "hasStructuralAnalysis": true
-    },
     "AGENTS.md": {
       "filePath": "AGENTS.md",
       "contentHash": "20fd652fadaaa8eab05ca01a4f2b7a3c8306dce5de7dfa8051ec4fa8963a8be2",
@@ -63,14 +13,24 @@
       "totalLines": 69,
       "hasStructuralAnalysis": true
     },
-    "backend/AGENTS.md": {
-      "filePath": "backend/AGENTS.md",
-      "contentHash": "d9f49d71f64f19aad6617b4e70d1aef1a49c6eec9cc18c5b22109919a88f1f90",
+    "README.md": {
+      "filePath": "README.md",
+      "contentHash": "bdeb05ebae0696bee93675d0e3b26e7ec39c2f198741339e0272101ee791d61b",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 53,
+      "totalLines": 192,
+      "hasStructuralAnalysis": true
+    },
+    "spec.md": {
+      "filePath": "spec.md",
+      "contentHash": "ecfa49300aa54528602883a86fbff36abcb4a835b06d774dea31c1242799a740",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 367,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/.env.example": {
@@ -103,16 +63,6 @@
       "totalLines": 35,
       "hasStructuralAnalysis": false
     },
-    "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.http": {
-      "filePath": "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.http",
-      "contentHash": "8076d45a0a56d627e1738a2e2095388ce0570731f29f02d39f1ac0b1c04f61d8",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 7,
-      "hasStructuralAnalysis": false
-    },
     "backend/AoDaiNhaUyen.Api/appsettings.Development.json": {
       "filePath": "backend/AoDaiNhaUyen.Api/appsettings.Development.json",
       "contentHash": "40fb44aeb667bbb3466c2d75a97c6e4249bd8000e8a3b54d45cc25c77befe55d",
@@ -132,6 +82,266 @@
       "exports": [],
       "totalLines": 81,
       "hasStructuralAnalysis": true
+    },
+    "frontend-admin/AGENTS.md": {
+      "filePath": "frontend-admin/AGENTS.md",
+      "contentHash": "b592eb1d53af0d084cab67130be820e065bf7ced6455075d9e65debd400b3944",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 70,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/README.md": {
+      "filePath": "frontend-admin/README.md",
+      "contentHash": "bf14fbe337274f08ba3d9c2d6fe3e8723f13c16b605583bff70483717e3d4f3a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 74,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/index.html": {
+      "filePath": "frontend-admin/index.html",
+      "contentHash": "338c51b7bfd5856e8d15344122442bf9a7ec7a823e24594a53a6e8235a8e74ad",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": false
+    },
+    "frontend-admin/package.json": {
+      "filePath": "frontend-admin/package.json",
+      "contentHash": "82d44d989bb697ea993e6847a8c138e1961e98de47717955e5707dee0e28638d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 41,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/tsconfig.app.json": {
+      "filePath": "frontend-admin/tsconfig.app.json",
+      "contentHash": "d07d41f9fa0c1a4d6ae173d31f7ab1ed50a35585ee7f330508347e482d1d2015",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/tsconfig.json": {
+      "filePath": "frontend-admin/tsconfig.json",
+      "contentHash": "ad28d132ee48d6e23917cf5827cace785d0fc01a44ca68b0dda51cc8c3fd3f52",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/tsconfig.node.json": {
+      "filePath": "frontend-admin/tsconfig.node.json",
+      "contentHash": "e0f1936992f77a707102795e8ea311ae74cb54de87b221bb32b44055af66ff7e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 25,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/.env.example": {
+      "filePath": "frontend/.env.example",
+      "contentHash": "3c897ec5a11aa5979981a3e56c0781eb6729796d75a271606932aa44d7c64681",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/AGENTS.md": {
+      "filePath": "frontend/AGENTS.md",
+      "contentHash": "20b63624c258db90f9ee923d04b25510a42bdd867f4927904ce4cc3c5fef4ff1",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 55,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/index.html": {
+      "filePath": "frontend/index.html",
+      "contentHash": "88c3ee7a3ffbe09f7c30bb516b7b63cda4695b0e99ccf160ca36b39cdf7319c5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/package.json": {
+      "filePath": "frontend/package.json",
+      "contentHash": "eca6b5cc25ff5311541f8dff4a173597489b420544f7d0547f2c85ecccb0c39e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 40,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/tsconfig.app.json": {
+      "filePath": "frontend/tsconfig.app.json",
+      "contentHash": "dfaeb7e13cd844712d3830b69392bb8794a55117105e258388448a7d3ec76245",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 26,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/tsconfig.json": {
+      "filePath": "frontend/tsconfig.json",
+      "contentHash": "770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/tsconfig.node.json": {
+      "filePath": "frontend/tsconfig.node.json",
+      "contentHash": "90a22c920cbc14624fb4658b58f15c875abf3234224f3933f211849c3ada3242",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 25,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/styles/AGENTS.md": {
+      "filePath": "frontend/src/styles/AGENTS.md",
+      "contentHash": "f9536f270acef3584d2db7813e75a8a7361835d7e83bca62865d7f368ff05c73",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 38,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/styles/global.css": {
+      "filePath": "frontend/src/styles/global.css",
+      "contentHash": "cc7c5b466d6bcc6e39207ae175599aea0e68da78c587b427c7c88023f86e825c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 17,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/styles/reset.css": {
+      "filePath": "frontend/src/styles/reset.css",
+      "contentHash": "69d407810d57626f863c547f6088f6174da61fe5e13925d8e14b717fbb7239b7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 45,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/styles/texture.css": {
+      "filePath": "frontend/src/styles/texture.css",
+      "contentHash": "b1513ef138ba0abee2653360a08698264480244abea2308520619c96cce1e208",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 16,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/styles/transitions.css": {
+      "filePath": "frontend/src/styles/transitions.css",
+      "contentHash": "f87de07648eff4a559a614a131699d25a4f0eccdf9ad2bcc2f7f5daf5e264786",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/styles/typography.css": {
+      "filePath": "frontend/src/styles/typography.css",
+      "contentHash": "3561ddb112a408c62ef818acb66f335121cfe2b49d0aaa635512632336071454",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 23,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/styles/variables.css": {
+      "filePath": "frontend/src/styles/variables.css",
+      "contentHash": "da359b5568eaacd9449e80f9e70499f942aa5f03e89b56b3140a7eb40437a19c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35,
+      "hasStructuralAnalysis": false
+    },
+    ".github/AGENTS.md": {
+      "filePath": ".github/AGENTS.md",
+      "contentHash": "09458759f6ff722d0b6fff772781d3cee6b284d80a6998778618f85b0a3d25cb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": true
+    },
+    ".github/workflows/AGENTS.md": {
+      "filePath": ".github/workflows/AGENTS.md",
+      "contentHash": "da557cfdb310c615fa6ba59aefd38eb331f63d9ee5e05f5f62f78d1ec36757bf",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 30,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/config.json": {
+      "filePath": ".understand-anything/config.json",
+      "contentHash": "3b7261a81d69f50685b9bb8b0690d0fcbde445a71e36781cc0cdce7167c0a8a7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AGENTS.md": {
+      "filePath": "backend/AGENTS.md",
+      "contentHash": "d9f49d71f64f19aad6617b4e70d1aef1a49c6eec9cc18c5b22109919a88f1f90",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 53,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.http": {
+      "filePath": "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.http",
+      "contentHash": "8076d45a0a56d627e1738a2e2095388ce0570731f29f02d39f1ac0b1c04f61d8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 7,
+      "hasStructuralAnalysis": false
     },
     "backend/AoDaiNhaUyen.Api/Configuration/S3StorageSettings.cs": {
       "filePath": "backend/AoDaiNhaUyen.Api/Configuration/S3StorageSettings.cs",
@@ -172,7 +382,7 @@
     },
     "backend/AoDaiNhaUyen.Api/Configuration/ServiceRegistration.cs": {
       "filePath": "backend/AoDaiNhaUyen.Api/Configuration/ServiceRegistration.cs",
-      "contentHash": "0e28c91b2bb2c5a3e8c9b7c13c4907045b80cde552b80d3da3f12e44195936e1",
+      "contentHash": "0766fad6a4ba705b4eae3231c99a87043656b0d29640e9cd3d651e2e09fb63cc",
       "functions": [
         {
           "name": "AddBackendServices",
@@ -182,7 +392,7 @@
           ],
           "returnType": "IServiceCollection",
           "exported": true,
-          "lineCount": 202
+          "lineCount": 204
         }
       ],
       "classes": [
@@ -193,7 +403,7 @@
           ],
           "properties": [],
           "exported": true,
-          "lineCount": 205
+          "lineCount": 207
         }
       ],
       "imports": [
@@ -322,7 +532,7 @@
         "AddBackendServices",
         "ServiceRegistration"
       ],
-      "totalLines": 229,
+      "totalLines": 231,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminCategoriesController.cs": {
@@ -550,7 +760,7 @@
     },
     "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminProductsController.cs": {
       "filePath": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminProductsController.cs",
-      "contentHash": "0650c52a701659adf21dc804afbd8f1bb634adc8cf5a4ffa9daa54c4c697b517",
+      "contentHash": "eba7565f9ff34db69746e5b690a00d1aaafc0c95971dfb557b89778c1e07cb5e",
       "functions": [
         {
           "name": "GetAll",
@@ -648,7 +858,40 @@
           ],
           "returnType": "Task<ActionResult<ApiResponse<ProductImageVisibilityDto>>>",
           "exported": true,
-          "lineCount": 9
+          "lineCount": 15
+        },
+        {
+          "name": "UploadImage",
+          "params": [
+            "productId",
+            "file",
+            "cancellationToken"
+          ],
+          "returnType": "Task<ActionResult<ApiResponse<AdminImageResponse>>>",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "DeleteImage",
+          "params": [
+            "productId",
+            "imageId",
+            "cancellationToken"
+          ],
+          "returnType": "Task<ActionResult<ApiResponse<object>>>",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "SetPrimaryImage",
+          "params": [
+            "productId",
+            "imageId",
+            "cancellationToken"
+          ],
+          "returnType": "Task<ActionResult<ApiResponse<object>>>",
+          "exported": true,
+          "lineCount": 14
         }
       ],
       "classes": [
@@ -663,11 +906,14 @@
             "Delete",
             "Restore",
             "MakeImagePublic",
-            "MakeImagePrivate"
+            "MakeImagePrivate",
+            "UploadImage",
+            "DeleteImage",
+            "SetPrimaryImage"
           ],
           "properties": [],
           "exported": true,
-          "lineCount": 158
+          "lineCount": 218
         }
       ],
       "imports": [
@@ -718,9 +964,12 @@
         "Restore",
         "MakeImagePublic",
         "MakeImagePrivate",
+        "UploadImage",
+        "DeleteImage",
+        "SetPrimaryImage",
         "AdminProductsController"
       ],
-      "totalLines": 169,
+      "totalLines": 229,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminRolesController.cs": {
@@ -2644,7 +2893,7 @@
     },
     "backend/AoDaiNhaUyen.Api/Services/S3StorageService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Api/Services/S3StorageService.cs",
-      "contentHash": "1b35b85e68ad6811e790bdd9c418d7771c0d4cfd2d68145ba4f2c45d20ed0ad7",
+      "contentHash": "f7aa6b0de8cc3e7367b9724967130a6715d18ae6751bd9cd43621ac8dc861523",
       "functions": [
         {
           "name": "S3StorageService",
@@ -3134,256 +3383,6 @@
       "totalLines": 393,
       "hasStructuralAnalysis": false
     },
-    "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-3.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-3.webp",
-      "contentHash": "1807387e7406e84a8ffd5a069568ab9b928ab1d4b34ec98002783e24aa896bea",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 544,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-5.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-5.webp",
-      "contentHash": "ec926070d0f74845afd771a7c33fd7a73c3a37f285d692b437476dd47dfa6cb3",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 188,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-6.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-6.webp",
-      "contentHash": "1fb0bd9aad271d3e2612711feb257578cc31c8704f5ec28eaa90e81522a0b8e0",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 1056,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-1.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-1.webp",
-      "contentHash": "7bc6d57b77412038c1f036283f53bc1687211ee02468fad74528972c299d5342",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 665,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-2.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-2.webp",
-      "contentHash": "06cbd95778bf2ccef67c4b48acb4b52b384ea2464c3ed02e83910eb537937d1f",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 859,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-4.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-4.webp",
-      "contentHash": "f1381be4dfa88e7a3c2075773eb90adef88aea066406c7f5ca60da92de34421d",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 1130,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-5.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-5.webp",
-      "contentHash": "4a3748c7cddd7bec623c580fccfbb6b28d801cce29aaec9aa0f37981bd08c329",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 662,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-6.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-6.webp",
-      "contentHash": "aef5c34e45822c7b1ca0d9f278ae09a9c631151023cb3a389058e84cc0321284",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 951,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-buom-trang.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-buom-trang.webp",
-      "contentHash": "f9a39dae75c01dbc173f9ddeef8c336f479151f31f5494eb97cae321cf3ecaca",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 277,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa-cach-dieu.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa-cach-dieu.webp",
-      "contentHash": "62a20ebc10245c74da23acaf20bdfbf79b3e5322c4d582867a2dbd6c9a64784f",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 360,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa.webp",
-      "contentHash": "95a15542bc514685d8246847d291877a4b1215f68e291304904ab1c9d51639be",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 138,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-kieu-cao.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-kieu-cao.webp",
-      "contentHash": "7053b6f1a16242f8a5f48579006997858f97259d1010f18340395632603e5c47",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 467,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no-de-bang.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no-de-bang.webp",
-      "contentHash": "b36c110632353dc268585682281ff566433ec12cc031940af09614d7d718ed43",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 577,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no.webp",
-      "contentHash": "4260d5d4efdb3749f0d8af68be4fb2a22c44f836685ef9939e029d6f18866d18",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 438,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong-node.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong-node.webp",
-      "contentHash": "5dad482bbba00f309d26b293cd0ff23638a8610283b9d27a1a812c1a0e131cd9",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 266,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong.webp",
-      "contentHash": "177afeea90360abec6e6e0326169119b62635896dbd08d353c2322b674570171",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 1173,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-bau.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-bau.webp",
-      "contentHash": "fc65340ae610f3e36a70d592816247a9d8e3e415c125f19614f488761eebdc15",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 471,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-gap-tua-rua.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-gap-tua-rua.webp",
-      "contentHash": "787e2ba834cd2e677e327c1203238d4b56fe77470a04c8a15cc217371168f70f",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 580,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-hoa-sen.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-hoa-sen.webp",
-      "contentHash": "1c5d1161bbd3fb109a18f7f13e56480eea623dd6690fa292a0a1d3199e71b898",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 735,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tre-gap.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tre-gap.webp",
-      "contentHash": "3e3e09330964d66f7d2dfdf418a19cc33c67529ca839177f0cd0582f2cf9e8aa",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 713,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tron.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tron.webp",
-      "contentHash": "9c0afce6c4850d3a5862bc443e99f6ab1cef16c4ed76af0264b0cbbac23e7b1d",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 89,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-van-may.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-van-may.webp",
-      "contentHash": "d35b443f008ec9fb878279e9a03657fd899f4fdfb89208632e5a449bc84610ed",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 1676,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-hoa-van.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-hoa-van.webp",
-      "contentHash": "f2b19f4069efec9fcb8abe3d03fb9f53a5291481f747f9e613e5630d8af41bb7",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 203,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-kieu.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-kieu.webp",
-      "contentHash": "90c4064a3b48684aa30ac259b6ed63395084b51de0f61497acf6f96ed3a3d23f",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 115,
-      "hasStructuralAnalysis": false
-    },
-    "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-thanh.webp": {
-      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-thanh.webp",
-      "contentHash": "f2b19f4069efec9fcb8abe3d03fb9f53a5291481f747f9e613e5630d8af41bb7",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 203,
-      "hasStructuralAnalysis": false
-    },
     "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-theu-hoa.webp": {
       "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-theu-hoa.webp",
       "contentHash": "e0683957f101c06e83123fe2ed0c969ec651703af095947edce000ce7c89095b",
@@ -3690,312 +3689,6 @@
       "totalLines": 9,
       "hasStructuralAnalysis": true
     },
-    "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnCatalogDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnCatalogDto.cs",
-      "contentHash": "fe8e70e9fe535ae7ba76b0451b47fd523632e101cfd1f3c8bdbd8e0dfe9b2c0d",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 26,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnCatalogItemDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnCatalogItemDto.cs",
-      "contentHash": "97069c1a3d61e77dc1a88f23cb23623d06c2ccb04ea26760093e244e18a02031",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 12,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnRequestDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnRequestDto.cs",
-      "contentHash": "496c126d39b1901f33f0a13259d0b41064b65c8c410c84882e6272c0a7a6b86f",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 10,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnResultDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnResultDto.cs",
-      "contentHash": "b1f83ea2327e4dddb4c371ff03ba278eb46fac3c36430fc0b559edfc106eb356",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 6,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthResult.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthResult.cs",
-      "contentHash": "ceb6b0dab7478051213ebe6d16036ce6af9e5027b58c91f9e41e120ce482005b",
-      "functions": [
-        {
-          "name": "AuthResult",
-          "params": [
-            "succeeded",
-            "value",
-            "errorCode",
-            "errorMessage"
-          ],
-          "exported": true,
-          "lineCount": 7
-        },
-        {
-          "name": "Success",
-          "params": [
-            "value"
-          ],
-          "returnType": "AuthResult<T>",
-          "exported": true,
-          "lineCount": 1
-        },
-        {
-          "name": "Failure",
-          "params": [
-            "errorCode",
-            "errorMessage"
-          ],
-          "returnType": "AuthResult<T>",
-          "exported": true,
-          "lineCount": 2
-        }
-      ],
-      "classes": [
-        {
-          "name": "AuthResult",
-          "methods": [
-            "AuthResult",
-            "Success",
-            "Failure"
-          ],
-          "properties": [
-            "Succeeded",
-            "Value",
-            "ErrorCode",
-            "ErrorMessage"
-          ],
-          "exported": true,
-          "lineCount": 20
-        }
-      ],
-      "imports": [],
-      "exports": [
-        "Succeeded",
-        "Value",
-        "ErrorCode",
-        "ErrorMessage",
-        "Success",
-        "Failure",
-        "AuthResult"
-      ],
-      "totalLines": 23,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthSessionDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthSessionDto.cs",
-      "contentHash": "be26a45b22fe8b4aeb695e4ca11a4f8ce3ef50646cfcb3c882fde53b97fbdb32",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 7,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthUserDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthUserDto.cs",
-      "contentHash": "2a59ba33cd2b9cfbe4cda9b45d1ec46cb6bd96b9353d7424536031c649501f30",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 9,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/Auth/GoogleUserInfoDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Auth/GoogleUserInfoDto.cs",
-      "contentHash": "6a2880441f3bea3f26698d991ba956f90c82862ed0bbe172f2127fab2f8df22f",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 9,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/Auth/TokenValidationResult.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Auth/TokenValidationResult.cs",
-      "contentHash": "62b82bf8d6080b6c857651c0fb246ba008f612d7335e720cfec9701cc5f2808d",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 17,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/Auth/ZaloUserInfoDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Auth/ZaloUserInfoDto.cs",
-      "contentHash": "94fc261a8a42c325b5c820d422b02d983705532c3b4b046a298265def113f0cd",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 7,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/Cart/AddCartItemDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Cart/AddCartItemDto.cs",
-      "contentHash": "1f1fd9c0a275b4cc36a1c089b0f6e7df205011622881b58b06c52e048d803af2",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 6,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/Cart/CartDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Cart/CartDto.cs",
-      "contentHash": "c856d880be873557f837d9a3f2eb815d2338281d88c569385d3a64f02c641952",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 9,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/Cart/CartItemDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Cart/CartItemDto.cs",
-      "contentHash": "3878cf32cf821bb35fab22bfa1b9b59a3826b20141b7ed6e929df8f6d31841be",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 18,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/Cart/UpdateCartItemDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Cart/UpdateCartItemDto.cs",
-      "contentHash": "3c4b624b69737a944f5c5a7b524cd0fa1cb482ad4cec8b970fdea7bdb53f3a4a",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 5,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/CatalogAiTryOnRequestDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/CatalogAiTryOnRequestDto.cs",
-      "contentHash": "c2d85ecbbefd64c7f4136d7210cf89ce2d6894b56eba00b6236efe8c0b9bb8dc",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 15,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/CategoryDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/CategoryDto.cs",
-      "contentHash": "892285da5eb96ef4a0a75f843a55426177ee227a74b16f03053cb9d93fa1a20a",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 12,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/CategoryTreeDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/CategoryTreeDto.cs",
-      "contentHash": "52d5d67d18dbb48974c8969554c9ec2257b4b67770339ce01fc48604199886b0",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 15,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/ChatAttachmentDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ChatAttachmentDto.cs",
-      "contentHash": "10c3ed22e075b249b5754f9c3cb60fd12409c6ba78cae87933e01038e0eace0e",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 10,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/ChatMessageDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ChatMessageDto.cs",
-      "contentHash": "b53ead6aec0d25361825f413df2736d46547a6b833adba52498a1848a43e6741",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 11,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/ChatRecommendationItemDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ChatRecommendationItemDto.cs",
-      "contentHash": "bac09e03040a3bfdfb9293cdf3dcd51e6c478dabf5efb744260ad341724b519a",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 13,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/ChatStructuredPayloadDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ChatStructuredPayloadDto.cs",
-      "contentHash": "377b7143b200530c2b6255d37d3d0a514e86538229d2a9042756dd96b9a3dfee",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 14,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/ChatThreadDetailDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ChatThreadDetailDto.cs",
-      "contentHash": "033806f50c5cc01c23cb2e3a1d19f8b8e6f661b699d51321463b0576ebbf2b14",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 11,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/ChatThreadSummaryDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ChatThreadSummaryDto.cs",
-      "contentHash": "8e99aaef0f35d67e13cadb2d854b013df5942cf73ee352edf1c0fef0b1ed2f00",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 9,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutAddressDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutAddressDto.cs",
-      "contentHash": "42f56b5bbd8b5c2cdd2199b9040ea511a4967c7a70a65a50bd41e9494dd6bb0b",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 10,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutRequestDto.cs": {
-      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutRequestDto.cs",
-      "contentHash": "aedfb4ab015f2c7b497ec565c27938854617bb9c82901514d41b2548da979316",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 8,
-      "hasStructuralAnalysis": true
-    },
     "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutResultDto.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutResultDto.cs",
       "contentHash": "e2e17bb8a1986b0040b6ebafce93303bce0e0c82e799a4e8f42c01e15a731af3",
@@ -4058,12 +3751,12 @@
     },
     "backend/AoDaiNhaUyen.Application/DTOs/ProductDetailDto.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ProductDetailDto.cs",
-      "contentHash": "ac1c1db6c8bcfde4bba7fe1b5f76380548ad1c321dc663dc99f940c3c9457ec1",
+      "contentHash": "51ad523a481425cef160f2b8a08ff3b1ea09bfd6ff1e3b8869c22ba4cbdd792e",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 22,
+      "totalLines": 23,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Application/DTOs/ProductImageDto.cs": {
@@ -4078,7 +3771,7 @@
     },
     "backend/AoDaiNhaUyen.Application/DTOs/ProductImageVisibilityDto.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ProductImageVisibilityDto.cs",
-      "contentHash": "edaa3584ac70566851943a9f838aa5c1ece04720e87b4f504a1813eecf3ecc1e",
+      "contentHash": "a2661e222ebe49e2fe59cd9ac4bbd609aacd7495c3499cad8fdfe1b4dbe4408f",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -4658,7 +4351,7 @@
     },
     "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminProductService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminProductService.cs",
-      "contentHash": "18854fb5732690b34d35058fe8a1362efc806239f8297af6e4847deffb014902",
+      "contentHash": "c9b7e5357ccac67282bb16ab6ce70ac2bde6eda507bfd993bba0c34f5dcf569d",
       "functions": [],
       "classes": [
         {
@@ -4670,11 +4363,14 @@
             "UpdateAsync",
             "ToggleStatusAsync",
             "DeleteAsync",
-            "RestoreAsync"
+            "RestoreAsync",
+            "UploadImageAsync",
+            "DeleteImageAsync",
+            "SetPrimaryImageAsync"
           ],
           "properties": [],
           "exported": true,
-          "lineCount": 29
+          "lineCount": 36
         }
       ],
       "imports": [
@@ -4688,7 +4384,7 @@
       "exports": [
         "IAdminProductService"
       ],
-      "totalLines": 35,
+      "totalLines": 42,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminRoleService.cs": {
@@ -5799,7 +5495,7 @@
     },
     "backend/AoDaiNhaUyen.Application/Services/CatalogService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/Services/CatalogService.cs",
-      "contentHash": "54a9462ac3dc8b9337ee6210770a1b7f4d9e0dc82cd41712ec74f8b559343481",
+      "contentHash": "6e481403a757cdcf8f8684908bb5d642e5f663ed0019984ac0e7c05b8da22bc2",
       "functions": [
         {
           "name": "GetCategoriesAsync",
@@ -5842,7 +5538,17 @@
           ],
           "returnType": "Task<ProductDetailDto?>",
           "exported": true,
-          "lineCount": 60
+          "lineCount": 61
+        },
+        {
+          "name": "MapReviewSummaryAsync",
+          "params": [
+            "productId",
+            "cancellationToken"
+          ],
+          "returnType": "Task<ReviewSummaryDto?>",
+          "exported": false,
+          "lineCount": 6
         }
       ],
       "classes": [
@@ -5852,11 +5558,12 @@
             "GetCategoriesAsync",
             "GetHeaderCategoriesAsync",
             "GetProductsAsync",
-            "GetProductBySlugAsync"
+            "GetProductBySlugAsync",
+            "MapReviewSummaryAsync"
           ],
           "properties": [],
           "exported": true,
-          "lineCount": 196
+          "lineCount": 205
         }
       ],
       "imports": [
@@ -5886,7 +5593,7 @@
         "GetProductBySlugAsync",
         "CatalogService"
       ],
-      "totalLines": 203,
+      "totalLines": 212,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Domain/AGENTS.md": {
@@ -6670,7 +6377,7 @@
     },
     "backend/AoDaiNhaUyen.Domain/Entities/Product.cs": {
       "filePath": "backend/AoDaiNhaUyen.Domain/Entities/Product.cs",
-      "contentHash": "69d767ef59fc846112d05fb3410e2641fd03ac9912ec7064a8f664aacddf676a",
+      "contentHash": "a76dd35bc9d1109fe141d36f2aea90f934a4a87e618a6a604bbeae93435e9d68",
       "functions": [],
       "classes": [
         {
@@ -6689,6 +6396,7 @@
             "CareInstruction",
             "Status",
             "IsFeatured",
+            "IsPublic",
             "Category",
             "Variants",
             "Images",
@@ -6696,10 +6404,12 @@
             "Scenarios",
             "BasePairings",
             "PairedWith",
-            "AiAssets"
+            "AiAssets",
+            "Reviews",
+            "Comments"
           ],
           "exported": true,
-          "lineCount": 24
+          "lineCount": 27
         }
       ],
       "imports": [
@@ -6723,6 +6433,7 @@
         "CareInstruction",
         "Status",
         "IsFeatured",
+        "IsPublic",
         "Category",
         "Variants",
         "Images",
@@ -6731,9 +6442,11 @@
         "BasePairings",
         "PairedWith",
         "AiAssets",
+        "Reviews",
+        "Comments",
         "Product"
       ],
-      "totalLines": 29,
+      "totalLines": 33,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Domain/Entities/ProductAiAsset.cs": {
@@ -7174,7 +6887,7 @@
     },
     "backend/AoDaiNhaUyen.Domain/Entities/User.cs": {
       "filePath": "backend/AoDaiNhaUyen.Domain/Entities/User.cs",
-      "contentHash": "db0c5d1e3eeb4a3d93d7a23c68950111753fd521500d0ec19cc87294b9770d30",
+      "contentHash": "379ca1903dde6fd699d238f507c867e3e555b214af4adb158caa218d00a66d22",
       "functions": [],
       "classes": [
         {
@@ -7200,10 +6913,11 @@
             "MeasurementProfiles",
             "Orders",
             "Carts",
-            "Reviews"
+            "Reviews",
+            "Comments"
           ],
           "exported": true,
-          "lineCount": 25
+          "lineCount": 26
         }
       ],
       "imports": [
@@ -7235,9 +6949,10 @@
         "Orders",
         "Carts",
         "Reviews",
+        "Comments",
         "User"
       ],
-      "totalLines": 30,
+      "totalLines": 31,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Domain/Entities/UserAccount.cs": {
@@ -7729,7 +7444,7 @@
     },
     "backend/AoDaiNhaUyen.Infrastructure/Data/AppDbContext.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/AppDbContext.cs",
-      "contentHash": "45f7a7c3f5f49e532b469f013849db50b369a6cbce6591603068861cbc00d2e6",
+      "contentHash": "634e28144f6adf20201cbb421358c05622ad4f5d24a7360305c09c3671fbeccb",
       "functions": [
         {
           "name": "OnModelCreating",
@@ -7738,7 +7453,7 @@
           ],
           "returnType": "void",
           "exported": false,
-          "lineCount": 540
+          "lineCount": 558
         },
         {
           "name": "ApplySnakeCaseColumnNames",
@@ -7807,11 +7522,12 @@
             "Payments",
             "Shipments",
             "Reviews",
+            "Comments",
             "ImageValidationCacheEntries",
             "UserGeneratedImages"
           ],
           "exported": true,
-          "lineCount": 635
+          "lineCount": 654
         }
       ],
       "imports": [
@@ -7876,11 +7592,12 @@
         "Payments",
         "Shipments",
         "Reviews",
+        "Comments",
         "ImageValidationCacheEntries",
         "UserGeneratedImages",
         "AppDbContext"
       ],
-      "totalLines": 644,
+      "totalLines": 663,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Infrastructure/Data/AppDbContextFactory.cs": {
@@ -8611,7 +8328,7 @@
     },
     "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/AppDbContextModelSnapshot.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/AppDbContextModelSnapshot.cs",
-      "contentHash": "adb6db111b7d623d728e5d7cd11f9f09063477e3c700c70831e064c347cf1a3d",
+      "contentHash": "7f29daf2d702c55d4b9a5607f37322cb7ca92717204388db04495b65b3b326c8",
       "functions": [
         {
           "name": "BuildModel",
@@ -8620,7 +8337,7 @@
           ],
           "returnType": "void",
           "exported": false,
-          "lineCount": 2992
+          "lineCount": 3111
         }
       ],
       "classes": [
@@ -8631,7 +8348,7 @@
           ],
           "properties": [],
           "exported": false,
-          "lineCount": 2996
+          "lineCount": 3115
         }
       ],
       "imports": [
@@ -8679,12 +8396,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 3011,
+      "totalLines": 3130,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Infrastructure/Data/SeedDataService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/SeedDataService.cs",
-      "contentHash": "653fb007ce562a1f262a308cd0785abf21f71c2deab983e2fa78a08c4e7d19a9",
+      "contentHash": "d3df65b614788c7a8bdbcfd6002c508ad458a28d59c698c43cd1c1927822fb35",
       "functions": [
         {
           "name": "SeedAllAsync",
@@ -8705,7 +8422,7 @@
           "params": [],
           "returnType": "Task",
           "exported": false,
-          "lineCount": 30
+          "lineCount": 35
         },
         {
           "name": "SeedCuratedTryOnAssetsToS3Async",
@@ -8747,7 +8464,7 @@
           "params": [],
           "returnType": "Task",
           "exported": false,
-          "lineCount": 84
+          "lineCount": 90
         },
         {
           "name": "SeedStyleScenariosAsync",
@@ -8903,7 +8620,7 @@
             "CuratedTryOnRoot"
           ],
           "exported": true,
-          "lineCount": 774
+          "lineCount": 785
         }
       ],
       "imports": [
@@ -8948,7 +8665,7 @@
         "SeedAllAsync",
         "SeedDataService"
       ],
-      "totalLines": 784,
+      "totalLines": 795,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Infrastructure/Repositories/AGENTS.md": {
@@ -9164,7 +8881,7 @@
     },
     "backend/AoDaiNhaUyen.Infrastructure/Repositories/ProductRepository.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Repositories/ProductRepository.cs",
-      "contentHash": "27898cf1e70cafd431da9d443d20165ab876a1d723d6d1d68018957d1f054915",
+      "contentHash": "82b02bb06a6995ebf0f709bfba6db4e1cb34fa7abfb03ae99e59174a1eaca9f4",
       "functions": [
         {
           "name": "GetPagedAsync",
@@ -9603,7 +9320,7 @@
     },
     "backend/AoDaiNhaUyen.Infrastructure/Services/AdminProductService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminProductService.cs",
-      "contentHash": "0b0cf1c54c368c1f16785db67b9587251f812ae4a06a4d73855ed173375924b8",
+      "contentHash": "dfab83516a782dae9b4bde42815d2eb2c27c1aefe4c14ceb1a6c192280aabbe1",
       "functions": [
         {
           "name": "GetPagedAsync",
@@ -9648,7 +9365,7 @@
           ],
           "returnType": "Task<AdminProductDetailResponse?>",
           "exported": true,
-          "lineCount": 29
+          "lineCount": 32
         },
         {
           "name": "ToggleStatusAsync",
@@ -9659,7 +9376,7 @@
           ],
           "returnType": "Task<bool>",
           "exported": true,
-          "lineCount": 14
+          "lineCount": 17
         },
         {
           "name": "DeleteAsync",
@@ -9680,6 +9397,53 @@
           "returnType": "Task<bool>",
           "exported": true,
           "lineCount": 16
+        },
+        {
+          "name": "ProcessStatusChangeVisibilityAsync",
+          "params": [
+            "product",
+            "oldStatus",
+            "newStatus",
+            "cancellationToken"
+          ],
+          "returnType": "Task",
+          "exported": false,
+          "lineCount": 27
+        },
+        {
+          "name": "UploadImageAsync",
+          "params": [
+            "productId",
+            "stream",
+            "fileName",
+            "contentType",
+            "cancellationToken"
+          ],
+          "returnType": "Task<AdminImageResponse?>",
+          "exported": true,
+          "lineCount": 36
+        },
+        {
+          "name": "DeleteImageAsync",
+          "params": [
+            "productId",
+            "imageId",
+            "cancellationToken"
+          ],
+          "returnType": "Task<bool>",
+          "exported": true,
+          "lineCount": 17
+        },
+        {
+          "name": "SetPrimaryImageAsync",
+          "params": [
+            "productId",
+            "imageId",
+            "cancellationToken"
+          ],
+          "returnType": "Task<bool>",
+          "exported": true,
+          "lineCount": 13
         },
         {
           "name": "MapToDetailAsync",
@@ -9703,11 +9467,15 @@
             "ToggleStatusAsync",
             "DeleteAsync",
             "RestoreAsync",
+            "ProcessStatusChangeVisibilityAsync",
+            "UploadImageAsync",
+            "DeleteImageAsync",
+            "SetPrimaryImageAsync",
             "MapToDetailAsync"
           ],
           "properties": [],
           "exported": true,
-          "lineCount": 208
+          "lineCount": 311
         }
       ],
       "imports": [
@@ -9750,9 +9518,12 @@
         "ToggleStatusAsync",
         "DeleteAsync",
         "RestoreAsync",
+        "UploadImageAsync",
+        "DeleteImageAsync",
+        "SetPrimaryImageAsync",
         "AdminProductService"
       ],
-      "totalLines": 218,
+      "totalLines": 321,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Infrastructure/Services/AdminRoleService.cs": {
@@ -10653,7 +10424,7 @@
     },
     "backend/AoDaiNhaUyen.Infrastructure/Services/CatalogStylingService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/CatalogStylingService.cs",
-      "contentHash": "9abdbb692db558b95ed3117d19ee551d9353e085a345cec905fe1de16d11ab38",
+      "contentHash": "971d6bc7ad39ade0df94e2c5ad3adf7ec7b3baf95f618b9852842ec4da580c66",
       "functions": [
         {
           "name": "RecommendAsync",
@@ -10964,7 +10735,7 @@
     },
     "backend/AoDaiNhaUyen.Infrastructure/Services/CatalogTryOnService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/CatalogTryOnService.cs",
-      "contentHash": "77abfa96557eda85f915a0658592e0bfc4b6d21f149e03a68e89769e9a94259c",
+      "contentHash": "899e26a2ad035cf5223008fb4daf788ce293a2b3477a5f7acb9982fa53de1abf",
       "functions": [
         {
           "name": "GetCatalogAsync",
@@ -15327,7 +15098,7 @@
     },
     "backend/AoDaiNhaUyen.Tests/Services/CatalogStylingServiceTests.cs": {
       "filePath": "backend/AoDaiNhaUyen.Tests/Services/CatalogStylingServiceTests.cs",
-      "contentHash": "6d66074db87268ba46e5daf1889afadb95a03f4a96233cdb6059239e1b070f2d",
+      "contentHash": "f7bdc016cd83fb96da12f0c3fc4cd64c02e3b1999887a5d14d3b37752624b487",
       "functions": [
         {
           "name": "RecommendAsync_PrefersInStockBroaderCoverageProduct_WhenScoresTie",
@@ -15349,7 +15120,7 @@
           ],
           "returnType": "Product",
           "exported": false,
-          "lineCount": 48
+          "lineCount": 49
         },
         {
           "name": "CreateDbContext",
@@ -15369,7 +15140,7 @@
           ],
           "properties": [],
           "exported": true,
-          "lineCount": 123
+          "lineCount": 134
         }
       ],
       "imports": [
@@ -15389,6 +15160,18 @@
           "source": "AoDaiNhaUyen.Infrastructure.Services",
           "specifiers": [
             "Services"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs",
+          "specifiers": [
+            "DTOs"
           ]
         },
         {
@@ -15414,26 +15197,26 @@
         "RecommendAsync_PrefersInStockBroaderCoverageProduct_WhenScoresTie",
         "CatalogStylingServiceTests"
       ],
-      "totalLines": 133,
+      "totalLines": 145,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Tests/Services/CatalogTryOnServiceTests.cs": {
       "filePath": "backend/AoDaiNhaUyen.Tests/Services/CatalogTryOnServiceTests.cs",
-      "contentHash": "367f69c54f665eaf011206660462dcdb3761e0e624a89b6e1b1fdd81fcbb00a7",
+      "contentHash": "0f08ddcd294d7ac6b112aabf9f4881b08693cc748f589e1ef9c56d1464caa66c",
       "functions": [
         {
           "name": "CreateAsync_ReadsGarmentImageFromFileUri",
           "params": [],
           "returnType": "Task",
           "exported": true,
-          "lineCount": 65
+          "lineCount": 67
         },
         {
           "name": "CreateAsync_InvalidPersonImage_ThrowsAndDoesNotGenerate",
           "params": [],
           "returnType": "Task",
           "exported": true,
-          "lineCount": 31
+          "lineCount": 32
         },
         {
           "name": "CreateDbContext",
@@ -15453,7 +15236,7 @@
           ],
           "properties": [],
           "exported": true,
-          "lineCount": 185
+          "lineCount": 202
         }
       ],
       "imports": [
@@ -15505,7 +15288,7 @@
         "CreateAsync_InvalidPersonImage_ThrowsAndDoesNotGenerate",
         "CatalogTryOnServiceTests"
       ],
-      "totalLines": 196,
+      "totalLines": 213,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Tests/Services/ConcurrencyLimitedAiTryOnServiceTests.cs": {
@@ -15843,8 +15626,15 @@
     },
     "backend/AoDaiNhaUyen.Tests/Services/ImageVisibilityServiceTests.cs": {
       "filePath": "backend/AoDaiNhaUyen.Tests/Services/ImageVisibilityServiceTests.cs",
-      "contentHash": "18c0b8615e5e86e60c0bf7ba02dfc0cda4d29fa79158527b0e43b09914adde9e",
+      "contentHash": "0eb6665c23494a834e11c39a961007012011bda0035b1fdf69e45dde12f8c5ab",
       "functions": [
+        {
+          "name": "xUnit_SuppressCollectionSize",
+          "params": [],
+          "returnType": "void",
+          "exported": true,
+          "lineCount": 5
+        },
         {
           "name": "ResolveUrl_LegacyPath_ReturnsAsIs",
           "params": [],
@@ -15909,6 +15699,7 @@
         {
           "name": "ImageVisibilityServiceTests",
           "methods": [
+            "xUnit_SuppressCollectionSize",
             "ResolveUrl_LegacyPath_ReturnsAsIs",
             "ResolveUrl_PublicImage_ReturnsCanonicalUrl",
             "ResolveUrl_PrivateImage_ReturnsPresignedUrl",
@@ -15920,7 +15711,7 @@
           ],
           "properties": [],
           "exported": true,
-          "lineCount": 174
+          "lineCount": 180
         }
       ],
       "imports": [
@@ -15974,6 +15765,7 @@
         }
       ],
       "exports": [
+        "xUnit_SuppressCollectionSize",
         "ResolveUrl_LegacyPath_ReturnsAsIs",
         "ResolveUrl_PublicImage_ReturnsCanonicalUrl",
         "ResolveUrl_PrivateImage_ReturnsPresignedUrl",
@@ -15982,7 +15774,7 @@
         "MakePrivateAsync_Success_DeletesPublic",
         "ImageVisibilityServiceTests"
       ],
-      "totalLines": 186,
+      "totalLines": 192,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Tests/Services/IntentClassifierTests.cs": {
@@ -16285,7 +16077,7 @@
     },
     "backend/AoDaiNhaUyen.Tests/Services/SeedDataServiceTests.cs": {
       "filePath": "backend/AoDaiNhaUyen.Tests/Services/SeedDataServiceTests.cs",
-      "contentHash": "9783ad07f3a604f86fc9b0fd96fd20e406f6b0406bc7897776c04976c925e5c6",
+      "contentHash": "8cecd47dff580520cf0b579d0c869af83dd381e960e7da64d23d953446b1bf1b",
       "functions": [
         {
           "name": "ValidateS3Configuration_MissingConfig_ThrowsInvalidOperationException",
@@ -16368,7 +16160,7 @@
     },
     "backend/AoDaiNhaUyen.Tests/Services/StylistChatServiceTests.cs": {
       "filePath": "backend/AoDaiNhaUyen.Tests/Services/StylistChatServiceTests.cs",
-      "contentHash": "ed91ed195e7b6f2751af845b67bce14e15050a1ce2597b816d36a2a1e748fb4c",
+      "contentHash": "2380f7e9a242bfee9c0cfa0adfd747c52b5323dd8055aa0a0b8c39727ee199bc",
       "functions": [
         {
           "name": "AddMessageAsync_FirstTurnPersistsMemoryWithSavedAssistantMessageId",
@@ -16578,7 +16370,7 @@
             "Pid203"
           ],
           "exported": true,
-          "lineCount": 1508
+          "lineCount": 1510
         }
       ],
       "imports": [
@@ -16663,7 +16455,7 @@
         "AddMessageAsync_UsesShortlistForProductDescriptionFollowUp",
         "StylistChatServiceTests"
       ],
-      "totalLines": 1521,
+      "totalLines": 1523,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Tests/Services/StylistFallbackTextServiceTests.cs": {
@@ -17600,16 +17392,6 @@
       "totalLines": 152,
       "hasStructuralAnalysis": true
     },
-    "frontend-admin/AGENTS.md": {
-      "filePath": "frontend-admin/AGENTS.md",
-      "contentHash": "04ac8ce7df9b4888e5f09905e9e2236190ad0b8376d511bb2773c9d790b48460",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 70,
-      "hasStructuralAnalysis": true
-    },
     "frontend-admin/eslint.config.js": {
       "filePath": "frontend-admin/eslint.config.js",
       "contentHash": "f19395caf80173ffbd41ab74f8eef4fc26c042f84a937de4a6286ec5c13ad401",
@@ -17658,39 +17440,9 @@
       "totalLines": 23,
       "hasStructuralAnalysis": true
     },
-    "frontend-admin/index.html": {
-      "filePath": "frontend-admin/index.html",
-      "contentHash": "338c51b7bfd5856e8d15344122442bf9a7ec7a823e24594a53a6e8235a8e74ad",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 14,
-      "hasStructuralAnalysis": false
-    },
-    "frontend-admin/package.json": {
-      "filePath": "frontend-admin/package.json",
-      "contentHash": "82d44d989bb697ea993e6847a8c138e1961e98de47717955e5707dee0e28638d",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 41,
-      "hasStructuralAnalysis": true
-    },
-    "frontend-admin/README.md": {
-      "filePath": "frontend-admin/README.md",
-      "contentHash": "bf14fbe337274f08ba3d9c2d6fe3e8723f13c16b605583bff70483717e3d4f3a",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 74,
-      "hasStructuralAnalysis": true
-    },
     "frontend-admin/src/api/admin.ts": {
       "filePath": "frontend-admin/src/api/admin.ts",
-      "contentHash": "7a74f24ee07e32b7d31febbab2247a2096dd531e1c3af3b023e33097d9ddce9b",
+      "contentHash": "0bbb5b7c770e42569bee7bdbaab43447687a0edcb3b3eaecaabd9f2c4d8d8426",
       "functions": [
         {
           "name": "getUsers",
@@ -17871,6 +17623,56 @@
           "lineCount": 3
         },
         {
+          "name": "uploadProductImage",
+          "params": [
+            "productId",
+            "file"
+          ],
+          "returnType": "Promise<AdminImageResponse>",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "deleteProductImage",
+          "params": [
+            "productId",
+            "imageId"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "setPrimaryProductImage",
+          "params": [
+            "productId",
+            "imageId"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "makeProductImagePublic",
+          "params": [
+            "productId",
+            "imageId"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "makeProductImagePrivate",
+          "params": [
+            "productId",
+            "imageId"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
           "name": "getCategories",
           "params": [
             "includeDeleted"
@@ -17947,6 +17749,7 @@
             "AdminUserListItem",
             "AdminProductListItem",
             "AdminProductDetail",
+            "AdminImageResponse",
             "CategoryListItem",
             "CategoryDetail",
             "RoleDto",
@@ -17983,6 +17786,11 @@
         "toggleProductStatus",
         "deleteProduct",
         "restoreProduct",
+        "uploadProductImage",
+        "deleteProductImage",
+        "setPrimaryProductImage",
+        "makeProductImagePublic",
+        "makeProductImagePrivate",
         "getCategories",
         "getCategory",
         "createCategory",
@@ -17990,7 +17798,7 @@
         "deleteCategory",
         "restoreCategory"
       ],
-      "totalLines": 186,
+      "totalLines": 212,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/api/auth.ts": {
@@ -19542,7 +19350,7 @@
     },
     "frontend-admin/src/pages/ProductFormPage.tsx": {
       "filePath": "frontend-admin/src/pages/ProductFormPage.tsx",
-      "contentHash": "2b3b04a213d78d545192df5f2279b80080d64becdf9641601c5b35eca8102664",
+      "contentHash": "78254c83c45c91d2dfc9a8eb41466d858c2a002f033e989996de27683d7150ed",
       "functions": [
         {
           "name": "slugify",
@@ -19556,7 +19364,7 @@
           "name": "ProductFormPage",
           "params": [],
           "exported": true,
-          "lineCount": 248
+          "lineCount": 378
         }
       ],
       "classes": [],
@@ -19565,7 +19373,8 @@
           "source": "react",
           "specifiers": [
             "useState",
-            "useEffect"
+            "useEffect",
+            "useRef"
           ]
         },
         {
@@ -19579,13 +19388,26 @@
           "source": "lucide-react",
           "specifiers": [
             "ArrowLeft",
-            "Loader2"
+            "Loader2",
+            "Globe",
+            "FileX",
+            "Upload",
+            "Trash2",
+            "Star",
+            "Eye",
+            "EyeOff"
           ]
         },
         {
           "source": "@/stores/productStore",
           "specifiers": [
             "useProductStore"
+          ]
+        },
+        {
+          "source": "@/types/admin",
+          "specifiers": [
+            "AdminImageResponse"
           ]
         },
         {
@@ -19643,12 +19465,12 @@
       "exports": [
         "ProductFormPage"
       ],
-      "totalLines": 272,
+      "totalLines": 403,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/pages/ProductListPage.tsx": {
       "filePath": "frontend-admin/src/pages/ProductListPage.tsx",
-      "contentHash": "d3006077fec1739542e52bfbf1f6c7d945f52b7ff60642bf2e86117a4303b730",
+      "contentHash": "573b6073ba5fe97d7df8ac6eb2a2fc88fef94e9392b88954a4f851e175bac4a4",
       "functions": [
         {
           "name": "statusBadge",
@@ -19670,7 +19492,7 @@
           "name": "ProductListPage",
           "params": [],
           "exported": true,
-          "lineCount": 240
+          "lineCount": 248
         }
       ],
       "classes": [],
@@ -19703,7 +19525,9 @@
             "Package",
             "Eye",
             "EyeOff",
-            "Loader2"
+            "Loader2",
+            "Globe",
+            "FileX"
           ]
         },
         {
@@ -19763,7 +19587,7 @@
       "exports": [
         "ProductListPage"
       ],
-      "totalLines": 271,
+      "totalLines": 279,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/pages/RolesPage.tsx": {
@@ -20023,7 +19847,7 @@
     },
     "frontend-admin/src/stores/productStore.ts": {
       "filePath": "frontend-admin/src/stores/productStore.ts",
-      "contentHash": "ecc7ea9dc213a3ed0253fd35f6898c7a5a2b64364d406b461052600c7e033888",
+      "contentHash": "d679176b59421035c6516e4eb132361e3acaafabf56e1cf73ca9f841ba32fc5a",
       "functions": [],
       "classes": [],
       "imports": [
@@ -20052,7 +19876,7 @@
       "exports": [
         "useProductStore"
       ],
-      "totalLines": 125,
+      "totalLines": 192,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/stores/roleStore.ts": {
@@ -20134,12 +19958,12 @@
     },
     "frontend-admin/src/types/admin.ts": {
       "filePath": "frontend-admin/src/types/admin.ts",
-      "contentHash": "60bffa9d72607866dd2de3374916424b5819a401f123a9252c7fe0b1b2cab34b",
+      "contentHash": "f5994e5d4ef28d4dbf4689dbf3c858f2dbb0eee83b9bf0eb87398b9f70c88186",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 183,
+      "totalLines": 184,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/types/api.ts": {
@@ -20160,36 +19984,6 @@
       "imports": [],
       "exports": [],
       "totalLines": 10,
-      "hasStructuralAnalysis": true
-    },
-    "frontend-admin/tsconfig.app.json": {
-      "filePath": "frontend-admin/tsconfig.app.json",
-      "contentHash": "d07d41f9fa0c1a4d6ae173d31f7ab1ed50a35585ee7f330508347e482d1d2015",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 29,
-      "hasStructuralAnalysis": true
-    },
-    "frontend-admin/tsconfig.json": {
-      "filePath": "frontend-admin/tsconfig.json",
-      "contentHash": "ad28d132ee48d6e23917cf5827cace785d0fc01a44ca68b0dda51cc8c3fd3f52",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 8,
-      "hasStructuralAnalysis": true
-    },
-    "frontend-admin/tsconfig.node.json": {
-      "filePath": "frontend-admin/tsconfig.node.json",
-      "contentHash": "e0f1936992f77a707102795e8ea311ae74cb54de87b221bb32b44055af66ff7e",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 25,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/vite.config.ts": {
@@ -20225,26 +20019,6 @@
       ],
       "exports": [],
       "totalLines": 13,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/.env.example": {
-      "filePath": "frontend/.env.example",
-      "contentHash": "3c897ec5a11aa5979981a3e56c0781eb6729796d75a271606932aa44d7c64681",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 10,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/AGENTS.md": {
-      "filePath": "frontend/AGENTS.md",
-      "contentHash": "20b63624c258db90f9ee923d04b25510a42bdd867f4927904ce4cc3c5fef4ff1",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 55,
       "hasStructuralAnalysis": true
     },
     "frontend/eslint.config.js": {
@@ -20295,26 +20069,6 @@
       "totalLines": 24,
       "hasStructuralAnalysis": true
     },
-    "frontend/index.html": {
-      "filePath": "frontend/index.html",
-      "contentHash": "88c3ee7a3ffbe09f7c30bb516b7b63cda4695b0e99ccf160ca36b39cdf7319c5",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 29,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/package.json": {
-      "filePath": "frontend/package.json",
-      "contentHash": "eca6b5cc25ff5311541f8dff4a173597489b420544f7d0547f2c85ecccb0c39e",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 40,
-      "hasStructuralAnalysis": true
-    },
     "frontend/postcss.config.js": {
       "filePath": "frontend/postcss.config.js",
       "contentHash": "3948c9452169e807c620529e4a358e35f1ba7919cd1eeeaf67e8b06eccfc1b22",
@@ -20350,16 +20104,6 @@
       "totalLines": 14,
       "hasStructuralAnalysis": true
     },
-    "frontend/public/AGENTS.md": {
-      "filePath": "frontend/public/AGENTS.md",
-      "contentHash": "baca1805e0522935211a651d772c653d14b8a75a9353cc40f7bf031c467d0ba7",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 45,
-      "hasStructuralAnalysis": true
-    },
     "frontend/public/assets/product-section/xanh 2.webp": {
       "filePath": "frontend/public/assets/product-section/xanh 2.webp",
       "contentHash": "410b6a0f165e4ab8bda2f67b31c6c7e636828cca5546460039abe4a11ed6e799",
@@ -20369,16 +20113,6 @@
       "exports": [],
       "totalLines": 627,
       "hasStructuralAnalysis": false
-    },
-    "frontend/public/serve.json": {
-      "filePath": "frontend/public/serve.json",
-      "contentHash": "95cd39b4f71bf654ebe96bb6bfdf0e285f14ae0fe0f1e77f194e82451445c8cc",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 4,
-      "hasStructuralAnalysis": true
     },
     "frontend/public/sw.js": {
       "filePath": "frontend/public/sw.js",
@@ -20620,16 +20354,6 @@
     },
     "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co": {
       "filePath": "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co",
-      "contentHash": "bc26a148c5a1a9b1b2ed0be8ca250548f38858d9095db10941f94f222bf9ea26",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 13,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co.html": {
-      "filePath": "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co.html",
       "contentHash": "bc26a148c5a1a9b1b2ed0be8ca250548f38858d9095db10941f94f222bf9ea26",
       "functions": [],
       "classes": [],
@@ -20960,7 +20684,7 @@
     },
     "frontend/src/api/catalog.ts": {
       "filePath": "frontend/src/api/catalog.ts",
-      "contentHash": "5cf73afaf71c0a1351e6108a52a0b2e48b1046992249fd2a3153820a2d794f88",
+      "contentHash": "3507fd1cc959b16680bff7cb133239e022895a664d3c2a7b64862bf032ea1e93",
       "functions": [
         {
           "name": "getHeaderCategories",
@@ -20977,6 +20701,15 @@
           "returnType": "Promise<PaginatedProducts>",
           "exported": true,
           "lineCount": 30
+        },
+        {
+          "name": "getProductBySlug",
+          "params": [
+            "slug"
+          ],
+          "returnType": "Promise<ProductDetail>",
+          "exported": true,
+          "lineCount": 3
         }
       ],
       "classes": [],
@@ -20993,15 +20726,17 @@
           "specifiers": [
             "HeaderCategory",
             "PaginatedProducts",
-            "ProductListItem"
+            "ProductListItem",
+            "ProductDetail"
           ]
         }
       ],
       "exports": [
         "getHeaderCategories",
-        "getProducts"
+        "getProducts",
+        "getProductBySlug"
       ],
-      "totalLines": 47,
+      "totalLines": 51,
       "hasStructuralAnalysis": true
     },
     "frontend/src/api/chat.ts": {
@@ -21318,7 +21053,7 @@
     },
     "frontend/src/App.tsx": {
       "filePath": "frontend/src/App.tsx",
-      "contentHash": "662e1fbea49d9d9df50abafa35f796622fe71f093a202ffa0fc78576dd43e45f",
+      "contentHash": "5d3a9e5fad788484ed9b6edb587d9206fb413cdee74bf8c1d69a8636c294158d",
       "functions": [
         {
           "name": "ScrollToTop",
@@ -21339,7 +21074,7 @@
           "name": "App",
           "params": [],
           "exported": true,
-          "lineCount": 113
+          "lineCount": 114
         }
       ],
       "classes": [],
@@ -21423,6 +21158,12 @@
           ]
         },
         {
+          "source": "./pages/ProductDetailPage/ProductDetailPage",
+          "specifiers": [
+            "ProductDetailPage"
+          ]
+        },
+        {
           "source": "./pages/LoginPage/LoginPage",
           "specifiers": [
             "LoginPage"
@@ -21470,7 +21211,7 @@
       "exports": [
         "App"
       ],
-      "totalLines": 170,
+      "totalLines": 172,
       "hasStructuralAnalysis": true
     },
     "frontend/src/auth/AGENTS.md": {
@@ -22040,12 +21781,12 @@
     },
     "frontend/src/components/CollectionSection/CollectionSection.module.css": {
       "filePath": "frontend/src/components/CollectionSection/CollectionSection.module.css",
-      "contentHash": "127c370bf2063c16f2746663edb5091d2fa57513e179cf57ba5c9a33a760ddaf",
+      "contentHash": "217c490ed26dc7d741440fa0bf79269c4bb574462f8f8a96cab0beea3c00b9f4",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 219,
+      "totalLines": 224,
       "hasStructuralAnalysis": false
     },
     "frontend/src/components/CollectionSection/CollectionSection.tsx": {
@@ -22564,17 +22305,17 @@
     },
     "frontend/src/components/ProductCard/ProductCard.module.css": {
       "filePath": "frontend/src/components/ProductCard/ProductCard.module.css",
-      "contentHash": "463c3087c618d808e0d69397db60817ff9395448ffcf2de7bb4fd7e108f9f8fe",
+      "contentHash": "3fbbbe05f4ae63fda7c7c599b613447e0501b499e013d0325c3f3527f6a01c29",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 123,
+      "totalLines": 129,
       "hasStructuralAnalysis": false
     },
     "frontend/src/components/ProductCard/ProductCard.tsx": {
       "filePath": "frontend/src/components/ProductCard/ProductCard.tsx",
-      "contentHash": "5177a45590a0be3b0892b2382d75262194199522fa539351dd45ee1f36a39843",
+      "contentHash": "b1a055ac82979f087f3f111d84ed86d81364caedaf2a07a007a35a3f2981a164",
       "functions": [
         {
           "name": "StarIcon",
@@ -22594,7 +22335,7 @@
             "{ data, onAddToCart }"
           ],
           "exported": true,
-          "lineCount": 44
+          "lineCount": 46
         }
       ],
       "classes": [],
@@ -22603,6 +22344,12 @@
           "source": "framer-motion",
           "specifiers": [
             "motion"
+          ]
+        },
+        {
+          "source": "react-router-dom",
+          "specifiers": [
+            "Link"
           ]
         },
         {
@@ -22630,7 +22377,7 @@
       "exports": [
         "ProductCard"
       ],
-      "totalLines": 77,
+      "totalLines": 80,
       "hasStructuralAnalysis": true
     },
     "frontend/src/components/ProductSection/ProductSection.module.css": {
@@ -23114,7 +22861,7 @@
     },
     "frontend/src/pages/AccessoriesPage/AccessoriesPage.tsx": {
       "filePath": "frontend/src/pages/AccessoriesPage/AccessoriesPage.tsx",
-      "contentHash": "3eb5173ddd63ec76621a32766eabd3925b6bae4fe5b8d6cee827c6f6f751cd73",
+      "contentHash": "5ec3e096486390ac8df0cf538fe907cdfcc858bf2803d3cd01702dfaef7cfed4",
       "functions": [
         {
           "name": "formatPrice",
@@ -23142,7 +22889,7 @@
           ],
           "returnType": "Product",
           "exported": false,
-          "lineCount": 12
+          "lineCount": 13
         },
         {
           "name": "AccessoriesPage",
@@ -23255,18 +23002,8 @@
       "exports": [
         "AccessoriesPage"
       ],
-      "totalLines": 188,
+      "totalLines": 189,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/AccountPage/AccountEditForm.module.css": {
-      "filePath": "frontend/src/pages/AccountPage/AccountEditForm.module.css",
-      "contentHash": "23bf423a558e179c00ef2f45786c46897ea1e74e5a2026f11cc2a64fb916a41b",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 87,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AccountPage/AccountEditForm.tsx": {
       "filePath": "frontend/src/pages/AccountPage/AccountEditForm.tsx",
@@ -23317,16 +23054,6 @@
       "totalLines": 112,
       "hasStructuralAnalysis": true
     },
-    "frontend/src/pages/AccountPage/AccountInfo.module.css": {
-      "filePath": "frontend/src/pages/AccountPage/AccountInfo.module.css",
-      "contentHash": "dca3a67b9ad459f85fb870d4a20f65a1b5c04bf6228e300769108408770b2bbe",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 66,
-      "hasStructuralAnalysis": false
-    },
     "frontend/src/pages/AccountPage/AccountInfo.tsx": {
       "filePath": "frontend/src/pages/AccountPage/AccountInfo.tsx",
       "contentHash": "d473e056b99c8885af7f7d42984568c653dfabb048230736ac65280b37446942",
@@ -23373,16 +23100,6 @@
       ],
       "totalLines": 63,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/AccountPage/AccountPage.module.css": {
-      "filePath": "frontend/src/pages/AccountPage/AccountPage.module.css",
-      "contentHash": "be034d0defbe79b75fc13efc3721fc9f17b5f28fffdaff202e65f84298b7e08a",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 75,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AccountPage/AccountPage.tsx": {
       "filePath": "frontend/src/pages/AccountPage/AccountPage.tsx",
@@ -23468,16 +23185,6 @@
       "totalLines": 98,
       "hasStructuralAnalysis": true
     },
-    "frontend/src/pages/AccountPage/AccountSidebar.module.css": {
-      "filePath": "frontend/src/pages/AccountPage/AccountSidebar.module.css",
-      "contentHash": "aa29d729c5bb7538c5d9722885ceaafb9fefd11fa226ee0cf3233000340973c0",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 149,
-      "hasStructuralAnalysis": false
-    },
     "frontend/src/pages/AccountPage/AccountSidebar.tsx": {
       "filePath": "frontend/src/pages/AccountPage/AccountSidebar.tsx",
       "contentHash": "b48c684597d40bdd5bbbeff3b9bcdc9a561cc09ee62e6a57e32841c7b8521b32",
@@ -23529,16 +23236,6 @@
       ],
       "totalLines": 79,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/AccountPage/AddressList.module.css": {
-      "filePath": "frontend/src/pages/AccountPage/AddressList.module.css",
-      "contentHash": "67578c89b0276df9bb691706a68d19a362dea9684828b70fbd63a206db8daf42",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 129,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AccountPage/AddressList.tsx": {
       "filePath": "frontend/src/pages/AccountPage/AddressList.tsx",
@@ -23593,16 +23290,6 @@
       "totalLines": 149,
       "hasStructuralAnalysis": true
     },
-    "frontend/src/pages/AccountPage/ImageHistory.module.css": {
-      "filePath": "frontend/src/pages/AccountPage/ImageHistory.module.css",
-      "contentHash": "fda35eff333a8b27a80c1a6b435c721e3b098bf914845792ada382166e4dfdbb",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 226,
-      "hasStructuralAnalysis": false
-    },
     "frontend/src/pages/AccountPage/ImageHistory.tsx": {
       "filePath": "frontend/src/pages/AccountPage/ImageHistory.tsx",
       "contentHash": "857e0d130994a014f4906c0573e599e20efa97a1235e7178c85a4adab071b63a",
@@ -23650,16 +23337,6 @@
       ],
       "totalLines": 191,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/AccountPage/OrderList.module.css": {
-      "filePath": "frontend/src/pages/AccountPage/OrderList.module.css",
-      "contentHash": "25f1caad554499f105f6975b7585610cd4ced46263fe9594fe8e85ed67949503",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 150,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AccountPage/OrderList.tsx": {
       "filePath": "frontend/src/pages/AccountPage/OrderList.tsx",
@@ -23721,16 +23398,6 @@
       "exports": [],
       "totalLines": 40,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/AiTryonPage/AccessoryPanel.module.css": {
-      "filePath": "frontend/src/pages/AiTryonPage/AccessoryPanel.module.css",
-      "contentHash": "b92301a88f1c30938b89094e04d79525f411e9d8826737e08cca6f5ed977e779",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 118,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AiTryonPage/AccessoryPanel.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/AccessoryPanel.tsx",
@@ -23798,16 +23465,6 @@
       ],
       "totalLines": 83,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/AiTryonPage/AiTryonPage.module.css": {
-      "filePath": "frontend/src/pages/AiTryonPage/AiTryonPage.module.css",
-      "contentHash": "ee359b591a76072b9a443471b14abb191c86532353f2ddc8d6e186fe94b86763",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 260,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AiTryonPage/AiTryonPage.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/AiTryonPage.tsx",
@@ -23940,16 +23597,6 @@
       "totalLines": 464,
       "hasStructuralAnalysis": true
     },
-    "frontend/src/pages/AiTryonPage/CategoryTabs.module.css": {
-      "filePath": "frontend/src/pages/AiTryonPage/CategoryTabs.module.css",
-      "contentHash": "90cfc466a1a1431bc5e6562b95294af806354c2df1e0e7ca83a3f402f958adc1",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 56,
-      "hasStructuralAnalysis": false
-    },
     "frontend/src/pages/AiTryonPage/CategoryTabs.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/CategoryTabs.tsx",
       "contentHash": "a7ca6e357a72e4073c5b744d9a06beb669018f990663ba496bb87f52764c6c36",
@@ -23990,16 +23637,6 @@
       ],
       "totalLines": 44,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/AiTryonPage/ClothingPanel.module.css": {
-      "filePath": "frontend/src/pages/AiTryonPage/ClothingPanel.module.css",
-      "contentHash": "13df4a0f8b0d02447eb2df85527fcfa9dee1b7106346c54aa76c6c6b12504549",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 126,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AiTryonPage/ClothingPanel.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/ClothingPanel.tsx",
@@ -24067,16 +23704,6 @@
       ],
       "totalLines": 82,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/AiTryonPage/ImageDropZone.module.css": {
-      "filePath": "frontend/src/pages/AiTryonPage/ImageDropZone.module.css",
-      "contentHash": "facd41d60ceee00cac25bf27c30ae2fa4ffb29656bed5976eaf8a62da57980a9",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 227,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AiTryonPage/ImageDropZone.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/ImageDropZone.tsx",
@@ -24152,16 +23779,6 @@
       "totalLines": 187,
       "hasStructuralAnalysis": true
     },
-    "frontend/src/pages/AiTryonPage/PaginationControls.module.css": {
-      "filePath": "frontend/src/pages/AiTryonPage/PaginationControls.module.css",
-      "contentHash": "3c610536b8fcc284d7af40d603957b2f3b19e7d57ae50300a189334eb2c0869e",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 76,
-      "hasStructuralAnalysis": false
-    },
     "frontend/src/pages/AiTryonPage/PaginationControls.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/PaginationControls.tsx",
       "contentHash": "4bc85557d2285525daa7a682cea46f25c4f07f6abd6da50ea71f90393330997d",
@@ -24189,16 +23806,6 @@
       ],
       "totalLines": 56,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/AiTryonPage/ResultPanel.module.css": {
-      "filePath": "frontend/src/pages/AiTryonPage/ResultPanel.module.css",
-      "contentHash": "b823d24e934e156ace7b32dbde52823489d5abe506fbb08070007e11e0c660b4",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 261,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AiTryonPage/ResultPanel.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/ResultPanel.tsx",
@@ -24389,16 +23996,6 @@
       "totalLines": 6,
       "hasStructuralAnalysis": true
     },
-    "frontend/src/pages/CartPage/CartItem.module.css": {
-      "filePath": "frontend/src/pages/CartPage/CartItem.module.css",
-      "contentHash": "5e8f19e68852d3e38b162a7221046ee7fbd14b2266e239b69eaa5d63c3f1becd",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 151,
-      "hasStructuralAnalysis": false
-    },
     "frontend/src/pages/CartPage/CartItem.tsx": {
       "filePath": "frontend/src/pages/CartPage/CartItem.tsx",
       "contentHash": "6d74d27647f5289f2a30190e9cc0a9d4eddc41afa615315b3538eb483dfdd6b9",
@@ -24438,16 +24035,6 @@
       ],
       "totalLines": 65,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/CartPage/CartPage.module.css": {
-      "filePath": "frontend/src/pages/CartPage/CartPage.module.css",
-      "contentHash": "779003812d1bfa14728bbfcebe6172d02c158b4b9e194b3c9c61fa647253381c",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 113,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/CartPage/CartPage.tsx": {
       "filePath": "frontend/src/pages/CartPage/CartPage.tsx",
@@ -24570,16 +24157,6 @@
       "totalLines": 178,
       "hasStructuralAnalysis": true
     },
-    "frontend/src/pages/CartPage/CartSummary.module.css": {
-      "filePath": "frontend/src/pages/CartPage/CartSummary.module.css",
-      "contentHash": "e4416e77618b999917413647ace2fc240afc0da793e854e0263c3b2d545d6159",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 215,
-      "hasStructuralAnalysis": false
-    },
     "frontend/src/pages/CartPage/CartSummary.tsx": {
       "filePath": "frontend/src/pages/CartPage/CartSummary.tsx",
       "contentHash": "f904329baf9a2718a6da08a4f48d59d9e00e80a7a3125872dc11cd4157d2643f",
@@ -24641,16 +24218,6 @@
       "totalLines": 10,
       "hasStructuralAnalysis": true
     },
-    "frontend/src/pages/CartPage/CustomerNotes.module.css": {
-      "filePath": "frontend/src/pages/CartPage/CustomerNotes.module.css",
-      "contentHash": "ccb487efcf1c3ae95e1a4da11fc0df2c40f9fcd42344961ccc06bc55142897aa",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 70,
-      "hasStructuralAnalysis": false
-    },
     "frontend/src/pages/CartPage/CustomerNotes.tsx": {
       "filePath": "frontend/src/pages/CartPage/CustomerNotes.tsx",
       "contentHash": "1543db83668818dc57587a60f1062a086d9018e55bb277a2b7e6796b2c11b845",
@@ -24678,16 +24245,6 @@
       ],
       "totalLines": 41,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/CollectionPage/BrandStorySection.module.css": {
-      "filePath": "frontend/src/pages/CollectionPage/BrandStorySection.module.css",
-      "contentHash": "9587c082e7eb035e0a163ba6816dd8319942b98ba896776e7cf8878a4f2db9f5",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 161,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/CollectionPage/BrandStorySection.tsx": {
       "filePath": "frontend/src/pages/CollectionPage/BrandStorySection.tsx",
@@ -24736,16 +24293,6 @@
       "totalLines": 53,
       "hasStructuralAnalysis": true
     },
-    "frontend/src/pages/CollectionPage/CollectionHero.module.css": {
-      "filePath": "frontend/src/pages/CollectionPage/CollectionHero.module.css",
-      "contentHash": "92b6510f06321100195d93b0c2500b94953820387e67e8a10267cd571243a61e",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 47,
-      "hasStructuralAnalysis": false
-    },
     "frontend/src/pages/CollectionPage/CollectionHero.tsx": {
       "filePath": "frontend/src/pages/CollectionPage/CollectionHero.tsx",
       "contentHash": "a96a43723c87ac9b448207c9752c954f598326cc7110d9d240b45c446d449b71",
@@ -24783,16 +24330,6 @@
       ],
       "totalLines": 26,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/CollectionPage/CollectionPage.module.css": {
-      "filePath": "frontend/src/pages/CollectionPage/CollectionPage.module.css",
-      "contentHash": "6396eb162129e21b89272ac7be4974a760c28ea24404f9c993cd07d7010518c6",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 223,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/CollectionPage/CollectionPage.tsx": {
       "filePath": "frontend/src/pages/CollectionPage/CollectionPage.tsx",
@@ -24904,16 +24441,6 @@
       "totalLines": 194,
       "hasStructuralAnalysis": true
     },
-    "frontend/src/pages/CollectionPage/EraSection.module.css": {
-      "filePath": "frontend/src/pages/CollectionPage/EraSection.module.css",
-      "contentHash": "9fd7d39d1a7c220fa346739c01b2ed72d2a31860094c703eaa2944174048a754",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 446,
-      "hasStructuralAnalysis": false
-    },
     "frontend/src/pages/CollectionPage/EraSection.tsx": {
       "filePath": "frontend/src/pages/CollectionPage/EraSection.tsx",
       "contentHash": "91c8fa62aebbbe115ce26fb6dc74f6dc6504eefab5856ae26bcbef3070c6fe60",
@@ -24968,16 +24495,6 @@
       ],
       "totalLines": 60,
       "hasStructuralAnalysis": true
-    },
-    "frontend/src/pages/CollectionPage/GallerySection.module.css": {
-      "filePath": "frontend/src/pages/CollectionPage/GallerySection.module.css",
-      "contentHash": "170721a6d421aad3c20de89ba55fde527f45ea8b443910a8cf56040864b20bdc",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 384,
-      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/CollectionPage/GallerySection.tsx": {
       "filePath": "frontend/src/pages/CollectionPage/GallerySection.tsx",
@@ -25384,14 +24901,14 @@
     },
     "frontend/src/pages/ProductsPage/data.ts": {
       "filePath": "frontend/src/pages/ProductsPage/data.ts",
-      "contentHash": "5d6eddc09a2a5fcedf033db9ce6f9713e23ac04e742f5140ae0a8379b1655032",
+      "contentHash": "bc353a20b07f00539976fe8678f67881f1be7c0b9be786e409cc3a107a37e8ae",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [
         "SIZES"
       ],
-      "totalLines": 22,
+      "totalLines": 23,
       "hasStructuralAnalysis": true
     },
     "frontend/src/pages/ProductsPage/ProductsPage.module.css": {
@@ -25406,7 +24923,7 @@
     },
     "frontend/src/pages/ProductsPage/ProductsPage.tsx": {
       "filePath": "frontend/src/pages/ProductsPage/ProductsPage.tsx",
-      "contentHash": "4105ca01bfecaa9a39913b6209d5950fff91e07ebea592c713c0f54cb0ac67bb",
+      "contentHash": "a8b80e82071b55f66fc09145dd0e2137238691b5d0fdf05ed9c93e399a1c2178",
       "functions": [
         {
           "name": "formatPrice",
@@ -25434,7 +24951,7 @@
           ],
           "returnType": "Product",
           "exported": false,
-          "lineCount": 15
+          "lineCount": 16
         },
         {
           "name": "getSizeParamKey",
@@ -25574,7 +25091,7 @@
       "exports": [
         "ProductsPage"
       ],
-      "totalLines": 300,
+      "totalLines": 301,
       "hasStructuralAnalysis": true
     },
     "frontend/src/pages/ResetPasswordPage/ResetPasswordPage.module.css": {
@@ -25639,76 +25156,6 @@
       "totalLines": 117,
       "hasStructuralAnalysis": true
     },
-    "frontend/src/styles/AGENTS.md": {
-      "filePath": "frontend/src/styles/AGENTS.md",
-      "contentHash": "f9536f270acef3584d2db7813e75a8a7361835d7e83bca62865d7f368ff05c73",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 38,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/src/styles/global.css": {
-      "filePath": "frontend/src/styles/global.css",
-      "contentHash": "cc7c5b466d6bcc6e39207ae175599aea0e68da78c587b427c7c88023f86e825c",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 17,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/src/styles/reset.css": {
-      "filePath": "frontend/src/styles/reset.css",
-      "contentHash": "69d407810d57626f863c547f6088f6174da61fe5e13925d8e14b717fbb7239b7",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 45,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/src/styles/texture.css": {
-      "filePath": "frontend/src/styles/texture.css",
-      "contentHash": "b1513ef138ba0abee2653360a08698264480244abea2308520619c96cce1e208",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 16,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/src/styles/transitions.css": {
-      "filePath": "frontend/src/styles/transitions.css",
-      "contentHash": "f87de07648eff4a559a614a131699d25a4f0eccdf9ad2bcc2f7f5daf5e264786",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 11,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/src/styles/typography.css": {
-      "filePath": "frontend/src/styles/typography.css",
-      "contentHash": "3561ddb112a408c62ef818acb66f335121cfe2b49d0aaa635512632336071454",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 23,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/src/styles/variables.css": {
-      "filePath": "frontend/src/styles/variables.css",
-      "contentHash": "da359b5568eaacd9449e80f9e70499f942aa5f03e89b56b3140a7eb40437a19c",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 35,
-      "hasStructuralAnalysis": false
-    },
     "frontend/src/types/address.ts": {
       "filePath": "frontend/src/types/address.ts",
       "contentHash": "476f291f25c973bc56b28d957edce5a8116bffb847e619aa12124e5e9c7c9ebc",
@@ -25761,7 +25208,7 @@
     },
     "frontend/src/types/catalog.ts": {
       "filePath": "frontend/src/types/catalog.ts",
-      "contentHash": "712ed2d1b6e8b467ce41452356e8a6399084fa814925e7422ecbbfca271619a2",
+      "contentHash": "e8a90ae86dad6062581b703a60c031d473551f56bd8462b32ec4062548ab99f9",
       "functions": [],
       "classes": [],
       "imports": [
@@ -25773,7 +25220,7 @@
         }
       ],
       "exports": [],
-      "totalLines": 36,
+      "totalLines": 109,
       "hasStructuralAnalysis": true
     },
     "frontend/src/types/order.ts": {
@@ -25943,36 +25390,6 @@
       "totalLines": 2,
       "hasStructuralAnalysis": true
     },
-    "frontend/tsconfig.app.json": {
-      "filePath": "frontend/tsconfig.app.json",
-      "contentHash": "dfaeb7e13cd844712d3830b69392bb8794a55117105e258388448a7d3ec76245",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 26,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/tsconfig.json": {
-      "filePath": "frontend/tsconfig.json",
-      "contentHash": "770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 8,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/tsconfig.node.json": {
-      "filePath": "frontend/tsconfig.node.json",
-      "contentHash": "90a22c920cbc14624fb4658b58f15c875abf3234224f3933f211849c3ada3242",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 25,
-      "hasStructuralAnalysis": true
-    },
     "frontend/vite.config.ts": {
       "filePath": "frontend/vite.config.ts",
       "contentHash": "37cce9e5ff74e147057dbd523febdfe66b914da24aff32b78250c9f6f9dc95ba",
@@ -26013,26 +25430,6 @@
       "imports": [],
       "exports": [],
       "totalLines": 19,
-      "hasStructuralAnalysis": true
-    },
-    "README.md": {
-      "filePath": "README.md",
-      "contentHash": "bdeb05ebae0696bee93675d0e3b26e7ec39c2f198741339e0272101ee791d61b",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 192,
-      "hasStructuralAnalysis": true
-    },
-    "spec.md": {
-      "filePath": "spec.md",
-      "contentHash": "ecfa49300aa54528602883a86fbff36abcb4a835b06d774dea31c1242799a740",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 367,
       "hasStructuralAnalysis": true
     }
   }

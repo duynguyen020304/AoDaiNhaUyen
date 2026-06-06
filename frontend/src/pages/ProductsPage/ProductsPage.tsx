@@ -52,7 +52,8 @@ function mapProduct(product: ProductListItem, index: number): Product {
     name: product.name,
     image,
     badge: getBadge(product, index),
-    reviews: 32 + ((Number(product.id) * 7) % 28),
+    rating: product.averageRating,
+    reviews: product.totalReviews,
     price: formatPrice(price),
     originalPrice: product.salePrice ? formatPrice(product.price) : undefined,
   };

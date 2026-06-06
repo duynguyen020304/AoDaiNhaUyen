@@ -95,4 +95,46 @@ public sealed class CommentRepository(AppDbContext dbContext) : ICommentReposito
 
     return new ReviewSummaryData(ratings.Average(), ratings.Count, dist);
   }
+
+  public async Task<IReadOnlyDictionary<Guid, ReviewSummaryData>> GetReviewSummariesAsync(
+    IEnumerable<Guid> productIds,
+    CancellationToken cancellationToken = default)
+  {
+    var idSet = productIds.ToHashSet();
+    if (idSet.Count == 0) return new Dictionary<Guid, ReviewSummaryData>();
+
+    var raw = await dbContext.Comments
+      .AsNoTracking()
+      .Where(c => idSet.Contains(c.ProductId)
+        && c.Rating != null
+        && c.ParentCommentId == null
+        && c.IsVisible)
+      .GroupBy(c => c.ProductId)
+      .Select(g => new
+      {
+        ProductId = g.Key,
+        Average = g.Average(c => c.Rating!.Value),
+        Count = g.Count(),
+        Rating1 = g.Count(c => c.Rating == 1),
+        Rating2 = g.Count(c => c.Rating == 2),
+        Rating3 = g.Count(c => c.Rating == 3),
+        Rating4 = g.Count(c => c.Rating == 4),
+        Rating5 = g.Count(c => c.Rating == 5),
+      })
+      .ToListAsync(cancellationToken);
+
+    return raw.ToDictionary(
+      r => r.ProductId,
+      r => new ReviewSummaryData(
+        r.Average,
+        r.Count,
+        new Dictionary<int, int>
+        {
+          [5] = r.Rating5,
+          [4] = r.Rating4,
+          [3] = r.Rating3,
+          [2] = r.Rating2,
+          [1] = r.Rating1,
+        }));
+  }
 }

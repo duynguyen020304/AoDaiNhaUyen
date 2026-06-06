@@ -5,7 +5,7 @@ import StarRating from '../StarRating/StarRating';
 import { useAuth } from '../../auth/useAuth';
 import { useAuthModal } from '../../auth/AuthModalContext';
 import { getProductComments, createComment } from '../../api/comment';
-import { staggerContainer, fadeUp, easeOutQuart } from '../../utils/motion';
+import { staggerContainer, fadeUp } from '../../utils/motion';
 import type { ReviewSummary, Comment } from '../../types/catalog';
 
 /* ── helpers ── */

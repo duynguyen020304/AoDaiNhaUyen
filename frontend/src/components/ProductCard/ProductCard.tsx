@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import styles from './ProductCard.module.css';
 import { cardReveal, cardHover, viewportOnce } from '../../utils/motion';
+import StarRating from '../StarRating/StarRating';
 import type { Product, Badge } from '../../pages/ProductsPage/data';
 
 const BADGE_COLORS: Record<Badge, string> = {
@@ -9,14 +10,6 @@ const BADGE_COLORS: Record<Badge, string> = {
   'MỚI': '#22a06b',
   'BÁN CHẠY': '#e58e26',
 };
-
-function StarIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" role="img">
-      <path d="M8 1.333l2.067 4.18 4.6.67-3.334 3.248.787 4.587L8 11.863 3.88 14.018l.787-4.587L1.333 6.183l4.6-.67z" fill="#FFD400" stroke="#FFD400" strokeWidth="0.5"/>
-    </svg>
-  );
-}
 
 function CartIcon() {
   return (
@@ -55,8 +48,14 @@ export default function ProductCard({ data, onAddToCart }: ProductCardProps) {
       <div className={styles.info}>
         <h3 className={styles.name}>{data.name}</h3>
         <div className={styles.rating}>
-          {[1, 2, 3, 4, 5].map((n) => <StarIcon key={n} />)}
-          <span className={styles.reviewCount}>({data.reviews})</span>
+          {data.reviews > 0 ? (
+            <>
+              <StarRating rating={data.rating} size="sm" />
+              <span className={styles.reviewCount}>({data.reviews} đánh giá)</span>
+            </>
+          ) : (
+            <span className={styles.reviewCount}>Chưa có đánh giá</span>
+          )}
         </div>
         <div className={styles.priceRow}>
           <span className={styles.price}>{data.price}</span>

@@ -30,6 +30,10 @@ public interface ICommentRepository
   Task<ReviewSummaryData?> GetReviewSummaryAsync(
     Guid productId,
     CancellationToken cancellationToken = default);
+
+  Task<IReadOnlyDictionary<Guid, ReviewSummaryData>> GetReviewSummariesAsync(
+    IEnumerable<Guid> productIds,
+    CancellationToken cancellationToken = default);
 }
 
 public sealed record ReviewSummaryData(

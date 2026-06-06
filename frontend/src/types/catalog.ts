@@ -30,6 +30,8 @@ export interface ProductListItem {
   primaryImageUrl: string | null;
   primaryVariantId: string | null;
   primaryVariantSku: string | null;
+  averageRating: number;
+  totalReviews: number;
 }
 
 export type PaginatedProducts = PaginatedApiEnvelope<ProductListItem[]>;

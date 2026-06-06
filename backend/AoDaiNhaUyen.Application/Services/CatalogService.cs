@@ -134,10 +134,30 @@ public sealed class CatalogService(
         p.PrimaryVariant?.StockQty ?? 0,
         resolvedUrl,
         p.PrimaryVariant?.Id,
-        p.PrimaryVariant?.Sku));
+        p.PrimaryVariant?.Sku,
+        0,
+        0));
     }
 
-    return new PagedResult<ProductListItemDto>(resolvedItems, totalCount, validatedPage, validatedPageSize);
+    // Batch-fetch review summaries in one DB round-trip
+    var productIds = resolvedItems.Select(p => p.Id).Distinct().ToList();
+    var summaries = await commentService.GetReviewSummariesAsync(productIds, cancellationToken);
+
+    var enrichedItems = resolvedItems.Select(p =>
+    {
+      var summary = summaries.GetValueOrDefault(p.Id);
+      return summary is not null
+        ? new ProductListItemDto(
+            p.Id, p.Name, p.Slug, p.ProductType, p.Status,
+            p.ShortDescription, p.Price, p.SalePrice, p.CategorySlug,
+            p.IsFeatured, p.StockQty, p.PrimaryImageUrl,
+            p.PrimaryVariantId, p.PrimaryVariantSku,
+            summary.AverageRating,
+            summary.TotalReviews)
+        : p;
+    }).ToList();
+
+    return new PagedResult<ProductListItemDto>(enrichedItems, totalCount, validatedPage, validatedPageSize);
   }
 
   public async Task<ProductDetailDto?> GetProductBySlugAsync(string slug, CancellationToken cancellationToken = default)

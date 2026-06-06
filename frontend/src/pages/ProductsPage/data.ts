@@ -7,6 +7,7 @@ export interface Product {
   name: string;
   image: string;
   badge?: Badge;
+  rating: number;
   reviews: number;
   price: string;
   originalPrice?: string;

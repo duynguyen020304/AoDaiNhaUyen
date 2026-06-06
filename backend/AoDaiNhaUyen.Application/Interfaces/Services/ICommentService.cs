@@ -26,6 +26,10 @@ public interface ICommentService
     Guid productId,
     CancellationToken cancellationToken = default);
 
+  Task<IReadOnlyDictionary<Guid, ReviewSummaryDto>> GetReviewSummariesAsync(
+    IEnumerable<Guid> productIds,
+    CancellationToken cancellationToken = default);
+
   Task<ReviewDto> CreateReviewAsync(
     Guid userId,
     Guid productId,
