@@ -1,9 +1,9 @@
-<!-- Generated: 2026-04-19 | Updated: 2026-04-19 -->
+<!-- Generated: 2026-04-19 | Updated: 2026-07-14 -->
 
 # AoDaiNhaUyen
 
 ## Purpose
-Premium Vietnamese áo dài e-commerce platform. Full-stack app with ASP.NET Core 10 backend (clean architecture) + React 19 + TypeScript + Vite frontend. Features AI try-on, chat widget, cart/checkout, social auth (Google/Facebook), product catalog management.
+Premium Vietnamese áo dài e-commerce platform. Full-stack app with ASP.NET Core 10 backend (clean architecture) + React 19 + TypeScript + Vite frontend. Features AI try-on, chat widget, cart/checkout, social auth (Google/Facebook/Zalo), product catalog management.
 
 ## Key Files
 | File | Description |
@@ -19,6 +19,7 @@ Premium Vietnamese áo dài e-commerce platform. Full-stack app with ASP.NET Cor
 | `frontend/` | React 19 + TypeScript + Vite SPA (see `frontend/AGENTS.md`) |
 | `.github/` | GitHub Actions CI/CD workflows (see `.github/AGENTS.md`) |
 | `public/` | Root static assets served at `/` (see `public/AGENTS.md`) |
+| `frontend-admin/` | React 19 + Tailwind v4 + Zustand admin panel — separate from customer frontend (see `frontend-admin/AGENTS.md`) |
 
 ## For AI Agents
 
@@ -46,6 +47,16 @@ Premium Vietnamese áo dài e-commerce platform. Full-stack app with ASP.NET Cor
 - Only commit complete, validated work
 - Review diff before commit; avoid unrelated changes
 - Screenshots/recordings for visual PR changes
+
+### Gotchas
+- **Tests not in `.slnx`**: `dotnet test` from `backend/` root may miss `AoDaiNhaUyen.Tests/`. Run `dotnet test` from Tests project dir explicitly.
+- **Dual lockfiles in `frontend/`**: both `bun.lock` and `package-lock.json` exist — bun is canonical. Never run `npm install`.
+- **No `.editorconfig`**: backend C# formatting inconsistent (2-space/4-space mixed). No style enforcement.
+- **No frontend tests**: zero test files in `src/`. Visual validation via Playwright MCP is the only front-end QA gate.
+- **CI missing quality gates**: `deploy-dev.yml` doesn't run `dotnet test` or `bun run lint`.
+- **CORS overly permissive**: `AllowAnyHeader()` + `AllowAnyMethod()` in `Program.cs`. Review before production hardening.
+- **`spec.md` outdated**: references mock auth — backend fully exists now. Spec not maintained.
+- **`exceptionHandlingMiddleware`**: catches ALL exceptions → 500. No specific status code mapping beyond what controllers do manually.
 
 ## Dependencies
 

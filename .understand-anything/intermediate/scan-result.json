@@ -1,0 +1,3292 @@
+{
+  "scriptCompleted": true,
+  "files": [
+    {
+      "path": ".github/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 23,
+      "fileCategory": "docs"
+    },
+    {
+      "path": ".github/workflows/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 29,
+      "fileCategory": "infra"
+    },
+    {
+      "path": ".github/workflows/deploy-dev.yml",
+      "language": "yaml",
+      "sizeLines": 929,
+      "fileCategory": "infra"
+    },
+    {
+      "path": ".understand-anything/.understandignore",
+      "language": "unknown",
+      "sizeLines": 27,
+      "fileCategory": "code"
+    },
+    {
+      "path": ".understand-anything/config.json",
+      "language": "json",
+      "sizeLines": 1,
+      "fileCategory": "config"
+    },
+    {
+      "path": "AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 68,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 52,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/.env.example",
+      "language": "config",
+      "sizeLines": 66,
+      "fileCategory": "config"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 87,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.csproj",
+      "language": "csproj",
+      "sizeLines": 34,
+      "fileCategory": "config"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.http",
+      "language": "http",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/appsettings.Development.json",
+      "language": "json",
+      "sizeLines": 62,
+      "fileCategory": "config"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/appsettings.json",
+      "language": "json",
+      "sizeLines": 80,
+      "fileCategory": "config"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Configuration/S3StorageSettings.cs",
+      "language": "csharp",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Configuration/ServiceRegistration.cs",
+      "language": "csharp",
+      "sizeLines": 228,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminCategoriesController.cs",
+      "language": "csharp",
+      "sizeLines": 112,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminMediaController.cs",
+      "language": "csharp",
+      "sizeLines": 67,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminProductsController.cs",
+      "language": "csharp",
+      "sizeLines": 168,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminRolesController.cs",
+      "language": "csharp",
+      "sizeLines": 71,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminUsersController.cs",
+      "language": "csharp",
+      "sizeLines": 161,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 32,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/AiTryOnController.cs",
+      "language": "csharp",
+      "sizeLines": 250,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/AuthController.cs",
+      "language": "csharp",
+      "sizeLines": 266,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/CacheController.cs",
+      "language": "csharp",
+      "sizeLines": 24,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/CategoriesController.cs",
+      "language": "csharp",
+      "sizeLines": 24,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/ChatController.cs",
+      "language": "csharp",
+      "sizeLines": 287,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/CheckoutController.cs",
+      "language": "csharp",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/HealthController.cs",
+      "language": "csharp",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/MediaController.cs",
+      "language": "csharp",
+      "sizeLines": 125,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/ProductsController.cs",
+      "language": "csharp",
+      "sizeLines": 51,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/UserAddressController.cs",
+      "language": "csharp",
+      "sizeLines": 103,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/UserCartController.cs",
+      "language": "csharp",
+      "sizeLines": 75,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/UserController.cs",
+      "language": "csharp",
+      "sizeLines": 77,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/UserOrderController.cs",
+      "language": "csharp",
+      "sizeLines": 55,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/HttpTests/AdminProducts.http",
+      "language": "http",
+      "sizeLines": 51,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Middleware/ExceptionHandlingMiddleware.cs",
+      "language": "csharp",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Program.cs",
+      "language": "csharp",
+      "sizeLines": 129,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Properties/launchSettings.json",
+      "language": "json",
+      "sizeLines": 23,
+      "fileCategory": "config"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Responses/ApiError.cs",
+      "language": "csharp",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Responses/ApiResponse.cs",
+      "language": "csharp",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Responses/ApiResponseFactory.cs",
+      "language": "csharp",
+      "sizeLines": 44,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Services/S3StorageService.cs",
+      "language": "csharp",
+      "sizeLines": 332,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Services/SmtpEmailService.cs",
+      "language": "csharp",
+      "sizeLines": 50,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-1.webp",
+      "language": "webp",
+      "sizeLines": 1882,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-3.webp",
+      "language": "webp",
+      "sizeLines": 500,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-4.webp",
+      "language": "webp",
+      "sizeLines": 2005,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-5.webp",
+      "language": "webp",
+      "sizeLines": 199,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-6.webp",
+      "language": "webp",
+      "sizeLines": 477,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-1.webp",
+      "language": "webp",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-2.webp",
+      "language": "webp",
+      "sizeLines": 721,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-3.webp",
+      "language": "webp",
+      "sizeLines": 196,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-4.webp",
+      "language": "webp",
+      "sizeLines": 527,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-5.webp",
+      "language": "webp",
+      "sizeLines": 120,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-6.webp",
+      "language": "webp",
+      "sizeLines": 869,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-extra.webp",
+      "language": "webp",
+      "sizeLines": 712,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-1.webp",
+      "language": "webp",
+      "sizeLines": 498,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-2.webp",
+      "language": "webp",
+      "sizeLines": 392,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-3.webp",
+      "language": "webp",
+      "sizeLines": 543,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-5.webp",
+      "language": "webp",
+      "sizeLines": 187,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-6.webp",
+      "language": "webp",
+      "sizeLines": 1055,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-1.webp",
+      "language": "webp",
+      "sizeLines": 664,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-2.webp",
+      "language": "webp",
+      "sizeLines": 858,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-4.webp",
+      "language": "webp",
+      "sizeLines": 1129,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-5.webp",
+      "language": "webp",
+      "sizeLines": 661,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-6.webp",
+      "language": "webp",
+      "sizeLines": 950,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-buom-trang.webp",
+      "language": "webp",
+      "sizeLines": 276,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa-cach-dieu.webp",
+      "language": "webp",
+      "sizeLines": 359,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa.webp",
+      "language": "webp",
+      "sizeLines": 137,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-kieu-cao.webp",
+      "language": "webp",
+      "sizeLines": 466,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no-de-bang.webp",
+      "language": "webp",
+      "sizeLines": 576,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no.webp",
+      "language": "webp",
+      "sizeLines": 437,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong-node.webp",
+      "language": "webp",
+      "sizeLines": 265,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong.webp",
+      "language": "webp",
+      "sizeLines": 1172,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-bau.webp",
+      "language": "webp",
+      "sizeLines": 470,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-gap-tua-rua.webp",
+      "language": "webp",
+      "sizeLines": 579,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-hoa-sen.webp",
+      "language": "webp",
+      "sizeLines": 734,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tre-gap.webp",
+      "language": "webp",
+      "sizeLines": 712,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tron.webp",
+      "language": "webp",
+      "sizeLines": 88,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-van-may.webp",
+      "language": "webp",
+      "sizeLines": 1675,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-hoa-van.webp",
+      "language": "webp",
+      "sizeLines": 202,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-kieu.webp",
+      "language": "webp",
+      "sizeLines": 114,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-thanh.webp",
+      "language": "webp",
+      "sizeLines": 202,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-theu-hoa.webp",
+      "language": "webp",
+      "sizeLines": 417,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-thuc.webp",
+      "language": "webp",
+      "sizeLines": 1675,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-xan-oc.webp",
+      "language": "webp",
+      "sizeLines": 414,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/tram-cai-hoa-don-2.webp",
+      "language": "webp",
+      "sizeLines": 163,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/tram-cai-hoa-don-sac.webp",
+      "language": "webp",
+      "sizeLines": 260,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/tram-cai-hoa-don.webp",
+      "language": "webp",
+      "sizeLines": 102,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/tram-cai-toc-hong-ngoc-bich.webp",
+      "language": "webp",
+      "sizeLines": 236,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/tram-cai-toc-vang-sac-dieu.webp",
+      "language": "webp",
+      "sizeLines": 169,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/tram-cai-toc-xanh-biec.webp",
+      "language": "webp",
+      "sizeLines": 512,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/tryon-curated/accessories/.gitkeep",
+      "language": "unknown",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/upload/tryon-curated/garments/.gitkeep",
+      "language": "unknown",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 113,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/AoDaiNhaUyen.Application.csproj",
+      "language": "csproj",
+      "sizeLines": 13,
+      "fileCategory": "config"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/AdminCategoryDTOs.cs",
+      "language": "csharp",
+      "sizeLines": 66,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/AdminProductDTOs.cs",
+      "language": "csharp",
+      "sizeLines": 140,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/AdminUserListItemDto.cs",
+      "language": "csharp",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/CreateRoleRequest.cs",
+      "language": "csharp",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/CreateUserRequest.cs",
+      "language": "csharp",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/RoleDto.cs",
+      "language": "csharp",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/UpdateRoleRequest.cs",
+      "language": "csharp",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/UpdateUserRequest.cs",
+      "language": "csharp",
+      "sizeLines": 16,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/UpdateUserRoleRequest.cs",
+      "language": "csharp",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/UpdateUserStatusRequest.cs",
+      "language": "csharp",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 78,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnAccessoryImageDto.cs",
+      "language": "csharp",
+      "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnCatalogDto.cs",
+      "language": "csharp",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnCatalogItemDto.cs",
+      "language": "csharp",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnRequestDto.cs",
+      "language": "csharp",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnResultDto.cs",
+      "language": "csharp",
+      "sizeLines": 5,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthResult.cs",
+      "language": "csharp",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthSessionDto.cs",
+      "language": "csharp",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthUserDto.cs",
+      "language": "csharp",
+      "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Auth/GoogleUserInfoDto.cs",
+      "language": "csharp",
+      "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Auth/TokenValidationResult.cs",
+      "language": "csharp",
+      "sizeLines": 16,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Auth/ZaloUserInfoDto.cs",
+      "language": "csharp",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Cart/AddCartItemDto.cs",
+      "language": "csharp",
+      "sizeLines": 5,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Cart/CartDto.cs",
+      "language": "csharp",
+      "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Cart/CartItemDto.cs",
+      "language": "csharp",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Cart/UpdateCartItemDto.cs",
+      "language": "csharp",
+      "sizeLines": 4,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/CatalogAiTryOnRequestDto.cs",
+      "language": "csharp",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/CategoryDto.cs",
+      "language": "csharp",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/CategoryTreeDto.cs",
+      "language": "csharp",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ChatAttachmentDto.cs",
+      "language": "csharp",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ChatMessageDto.cs",
+      "language": "csharp",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ChatRecommendationItemDto.cs",
+      "language": "csharp",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ChatStructuredPayloadDto.cs",
+      "language": "csharp",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ChatThreadDetailDto.cs",
+      "language": "csharp",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ChatThreadSummaryDto.cs",
+      "language": "csharp",
+      "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutAddressDto.cs",
+      "language": "csharp",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutRequestDto.cs",
+      "language": "csharp",
+      "sizeLines": 7,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutResultDto.cs",
+      "language": "csharp",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ImageReferenceDto.cs",
+      "language": "csharp",
+      "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ImageValidationResultDto.cs",
+      "language": "csharp",
+      "sizeLines": 7,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/IncomingChatAttachmentDto.cs",
+      "language": "csharp",
+      "sizeLines": 7,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/IntentClassificationDto.cs",
+      "language": "csharp",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/PagedResult.cs",
+      "language": "csharp",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ProductDetailDto.cs",
+      "language": "csharp",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ProductImageDto.cs",
+      "language": "csharp",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ProductImageVisibilityDto.cs",
+      "language": "csharp",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ProductListItemDto.cs",
+      "language": "csharp",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ProductVariantDto.cs",
+      "language": "csharp",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/SseChatEvent.cs",
+      "language": "csharp",
+      "sizeLines": 23,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ThreadMemoryStateDto.cs",
+      "language": "csharp",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/UploadedFileResult.cs",
+      "language": "csharp",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/User/CreateAddressDto.cs",
+      "language": "csharp",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/User/OrderItemDto.cs",
+      "language": "csharp",
+      "sizeLines": 18,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/User/UpdateUserProfileDto.cs",
+      "language": "csharp",
+      "sizeLines": 7,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/User/UserAddressDto.cs",
+      "language": "csharp",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/User/UserOrderDto.cs",
+      "language": "csharp",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/User/UserProfileDto.cs",
+      "language": "csharp",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/UserImageDto.cs",
+      "language": "csharp",
+      "sizeLines": 34,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Exceptions/AiTryOnConfigurationException.cs",
+      "language": "csharp",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Exceptions/AiTryOnProviderException.cs",
+      "language": "csharp",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Exceptions/GoogleOAuthExchangeException.cs",
+      "language": "csharp",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Exceptions/ImageValidationConfigurationException.cs",
+      "language": "csharp",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Exceptions/ImageValidationProviderException.cs",
+      "language": "csharp",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Exceptions/ZaloOAuthExchangeException.cs",
+      "language": "csharp",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 56,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/ISeedDataService.cs",
+      "language": "csharp",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Repositories/ICartRepository.cs",
+      "language": "csharp",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Repositories/ICategoryRepository.cs",
+      "language": "csharp",
+      "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Repositories/IProductRepository.cs",
+      "language": "csharp",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Repositories/IUserProfileRepository.cs",
+      "language": "csharp",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminCategoryService.cs",
+      "language": "csharp",
+      "sizeLines": 27,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminMediaService.cs",
+      "language": "csharp",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminProductService.cs",
+      "language": "csharp",
+      "sizeLines": 34,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminRoleService.cs",
+      "language": "csharp",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminUserService.cs",
+      "language": "csharp",
+      "sizeLines": 26,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAiTryOnService.cs",
+      "language": "csharp",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAuthService.cs",
+      "language": "csharp",
+      "sizeLines": 54,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/ICachedImageValidationService.cs",
+      "language": "csharp",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/ICartService.cs",
+      "language": "csharp",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/ICatalogService.cs",
+      "language": "csharp",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/ICatalogStylingService.cs",
+      "language": "csharp",
+      "sizeLines": 35,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/ICatalogTryOnService.cs",
+      "language": "csharp",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/ICheckoutService.cs",
+      "language": "csharp",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IEmailService.cs",
+      "language": "csharp",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IGoogleOAuthService.cs",
+      "language": "csharp",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IImageValidationService.cs",
+      "language": "csharp",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IImageVisibilityService.cs",
+      "language": "csharp",
+      "sizeLines": 26,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IIntentClassifier.cs",
+      "language": "csharp",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IJwtTokenService.cs",
+      "language": "csharp",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IPasswordHasher.cs",
+      "language": "csharp",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IRefreshTokenService.cs",
+      "language": "csharp",
+      "sizeLines": 7,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IStorageService.cs",
+      "language": "csharp",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IStylistChatService.cs",
+      "language": "csharp",
+      "sizeLines": 47,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IStylistFallbackTextService.cs",
+      "language": "csharp",
+      "sizeLines": 7,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IStylistResponseComposer.cs",
+      "language": "csharp",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IThreadMemoryService.cs",
+      "language": "csharp",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IUploadStoragePathResolver.cs",
+      "language": "csharp",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IUserService.cs",
+      "language": "csharp",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IZaloOAuthService.cs",
+      "language": "csharp",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Options/AiTryOnConcurrencyOptions.cs",
+      "language": "csharp",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Options/ChatConcurrencyOptions.cs",
+      "language": "csharp",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Options/CookieSettings.cs",
+      "language": "csharp",
+      "sizeLines": 7,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Options/EmailSettings.cs",
+      "language": "csharp",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Options/GoogleOAuthSettings.cs",
+      "language": "csharp",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Options/ImageValidationOptions.cs",
+      "language": "csharp",
+      "sizeLines": 28,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Options/JwtSettings.cs",
+      "language": "csharp",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Options/ZaloOAuthSettings.cs",
+      "language": "csharp",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Services/CatalogService.cs",
+      "language": "csharp",
+      "sizeLines": 202,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 95,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/AoDaiNhaUyen.Domain.csproj",
+      "language": "csproj",
+      "sizeLines": 9,
+      "fileCategory": "config"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Common/BaseEntity.cs",
+      "language": "csharp",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Common/ISoftDeletable.cs",
+      "language": "csharp",
+      "sizeLines": 7,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Constants/RoleNames.cs",
+      "language": "csharp",
+      "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 50,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/Cart.cs",
+      "language": "csharp",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/CartItem.cs",
+      "language": "csharp",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/Category.cs",
+      "language": "csharp",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/ChatAttachment.cs",
+      "language": "csharp",
+      "sizeLines": 18,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/ChatMessage.cs",
+      "language": "csharp",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/ChatThread.cs",
+      "language": "csharp",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/ChatThreadMemory.cs",
+      "language": "csharp",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/EmailVerificationToken.cs",
+      "language": "csharp",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/ImageValidationCacheEntry.cs",
+      "language": "csharp",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/MeasurementProfile.cs",
+      "language": "csharp",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/Order.cs",
+      "language": "csharp",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/OrderItem.cs",
+      "language": "csharp",
+      "sizeLines": 26,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/PasswordResetToken.cs",
+      "language": "csharp",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/Payment.cs",
+      "language": "csharp",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/Product.cs",
+      "language": "csharp",
+      "sizeLines": 28,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/ProductAiAsset.cs",
+      "language": "csharp",
+      "sizeLines": 16,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/ProductImage.cs",
+      "language": "csharp",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/ProductPairing.cs",
+      "language": "csharp",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/ProductScenario.cs",
+      "language": "csharp",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/ProductStyleProfile.cs",
+      "language": "csharp",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/ProductVariant.cs",
+      "language": "csharp",
+      "sizeLines": 24,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/Review.cs",
+      "language": "csharp",
+      "sizeLines": 18,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/Role.cs",
+      "language": "csharp",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/Shipment.cs",
+      "language": "csharp",
+      "sizeLines": 16,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/StyleScenario.cs",
+      "language": "csharp",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/User.cs",
+      "language": "csharp",
+      "sizeLines": 29,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/UserAccount.cs",
+      "language": "csharp",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/UserAddress.cs",
+      "language": "csharp",
+      "sizeLines": 18,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/UserGeneratedImage.cs",
+      "language": "csharp",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/UserRole.cs",
+      "language": "csharp",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/UserSession.cs",
+      "language": "csharp",
+      "sizeLines": 16,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/SeedData/DefaultCategories.cs",
+      "language": "csharp",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/SeedData/DefaultCustomers.cs",
+      "language": "csharp",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/SeedData/DefaultMaterials.cs",
+      "language": "csharp",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/SeedData/DefaultProducts.cs",
+      "language": "csharp",
+      "sizeLines": 591,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/SeedData/DefaultRoles.cs",
+      "language": "csharp",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/SeedData/DefaultStoreLocations.cs",
+      "language": "csharp",
+      "sizeLines": 27,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 89,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/AoDaiNhaUyen.Infrastructure.csproj",
+      "language": "csproj",
+      "sizeLines": 28,
+      "fileCategory": "config"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Configuration/GoogleCloudOptions.cs",
+      "language": "csharp",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 57,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/AppDbContext.cs",
+      "language": "csharp",
+      "sizeLines": 643,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/AppDbContextFactory.cs",
+      "language": "csharp",
+      "sizeLines": 36,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260604085040_InitGuid.cs",
+      "language": "csharp",
+      "sizeLines": 1303,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260604085040_InitGuid.Designer.cs",
+      "language": "csharp",
+      "sizeLines": 2361,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260604131343_AddSoftDelete.cs",
+      "language": "csharp",
+      "sizeLines": 1175,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260604131343_AddSoftDelete.Designer.cs",
+      "language": "csharp",
+      "sizeLines": 2893,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260604173757_AddUserGeneratedImages.cs",
+      "language": "csharp",
+      "sizeLines": 68,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260604173757_AddUserGeneratedImages.Designer.cs",
+      "language": "csharp",
+      "sizeLines": 3002,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260605122605_AddProductImageVisibility.cs",
+      "language": "csharp",
+      "sizeLines": 40,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260605122605_AddProductImageVisibility.Designer.cs",
+      "language": "csharp",
+      "sizeLines": 3013,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606025722_AddProductIsPublic.cs",
+      "language": "csharp",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606025722_AddProductIsPublic.Designer.cs",
+      "language": "csharp",
+      "sizeLines": 3022,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 31,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/AppDbContextModelSnapshot.cs",
+      "language": "csharp",
+      "sizeLines": 3010,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/SeedDataService.cs",
+      "language": "csharp",
+      "sizeLines": 783,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Repositories/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 22,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Repositories/CartRepository.cs",
+      "language": "csharp",
+      "sizeLines": 118,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Repositories/CategoryRepository.cs",
+      "language": "csharp",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Repositories/ProductRepository.cs",
+      "language": "csharp",
+      "sizeLines": 71,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Repositories/UserProfileRepository.cs",
+      "language": "csharp",
+      "sizeLines": 151,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminCategoryService.cs",
+      "language": "csharp",
+      "sizeLines": 190,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminMediaService.cs",
+      "language": "csharp",
+      "sizeLines": 148,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminProductService.cs",
+      "language": "csharp",
+      "sizeLines": 217,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminRoleService.cs",
+      "language": "csharp",
+      "sizeLines": 61,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminUserService.cs",
+      "language": "csharp",
+      "sizeLines": 219,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 44,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/AuthService.cs",
+      "language": "csharp",
+      "sizeLines": 756,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/CachedImageValidationService.cs",
+      "language": "csharp",
+      "sizeLines": 188,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/CartService.cs",
+      "language": "csharp",
+      "sizeLines": 132,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/CatalogStylingService.cs",
+      "language": "csharp",
+      "sizeLines": 512,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/CatalogTryOnService.cs",
+      "language": "csharp",
+      "sizeLines": 453,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/ChatTextUtils.cs",
+      "language": "csharp",
+      "sizeLines": 97,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/CheckoutService.cs",
+      "language": "csharp",
+      "sizeLines": 248,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/ConcurrencyLimitedAiTryOnService.cs",
+      "language": "csharp",
+      "sizeLines": 61,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/ConcurrencyLimitedStylistChatService.cs",
+      "language": "csharp",
+      "sizeLines": 228,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/GoogleOAuthService.cs",
+      "language": "csharp",
+      "sizeLines": 77,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/ImageVisibilityService.cs",
+      "language": "csharp",
+      "sizeLines": 105,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/IntentClassifier.cs",
+      "language": "csharp",
+      "sizeLines": 927,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/JwtTokenService.cs",
+      "language": "csharp",
+      "sizeLines": 190,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/Pbkdf2PasswordHasher.cs",
+      "language": "csharp",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/RefreshTokenService.cs",
+      "language": "csharp",
+      "sizeLines": 31,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/StylistChatService.cs",
+      "language": "csharp",
+      "sizeLines": 1553,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/StylistFallbackTextService.cs",
+      "language": "csharp",
+      "sizeLines": 300,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/ThreadMemoryService.cs",
+      "language": "csharp",
+      "sizeLines": 448,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/UploadStoragePathResolver.cs",
+      "language": "csharp",
+      "sizeLines": 82,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/UserService.cs",
+      "language": "csharp",
+      "sizeLines": 193,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/VertexAiImageValidationService.cs",
+      "language": "csharp",
+      "sizeLines": 357,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/VertexAiStylistResponseComposer.cs",
+      "language": "csharp",
+      "sizeLines": 481,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/VertexAiTryOnService.cs",
+      "language": "csharp",
+      "sizeLines": 402,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/ZaloOAuthService.cs",
+      "language": "csharp",
+      "sizeLines": 193,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.slnx",
+      "language": "slnx",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 61,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/AoDaiNhaUyen.Tests.csproj",
+      "language": "csproj",
+      "sizeLines": 27,
+      "fileCategory": "config"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Configuration/GoogleOAuthSettingsValidationTests.cs",
+      "language": "csharp",
+      "sizeLines": 39,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Configuration/ZaloOAuthSettingsValidationTests.cs",
+      "language": "csharp",
+      "sizeLines": 39,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Controllers/ChatControllerTests.cs",
+      "language": "csharp",
+      "sizeLines": 199,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/AuthServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 218,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/CachedImageValidationServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 188,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/CatalogStylingServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 132,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/CatalogTryOnServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 195,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/ConcurrencyLimitedAiTryOnServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 239,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/ConcurrencyLimitedStylistChatServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 202,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/GoogleOAuthServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 121,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/ImageVisibilityServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 185,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/IntentClassifierTests.cs",
+      "language": "csharp",
+      "sizeLines": 560,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/SeedDataServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 81,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/StylistChatServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 1520,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/StylistFallbackTextServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/ThreadMemoryServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 304,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/UploadStoragePathResolverTests.cs",
+      "language": "csharp",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/VertexAiImageValidationServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 214,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/VertexAiStylistResponseComposerTests.cs",
+      "language": "csharp",
+      "sizeLines": 276,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/VertexAiTryOnServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 244,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Tests/Services/ZaloOAuthServiceTests.cs",
+      "language": "csharp",
+      "sizeLines": 151,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 69,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend-admin/eslint.config.js",
+      "language": "javascript",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/index.html",
+      "language": "html",
+      "sizeLines": 13,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend-admin/package.json",
+      "language": "json",
+      "sizeLines": 40,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend-admin/README.md",
+      "language": "markdown",
+      "sizeLines": 73,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend-admin/src/api/admin.ts",
+      "language": "typescript",
+      "sizeLines": 185,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/api/auth.ts",
+      "language": "typescript",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/api/client.ts",
+      "language": "typescript",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/api/media.ts",
+      "language": "typescript",
+      "sizeLines": 55,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/App.tsx",
+      "language": "typescript",
+      "sizeLines": 59,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/auth/AdminRoute.tsx",
+      "language": "typescript",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/auth/GuestRoute.tsx",
+      "language": "typescript",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/admin/CategoryFormModal.tsx",
+      "language": "typescript",
+      "sizeLines": 170,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/admin/DeleteConfirmModal.tsx",
+      "language": "typescript",
+      "sizeLines": 49,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/admin/ModalOverlay.tsx",
+      "language": "typescript",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/admin/RoleFormModal.tsx",
+      "language": "typescript",
+      "sizeLines": 96,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/admin/UserFormModal.tsx",
+      "language": "typescript",
+      "sizeLines": 144,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/AdminLayout.tsx",
+      "language": "typescript",
+      "sizeLines": 109,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ui/badge.tsx",
+      "language": "typescript",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ui/button.tsx",
+      "language": "typescript",
+      "sizeLines": 37,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ui/card.tsx",
+      "language": "typescript",
+      "sizeLines": 18,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ui/checkbox.tsx",
+      "language": "typescript",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ui/input.tsx",
+      "language": "typescript",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ui/label.tsx",
+      "language": "typescript",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ui/select.tsx",
+      "language": "typescript",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ui/sheet.tsx",
+      "language": "typescript",
+      "sizeLines": 26,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ui/table.tsx",
+      "language": "typescript",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ui/textarea.tsx",
+      "language": "typescript",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/lib/utils.ts",
+      "language": "typescript",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/main.tsx",
+      "language": "typescript",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/pages/CategoriesPage.tsx",
+      "language": "typescript",
+      "sizeLines": 206,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/pages/LoginPage.tsx",
+      "language": "typescript",
+      "sizeLines": 79,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/pages/MediaPage.tsx",
+      "language": "typescript",
+      "sizeLines": 305,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/pages/ProductFormPage.tsx",
+      "language": "typescript",
+      "sizeLines": 271,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/pages/ProductListPage.tsx",
+      "language": "typescript",
+      "sizeLines": 270,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/pages/RolesPage.tsx",
+      "language": "typescript",
+      "sizeLines": 124,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/pages/UsersPage.tsx",
+      "language": "typescript",
+      "sizeLines": 253,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/stores/authStore.ts",
+      "language": "typescript",
+      "sizeLines": 52,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/stores/categoryStore.ts",
+      "language": "typescript",
+      "sizeLines": 88,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/stores/productStore.ts",
+      "language": "typescript",
+      "sizeLines": 124,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/stores/roleStore.ts",
+      "language": "typescript",
+      "sizeLines": 71,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/stores/userStore.ts",
+      "language": "typescript",
+      "sizeLines": 145,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/styles/globals.css",
+      "language": "css",
+      "sizeLines": 73,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend-admin/src/types/admin.ts",
+      "language": "typescript",
+      "sizeLines": 182,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/types/api.ts",
+      "language": "typescript",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/types/auth.ts",
+      "language": "typescript",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/tsconfig.app.json",
+      "language": "json",
+      "sizeLines": 28,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend-admin/tsconfig.json",
+      "language": "json",
+      "sizeLines": 7,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend-admin/tsconfig.node.json",
+      "language": "json",
+      "sizeLines": 24,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend-admin/vite.config.ts",
+      "language": "typescript",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/.env.example",
+      "language": "config",
+      "sizeLines": 9,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 54,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/eslint.config.js",
+      "language": "javascript",
+      "sizeLines": 23,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/index.html",
+      "language": "html",
+      "sizeLines": 28,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/package.json",
+      "language": "json",
+      "sizeLines": 39,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/postcss.config.js",
+      "language": "javascript",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/public/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 44,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/public/assets/product-section/xanh 2.webp",
+      "language": "webp",
+      "sizeLines": 626,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/public/serve.json",
+      "language": "json",
+      "sizeLines": 3,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/public/sw.js",
+      "language": "javascript",
+      "sizeLines": 449,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co",
+      "language": "unknown",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co.html",
+      "language": "html",
+      "sizeLines": 12,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 51,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/src/api/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 38,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/src/api/aiTryon.ts",
+      "language": "typescript",
+      "sizeLines": 94,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/api/auth.ts",
+      "language": "typescript",
+      "sizeLines": 165,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/api/cart.ts",
+      "language": "typescript",
+      "sizeLines": 46,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/api/catalog.ts",
+      "language": "typescript",
+      "sizeLines": 46,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/api/chat.ts",
+      "language": "typescript",
+      "sizeLines": 263,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/api/checkout.ts",
+      "language": "typescript",
+      "sizeLines": 34,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/api/client.ts",
+      "language": "typescript",
+      "sizeLines": 127,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/api/media.ts",
+      "language": "typescript",
+      "sizeLines": 44,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/api/user.ts",
+      "language": "typescript",
+      "sizeLines": 35,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "language": "typescript",
+      "sizeLines": 169,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/auth/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 39,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/src/auth/AuthContext.tsx",
+      "language": "typescript",
+      "sizeLines": 134,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/auth/AuthModalContext.tsx",
+      "language": "typescript",
+      "sizeLines": 26,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/auth/ProtectedRoute.tsx",
+      "language": "typescript",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/auth/useAuth.ts",
+      "language": "typescript",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/AccessorySection/AccessorySection.module.css",
+      "language": "css",
+      "sizeLines": 506,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/AccessorySection/AccessorySection.tsx",
+      "language": "typescript",
+      "sizeLines": 160,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 44,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/src/components/AiSection/AiCopy.tsx",
+      "language": "typescript",
+      "sizeLines": 51,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/AiSection/AiSection.module.css",
+      "language": "css",
+      "sizeLines": 793,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/AiSection/AiSection.tsx",
+      "language": "typescript",
+      "sizeLines": 160,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/AiSection/AiVisual.tsx",
+      "language": "typescript",
+      "sizeLines": 51,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/CategoryBanner/CategoryBanner.module.css",
+      "language": "css",
+      "sizeLines": 83,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/CategoryBanner/CategoryBanner.tsx",
+      "language": "typescript",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/ChatWidget/ChatWidget.module.css",
+      "language": "css",
+      "sizeLines": 570,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/ChatWidget/ChatWidget.tsx",
+      "language": "typescript",
+      "sizeLines": 679,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/CollectionSection/CategoryPills.tsx",
+      "language": "typescript",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/CollectionSection/CollectionSection.module.css",
+      "language": "css",
+      "sizeLines": 218,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/CollectionSection/CollectionSection.tsx",
+      "language": "typescript",
+      "sizeLines": 70,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/CollectionSection/DressShowcase.tsx",
+      "language": "typescript",
+      "sizeLines": 70,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/FeaturesStrip/FeaturesStrip.module.css",
+      "language": "css",
+      "sizeLines": 53,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/FeaturesStrip/FeaturesStrip.tsx",
+      "language": "typescript",
+      "sizeLines": 46,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/Footer/Footer.module.css",
+      "language": "css",
+      "sizeLines": 173,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/Footer/Footer.tsx",
+      "language": "typescript",
+      "sizeLines": 58,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/Footer/NewsletterForm.tsx",
+      "language": "typescript",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/Header/Header.module.css",
+      "language": "css",
+      "sizeLines": 285,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/Header/Header.tsx",
+      "language": "typescript",
+      "sizeLines": 278,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/HeroBlank/HeroBlank.module.css",
+      "language": "css",
+      "sizeLines": 206,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/HeroBlank/HeroBlank.tsx",
+      "language": "typescript",
+      "sizeLines": 148,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/LoadingScreen/LoadingScreen.module.css",
+      "language": "css",
+      "sizeLines": 179,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/LoadingScreen/LoadingScreen.tsx",
+      "language": "typescript",
+      "sizeLines": 143,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/MaterialSection/MaterialSection.module.css",
+      "language": "css",
+      "sizeLines": 371,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/MaterialSection/MaterialSection.tsx",
+      "language": "typescript",
+      "sizeLines": 132,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/ProductCard/ProductCard.module.css",
+      "language": "css",
+      "sizeLines": 122,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/ProductCard/ProductCard.tsx",
+      "language": "typescript",
+      "sizeLines": 76,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/ProductSection/ProductSection.module.css",
+      "language": "css",
+      "sizeLines": 994,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/ProductSection/ProductSection.tsx",
+      "language": "typescript",
+      "sizeLines": 93,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/ProductSection/ProductSectionCopy.tsx",
+      "language": "typescript",
+      "sizeLines": 64,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/ProductSection/productSectionData.ts",
+      "language": "typescript",
+      "sizeLines": 421,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/ProductSection/ProductSectionHero.tsx",
+      "language": "typescript",
+      "sizeLines": 139,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/ProductSection/ProductSectionPreview.tsx",
+      "language": "typescript",
+      "sizeLines": 133,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/StoreSection/StoreSection.module.css",
+      "language": "css",
+      "sizeLines": 165,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/StoreSection/StoreSection.tsx",
+      "language": "typescript",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/Toast/Toast.css",
+      "language": "css",
+      "sizeLines": 41,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/Toast/ToastContext.tsx",
+      "language": "typescript",
+      "sizeLines": 44,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/Toast/ToastContextValue.ts",
+      "language": "typescript",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/Toast/useToast.ts",
+      "language": "typescript",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/main.tsx",
+      "language": "typescript",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AccessoriesPage/AccessoriesPage.module.css",
+      "language": "css",
+      "sizeLines": 75,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AccessoriesPage/AccessoriesPage.tsx",
+      "language": "typescript",
+      "sizeLines": 187,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/AccountEditForm.module.css",
+      "language": "css",
+      "sizeLines": 86,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/AccountEditForm.tsx",
+      "language": "typescript",
+      "sizeLines": 111,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/AccountInfo.module.css",
+      "language": "css",
+      "sizeLines": 65,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/AccountInfo.tsx",
+      "language": "typescript",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/AccountPage.module.css",
+      "language": "css",
+      "sizeLines": 74,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/AccountPage.tsx",
+      "language": "typescript",
+      "sizeLines": 97,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/AccountSidebar.module.css",
+      "language": "css",
+      "sizeLines": 148,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/AccountSidebar.tsx",
+      "language": "typescript",
+      "sizeLines": 78,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/AddressList.module.css",
+      "language": "css",
+      "sizeLines": 128,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/AddressList.tsx",
+      "language": "typescript",
+      "sizeLines": 148,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/ImageHistory.module.css",
+      "language": "css",
+      "sizeLines": 225,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/ImageHistory.tsx",
+      "language": "typescript",
+      "sizeLines": 190,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/OrderList.module.css",
+      "language": "css",
+      "sizeLines": 149,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AccountPage/OrderList.tsx",
+      "language": "typescript",
+      "sizeLines": 92,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 39,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/AccessoryPanel.module.css",
+      "language": "css",
+      "sizeLines": 117,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/AccessoryPanel.tsx",
+      "language": "typescript",
+      "sizeLines": 82,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/AiTryonPage.module.css",
+      "language": "css",
+      "sizeLines": 259,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/AiTryonPage.tsx",
+      "language": "typescript",
+      "sizeLines": 463,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/CategoryTabs.module.css",
+      "language": "css",
+      "sizeLines": 55,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/CategoryTabs.tsx",
+      "language": "typescript",
+      "sizeLines": 43,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/ClothingPanel.module.css",
+      "language": "css",
+      "sizeLines": 125,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/ClothingPanel.tsx",
+      "language": "typescript",
+      "sizeLines": 81,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/ImageDropZone.module.css",
+      "language": "css",
+      "sizeLines": 226,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/ImageDropZone.tsx",
+      "language": "typescript",
+      "sizeLines": 186,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/PaginationControls.module.css",
+      "language": "css",
+      "sizeLines": 75,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/PaginationControls.tsx",
+      "language": "typescript",
+      "sizeLines": 55,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/ResultPanel.module.css",
+      "language": "css",
+      "sizeLines": 260,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AiTryonPage/ResultPanel.tsx",
+      "language": "typescript",
+      "sizeLines": 137,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AuthCallbackPage/AuthCallbackPage.module.css",
+      "language": "css",
+      "sizeLines": 123,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/AuthCallbackPage/AuthCallbackPage.tsx",
+      "language": "typescript",
+      "sizeLines": 129,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AuthGoogleCallbackPage/AuthGoogleCallbackPage.tsx",
+      "language": "typescript",
+      "sizeLines": 5,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/AuthZaloCallbackPage/AuthZaloCallbackPage.tsx",
+      "language": "typescript",
+      "sizeLines": 5,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/CartPage/CartItem.module.css",
+      "language": "css",
+      "sizeLines": 150,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/CartPage/CartItem.tsx",
+      "language": "typescript",
+      "sizeLines": 64,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/CartPage/CartPage.module.css",
+      "language": "css",
+      "sizeLines": 112,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/CartPage/CartPage.tsx",
+      "language": "typescript",
+      "sizeLines": 177,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/CartPage/CartSummary.module.css",
+      "language": "css",
+      "sizeLines": 214,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/CartPage/CartSummary.tsx",
+      "language": "typescript",
+      "sizeLines": 133,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/CartPage/currency.ts",
+      "language": "typescript",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/CartPage/CustomerNotes.module.css",
+      "language": "css",
+      "sizeLines": 69,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/CartPage/CustomerNotes.tsx",
+      "language": "typescript",
+      "sizeLines": 40,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/CollectionPage/BrandStorySection.module.css",
+      "language": "css",
+      "sizeLines": 160,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/CollectionPage/BrandStorySection.tsx",
+      "language": "typescript",
+      "sizeLines": 52,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/CollectionPage/CollectionHero.module.css",
+      "language": "css",
+      "sizeLines": 46,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/CollectionPage/CollectionHero.tsx",
+      "language": "typescript",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/CollectionPage/CollectionPage.module.css",
+      "language": "css",
+      "sizeLines": 222,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/CollectionPage/CollectionPage.tsx",
+      "language": "typescript",
+      "sizeLines": 101,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/CollectionPage/data.ts",
+      "language": "typescript",
+      "sizeLines": 193,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/CollectionPage/EraSection.module.css",
+      "language": "css",
+      "sizeLines": 445,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/CollectionPage/EraSection.tsx",
+      "language": "typescript",
+      "sizeLines": 59,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/CollectionPage/GallerySection.module.css",
+      "language": "css",
+      "sizeLines": 383,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/CollectionPage/GallerySection.tsx",
+      "language": "typescript",
+      "sizeLines": 79,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/DataDeletionPage/DataDeletionPage.module.css",
+      "language": "css",
+      "sizeLines": 778,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/DataDeletionPage/DataDeletionPage.tsx",
+      "language": "typescript",
+      "sizeLines": 471,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/HomePage/HomePage.module.css",
+      "language": "css",
+      "sizeLines": 3,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/HomePage/HomePage.tsx",
+      "language": "typescript",
+      "sizeLines": 47,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/LoginPage/LoginPage.module.css",
+      "language": "css",
+      "sizeLines": 313,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/LoginPage/LoginPage.tsx",
+      "language": "typescript",
+      "sizeLines": 390,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/NotFoundPage/NotFoundPage.module.css",
+      "language": "css",
+      "sizeLines": 52,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/NotFoundPage/NotFoundPage.tsx",
+      "language": "typescript",
+      "sizeLines": 35,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/PrivacyPolicyPage/PrivacyPolicyPage.module.css",
+      "language": "css",
+      "sizeLines": 406,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/PrivacyPolicyPage/PrivacyPolicyPage.tsx",
+      "language": "typescript",
+      "sizeLines": 411,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/ProductsPage/data.ts",
+      "language": "typescript",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/ProductsPage/ProductsPage.module.css",
+      "language": "css",
+      "sizeLines": 178,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/ProductsPage/ProductsPage.tsx",
+      "language": "typescript",
+      "sizeLines": 299,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/ResetPasswordPage/ResetPasswordPage.module.css",
+      "language": "css",
+      "sizeLines": 121,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/ResetPasswordPage/ResetPasswordPage.tsx",
+      "language": "typescript",
+      "sizeLines": 116,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/styles/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 37,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/src/styles/global.css",
+      "language": "css",
+      "sizeLines": 16,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/styles/reset.css",
+      "language": "css",
+      "sizeLines": 44,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/styles/texture.css",
+      "language": "css",
+      "sizeLines": 15,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/styles/transitions.css",
+      "language": "css",
+      "sizeLines": 10,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/styles/typography.css",
+      "language": "css",
+      "sizeLines": 22,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/styles/variables.css",
+      "language": "css",
+      "sizeLines": 34,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/types/address.ts",
+      "language": "typescript",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/types/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 37,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/src/types/api.ts",
+      "language": "typescript",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/types/auth.ts",
+      "language": "typescript",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/types/cart.ts",
+      "language": "typescript",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/types/catalog.ts",
+      "language": "typescript",
+      "sizeLines": 35,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/types/order.ts",
+      "language": "typescript",
+      "sizeLines": 40,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/types/user.ts",
+      "language": "typescript",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/utils/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 40,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "frontend/src/utils/imageConversion.ts",
+      "language": "typescript",
+      "sizeLines": 40,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/utils/motion.ts",
+      "language": "typescript",
+      "sizeLines": 150,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/utils/serviceWorkerCache.ts",
+      "language": "typescript",
+      "sizeLines": 128,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/vite-env.d.ts",
+      "language": "typescript",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/tsconfig.app.json",
+      "language": "json",
+      "sizeLines": 25,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/tsconfig.json",
+      "language": "json",
+      "sizeLines": 7,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/tsconfig.node.json",
+      "language": "json",
+      "sizeLines": 24,
+      "fileCategory": "config"
+    },
+    {
+      "path": "frontend/vite.config.ts",
+      "language": "typescript",
+      "sizeLines": 34,
+      "fileCategory": "code"
+    },
+    {
+      "path": "public/AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 18,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "sizeLines": 191,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "spec.md",
+      "language": "markdown",
+      "sizeLines": 366,
+      "fileCategory": "docs"
+    }
+  ],
+  "totalFiles": 543,
+  "filteredByIgnore": 0,
+  "estimatedComplexity": "very-large",
+  "stats": {
+    "filesScanned": 543,
+    "byCategory": {
+      "docs": 31,
+      "infra": 2,
+      "code": 433,
+      "config": 20,
+      "markup": 57
+    },
+    "byLanguage": {
+      "markdown": 32,
+      "yaml": 1,
+      "unknown": 4,
+      "json": 13,
+      "config": 2,
+      "csproj": 5,
+      "http": 2,
+      "csharp": 242,
+      "webp": 49,
+      "slnx": 1,
+      "javascript": 4,
+      "html": 3,
+      "typescript": 131,
+      "css": 54
+    }
+  }
+}

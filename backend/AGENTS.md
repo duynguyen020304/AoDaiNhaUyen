@@ -1,10 +1,10 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-19 | Updated: 2026-04-19 -->
+<!-- Generated: 2026-04-19 | Updated: 2026-07-14 -->
 
 # backend
 
 ## Purpose
-ASP.NET Core 10 REST API, clean architecture. Four projects: Api (presentation), Application (use cases/DTOs), Domain (entities), Infrastructure (data access/external services). Uses EF Core with PostgreSQL, JWT auth with Google/Facebook OAuth, MailKit email, Google Vertex AI for virtual try-on + stylist chat.
+ASP.NET Core 10 REST API, clean architecture. Four projects: Api (presentation), Application (use cases/DTOs), Domain (entities), Infrastructure (data access/external services). Uses EF Core with PostgreSQL, JWT auth with Google/Facebook/Zalo OAuth, MailKit email, Google Vertex AI for virtual try-on + stylist chat.
 
 ## Key Files
 | File | Description |
@@ -40,7 +40,7 @@ ASP.NET Core 10 REST API, clean architecture. Four projects: Api (presentation),
 - Repository pattern for data access (ICategoryRepository, IProductRepository, ICartRepository, IUserProfileRepository)
 - Service layer for business logic (AuthService, CartService, CheckoutService, CatalogService, etc.)
 - DTOs for request/response mapping
-- JWT Bearer auth with Google/Facebook OAuth providers
+- JWT Bearer auth with Google/Facebook/Zalo OAuth providers
 - Token stored in HttpOnly cookies (access_token + refresh_token)
 - Options pattern with ValidateDataAnnotations for config (JwtSettings, EmailSettings, GoogleOAuthSettings, FacebookOAuthSettings, CookieSettings)
 
