@@ -63,13 +63,18 @@ public sealed class SeedDataService(
           continue; // Skip if local file doesn't exist (already migrated or missing)
         }
 
-        if (await storageService.ExistsAsync(objectKey))
+        if (!await storageService.ExistsAsync(objectKey))
         {
-          continue; // Already uploaded
+          using var stream = File.OpenRead(localPath);
+          await storageService.PutObjectWithKeyAsync(objectKey, stream, "image/webp", ct: CancellationToken.None);
         }
-
-        using var stream = File.OpenRead(localPath);
-        await storageService.PutObjectWithKeyAsync(objectKey, stream, "image/webp", ct: CancellationToken.None);
+        
+        // Ensure the public copy exists since seeded products are 'active' by default
+        var publicObjectKey = $"aodainhauyen/public/products/{fileName}";
+        if (!await storageService.ExistsAsync(publicObjectKey))
+        {
+          await storageService.CopyToPublicAsync(objectKey, CancellationToken.None);
+        }
       }
     }
   }
@@ -377,7 +382,9 @@ public sealed class SeedDataService(
             AltText = image.AltText,
             Variant = image.IsPrimary ? defaultVariant : null,
             SortOrder = image.SortOrder,
-            IsPrimary = image.IsPrimary
+            IsPrimary = image.IsPrimary,
+            IsPublic = true,
+            PublicObjectKey = $"aodainhauyen/public/products/{image.ImageUrl[(image.ImageUrl.LastIndexOf('/') + 1)..]}"
           });
           continue;
         }
@@ -386,6 +393,8 @@ public sealed class SeedDataService(
         existingImage.Variant = image.IsPrimary ? defaultVariant : null;
         existingImage.SortOrder = image.SortOrder;
         existingImage.IsPrimary = image.IsPrimary;
+        existingImage.IsPublic = true;
+        existingImage.PublicObjectKey = $"aodainhauyen/public/products/{image.ImageUrl[(image.ImageUrl.LastIndexOf('/') + 1)..]}";
       }
     }
 
