@@ -73,6 +73,7 @@ export interface AdminImageResponse {
   altText: string | null
   sortOrder: number
   isPrimary: boolean
+  isPublic: boolean
 }
 
 export interface AdminProductDetail {

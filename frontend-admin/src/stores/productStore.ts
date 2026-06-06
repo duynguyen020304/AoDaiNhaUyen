@@ -19,6 +19,11 @@ interface ProductState {
   updateProduct: (id: string, data: UpdateProductRequest) => Promise<void>
   deleteProduct: (id: string) => Promise<void>
   restoreProduct: (id: string) => Promise<void>
+  toggleProductStatus: (id: string, status: string) => Promise<void>
+  uploadImage: (productId: string, file: File) => Promise<void>
+  deleteImage: (productId: string, imageId: string) => Promise<void>
+  setPrimaryImage: (productId: string, imageId: string) => Promise<void>
+  toggleImageVisibility: (productId: string, imageId: string, isPublic: boolean) => Promise<void>
   setSearch: (search: string) => void
   setStatusFilter: (status: string) => void
   setIncludeDeleted: (value: boolean) => void
@@ -112,6 +117,68 @@ export const useProductStore = create<ProductState>((set, get) => ({
       await get().fetchProducts()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể khôi phục sản phẩm.'
+      set({ error: message })
+      throw err
+    }
+  },
+
+  toggleProductStatus: async (id: string, status: string) => {
+    set({ error: null })
+    try {
+      await adminApi.toggleProductStatus(id, status)
+      await get().fetchProducts()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể cập nhật trạng thái.'
+      set({ error: message })
+      throw err
+    }
+  },
+
+  uploadImage: async (productId: string, file: File) => {
+    set({ error: null })
+    try {
+      await adminApi.uploadProductImage(productId, file)
+      // re-fetch the product to update images
+      await get().getProduct(productId)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể tải ảnh lên.'
+      set({ error: message })
+      throw err
+    }
+  },
+
+  deleteImage: async (productId: string, imageId: string) => {
+    set({ error: null })
+    try {
+      await adminApi.deleteProductImage(productId, imageId)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể xóa ảnh.'
+      set({ error: message })
+      throw err
+    }
+  },
+
+  setPrimaryImage: async (productId: string, imageId: string) => {
+    set({ error: null })
+    try {
+      await adminApi.setPrimaryProductImage(productId, imageId)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể đặt ảnh chính.'
+      set({ error: message })
+      throw err
+    }
+  },
+
+  toggleImageVisibility: async (productId: string, imageId: string, isPublic: boolean) => {
+    set({ error: null })
+    try {
+      if (isPublic) {
+        await adminApi.makeProductImagePublic(productId, imageId)
+      } else {
+        await adminApi.makeProductImagePrivate(productId, imageId)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể đổi trạng thái ảnh.'
       set({ error: message })
       throw err
     }

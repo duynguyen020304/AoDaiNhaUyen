@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Pencil, Trash2, RotateCcw, ChevronLeft, ChevronRight, Search, Package, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, RotateCcw, ChevronLeft, ChevronRight, Search, Package, Eye, EyeOff, Loader2, Globe, FileX } from 'lucide-react'
 import { useProductStore } from '@/stores/productStore'
 import type { AdminProductListItem } from '@/types/admin'
 import { Button } from '@/components/ui/button'
@@ -79,6 +79,11 @@ export function ProductListPage() {
     if (!restoreTarget) return
     await restoreProduct(restoreTarget.id)
     setRestoreTarget(null)
+  }
+
+  async function handleToggleStatus(product: AdminProductListItem) {
+    const newStatus = product.status === 'active' ? 'draft' : 'active'
+    await useProductStore.getState().toggleProductStatus(product.id, newStatus)
   }
 
   return (
@@ -187,6 +192,9 @@ export function ProductListPage() {
                         </Button>
                       ) : (
                         <>
+                          <Button variant="ghost" size="icon" className="size-8" onClick={() => handleToggleStatus(p)} aria-label={p.status === 'active' ? 'Gỡ bán' : 'Đăng bán'} title={p.status === 'active' ? 'Gỡ bán' : 'Đăng bán'}>
+                            {p.status === 'active' ? <FileX className="size-4" /> : <Globe className="size-4" />}
+                          </Button>
                           <Link to={`/admin/products/${p.id}/edit`} aria-label={`Sửa ${p.name}`} className="inline-flex items-center justify-center size-8 rounded-lg hover:bg-muted transition-colors">
                             <Pencil className="size-4" />
                           </Link>

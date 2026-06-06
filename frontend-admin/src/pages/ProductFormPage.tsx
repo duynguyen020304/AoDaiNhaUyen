@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Globe, FileX, Upload, Trash2, Star, Eye, EyeOff } from 'lucide-react'
 import { useProductStore } from '@/stores/productStore'
+import type { AdminImageResponse } from '@/types/admin'
 import { useCategoryStore } from '@/stores/categoryStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,6 +44,9 @@ export function ProductFormPage() {
   const [care, setCare] = useState('')
   const [status, setStatus] = useState('draft')
   const [featured, setFeatured] = useState(false)
+  const [images, setImages] = useState<AdminImageResponse[]>([])
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchCategories()
@@ -66,6 +70,7 @@ export function ProductFormPage() {
         setCare(product.careInstruction ?? '')
         setStatus(product.status)
         setFeatured(product.isFeatured)
+        setImages(product.images)
         setIsLoading(false)
       })
       .catch((err) => {
@@ -75,6 +80,67 @@ export function ProductFormPage() {
       })
     return () => { cancelled = true }
   }, [id, getProduct])
+
+  const handlePublishToggle = async () => {
+    if (!id) return
+    const newStatus = status === 'active' ? 'draft' : 'active'
+    try {
+      await useProductStore.getState().toggleProductStatus(id, newStatus)
+      setStatus(newStatus)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể cập nhật trạng thái.')
+    }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!id) return
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    setUploading(true)
+    setError(null)
+    try {
+      await useProductStore.getState().uploadImage(id, file)
+      const refreshed = await getProduct(id)
+      setImages(refreshed.images)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Lỗi tải ảnh.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDeleteImage = async (imageId: string) => {
+    if (!id) return
+    if (!confirm('Bạn có chắc muốn xóa ảnh này?')) return
+    try {
+      await useProductStore.getState().deleteImage(id, imageId)
+      setImages(prev => prev.filter(img => img.id !== imageId))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể xóa ảnh.')
+    }
+  }
+
+  const handleSetPrimaryImage = async (imageId: string) => {
+    if (!id) return
+    try {
+      await useProductStore.getState().setPrimaryImage(id, imageId)
+      setImages(prev => prev.map(img => ({ ...img, isPrimary: img.id === imageId })))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Lỗi cập nhật ảnh chính.')
+    }
+  }
+
+  const handleToggleImageVisibility = async (imageId: string, currentPublic: boolean) => {
+    if (!id) return
+    try {
+      await useProductStore.getState().toggleImageVisibility(id, imageId, !currentPublic)
+      setImages(prev => prev.map(img => img.id === imageId ? { ...img, isPublic: !currentPublic } : img))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Lỗi chuyển trạng thái hiển thị ảnh.')
+    }
+  }
 
   const handleNameChange = (val: string) => {
     setName(val)
@@ -148,6 +214,16 @@ export function ProductFormPage() {
           </h1>
         </div>
         <div className="flex gap-3">
+          {id && (
+            <Button 
+              variant="outline" 
+              onClick={handlePublishToggle}
+              disabled={saving}
+              className={status === 'active' ? 'text-destructive border-destructive/30 hover:bg-destructive/10' : 'text-green-600 border-green-600/30 hover:bg-green-600/10'}
+            >
+              {status === 'active' ? <><FileX className="size-4 mr-2" /> Gỡ bán</> : <><Globe className="size-4 mr-2" /> Đăng bán</>}
+            </Button>
+          )}
           <Button variant="outline" onClick={() => navigate('/admin/products')} disabled={saving}>Hủy</Button>
           <Button className="bg-gold text-ink font-semibold hover:bg-gold/90" onClick={handleSave} disabled={saving}>
             {saving ? 'Đang lưu...' : 'Lưu sản phẩm'}
@@ -259,9 +335,64 @@ export function ProductFormPage() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle className="text-lg">Hình ảnh</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-lg flex justify-between items-center">
+                Hình ảnh
+                {id && (
+                  <div>
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
+                    <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                      {uploading ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Upload className="size-4 mr-2" />}
+                      Tải lên
+                    </Button>
+                  </div>
+                )}
+              </CardTitle>
+            </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Tải lên và quản lý hình ảnh sản phẩm sẽ có ở bản cập nhật sau.</p>
+              {!id ? (
+                <p className="text-sm text-muted-foreground">Lưu sản phẩm trước khi tải ảnh lên.</p>
+              ) : images.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Chưa có hình ảnh nào.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  {images.sort((a, b) => a.sortOrder - b.sortOrder).map(img => (
+                    <div key={img.id} className="relative group border rounded-lg overflow-hidden">
+                      <img src={img.imageUrl} alt={img.altText || ''} className="w-full aspect-square object-cover" />
+                      
+                      <div className="absolute top-2 left-2 flex flex-col gap-1">
+                        {img.isPrimary && <span className="bg-gold text-ink text-xs font-bold px-2 py-1 rounded shadow-sm">Ảnh chính</span>}
+                        {img.isPublic ? (
+                          <span className="bg-green-500 text-white text-xs font-medium px-2 py-1 rounded shadow-sm flex items-center gap-1"><Globe className="size-3" /> Công khai</span>
+                        ) : (
+                          <span className="bg-gray-600 text-white text-xs font-medium px-2 py-1 rounded shadow-sm flex items-center gap-1"><EyeOff className="size-3" /> Nội bộ</span>
+                        )}
+                      </div>
+
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                        {!img.isPrimary && (
+                          <Button variant="secondary" size="sm" className="w-28" onClick={() => handleSetPrimaryImage(img.id)}>
+                            <Star className="size-4 mr-2" /> Đặt chính
+                          </Button>
+                        )}
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          className="w-28" 
+                          onClick={() => handleToggleImageVisibility(img.id, img.isPublic)}
+                          disabled={status === 'active' && img.isPublic}
+                          title={status === 'active' && img.isPublic ? "Sản phẩm đang bán phải có ảnh công khai" : undefined}
+                        >
+                          {img.isPublic ? <><EyeOff className="size-4 mr-2" /> Ẩn</> : <><Globe className="size-4 mr-2" /> Public</>}
+                        </Button>
+                        <Button variant="destructive" size="sm" className="w-28" onClick={() => handleDeleteImage(img.id)}>
+                          <Trash2 className="size-4 mr-2" /> Xóa
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

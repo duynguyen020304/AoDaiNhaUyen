@@ -4,6 +4,7 @@ import type {
   AdminUserListItem,
   AdminProductListItem,
   AdminProductDetail,
+  AdminImageResponse,
   CategoryListItem,
   CategoryDetail,
   RoleDto,
@@ -147,6 +148,31 @@ export async function deleteProduct(id: string): Promise<void> {
 
 export async function restoreProduct(id: string): Promise<void> {
   await request<void>(`/api/admin/products/${id}/restore`, { method: 'PATCH' })
+}
+
+export async function uploadProductImage(productId: string, file: File): Promise<AdminImageResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request<AdminImageResponse>(`/api/admin/products/${productId}/images`, {
+    method: 'POST',
+    body: formData,
+  })
+}
+
+export async function deleteProductImage(productId: string, imageId: string): Promise<void> {
+  await request<void>(`/api/admin/products/${productId}/images/${imageId}`, { method: 'DELETE' })
+}
+
+export async function setPrimaryProductImage(productId: string, imageId: string): Promise<void> {
+  await request<void>(`/api/admin/products/${productId}/images/${imageId}/primary`, { method: 'PUT' })
+}
+
+export async function makeProductImagePublic(productId: string, imageId: string): Promise<void> {
+  await request<void>(`/api/admin/products/${productId}/images/${imageId}/make-public`, { method: 'POST' })
+}
+
+export async function makeProductImagePrivate(productId: string, imageId: string): Promise<void> {
+  await request<void>(`/api/admin/products/${productId}/images/${imageId}/make-private`, { method: 'POST' })
 }
 
 // ── Categories ──
