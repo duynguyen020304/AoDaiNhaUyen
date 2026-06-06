@@ -7,7 +7,8 @@ namespace AoDaiNhaUyen.Application.Services;
 public sealed class CatalogService(
   ICategoryRepository categoryRepository,
   IProductRepository productRepository,
-  IImageVisibilityService imageVisibilityService) : ICatalogService
+  IImageVisibilityService imageVisibilityService,
+  ICommentService commentService) : ICatalogService
 {
   public async Task<IReadOnlyList<CategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default)
   {
@@ -197,6 +198,14 @@ public sealed class CatalogService(
       product.CreatedAt,
       product.UpdatedAt,
       variants,
-      resolvedImages);
+      resolvedImages,
+      await MapReviewSummaryAsync(product.Id, cancellationToken));
+  }
+
+  private async Task<ReviewSummaryDto?> MapReviewSummaryAsync(
+    Guid productId,
+    CancellationToken cancellationToken)
+  {
+    return await commentService.GetReviewSummaryAsync(productId, cancellationToken);
   }
 }

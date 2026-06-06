@@ -29,7 +29,8 @@ public sealed class CatalogTryOnServiceTests
       Name = "Áo dài thử đồ",
       Slug = "ao-dai-thu-do",
       ProductType = "ao_dai",
-      Status = "active"
+      Status = "active",
+      IsPublic = true
     };
 
     var garmentPath = Path.Combine(uploadRoot.Path, "tryon", "ao-dai-thu-do.png");

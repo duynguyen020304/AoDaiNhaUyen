@@ -37,6 +37,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<Payment> Payments => Set<Payment>();
   public DbSet<Shipment> Shipments => Set<Shipment>();
   public DbSet<Review> Reviews => Set<Review>();
+  public DbSet<Comment> Comments => Set<Comment>();
   public DbSet<ImageValidationCacheEntry> ImageValidationCacheEntries => Set<ImageValidationCacheEntry>();
   public DbSet<UserGeneratedImage> UserGeneratedImages => Set<UserGeneratedImage>();
 
@@ -199,6 +200,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.Brand).HasMaxLength(120);
       builder.Property(x => x.Origin).HasMaxLength(120);
       builder.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("draft").IsRequired();
+      builder.Property(x => x.IsPublic).HasDefaultValue(false).IsRequired().HasColumnName("is_public");
       builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
       builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
       builder.HasIndex(x => x.Slug).IsUnique();
@@ -533,10 +535,27 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => x.ProductId).HasDatabaseName("idx_reviews_product_id");
       builder.HasIndex(x => new { x.UserId, x.ProductId, x.OrderItemId }).IsUnique();
       builder.HasOne(x => x.User).WithMany(x => x.Reviews).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
-      builder.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.Product).WithMany(x => x.Reviews).HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
       builder.HasOne(x => x.OrderItem).WithMany().HasForeignKey(x => x.OrderItemId).OnDelete(DeleteBehavior.SetNull);
       builder.ToTable(t => t.HasCheckConstraint("ck_reviews_rating", "rating BETWEEN 1 AND 5"));
     });
+
+    modelBuilder.Entity<Comment>(builder =>
+    {
+      builder.ToTable("comments");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Content).IsRequired();
+      builder.Property(x => x.Rating);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.ProductId).HasDatabaseName("idx_comments_product_id");
+      builder.HasIndex(x => x.ParentCommentId).HasDatabaseName("idx_comments_parent_comment_id");
+      builder.HasOne(x => x.User).WithMany(x => x.Comments).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.Product).WithMany(x => x.Comments).HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.ParentComment).WithMany(x => x.Replies).HasForeignKey(x => x.ParentCommentId).OnDelete(DeleteBehavior.Cascade);
+      builder.ToTable(t => t.HasCheckConstraint("ck_comments_rating", "rating IS NULL OR (rating >= 1 AND rating <= 5)"));
+    });
+
 
     modelBuilder.Entity<ImageValidationCacheEntry>(builder =>
     {

@@ -16,6 +16,7 @@ public sealed class Product : BaseEntity
   public string? CareInstruction { get; set; }
   public string Status { get; set; } = "draft";
   public bool IsFeatured { get; set; }
+  public bool IsPublic { get; set; }
 
   public Category Category { get; set; } = null!;
   public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
@@ -25,4 +26,7 @@ public sealed class Product : BaseEntity
   public ICollection<ProductPairing> BasePairings { get; set; } = new List<ProductPairing>();
   public ICollection<ProductPairing> PairedWith { get; set; } = new List<ProductPairing>();
   public ICollection<ProductAiAsset> AiAssets { get; set; } = new List<ProductAiAsset>();
+  public ICollection<Review> Reviews { get; set; } = new List<Review>();
+  public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 }
+

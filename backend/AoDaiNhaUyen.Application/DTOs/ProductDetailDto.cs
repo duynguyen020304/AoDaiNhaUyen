@@ -18,4 +18,5 @@ public sealed record ProductDetailDto(
   DateTime CreatedAt,
   DateTime UpdatedAt,
   IReadOnlyList<ProductVariantDto> Variants,
-  IReadOnlyList<ProductImageDto> Images);
+  IReadOnlyList<ProductImageDto> Images,
+  ReviewSummaryDto? ReviewSummary = null);

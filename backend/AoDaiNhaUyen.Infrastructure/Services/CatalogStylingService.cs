@@ -238,7 +238,7 @@ public sealed class CatalogStylingService(AppDbContext dbContext, IImageVisibili
     var normalizedMessage = ChatTextUtils.Normalize(message);
     var products = await dbContext.Products
       .AsNoTracking()
-      .Where(product => product.Status == "active")
+      .Where(product => product.Status == "active" && product.IsPublic)
       .Select(product => new { product.Id, product.Name, product.Slug })
       .ToListAsync(cancellationToken);
 
@@ -292,7 +292,7 @@ public sealed class CatalogStylingService(AppDbContext dbContext, IImageVisibili
       .Include(product => product.StyleProfiles)
       .Include(product => product.Scenarios)
         .ThenInclude(productScenario => productScenario.Scenario)
-      .Where(product => product.Status == "active");
+      .Where(product => product.Status == "active" && product.IsPublic);
 
     if (!string.IsNullOrWhiteSpace(productType))
     {

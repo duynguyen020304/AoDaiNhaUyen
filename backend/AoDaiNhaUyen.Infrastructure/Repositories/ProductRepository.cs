@@ -21,7 +21,7 @@ public sealed class ProductRepository(AppDbContext dbContext) : IProductReposito
       .Include(p => p.Category)
       .Include(p => p.Variants)
       .Include(p => p.Images)
-      .Where(p => p.Status == "active")
+      .Where(p => p.Status == "active" && p.IsPublic)
       .AsQueryable();
 
     if (!string.IsNullOrWhiteSpace(categorySlug))
@@ -66,6 +66,6 @@ public sealed class ProductRepository(AppDbContext dbContext) : IProductReposito
       .Include(p => p.Category)
       .Include(p => p.Variants)
       .Include(p => p.Images)
-      .FirstOrDefaultAsync(p => p.Slug == slug && p.Status == "active", cancellationToken);
+      .FirstOrDefaultAsync(p => p.Slug == slug && p.Status == "active" && p.IsPublic, cancellationToken);
   }
 }

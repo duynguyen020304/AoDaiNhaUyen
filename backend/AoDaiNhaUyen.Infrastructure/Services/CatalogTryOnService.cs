@@ -36,7 +36,7 @@ public sealed class CatalogTryOnService(
       .Include(product => product.Variants)
       .Include(product => product.Images)
       .Include(product => product.AiAssets)
-      .Where(product => product.Status == "active")
+      .Where(product => product.Status == "active" && product.IsPublic)
       .Where(product => product.AiAssets.Any(asset => asset.IsActive))
       .OrderByDescending(product => product.IsFeatured)
       .ThenBy(product => product.Name)
@@ -202,7 +202,7 @@ public sealed class CatalogTryOnService(
         .AsNoTracking()
         .Include(item => item.AiAssets)
         .FirstOrDefaultAsync(
-          item => item.Id == request.GarmentProductId.Value && item.Status == "active",
+          item => item.Id == request.GarmentProductId.Value && item.Status == "active" && item.IsPublic,
           cancellationToken);
 
       if (product is null)
@@ -246,7 +246,7 @@ public sealed class CatalogTryOnService(
       .AsNoTracking()
       .Include(product => product.AiAssets)
       .Include(product => product.Category)
-      .Where(product => accessoryProductIds.Contains(product.Id) && product.Status == "active")
+      .Where(product => accessoryProductIds.Contains(product.Id) && product.Status == "active" && product.IsPublic)
       .ToListAsync(cancellationToken);
 
     var productById = products.ToDictionary(product => product.Id);

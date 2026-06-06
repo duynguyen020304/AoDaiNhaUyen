@@ -92,6 +92,7 @@ public sealed class CatalogStylingServiceTests
       Slug = $"product-{productId}",
       ProductType = "ao_dai",
       Status = "active",
+      IsPublic = true,
       IsFeatured = isFeatured,
       Variants =
       [

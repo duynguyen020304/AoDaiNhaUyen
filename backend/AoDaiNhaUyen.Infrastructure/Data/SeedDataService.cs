@@ -345,7 +345,8 @@ public sealed class SeedDataService(
           Brand = "Nha Uyen",
           Origin = "Viet Nam",
           Status = "active",
-          IsFeatured = item.IsFeatured
+          IsFeatured = item.IsFeatured,
+          IsPublic = true
         };
 
         dbContext.Products.Add(product);
@@ -362,6 +363,7 @@ public sealed class SeedDataService(
         product.Origin = "Viet Nam";
         product.Status = "active";
         product.IsFeatured = item.IsFeatured;
+        product.IsPublic = true;
         product.UpdatedAt = DateTime.UtcNow;
       }
 
