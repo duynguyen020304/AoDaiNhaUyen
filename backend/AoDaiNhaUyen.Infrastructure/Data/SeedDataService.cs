@@ -26,6 +26,7 @@ public sealed class SeedDataService(
     await SeedCustomersAsync();
     await SeedCategoriesAsync();
     await SeedProductImagesToS3Async();
+    await SeedCuratedTryOnAssetsToS3Async();
     await SeedProductsAsync();
     await SeedStyleScenariosAsync();
     await SeedProductStyleDataAsync();
@@ -69,6 +70,47 @@ public sealed class SeedDataService(
 
         using var stream = File.OpenRead(localPath);
         await storageService.PutObjectWithKeyAsync(objectKey, stream, "image/webp", ct: CancellationToken.None);
+      }
+    }
+  }
+
+  private async Task SeedCuratedTryOnAssetsToS3Async()
+  {
+    var uploadRoot = uploadStoragePathResolver.UploadRootPath;
+    var categories = new[] { "garments", "accessories" };
+
+    foreach (var category in categories)
+    {
+      var localFolder = Path.Combine(uploadRoot, "tryon-curated", category);
+      if (!Directory.Exists(localFolder))
+      {
+        continue;
+      }
+
+      var s3Prefix = category == "garments"
+        ? DefaultProducts.S3PrivateTryOnGarmentsPrefix
+        : DefaultProducts.S3PrivateTryOnAccessoriesPrefix;
+
+      foreach (var filePath in Directory.GetFiles(localFolder))
+      {
+        var fileName = Path.GetFileName(filePath);
+        var objectKey = $"{s3Prefix}/{fileName}";
+
+        if (await storageService.ExistsAsync(objectKey))
+        {
+          continue;
+        }
+
+        var contentType = Path.GetExtension(fileName).ToLowerInvariant() switch
+        {
+          ".png" => "image/png",
+          ".jpg" or ".jpeg" => "image/jpeg",
+          ".webp" => "image/webp",
+          _ => "application/octet-stream"
+        };
+
+        using var stream = File.OpenRead(filePath);
+        await storageService.PutObjectWithKeyAsync(objectKey, stream, contentType, ct: CancellationToken.None);
       }
     }
   }
@@ -528,6 +570,23 @@ public sealed class SeedDataService(
       var relativePath = Path.Combine(CuratedTryOnRoot, categoryFolder, $"{product.Slug}{extension}");
       var uploadRelativePath = relativePath["upload".Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
       var absolutePath = uploadStoragePathResolver.GetAbsolutePathForRelativePath(uploadRelativePath);
+
+      if (storageService.IsConfigured())
+      {
+        // Use S3 key if configured — seed uploaded local files to S3, so check local existence
+        if (File.Exists(absolutePath))
+        {
+          var s3Prefix = categoryFolder == "garments"
+            ? DefaultProducts.S3PrivateTryOnGarmentsPrefix
+            : DefaultProducts.S3PrivateTryOnAccessoriesPrefix;
+          var fileName = $"{product.Slug}{extension}";
+          return $"{s3Prefix}/{fileName}";
+        }
+
+        continue;
+      }
+
+      // Legacy fallback: local filesystem
       if (File.Exists(absolutePath))
       {
         return $"/{relativePath.Replace("\\", "/")}";

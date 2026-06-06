@@ -13,17 +13,27 @@ public sealed class CatalogService(
   {
     var categories = await categoryRepository.GetActiveAsync(cancellationToken);
 
-    return categories
-      .Select(c => new CategoryDto(
+    var result = new List<CategoryDto>(categories.Count);
+    foreach (var c in categories)
+    {
+      var imageUrl = c.ImageUrl;
+      if (!string.IsNullOrWhiteSpace(imageUrl) && !imageUrl.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase))
+      {
+        imageUrl = await imageVisibilityService.ResolveUrlAsync(imageUrl, false, null, cancellationToken);
+      }
+
+      result.Add(new CategoryDto(
         c.Id,
         c.Parent,
         c.Name,
         c.Slug,
         c.Description,
-        c.ImageUrl,
+        imageUrl,
         c.SortOrder,
-        c.IsActive))
-      .ToList();
+        c.IsActive));
+    }
+
+    return result;
   }
 
   public async Task<IReadOnlyList<CategoryTreeDto>> GetHeaderCategoriesAsync(CancellationToken cancellationToken = default)

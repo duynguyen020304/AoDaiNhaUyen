@@ -3,6 +3,9 @@ namespace AoDaiNhaUyen.Domain.SeedData;
 public static class DefaultProducts
 {
   private const string S3PrivateProductsPrefix = "aodainhauyen/private/products";
+  public const string S3PrivateTryOnPrefix = "aodainhauyen/private/tryon";
+  public const string S3PrivateTryOnGarmentsPrefix = "aodainhauyen/private/tryon/garments";
+  public const string S3PrivateTryOnAccessoriesPrefix = "aodainhauyen/private/tryon/accessories";
 
   public static readonly IReadOnlyList<SeedProduct> Items =
   [

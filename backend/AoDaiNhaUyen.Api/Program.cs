@@ -49,6 +49,9 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStaticFiles();
 
+// TODO: Remove /upload static file serving once all consumers migrated to S3.
+// Chat uploads use S3 (private/chat/), product images use S3, curated try-on assets use S3.
+// Some legacy paths may still reference local /upload/ — keep until full audit confirms safe removal.
 var uploadStoragePathResolver = app.Services.GetRequiredService<IUploadStoragePathResolver>();
 Directory.CreateDirectory(uploadStoragePathResolver.UploadRootPath);
 app.UseStaticFiles(new StaticFileOptions

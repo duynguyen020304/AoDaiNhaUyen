@@ -8,7 +8,10 @@ using Microsoft.Extensions.Logging;
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
 /// <summary>Admin category management service implementation.</summary>
-public sealed class AdminCategoryService(AppDbContext dbContext, ILogger<AdminCategoryService> logger) : IAdminCategoryService
+public sealed class AdminCategoryService(
+    AppDbContext dbContext,
+    IImageVisibilityService imageVisibilityService,
+    ILogger<AdminCategoryService> logger) : IAdminCategoryService
 {
     public async Task<IReadOnlyList<AdminCategoryListItemResponse>> GetAllAsync(
         bool includeDeleted = false,
@@ -27,20 +30,26 @@ public sealed class AdminCategoryService(AppDbContext dbContext, ILogger<AdminCa
         var categories = await query
             .OrderBy(c => c.SortOrder)
             .ThenBy(c => c.Name)
-            .Select(c => new AdminCategoryListItemResponse(
+            .ToListAsync(cancellationToken);
+
+        var result = new List<AdminCategoryListItemResponse>(categories.Count);
+        foreach (var c in categories)
+        {
+            var imageUrl = await ResolveCategoryImageUrlAsync(c.ImageUrl, cancellationToken);
+            result.Add(new AdminCategoryListItemResponse(
                 c.Id,
                 c.Parent,
                 c.Name,
                 c.Slug,
                 c.Description,
-                c.ImageUrl,
+                imageUrl,
                 c.SortOrder,
                 c.Products.Count,
                 c.IsDeleted,
-                new DateTimeOffset(c.CreatedAt, TimeSpan.Zero)))
-            .ToListAsync(cancellationToken);
+                new DateTimeOffset(c.CreatedAt, TimeSpan.Zero)));
+        }
 
-        return categories.AsReadOnly();
+        return result.AsReadOnly();
     }
 
     public async Task<AdminCategoryDetailResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -53,7 +62,8 @@ public sealed class AdminCategoryService(AppDbContext dbContext, ILogger<AdminCa
         if (category is null)
             return null;
 
-        return MapToDetail(category);
+        var detail = MapToDetail(category);
+        return detail with { ImageUrl = await ResolveCategoryImageUrlAsync(detail.ImageUrl, cancellationToken) };
     }
 
     public async Task<AdminCategoryDetailResponse> CreateAsync(
@@ -75,7 +85,8 @@ public sealed class AdminCategoryService(AppDbContext dbContext, ILogger<AdminCa
 
         logger.LogInformation("Admin created category {CategoryId} ({Name})", category.Id, category.Name);
 
-        return MapToDetail(category);
+        var created = MapToDetail(category);
+        return created with { ImageUrl = await ResolveCategoryImageUrlAsync(created.ImageUrl, cancellationToken) };
     }
 
     public async Task<AdminCategoryDetailResponse?> UpdateAsync(
@@ -105,7 +116,8 @@ public sealed class AdminCategoryService(AppDbContext dbContext, ILogger<AdminCa
 
         logger.LogInformation("Admin updated category {CategoryId}", id);
 
-        return MapToDetail(category);
+        var updated = MapToDetail(category);
+        return updated with { ImageUrl = await ResolveCategoryImageUrlAsync(updated.ImageUrl, cancellationToken) };
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -165,4 +177,14 @@ public sealed class AdminCategoryService(AppDbContext dbContext, ILogger<AdminCa
             category.SortOrder,
             new DateTimeOffset(category.CreatedAt, TimeSpan.Zero),
             new DateTimeOffset(category.UpdatedAt, TimeSpan.Zero));
+
+    private async Task<string?> ResolveCategoryImageUrlAsync(string? imageUrl, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl) || imageUrl.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase))
+        {
+            return imageUrl;
+        }
+
+        return await imageVisibilityService.ResolveUrlAsync(imageUrl, false, null, ct);
+    }
 }
