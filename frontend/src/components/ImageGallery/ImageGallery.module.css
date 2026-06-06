@@ -1,0 +1,147 @@
+.gallery {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+/* === Thumbnails === */
+.thumbnails {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  max-height: 520px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+}
+
+.thumbBtn {
+  width: 72px;
+  height: 90px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--cream);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.thumbBtn:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.thumbBtn:focus-visible {
+  outline: 2px solid var(--burgundy);
+  outline-offset: 2px;
+}
+
+.thumbActive {
+  border-color: var(--burgundy);
+  box-shadow: 0 0 0 1px var(--burgundy);
+}
+
+.thumbImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* === Main Image === */
+.mainWrapper {
+  position: relative;
+  flex: 1;
+  aspect-ratio: 4 / 5;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--cream);
+}
+
+.mainBtn {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+  display: block;
+}
+
+.mainImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.zoomed {
+  transform: scale(1.6);
+  cursor: zoom-out;
+}
+
+/* Counter */
+.counter {
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  background: rgba(16, 24, 40, 0.72);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 20px;
+  pointer-events: none;
+}
+
+/* === Empty State === */
+.emptyState {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--cream);
+  border-radius: 12px;
+}
+
+.emptyText {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* === Responsive: Mobile === */
+@media (max-width: 768px) {
+  .gallery {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .thumbnails {
+    flex-direction: row;
+    gap: 8px;
+    order: 2;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+  }
+
+  .thumbBtn {
+    width: 60px;
+    height: 76px;
+  }
+
+  .mainWrapper {
+    order: 1;
+  }
+}
