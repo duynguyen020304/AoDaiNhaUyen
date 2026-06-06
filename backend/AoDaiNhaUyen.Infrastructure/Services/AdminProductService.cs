@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
 /// <summary>Admin product management service implementation.</summary>
-public sealed class AdminProductService(AppDbContext dbContext, IImageVisibilityService imageVisibilityService, ILogger<AdminProductService> logger) : IAdminProductService
+public sealed class AdminProductService(AppDbContext dbContext, IImageVisibilityService imageVisibilityService, IStorageService storageService, ILogger<AdminProductService> logger) : IAdminProductService
 {
     public async Task<(IReadOnlyList<AdminProductListItemResponse> Items, int TotalCount)> GetPagedAsync(
         string? search,
@@ -114,6 +114,7 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
 
         if (product is null) return null;
 
+        var oldStatus = product.Status;
         product.Name = request.Name;
         product.Slug = request.Slug;
         product.ProductType = request.ProductType;
@@ -130,6 +131,8 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        await ProcessStatusChangeVisibilityAsync(product, oldStatus, product.Status, cancellationToken);
+
         logger.LogInformation("Admin updated product {ProductId}", product.Id);
         return (await GetByIdAsync(product.Id, cancellationToken))!;
     }
@@ -141,9 +144,12 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
 
         if (product is null) return false;
 
+        var oldStatus = product.Status;
         product.Status = newStatus;
         product.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await ProcessStatusChangeVisibilityAsync(product, oldStatus, newStatus, cancellationToken);
 
         logger.LogInformation("Admin toggled product {ProductId} status to {Status}", product.Id, newStatus);
         return true;
@@ -180,6 +186,103 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
         await dbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Admin restored product {ProductId} ({Name})", product.Id, product.Name);
+        return true;
+    }
+
+    private async Task ProcessStatusChangeVisibilityAsync(Domain.Entities.Product product, string oldStatus, string newStatus, CancellationToken cancellationToken)
+    {
+        if (oldStatus == newStatus) return;
+
+        var images = await dbContext.ProductImages.Where(i => i.ProductId == product.Id).ToListAsync(cancellationToken);
+
+        if (newStatus == "active" && oldStatus != "active")
+        {
+            foreach (var img in images)
+            {
+                if (!img.IsPublic)
+                {
+                    await imageVisibilityService.MakePublicAsync(img.Id, product.Id, cancellationToken);
+                }
+            }
+        }
+        else if (newStatus != "active" && oldStatus == "active")
+        {
+            foreach (var img in images)
+            {
+                if (img.IsPublic)
+                {
+                    await imageVisibilityService.MakePrivateAsync(img.Id, product.Id, cancellationToken);
+                }
+            }
+        }
+    }
+
+    public async Task<AdminImageResponse?> UploadImageAsync(Guid productId, Stream stream, string fileName, string contentType, CancellationToken cancellationToken = default)
+    {
+        var product = await dbContext.Products
+            .Include(p => p.Images)
+            .FirstOrDefaultAsync(p => p.Id == productId, cancellationToken);
+
+        if (product is null) return null;
+
+        var uploadResult = await storageService.UploadAsync(stream, fileName, contentType, "private/products", cancellationToken);
+
+        var isPrimary = product.Images.Count == 0;
+        var sortOrder = product.Images.Count > 0 ? product.Images.Max(i => i.SortOrder) + 1 : 0;
+
+        var image = new Domain.Entities.ProductImage
+        {
+            ProductId = productId,
+            ImageUrl = uploadResult.ObjectKey,
+            AltText = fileName,
+            SortOrder = sortOrder,
+            IsPrimary = isPrimary,
+            IsPublic = false
+        };
+
+        dbContext.ProductImages.Add(image);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        if (product.Status == "active")
+        {
+            await imageVisibilityService.MakePublicAsync(image.Id, productId, cancellationToken);
+            // Refresh from DB after make public
+            image = await dbContext.ProductImages.FirstAsync(i => i.Id == image.Id, cancellationToken);
+        }
+
+        var resolvedUrl = await imageVisibilityService.ResolveUrlAsync(image.ImageUrl, image.IsPublic, image.PublicObjectKey, cancellationToken);
+        return new AdminImageResponse(image.Id, resolvedUrl, image.AltText, image.SortOrder, image.IsPrimary, image.IsPublic);
+    }
+
+    public async Task<bool> DeleteImageAsync(Guid productId, Guid imageId, CancellationToken cancellationToken = default)
+    {
+        var image = await dbContext.ProductImages.FirstOrDefaultAsync(i => i.Id == imageId && i.ProductId == productId, cancellationToken);
+        if (image is null) return false;
+
+        if (image.IsPublic && !string.IsNullOrWhiteSpace(image.PublicObjectKey))
+        {
+            await storageService.DeleteAsync(image.PublicObjectKey, cancellationToken);
+        }
+
+        await storageService.DeleteAsync(image.ImageUrl, cancellationToken);
+
+        dbContext.ProductImages.Remove(image);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return true;
+    }
+
+    public async Task<bool> SetPrimaryImageAsync(Guid productId, Guid imageId, CancellationToken cancellationToken = default)
+    {
+        var images = await dbContext.ProductImages.Where(i => i.ProductId == productId).ToListAsync(cancellationToken);
+        if (images.Count == 0 || !images.Any(i => i.Id == imageId)) return false;
+
+        foreach (var img in images)
+        {
+            img.IsPrimary = img.Id == imageId;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }
 

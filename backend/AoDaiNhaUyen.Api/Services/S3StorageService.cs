@@ -194,7 +194,7 @@ public sealed class S3StorageService : IStorageService
     EnsureConfigured();
     var normalizedKey = NormalizeObjectKey(objectKey);
 
-    var fileName = normalizedKey[(normalizedKey.IndexOf("private/", StringComparison.Ordinal) + "private/".Length)..];
+    var fileName = normalizedKey[(normalizedKey.LastIndexOf('/') + 1)..];
     var publicKey = $"{PublicProductsPrefix}/{fileName}";
 
     var copyRequest = new CopyObjectRequest

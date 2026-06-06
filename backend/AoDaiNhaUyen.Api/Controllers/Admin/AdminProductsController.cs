@@ -162,7 +162,67 @@ public sealed class AdminProductsController(
         Guid imageId,
         CancellationToken cancellationToken = default)
     {
+        var product = await adminProductService.GetByIdAsync(productId, cancellationToken);
+        if (product != null && product.Status == "active")
+        {
+            return BadRequest(ApiResponseFactory.Failure("Không thể ẩn ảnh khi sản phẩm đang ở trạng thái 'Đăng bán'.", "bad_request", "Lỗi nghiệp vụ"));
+        }
+
         var result = await imageVisibilityService.MakePrivateAsync(imageId, productId, cancellationToken);
         return Ok(ApiResponseFactory.Success(result, "Chuyển ảnh sang riêng tư thành công."));
+    }    /// <summary>Upload a new image for a product.</summary>
+    [HttpPost("{productId:guid}/images")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<ApiResponse<AdminImageResponse>>> UploadImage(
+        Guid productId,
+        [FromForm] IFormFile file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(ApiResponseFactory.Failure("File không hợp lệ.", "bad_request", "Vui lòng chọn một file ảnh hợp lệ."));
+        }
+
+        using var stream = file.OpenReadStream();
+        var result = await adminProductService.UploadImageAsync(productId, stream, file.FileName, file.ContentType, cancellationToken);
+        
+        if (result is null)
+        {
+            return NotFound(ApiResponseFactory.Failure("Không tìm thấy sản phẩm.", "not_found", "Sản phẩm không tồn tại hoặc đã bị xóa."));
+        }
+
+        return Ok(ApiResponseFactory.Success(result, "Tải ảnh lên thành công."));
+    }
+
+    /// <summary>Delete a product image.</summary>
+    [HttpDelete("{productId:guid}/images/{imageId:guid}")]
+    public async Task<ActionResult<ApiResponse<object>>> DeleteImage(
+        Guid productId,
+        Guid imageId,
+        CancellationToken cancellationToken = default)
+    {
+        var success = await adminProductService.DeleteImageAsync(productId, imageId, cancellationToken);
+        if (!success)
+        {
+            return NotFound(ApiResponseFactory.Failure("Không tìm thấy ảnh hoặc sản phẩm.", "not_found", "Ảnh hoặc sản phẩm không tồn tại."));
+        }
+
+        return Ok(ApiResponseFactory.Success<object?>(null, "Xóa ảnh thành công."));
+    }
+
+    /// <summary>Set a product image as primary.</summary>
+    [HttpPut("{productId:guid}/images/{imageId:guid}/primary")]
+    public async Task<ActionResult<ApiResponse<object>>> SetPrimaryImage(
+        Guid productId,
+        Guid imageId,
+        CancellationToken cancellationToken = default)
+    {
+        var success = await adminProductService.SetPrimaryImageAsync(productId, imageId, cancellationToken);
+        if (!success)
+        {
+            return NotFound(ApiResponseFactory.Failure("Không tìm thấy ảnh hoặc sản phẩm.", "not_found", "Ảnh hoặc sản phẩm không tồn tại."));
+        }
+
+        return Ok(ApiResponseFactory.Success<object?>(null, "Cập nhật ảnh chính thành công."));
     }
 }

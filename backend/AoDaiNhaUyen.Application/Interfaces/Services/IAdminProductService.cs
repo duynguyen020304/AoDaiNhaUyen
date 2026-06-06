@@ -30,5 +30,12 @@ public interface IAdminProductService
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>Restore a soft-deleted product.</summary>
-    Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken = default);    /// <summary>Upload a product image.</summary>
+    Task<AdminImageResponse?> UploadImageAsync(Guid productId, Stream stream, string fileName, string contentType, CancellationToken cancellationToken = default);
+
+    /// <summary>Delete a product image.</summary>
+    Task<bool> DeleteImageAsync(Guid productId, Guid imageId, CancellationToken cancellationToken = default);
+
+    /// <summary>Set a product image as primary.</summary>
+    Task<bool> SetPrimaryImageAsync(Guid productId, Guid imageId, CancellationToken cancellationToken = default);
 }
