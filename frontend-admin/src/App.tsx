@@ -6,6 +6,7 @@ import { AdminRoute } from '@/auth/AdminRoute'
 import { GuestRoute } from '@/auth/GuestRoute'
 import { AdminLayout } from '@/components/AdminLayout'
 import { LoginPage } from '@/pages/LoginPage'
+import { DashboardPage } from '@/pages/DashboardPage'
 import { ProductListPage } from '@/pages/ProductListPage'
 import { ProductFormPage } from '@/pages/ProductFormPage'
 import { CategoriesPage } from '@/pages/CategoriesPage'
@@ -40,7 +41,8 @@ export function App() {
         {/* Protected admin */}
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Navigate to="/admin/products" replace />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardPage />} />
             <Route path="products" element={<ProductListPage />} />
             <Route path="products/new" element={<ProductFormPage />} />
             <Route path="products/:id/edit" element={<ProductFormPage />} />
@@ -52,7 +54,7 @@ export function App() {
         </Route>
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/admin/products" replace />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </BrowserRouter>
   )

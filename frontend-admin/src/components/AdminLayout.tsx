@@ -1,12 +1,13 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { Package, Users, Shield, FolderTree, LogOut, Menu, Image } from 'lucide-react'
+import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetHeader, SheetTrigger } from '@/components/ui/sheet'
 
 const NAV_ITEMS = [
-  { to: '/admin/products', icon: Package, label: 'Sản phẩm', end: true },
+  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Tổng quan', end: true },
+  { to: '/admin/products', icon: Package, label: 'Sản phẩm', end: false },
   { to: '/admin/categories', icon: FolderTree, label: 'Danh mục', end: false },
   { to: '/admin/users', icon: Users, label: 'Người dùng', end: false },
   { to: '/admin/roles', icon: Shield, label: 'Vai trò', end: false },
