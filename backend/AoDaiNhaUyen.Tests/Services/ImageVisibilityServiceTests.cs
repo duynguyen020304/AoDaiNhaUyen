@@ -12,9 +12,15 @@ namespace AoDaiNhaUyen.Tests.Services;
 public sealed class ImageVisibilityServiceTests
 {
   [Fact]
+  public void xUnit_SuppressCollectionSize()
+  {
+    Assert.Single(new[] { 1 });
+  }
+
+  [Fact]
   public async Task ResolveUrl_LegacyPath_ReturnsAsIs()
   {
-    var service = CreateService(out _);
+    var service = CreateService(CreateDbContext());
     var result = await service.ResolveUrlAsync("/upload/products/test.webp", false, null);
     Assert.Equal("/upload/products/test.webp", result);
   }
@@ -23,7 +29,7 @@ public sealed class ImageVisibilityServiceTests
   public async Task ResolveUrl_PublicImage_ReturnsCanonicalUrl()
   {
     var storage = new TrackingStorageService();
-    var service = CreateService(out _, storage);
+    var service = CreateService(CreateDbContext(), storage);
     var result = await service.ResolveUrlAsync(
       "aodainhauyen/private/products/test.webp", true, "aodainhauyen/public/products/test.webp");
 
@@ -35,7 +41,7 @@ public sealed class ImageVisibilityServiceTests
   public async Task ResolveUrl_PrivateImage_ReturnsPresignedUrl()
   {
     var storage = new TrackingStorageService();
-    var service = CreateService(out _, storage);
+    var service = CreateService(CreateDbContext(), storage);
     var result = await service.ResolveUrlAsync("aodainhauyen/private/products/test.webp", false, null);
 
     Assert.StartsWith("https://presigned.stub/", result);
@@ -123,7 +129,7 @@ public sealed class ImageVisibilityServiceTests
     var updated = await db.ProductImages.FindAsync(imageId);
     Assert.False(updated!.IsPublic);
     Assert.Null(updated.PublicObjectKey);
-    Assert.Equal(1, storage.DeletedKeys.Count);
+    Assert.Single(storage.DeletedKeys);
   }
 
   private static ImageVisibilityService CreateService(AppDbContext db, IStorageService? storageService = null)

@@ -573,9 +573,9 @@ public sealed class StylistChatServiceTests
       CancellationToken.None);
 
     var savedAttachment = await dbContext.ChatAttachments.SingleAsync();
-    var expectedPath = Path.Combine(uploadRoot.Path, "chat", thread.Id.ToString(), Path.GetFileName(savedAttachment.FileUrl));
+    var expectedPath = Path.Combine(uploadRoot.Path, "private", "chat", thread.Id.ToString(), Path.GetFileName(savedAttachment.FileUrl));
 
-    Assert.Equal("/upload/chat/" + thread.Id + "/" + Path.GetFileName(expectedPath), savedAttachment.FileUrl);
+    Assert.Equal("/upload/private/chat/" + thread.Id + "/" + Path.GetFileName(expectedPath), savedAttachment.FileUrl);
     Assert.True(File.Exists(expectedPath));
     Assert.Equal([1, 2, 3, 4], await File.ReadAllBytesAsync(expectedPath));
     Assert.Contains(threadDetail.Messages.SelectMany(message => message.Attachments), attachment => attachment.Id == savedAttachment.Id);
@@ -599,7 +599,7 @@ public sealed class StylistChatServiceTests
     {
       ThreadId = thread.Id,
       Kind = "user_image",
-      FileUrl = $"/upload/chat/{thread.Id}/person.png",
+      FileUrl = $"/upload/private/chat/{thread.Id}/person.png",
       MimeType = "image/png",
       OriginalFileName = "person.png",
       FileSizeBytes = 4
@@ -618,7 +618,7 @@ public sealed class StylistChatServiceTests
     };
     await dbContext.SaveChangesAsync();
 
-    var personDirectory = Path.Combine(uploadRoot.Path, "chat", thread.Id.ToString());
+    var personDirectory = Path.Combine(uploadRoot.Path, "private", "chat", thread.Id.ToString());
     Directory.CreateDirectory(personDirectory);
     await File.WriteAllBytesAsync(Path.Combine(personDirectory, "person.png"), [8, 6, 7, 5]);
 
@@ -651,7 +651,7 @@ public sealed class StylistChatServiceTests
       .SingleAsync(item => item.Id == thread.Id);
 
     var tryOnAttachment = Assert.Single(storedThread.Attachments, attachment => attachment.Kind == "tryon_result");
-    var absolutePath = Path.Combine(uploadRoot.Path, "chat", thread.Id.ToString(), Path.GetFileName(tryOnAttachment.FileUrl));
+    var absolutePath = Path.Combine(uploadRoot.Path, "private", "chat", thread.Id.ToString(), Path.GetFileName(tryOnAttachment.FileUrl));
     var storedMemory = new ThreadMemoryService().Read(storedThread.Memory);
 
     Assert.True(File.Exists(absolutePath));
@@ -764,7 +764,7 @@ public sealed class StylistChatServiceTests
 
     var created = Assert.IsType<SseChatEvent.Created>(events[0]);
     var savedAttachment = await dbContext.ChatAttachments.SingleAsync();
-    var expectedPath = Path.Combine(uploadRoot.Path, "chat", thread.Id.ToString(), Path.GetFileName(savedAttachment.FileUrl));
+    var expectedPath = Path.Combine(uploadRoot.Path, "private", "chat", thread.Id.ToString(), Path.GetFileName(savedAttachment.FileUrl));
 
     Assert.Equal(Guid.Empty, created.MessageId);
     Assert.True(File.Exists(expectedPath));
@@ -1458,7 +1458,9 @@ public sealed class StylistChatServiceTests
       => Task.FromResult(false);
 
     public string BuildCanonicalUrl(string objectKey)
-      => $"https://canonical.stub.example/{objectKey}";
+      => $"https://canonical.stub.example/{objectKey}";    public Task PutObjectWithKeyAsync(string objectKey, Stream stream, string contentType, CancellationToken ct = default) => Task.CompletedTask;
+    public Task<string> CopyToPublicAsync(string objectKey, CancellationToken ct = default) => Task.FromResult($"https://canonical.stub.example/{objectKey}");
+    public bool IsConfigured() => true;
   }
 
   private sealed class StubHttpClientFactory : IHttpClientFactory

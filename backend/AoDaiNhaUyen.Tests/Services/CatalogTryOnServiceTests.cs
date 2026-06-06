@@ -55,7 +55,8 @@ public sealed class CatalogTryOnServiceTests
       imageValidationService,
       new StubHttpClientFactory(),
       new UploadStoragePathResolver(uploadRoot.Path),
-      new StubStorageService());
+      new StubStorageService(),
+      new StubImageVisibilityService());
 
     await service.CreateAsync(
       new CatalogAiTryOnRequestDto(
@@ -89,7 +90,8 @@ public sealed class CatalogTryOnServiceTests
       new StubImageValidationService(new ImageValidationResultDto(false, "Ảnh không có người phù hợp để thử đồ.", "object_only", 0.9m)),
       new StubHttpClientFactory(),
       new UploadStoragePathResolver(uploadRoot.Path),
-      new StubStorageService());
+      new StubStorageService(),
+      new StubImageVisibilityService());
 
     var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(
       new CatalogAiTryOnRequestDto(
@@ -163,7 +165,9 @@ public sealed class CatalogTryOnServiceTests
     public Task DeleteAsync(string objectKey, CancellationToken ct = default) => Task.CompletedTask;
     public Task<Stream> DownloadAsync(string objectKey, CancellationToken ct = default) => Task.FromResult<Stream>(new MemoryStream());
     public Task<bool> ExistsAsync(string objectKey, CancellationToken ct = default) => Task.FromResult(false);
-    public string BuildCanonicalUrl(string objectKey) => $"https://canonical.stub/{objectKey}";
+    public string BuildCanonicalUrl(string objectKey) => $"https://canonical.stub/{objectKey}";    public Task PutObjectWithKeyAsync(string objectKey, Stream stream, string contentType, CancellationToken ct = default) => Task.CompletedTask;
+    public Task<string> CopyToPublicAsync(string objectKey, CancellationToken ct = default) => Task.FromResult($"https://canonical.stub/{objectKey}");
+    public bool IsConfigured() => true;
   }
 
   private sealed class ThrowingHttpMessageHandler : HttpMessageHandler
@@ -172,6 +176,18 @@ public sealed class CatalogTryOnServiceTests
       HttpRequestMessage request,
       CancellationToken cancellationToken) =>
       throw new InvalidOperationException("HttpClient should not be used for file:// URIs.");
+  }
+
+  private sealed class StubImageVisibilityService : IImageVisibilityService
+  {
+    public Task<ProductImageVisibilityDto> MakePrivateAsync(Guid productImageId, Guid productId, CancellationToken ct = default)
+      => Task.FromResult(new ProductImageVisibilityDto(productImageId, false, null, "url"));
+
+    public Task<ProductImageVisibilityDto> MakePublicAsync(Guid productImageId, Guid productId, CancellationToken ct = default)
+      => Task.FromResult(new ProductImageVisibilityDto(productImageId, true, "pub", "url"));
+
+    public Task<string> ResolveUrlAsync(string objectKey, bool isPublic, string? publicObjectKey, CancellationToken ct = default)
+      => Task.FromResult("https://stub.example/url");
   }
 
   private sealed class TemporaryDirectory : IDisposable

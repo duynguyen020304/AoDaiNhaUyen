@@ -1,6 +1,7 @@
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
-using AoDaiNhaUyen.Infrastructure.Services;
+using AoDaiNhaUyen.Infrastructure.Services;using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Application.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -65,7 +66,7 @@ public sealed class CatalogStylingServiceTests
     dbContext.Products.AddRange(featuredProduct, coverageProduct);
     await dbContext.SaveChangesAsync();
 
-    var service = new CatalogStylingService(dbContext);
+    var service = new CatalogStylingService(dbContext, new StubImageVisibilityService());
 
     var results = await service.RecommendAsync("giao-vien", null, "blue", null, "ao_dai", 2, cancellationToken: CancellationToken.None);
 
@@ -128,5 +129,15 @@ public sealed class CatalogStylingServiceTests
       .UseInMemoryDatabase($"catalog-styling-{Guid.NewGuid():N}")
       .Options;
     return new AppDbContext(options);
+  }  private sealed class StubImageVisibilityService : IImageVisibilityService
+  {
+    public Task<ProductImageVisibilityDto> MakePrivateAsync(Guid productImageId, Guid productId, CancellationToken ct = default)
+      => Task.FromResult(new ProductImageVisibilityDto(productImageId, false, null, "url"));
+
+    public Task<ProductImageVisibilityDto> MakePublicAsync(Guid productImageId, Guid productId, CancellationToken ct = default)
+      => Task.FromResult(new ProductImageVisibilityDto(productImageId, true, "pub", "url"));
+
+    public Task<string> ResolveUrlAsync(string objectKey, bool isPublic, string? publicObjectKey, CancellationToken ct = default)
+      => Task.FromResult("https://stub.example/url");
   }
 }
