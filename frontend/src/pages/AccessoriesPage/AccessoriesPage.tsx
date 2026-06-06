@@ -43,6 +43,7 @@ function getBadge(product: ProductListItem, index: number): Badge | undefined {
 function mapProduct(product: ProductListItem, index: number): Product {
   return {
     id: String(product.id),
+    slug: product.slug,
     variantId: product.primaryVariantId,
     name: product.name,
     image: resolveAssetUrl(product.primaryImageUrl) ?? '/assets/products/product-truyen-thong-1.png',

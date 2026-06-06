@@ -47,6 +47,7 @@ function mapProduct(product: ProductListItem, index: number): Product {
 
   return {
     id: String(product.id),
+    slug: product.slug,
     variantId: product.primaryVariantId,
     name: product.name,
     image,

@@ -9,6 +9,12 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
+.imageLink {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
 .imageWrap {
   position: relative;
   width: 100%;

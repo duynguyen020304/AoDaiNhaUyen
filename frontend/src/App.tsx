@@ -10,6 +10,7 @@ import ProductsPage from './pages/ProductsPage/ProductsPage';
 import AccessoriesPage from './pages/AccessoriesPage/AccessoriesPage';
 import CartPage from './pages/CartPage/CartPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
+import ProductDetailPage from './pages/ProductDetailPage/ProductDetailPage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import AccountPage, { type AccountView } from './pages/AccountPage/AccountPage';
 import AuthGoogleCallbackPage from './pages/AuthGoogleCallbackPage/AuthGoogleCallbackPage';
@@ -133,6 +134,7 @@ export default function App() {
         <Route path="/ai-tryon" element={<AiTryonPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/accessories" element={<AccessoriesPage />} />
+        <Route path="/product/:slug" element={<ProductDetailPage />} />
         <Route path="/cart" element={status === 'anonymous' ? <HomePage /> : <CartPage />} />
         <Route path="/login" element={<HomePage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import styles from './ProductCard.module.css';
 import { cardReveal, cardHover, viewportOnce } from '../../utils/motion';
 import type { Product, Badge } from '../../pages/ProductsPage/data';
@@ -41,14 +42,16 @@ export default function ProductCard({ data, onAddToCart }: ProductCardProps) {
       whileHover={cardHover.hover}
       transition={{ duration: 0.24, ease: 'easeOut' }}
     >
-      <div className={styles.imageWrap}>
-        <img src={data.image} alt={data.name} className={styles.image} loading="lazy" />
-        {data.badge && (
-          <span className={styles.badge} style={{ background: BADGE_COLORS[data.badge] }}>
-            {data.badge}
-          </span>
-        )}
-      </div>
+      <Link to={`/product/${data.slug}`} className={styles.imageLink}>
+        <div className={styles.imageWrap}>
+          <img src={data.image} alt={data.name} className={styles.image} loading="lazy" />
+          {data.badge && (
+            <span className={styles.badge} style={{ background: BADGE_COLORS[data.badge] }}>
+              {data.badge}
+            </span>
+          )}
+        </div>
+      </Link>
       <div className={styles.info}>
         <h3 className={styles.name}>{data.name}</h3>
         <div className={styles.rating}>

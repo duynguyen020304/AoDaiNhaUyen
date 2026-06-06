@@ -1,0 +1,140 @@
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Two-column product area ── */
+.productLayout {
+  display: grid;
+  grid-template-columns: 55% 45%;
+  gap: 56px;
+  padding: 32px 0 48px;
+}
+
+.leftCol {
+  grid-column: 1;
+}
+
+.rightCol {
+  grid-column: 2;
+}
+
+/* ── Feedback ── */
+.feedbackContainer {
+  padding: 0 0 48px 0;
+  width: 100%;
+}
+
+/* ── Loading skeleton ── */
+.loadingSkeleton {
+  display: grid;
+  grid-template-columns: 55% 45%;
+  gap: 56px;
+  padding: 32px 0 48px;
+}
+
+.skeletonMedia {
+  aspect-ratio: 460/481;
+  background: var(--cream);
+  border-radius: 16px;
+  animation: productPulse 1.5s ease-in-out infinite;
+}
+
+.skeletonInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skeletonLine {
+  height: 14px;
+  background: var(--cream);
+  border-radius: 6px;
+  animation: productPulse 1.5s ease-in-out infinite;
+}
+
+.skeletonLineLarge {
+  height: 28px;
+  background: var(--cream);
+  border-radius: 8px;
+  width: 60%;
+  animation: productPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes productPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ── Not found ── */
+.notFound {
+  text-align: center;
+  padding: 120px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.notFoundTitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.notFoundDesc {
+  font-size: 15px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.backLink {
+  display: inline-block;
+  padding: 12px 32px;
+  background: var(--burgundy);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.backLink:hover {
+  opacity: 0.9;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .productLayout,
+  .loadingSkeleton {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 0 16px;
+  }
+
+  .productLayout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 16px 0 32px;
+  }
+
+  .leftCol, .rightCol {
+    grid-column: 1;
+  }
+
+  .loadingSkeleton {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+
+}

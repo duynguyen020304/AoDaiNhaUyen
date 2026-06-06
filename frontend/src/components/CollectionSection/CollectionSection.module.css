@@ -98,7 +98,8 @@
 .dressShowcase {
   position: relative;
   z-index: 2;
-  width: min(1620px, calc(100% - 72px));
+  width: 100%;
+  padding: 0 36px;
   margin: 0 auto 0;
 }
 
@@ -180,6 +181,10 @@
   .collectionSection {
     min-height: auto;
     padding: 80px 24px;
+  }
+
+  .dressShowcase {
+    padding: 0;
   }
 
   .categoryPills {
