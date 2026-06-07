@@ -173,6 +173,12 @@ public static class ServiceRegistration
     services.AddScoped<IStorageService, S3StorageService>();
     services.AddScoped<IAdminMediaService, AdminMediaService>();
     services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+    services.AddScoped<ISafetyGate, SafetyGate>();
+    services.AddScoped<IAdminAgentService, AdminAgentService>();
+    services.AddHttpClient<IAdminLlmProvider, VertexAiAdminProvider>(httpClient =>
+    {
+      httpClient.Timeout = Timeout.InfiniteTimeSpan;
+    });
     services.AddScoped<IImageVisibilityService, ImageVisibilityService>();
     services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
     services.AddScoped<IRefreshTokenService, RefreshTokenService>();

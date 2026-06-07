@@ -40,6 +40,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<Comment> Comments => Set<Comment>();
   public DbSet<ImageValidationCacheEntry> ImageValidationCacheEntries => Set<ImageValidationCacheEntry>();
   public DbSet<UserGeneratedImage> UserGeneratedImages => Set<UserGeneratedImage>();
+  public DbSet<AdminAiAction> AdminAiActions => Set<AdminAiAction>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
@@ -596,6 +597,21 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
     });
 
+
+    modelBuilder.Entity<AdminAiAction>(builder =>
+    {
+      builder.ToTable("admin_ai_actions");
+      builder.Property(x => x.ToolName).HasMaxLength(100).IsRequired();
+      builder.Property(x => x.ToolInput).HasColumnType("text");
+      builder.Property(x => x.ToolResult).HasColumnType("text");
+      builder.Property(x => x.ConfirmedBy).HasMaxLength(100);
+      builder.Property(x => x.ActionType).HasConversion<string>().HasMaxLength(30).IsRequired();
+      builder.Property(x => x.RiskLevel).HasConversion<string>().HasMaxLength(20).IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.AdminUserId).HasDatabaseName("idx_admin_ai_actions_admin_user_id");
+      builder.HasIndex(x => x.CreatedAt).HasDatabaseName("idx_admin_ai_actions_created_at");
+      builder.HasOne(x => x.AdminUser).WithMany().HasForeignKey(x => x.AdminUserId).OnDelete(DeleteBehavior.Cascade);
+    });
     ApplySnakeCaseColumnNames(modelBuilder);
     ApplyGlobalSoftDeleteQueryFilters(modelBuilder);
   }

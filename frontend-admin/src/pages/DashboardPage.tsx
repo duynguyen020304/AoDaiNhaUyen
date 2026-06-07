@@ -9,6 +9,7 @@ import { RecentOrdersTable } from '@/components/dashboard/RecentOrdersTable'
 import { TopProductsList } from '@/components/dashboard/TopProductsList'
 import { UserGrowthChart } from '@/components/dashboard/UserGrowthChart'
 import { Button } from '@/components/ui/button'
+import { AiSuggestionCards } from '@/components/ai/AiSuggestionCards'
 
 type Period = 7 | 30 | 90
 
@@ -97,6 +98,7 @@ export function DashboardPage() {
       </div>
 
       {/* Stats cards */}
+      <AiSuggestionCards />
       <StatsCardGrid
         summary={summary}
         loading={loading}

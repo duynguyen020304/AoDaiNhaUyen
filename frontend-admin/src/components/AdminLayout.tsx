@@ -1,9 +1,11 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard } from 'lucide-react'
+import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
+import { useAdminAiStore } from '@/stores/adminAiStore'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetHeader, SheetTrigger } from '@/components/ui/sheet'
+import { AiChatSidebar } from '@/components/ai/AiChatSidebar'
 
 const NAV_ITEMS = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Tổng quan', end: true },
@@ -12,11 +14,13 @@ const NAV_ITEMS = [
   { to: '/admin/users', icon: Users, label: 'Người dùng', end: false },
   { to: '/admin/roles', icon: Shield, label: 'Vai trò', end: false },
   { to: '/admin/media', icon: Image, label: 'Hình ảnh', end: false },
+  { to: '#ai-chat', icon: Bot, label: 'AI Trợ lý', end: false },
 ] as const
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
+  const toggleAi = useAdminAiStore((s) => s.toggle)
   const navigate = useNavigate()
 
   async function handleLogout() {
@@ -31,20 +35,31 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <div className="text-white/60 text-xs mt-0.5">Admin</div>
       </div>
       <nav className="flex-1 p-4 space-y-1">
-        {NAV_ITEMS.map(({ to, icon: Icon, label, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive ? 'bg-wine/40 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`
-            }
-          >
-            <Icon className="size-5" />
-            {label}
-          </NavLink>
-        ))}
+        {NAV_ITEMS.map(({ to, icon: Icon, label, end }) =>
+          to === '#ai-chat' ? (
+            <button
+              key={to}
+              onClick={() => { toggleAi(); onNavigate?.() }}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors w-full text-left text-white/70 hover:bg-white/10 hover:text-white"
+            >
+              <Icon className="size-5" />
+              {label}
+            </button>
+          ) : (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              onClick={onNavigate}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive ? 'bg-wine/40 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`
+              }
+            >
+              <Icon className="size-5" />
+              {label}
+            </NavLink>
+          )
+        )}
       </nav>
       <div className="p-4 border-t border-white/10">
         {user && (
@@ -99,12 +114,32 @@ export function AdminSidebar() {
 }
 
 export function AdminLayout() {
+  const isAiOpen = useAdminAiStore((s) => s.isOpen)
+  const toggleAi = useAdminAiStore((s) => s.toggle)
+
   return (
     <div className="flex min-h-dvh">
       <AdminSidebar />
       <main className="flex-1 bg-cream p-4 lg:p-6 overflow-y-auto pt-14 lg:pt-6">
         <Outlet />
       </main>
+
+      {/* AI Chat toggle button */}
+      <button
+        onClick={toggleAi}
+        className={`fixed bottom-4 right-4 z-40 p-3 rounded-full shadow-lg transition-all ${
+          isAiOpen
+            ? 'bg-gray-200 text-gray-600'
+            : 'bg-wine text-white hover:bg-wine/90'
+        }`}
+        aria-label="AI Trợ lý"
+        title="AI Trợ lý"
+      >
+        <Bot className="size-5" />
+      </button>
+
+      {/* AI Chat sidebar */}
+      <AiChatSidebar />
     </div>
   )
 }
