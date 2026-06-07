@@ -2,12 +2,13 @@ using System.Text;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
-using AoDaiNhaUyen.Api.Configuration;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Infrastructure.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace AoDaiNhaUyen.Api.Services;
+namespace AoDaiNhaUyen.Infrastructure.Services;
 
 public sealed class S3StorageService : IStorageService
 {

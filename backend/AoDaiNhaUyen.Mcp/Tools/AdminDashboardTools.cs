@@ -36,6 +36,36 @@ public static class AdminDashboardTools
     return JsonSerializer.Serialize(o);
   }
 
+  [McpServerTool, Description("Lấy danh sách đơn hàng gần đây.")]
+  public static async Task<string> GetRecentOrders(
+    [Description("Số lượng đơn hàng. Mặc định: 10")] int limit = 10,
+    IAdminDashboardService? dashboard = null)
+  {
+    if (dashboard is null) return Error("DashboardService", "Dashboard service chưa được inject.");
+    var o = await dashboard.GetRecentOrdersAsync(limit, CancellationToken.None);
+    return JsonSerializer.Serialize(o);
+  }
+
+  [McpServerTool, Description("Lấy top sản phẩm bán chạy.")]
+  public static async Task<string> GetTopProducts(
+    [Description("Số lượng sản phẩm. Mặc định: 5")] int limit = 5,
+    IAdminDashboardService? dashboard = null)
+  {
+    if (dashboard is null) return Error("DashboardService", "Dashboard service chưa được inject.");
+    var p = await dashboard.GetTopProductsAsync(limit, CancellationToken.None);
+    return JsonSerializer.Serialize(p);
+  }
+
+  [McpServerTool, Description("Lấy dữ liệu tăng trưởng người dùng.")]
+  public static async Task<string> GetUserGrowth(
+    [Description("Số ngày phân tích. Mặc định: 30")] int periodDays = 30,
+    IAdminDashboardService? dashboard = null)
+  {
+    if (dashboard is null) return Error("DashboardService", "Dashboard service chưa được inject.");
+    var g = await dashboard.GetUserGrowthAsync(periodDays, CancellationToken.None);
+    return JsonSerializer.Serialize(g);
+  }
+
   private static string Error(string code, string msg) =>
     $"{{\"error\": {{\"code\": \"{code}\", \"message\": \"{msg}\"}}}}";
 }

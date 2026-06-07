@@ -1,4 +1,4 @@
-namespace AoDaiNhaUyen.Api.Configuration;
+namespace AoDaiNhaUyen.Infrastructure.Configuration;
 
 /// <summary>
 /// Cấu hình S3-compatible storage (AWS S3 hoặc MinIO).
