@@ -44,6 +44,7 @@ public sealed record OrderStatusDistributionDto(
 /// Đơn hàng gần đây.
 /// </summary>
 public sealed record RecentOrderDto(
+  Guid Id,
   string OrderCode,
   string CustomerName,
   decimal TotalAmount,

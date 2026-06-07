@@ -27,6 +27,10 @@ export default function CartPage() {
   const [error, setError] = useState<string | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
+  const [appliedPromoCode, setAppliedPromoCode] = useState<string | null>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [discountLabel, setDiscountLabel] = useState<string | null>(null);
+  const [promoFreeShipping, setPromoFreeShipping] = useState(false);
 
   useEffect(() => {
     if (status === 'anonymous') {
@@ -56,6 +60,20 @@ export default function CartPage() {
 
   const isLoadingCart = status === 'loading' || (status === 'authenticated' && loading);
   const shippingFee = useMemo(() => (cart && cart.items.length > 0 ? 25000 : 0), [cart]);
+
+  function handlePromoApplied(code: string, amount: number, label: string, freeShipping: boolean) {
+    setAppliedPromoCode(code);
+    setDiscountAmount(amount);
+    setDiscountLabel(label);
+    setPromoFreeShipping(freeShipping);
+  }
+
+  function handlePromoCleared() {
+    setAppliedPromoCode(null);
+    setDiscountAmount(0);
+    setDiscountLabel(null);
+    setPromoFreeShipping(false);
+  }
 
   async function handleUpdateQuantity(itemId: string, quantity: number) {
     try {
@@ -105,6 +123,7 @@ export default function CartPage() {
         addressId: selectedAddressId,
         note: note.trim() || undefined,
         paymentMethod: 'cash',
+        promoCode: appliedPromoCode ?? undefined,
       });
       setCart((current) => current ? { ...current, items: [], subtotal: 0, totalItemCount: 0 } : current);
       showToast(`Thanh toán thành công. Mã đơn hàng: ${result.orderCode}`);
@@ -169,6 +188,12 @@ export default function CartPage() {
             onCheckout={handleCheckout}
             checkingOut={checkingOut}
             disabled={!cart || cart.items.length === 0 || addresses.length === 0}
+            appliedPromoCode={appliedPromoCode}
+            discountAmount={discountAmount}
+            discountLabel={discountLabel}
+            promoFreeShipping={promoFreeShipping}
+            onPromoApplied={handlePromoApplied}
+            onPromoCleared={handlePromoCleared}
           />
         </motion.div>
       </div>

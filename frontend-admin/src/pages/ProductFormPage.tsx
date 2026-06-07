@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2, Globe, FileX, Upload, Trash2, Star, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Loader2, Globe, FileX, Upload, Trash2, Star, EyeOff } from 'lucide-react'
 import { useProductStore } from '@/stores/productStore'
 import type { AdminImageResponse } from '@/types/admin'
 import { useCategoryStore } from '@/stores/categoryStore'

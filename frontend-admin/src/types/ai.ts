@@ -30,6 +30,7 @@ export interface AiPendingAction {
   description: string
   riskLevel: string
   requestedAt: string
+  status?: 'pending' | 'confirmed' | 'rejected'
 }
 
 export interface AiSuggestion {
@@ -47,4 +48,11 @@ export interface AiChatRequest {
 export interface AiConfirmRequest {
   actionId: string
   approved: boolean
+}
+export interface SavedConversation {
+  id: string
+  title: string
+  messages: AiMessage[]
+  createdAt: string
+  updatedAt: string
 }

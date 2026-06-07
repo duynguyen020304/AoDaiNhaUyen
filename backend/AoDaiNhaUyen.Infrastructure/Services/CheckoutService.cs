@@ -12,8 +12,12 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 public sealed class CheckoutService(
   AppDbContext dbContext,
   ICartRepository cartRepository,
-  IEmailService emailService) : ICheckoutService
+  IEmailService emailService,
+  IPromoService promoService,
+  IStockService stockService) : ICheckoutService
 {
+  private const decimal DefaultShippingFee = 25000m;
+  private const decimal FreeShippingThreshold = 500000m;
   public async Task<AuthResult<CheckoutResultDto>> CheckoutAsync(Guid userId, CheckoutRequestDto request, CancellationToken cancellationToken = default)
   {
     if (!string.Equals(request.PaymentMethod, "cash", StringComparison.OrdinalIgnoreCase)
@@ -57,9 +61,29 @@ public sealed class CheckoutService(
 
     var now = DateTime.UtcNow;
     var subtotal = cart.Items.Sum(item => (item.Variant.SalePrice ?? item.Variant.Price) * item.Quantity);
-    const decimal shippingFee = 25000m;
-    const decimal discountAmount = 0m;
-    var totalAmount = subtotal + shippingFee - discountAmount;
+
+    // Promo code validation
+    decimal discountAmount = 0m;
+    bool promoFreeShipping = false;
+    string? appliedPromoCode = null;
+    string? discountLabel = null;
+
+    if (!string.IsNullOrWhiteSpace(request.PromoCode))
+    {
+      var promoResult = await promoService.ValidateAsync(request.PromoCode, subtotal, cancellationToken);
+      if (!promoResult.IsValid)
+      {
+        return AuthResult<CheckoutResultDto>.Failure(promoResult.ErrorCode ?? "promo_invalid", promoResult.ErrorMessage ?? "Mã giảm giá không hợp lệ.");
+      }
+      discountAmount = promoResult.DiscountAmount;
+      promoFreeShipping = promoResult.FreeShipping;
+      appliedPromoCode = request.PromoCode.Trim().ToUpperInvariant();
+      discountLabel = promoResult.DiscountLabel;
+    }
+
+    var shippingFee = promoFreeShipping || subtotal >= FreeShippingThreshold ? 0m : DefaultShippingFee;
+    var totalAmount = subtotal - discountAmount + shippingFee;
+    if (totalAmount < 0) totalAmount = 0;
 
     await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
     try
@@ -79,10 +103,10 @@ public sealed class CheckoutService(
         DiscountAmount = discountAmount,
         ShippingFee = shippingFee,
         TotalAmount = totalAmount,
-        OrderStatus = "confirmed",
+        OrderStatus = "pending",
         Note = request.Note,
         PlacedAt = now,
-        ConfirmedAt = now,
+        ConfirmedAt = null,
         CreatedAt = now,
         UpdatedAt = now
       };
@@ -105,7 +129,12 @@ public sealed class CheckoutService(
           Note = request.Note
         });
 
-        item.Variant.StockQty -= item.Quantity;
+        var reserved = await stockService.ReserveStockAsync(item.VariantId, item.Quantity, cancellationToken);
+        if (!reserved)
+        {
+          await transaction.RollbackAsync(cancellationToken);
+          return AuthResult<CheckoutResultDto>.Failure("insufficient_stock", $"Số lượng tồn kho không đủ cho {item.Variant.Product.Name}.");
+        }
       }
 
       order.Payment = new Payment
@@ -116,7 +145,26 @@ public sealed class CheckoutService(
         CreatedAt = now
       };
 
+      order.Shipments.Add(new Shipment
+      {
+        ShippingStatus = "pending",
+        CreatedAt = now
+      });
+
       dbContext.Orders.Add(order);
+      await dbContext.SaveChangesAsync(cancellationToken);
+
+      // Apply promo code within the same transaction
+      if (!string.IsNullOrWhiteSpace(appliedPromoCode))
+      {
+        var applyResult = await promoService.ApplyAsync(order.Id, appliedPromoCode, subtotal, cancellationToken);
+        if (!applyResult.IsValid)
+        {
+          await transaction.RollbackAsync(cancellationToken);
+          return AuthResult<CheckoutResultDto>.Failure(applyResult.ErrorCode ?? "promo_failed", applyResult.ErrorMessage ?? "Không thể áp dụng mã giảm giá.");
+        }
+      }
+
       dbContext.CartItems.RemoveRange(cart.Items);
       cart.UpdatedAt = now;
 
@@ -132,7 +180,9 @@ public sealed class CheckoutService(
         order.DiscountAmount,
         order.ShippingFee,
         order.TotalAmount,
-        order.PlacedAt);
+        order.PlacedAt,
+        appliedPromoCode,
+        discountLabel);
 
       if (!string.IsNullOrWhiteSpace(user.Email))
       {

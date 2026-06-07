@@ -36,6 +36,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<OrderItem> OrderItems => Set<OrderItem>();
   public DbSet<Payment> Payments => Set<Payment>();
   public DbSet<Shipment> Shipments => Set<Shipment>();
+  public DbSet<PromoCode> PromoCodes => Set<PromoCode>();
+  public DbSet<OrderPromoCode> OrderPromoCodes => Set<OrderPromoCode>();
   public DbSet<Review> Reviews => Set<Review>();
   public DbSet<Comment> Comments => Set<Comment>();
   public DbSet<ImageValidationCacheEntry> ImageValidationCacheEntries => Set<ImageValidationCacheEntry>();
@@ -524,6 +526,37 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => x.OrderId).HasDatabaseName("idx_shipments_order_id");
       builder.HasOne(x => x.Order).WithMany(x => x.Shipments).HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
       builder.ToTable(t => t.HasCheckConstraint("ck_shipments_status", "shipping_status IN ('pending','packed','shipped','delivered','failed','returned')"));
+    });
+
+    modelBuilder.Entity<PromoCode>(builder =>
+    {
+      builder.ToTable("promo_codes");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Code).HasMaxLength(50).IsRequired();
+      builder.Property(x => x.DiscountType).HasMaxLength(20).IsRequired();
+      builder.Property(x => x.DiscountValue).HasColumnType("numeric(12,2)").HasDefaultValue(0);
+      builder.Property(x => x.MinOrderAmount).HasColumnType("numeric(12,2)").HasDefaultValue(0);
+      builder.Property(x => x.MaxUses).HasDefaultValue(0);
+      builder.Property(x => x.CurrentUses).HasDefaultValue(0);
+      builder.Property(x => x.FreeShipping).HasDefaultValue(false);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.Code).IsUnique();
+      builder.ToTable(t => t.HasCheckConstraint("ck_promo_discount_value", "discount_value >= 0"));
+      builder.ToTable(t => t.HasCheckConstraint("ck_promo_uses", "current_uses >= 0 AND (max_uses = 0 OR current_uses <= max_uses)"));
+      builder.ToTable(t => t.HasCheckConstraint("ck_promo_dates", "end_date > start_date"));
+    });
+
+    modelBuilder.Entity<OrderPromoCode>(builder =>
+    {
+      builder.ToTable("order_promo_codes");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.DiscountAmountApplied).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.OrderId, x.PromoCodeId }).IsUnique();
+      builder.HasOne(x => x.Order).WithMany(x => x.OrderPromoCodes).HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.PromoCode).WithMany(x => x.OrderPromoCodes).HasForeignKey(x => x.PromoCodeId).OnDelete(DeleteBehavior.Restrict);
+      builder.ToTable(t => t.HasCheckConstraint("ck_order_promo_discount", "discount_amount_applied >= 0"));
     });
 
     modelBuilder.Entity<Review>(builder =>

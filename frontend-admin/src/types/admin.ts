@@ -181,3 +181,13 @@ export interface UpdateRoleRequest {
   name: string
   description?: string
 }
+
+// ── Orders ──
+
+export interface AdminOrderListItem {
+  orderCode: string
+  customerName: string
+  totalAmount: number
+  status: string
+  createdAt: string
+}

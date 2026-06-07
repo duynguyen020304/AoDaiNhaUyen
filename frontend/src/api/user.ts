@@ -33,3 +33,7 @@ export async function getOrders(): Promise<UserOrder[]> {
   const response = await requestPaginated<UserOrder[]>('/api/users/me/orders');
   return response.data;
 }
+
+export async function cancelOrder(orderId: string): Promise<void> {
+  await request<void>(`/api/users/me/orders/${orderId}/cancel`, { method: 'PATCH' });
+}

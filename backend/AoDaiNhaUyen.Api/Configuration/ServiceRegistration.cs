@@ -1,9 +1,7 @@
-using Amazon;
-using Amazon.S3;
-using AoDaiNhaUyen.Api.Configuration;
+using Amazon;
+using Amazon.S3;
 using System.Security.Claims;
 using System.Text;
-using AoDaiNhaUyen.Api.Services;
 using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Repositories;
 using AoDaiNhaUyen.Application.Interfaces.Services;
@@ -14,6 +12,7 @@ using AoDaiNhaUyen.Infrastructure.Configuration;
 using AoDaiNhaUyen.Infrastructure.Data;
 using AoDaiNhaUyen.Infrastructure.Repositories;
 using AoDaiNhaUyen.Infrastructure.Services;
+using AoDaiNhaUyen.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -131,6 +130,9 @@ public static class ServiceRegistration
     services.AddScoped<IAdminCategoryService, AdminCategoryService>();
     services.AddScoped<ICartService, CartService>();
     services.AddScoped<ICheckoutService, CheckoutService>();
+    services.AddScoped<IPromoService, PromoService>();
+    services.AddScoped<IStockService, StockService>();
+    services.AddScoped<IOrderService, OrderService>();
     services.AddScoped<IUserService, UserService>();
     services.AddScoped<ISeedDataService, SeedDataService>();
 
@@ -174,6 +176,8 @@ public static class ServiceRegistration
     services.AddScoped<IAdminMediaService, AdminMediaService>();
     services.AddScoped<IAdminDashboardService, AdminDashboardService>();
     services.AddScoped<ISafetyGate, SafetyGate>();
+    services.AddSingleton<IPendingActionStore, PendingActionStore>();
+    services.AddSingleton<IConversationStore, ConversationStore>();
     services.AddScoped<IAdminAgentService, AdminAgentService>();
     services.AddHttpClient<IAdminLlmProvider, VertexAiAdminProvider>(httpClient =>
     {

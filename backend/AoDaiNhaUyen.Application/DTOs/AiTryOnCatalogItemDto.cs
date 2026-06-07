@@ -8,4 +8,6 @@ public sealed record AiTryOnCatalogItemDto(
   string CategorySlug,
   string ThumbnailUrl,
   string AiAssetUrl,
-  bool IsFeatured);
+  bool IsFeatured,
+  bool IsPublic,
+  string? PublicObjectKey);

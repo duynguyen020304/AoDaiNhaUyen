@@ -1,0 +1,201 @@
+import { useState } from 'react'
+import { ChevronDown, ChevronUp, Bot, User, Sparkles, Terminal, Check, X, AlertTriangle } from 'lucide-react'
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import type { AiMessage, AiToolCall } from '@/types/ai'
+import { ConfirmCard } from './ConfirmCard'
+
+function toolLabel(name: string): string {
+  const labels: Record<string, string> = {
+    get_dashboard_summary: '📊 Đọc tổng quan',
+    get_revenue: '💰 Đọc doanh thu',
+    get_orders_by_status: '📋 Đọc trạng thái đơn hàng',
+    get_recent_orders: '🛒 Đọc đơn hàng gần đây',
+    get_top_products: '⭐ Đọc top sản phẩm',
+    list_products: '📦 Liệt kê sản phẩm',
+    get_product: '🔍 Xem sản phẩm',
+    create_product: '✨ Tạo sản phẩm',
+    update_product: '✏️ Cập nhật sản phẩm',
+    delete_product: '🗑️ Xóa sản phẩm',
+    toggle_product_status: '🔄 Đổi trạng thái sản phẩm',
+    list_categories: '📁 Liệt kê danh mục',
+    create_category: '📁 Tạo danh mục',
+    update_category: '✏️ Cập nhật danh mục',
+    delete_category: '🗑️ Xóa danh mục',
+    list_users: '👥 Liệt kê người dùng',
+    get_user: '👤 Xem người dùng',
+    update_user_status: '🔄 Đổi trạng thái người dùng',
+    update_user_role: '🔑 Đổi vai trò người dùng',
+  }
+  return labels[name] || `🔧 ${name}`
+}
+
+function truncate(text: string, len: number): string {
+  return text.length > len ? text.slice(0, len) + '...' : text
+}
+
+interface ToolCallCardProps {
+  toolCall: AiToolCall
+  status: 'pending' | 'confirmed' | 'rejected' | 'completed'
+}
+
+function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
+  const [expanded, setExpanded] = useState(false)
+  const label = toolLabel(toolCall.toolName)
+
+  return (
+    <div className="bg-gray-50 border border-gray-200/60 rounded-xl p-2.5 text-xs shadow-sm transition-all hover:bg-gray-100/50">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center justify-between w-full text-left font-medium text-gray-700 hover:text-wine cursor-pointer"
+      >
+        <span className="flex items-center gap-2">
+          {status === 'completed' && <Check className="size-4 text-green-600 shrink-0" />}
+          {status === 'confirmed' && <Check className="size-4 text-green-600 shrink-0" />}
+          {status === 'rejected' && <X className="size-4 text-red-500 shrink-0" />}
+          {status === 'pending' && <AlertTriangle className="size-4 text-amber-500 shrink-0 animate-pulse" />}
+          
+          <Terminal className="size-3.5 text-gray-500" />
+          {label}
+        </span>
+        {expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+      </button>
+      {expanded && (
+        <div className="mt-2 text-gray-500 font-mono text-[10px] bg-white border border-gray-100 rounded-lg p-2 overflow-x-auto whitespace-pre-wrap max-h-40">
+          {toolCall.input}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const markdownComponents = {
+  h1: ({ children }: { children?: React.ReactNode }) => (
+    <h1 className="text-lg font-bold text-gray-900 mt-4 mb-2 first:mt-0 tracking-tight">{children}</h1>
+  ),
+  h2: ({ children }: { children?: React.ReactNode }) => (
+    <h2 className="text-base font-bold text-gray-900 mt-4 mb-2 first:mt-0 tracking-tight">{children}</h2>
+  ),
+  h3: ({ children }: { children?: React.ReactNode }) => (
+    <h3 className="text-sm font-semibold text-gray-800 mt-3 mb-1 first:mt-0">{children}</h3>
+  ),
+  p: ({ children }: { children?: React.ReactNode }) => (
+    <p className="my-1.5 leading-relaxed text-gray-700">{children}</p>
+  ),
+  ul: ({ children }: { children?: React.ReactNode }) => (
+    <ul className="my-2 pl-5 list-disc space-y-1 text-gray-700">{children}</ul>
+  ),
+  ol: ({ children }: { children?: React.ReactNode }) => (
+    <ol className="my-2 pl-5 list-decimal space-y-1 text-gray-700">{children}</ol>
+  ),
+  li: ({ children }: { children?: React.ReactNode }) => (
+    <li className="my-0.5 leading-relaxed">{children}</li>
+  ),
+  table: ({ children }: { children?: React.ReactNode }) => (
+    <div className="overflow-x-auto my-3 border border-gray-200 rounded-xl shadow-sm bg-white">
+      <table className="text-xs w-full divide-y divide-gray-200">{children}</table>
+    </div>
+  ),
+  thead: ({ children }: { children?: React.ReactNode }) => (
+    <thead className="bg-gray-50">{children}</thead>
+  ),
+  tbody: ({ children }: { children?: React.ReactNode }) => (
+    <tbody className="divide-y divide-gray-100">{children}</tbody>
+  ),
+  th: ({ children }: { children?: React.ReactNode }) => (
+    <th className="px-3 py-2 text-left font-semibold text-gray-500 uppercase tracking-wider">{children}</th>
+  ),
+  td: ({ children }: { children?: React.ReactNode }) => (
+    <td className="px-3 py-2 text-gray-700">{children}</td>
+  ),
+  code: ({ children, className }: { children?: React.ReactNode; className?: string }) => {
+    const match = /language-(\w+)/.exec(className || '')
+    if (match) {
+      return (
+        <pre className="bg-gray-950 text-gray-100 p-4 rounded-xl my-3 text-xs overflow-x-auto font-mono shadow-inner border border-gray-850">
+          <code className={className}>{String(children ?? '').replace(/\n$/, '')}</code>
+        </pre>
+      )
+    }
+    return (
+      <code className="bg-gray-100 text-wine px-1.5 py-0.5 rounded-md text-xs font-mono border border-gray-200/60 font-semibold">{children}</code>
+    )
+  },
+  a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-wine font-medium underline underline-offset-2 hover:text-wine/80">{children}</a>
+  ),
+  blockquote: ({ children }: { children?: React.ReactNode }) => (
+    <blockquote className="border-l-4 border-wine/40 pl-4 italic text-gray-500 my-3 bg-gray-50 py-1 pr-2 rounded-r-lg">{children}</blockquote>
+  ),
+  strong: ({ children }: { children?: React.ReactNode }) => (
+    <strong className="font-semibold text-gray-900">{children}</strong>
+  ),
+  hr: () => <hr className="my-4 border-gray-200" />,
+}
+
+export function MessageBubble({ message }: { message: AiMessage }) {
+  const isUser = message.role === 'user'
+  
+  // Derive status from the pendingAction inside the message (persisted in store)
+  const actionStatus = message.pendingAction
+    ? (message.pendingAction.status || 'pending')
+    : 'completed'
+
+  // Only show the main text bubble if there's user text, bot text, or a pending confirmation box
+  const showTextBubble = isUser || message.content.trim() !== '' || actionStatus === 'pending'
+
+  return (
+    <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+      {/* Bot avatar */}
+      {!isUser && (
+        <div className="size-8 rounded-xl bg-wine/10 border border-wine/20 flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+          <Bot className="size-4.5 text-wine" />
+        </div>
+      )}
+
+      <div className={`flex flex-col gap-1.5 max-w-[95%] ${isUser ? 'items-end' : 'items-start'}`}>
+        {/* Tool calls rendered as clean badges on top of text response for flow sync */}
+        {message.toolCalls && message.toolCalls.length > 0 && (
+          <div className="w-full space-y-1.5 mt-1 max-w-md">
+            {message.toolCalls.map((tc, i) => (
+              <ToolCallCard key={i} toolCall={tc} status={actionStatus} />
+            ))}
+          </div>
+        )}
+
+        {showTextBubble && (
+          <div
+            className={`rounded-2xl px-4 py-3 text-sm shadow-sm transition-all ${
+              isUser
+                ? 'bg-wine text-white rounded-tr-none whitespace-pre-wrap'
+                : 'bg-white border border-gray-100 text-gray-800 rounded-tl-none shadow-sm'
+            }`}
+          >
+            {isUser ? (
+              message.content
+            ) : (
+              <div className="prose prose-sm max-w-none">
+                <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {message.content}
+                </Markdown>
+              </div>
+            )}
+
+            {message.pendingAction && (
+              <ConfirmCard
+                action={message.pendingAction}
+              />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* User avatar */}
+      {isUser && (
+        <div className="size-8 rounded-xl bg-gray-200 border border-gray-350 flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+          <User className="size-4.5 text-gray-650" />
+        </div>
+      )}
+    </div>
+  )
+}

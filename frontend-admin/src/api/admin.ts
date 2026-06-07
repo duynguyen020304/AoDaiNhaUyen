@@ -209,3 +209,19 @@ export async function restoreCategory(id: string): Promise<void> {
   await request<void>(`/api/admin/categories/${id}/restore`, { method: 'PATCH' })
 }
 
+// ── Orders ──
+
+export async function updateOrderStatus(orderId: string, status: string): Promise<void> {
+  await request<void>(`/api/admin/orders/${orderId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  })
+}
+
+export async function createShipment(orderId: string, carrier?: string, trackingNumber?: string): Promise<void> {
+  await request<void>(`/api/admin/orders/${orderId}/ship`, {
+    method: 'POST',
+    body: JSON.stringify({ carrier, trackingNumber }),
+  })
+}
+

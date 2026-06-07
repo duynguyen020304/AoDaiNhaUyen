@@ -12,6 +12,7 @@ export interface CheckoutPayload {
   };
   note?: string;
   paymentMethod: string;
+  promoCode?: string;
 }
 
 export interface CheckoutResult {
@@ -24,11 +25,29 @@ export interface CheckoutResult {
   shippingFee: number;
   totalAmount: number;
   placedAt: string;
+  appliedPromoCode: string | null;
+  discountLabel: string | null;
+}
+
+export interface PromoValidationResult {
+  isValid: boolean;
+  errorCode: string | null;
+  errorMessage: string | null;
+  discountAmount: number;
+  freeShipping: boolean;
+  discountLabel: string | null;
 }
 
 export function checkout(payload: CheckoutPayload): Promise<CheckoutResult> {
   return request<CheckoutResult>('/api/users/me/checkout', {
     method: 'POST',
     body: JSON.stringify(payload),
+  });
+}
+
+export function validatePromo(code: string, subtotal: number): Promise<PromoValidationResult> {
+  return request<PromoValidationResult>('/api/promo/validate', {
+    method: 'POST',
+    body: JSON.stringify({ code, subtotal }),
   });
 }

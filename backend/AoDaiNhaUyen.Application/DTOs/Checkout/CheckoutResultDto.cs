@@ -9,4 +9,6 @@ public sealed record CheckoutResultDto(
   decimal DiscountAmount,
   decimal ShippingFee,
   decimal TotalAmount,
-  DateTime PlacedAt);
+  DateTime PlacedAt,
+  string? AppliedPromoCode,
+  string? DiscountLabel);

@@ -136,6 +136,7 @@ public sealed class AdminDashboardService(AppDbContext dbContext) : IAdminDashbo
       .OrderByDescending(o => o.CreatedAt)
       .Take(limit)
       .Select(o => new RecentOrderDto(
+        o.Id,
         o.OrderCode,
         o.User.FullName,
         o.TotalAmount,

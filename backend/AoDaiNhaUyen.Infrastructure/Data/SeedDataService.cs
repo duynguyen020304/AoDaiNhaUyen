@@ -31,6 +31,9 @@ public sealed class SeedDataService(
     await SeedStyleScenariosAsync();
     await SeedProductStyleDataAsync();
     await SeedProductAiAssetsAsync();
+    await SeedPromoCodesAsync();
+    await SeedDemoOrdersAsync();
+    await SeedLowStockVariantsAsync();
     await RemoveStaleCategoriesAsync();
   }
 
@@ -791,4 +794,166 @@ public sealed class SeedDataService(
       _ => "application/octet-stream"
     };
   }
+
+  private async Task SeedPromoCodesAsync()
+  {
+    var now = DateTime.UtcNow;
+    var promoData = new[]
+    {
+      new { Code = "CHAOMUNG", Type = "percentage", Value = 15m, MinOrder = 200000m, MaxUses = 100, FreeShipping = false },
+      new { Code = "FREESHIP", Type = "percentage", Value = 0m, MinOrder = 300000m, MaxUses = 0, FreeShipping = true },
+      new { Code = "NHANQUA", Type = "fixed", Value = 50000m, MinOrder = 500000m, MaxUses = 50, FreeShipping = false },
+    };
+
+    foreach (var data in promoData)
+    {
+      var exists = await dbContext.PromoCodes.AnyAsync(p => p.Code == data.Code);
+      if (exists) continue;
+
+      dbContext.PromoCodes.Add(new PromoCode
+      {
+        Code = data.Code,
+        DiscountType = data.Type,
+        DiscountValue = data.Value,
+        MinOrderAmount = data.MinOrder,
+        MaxUses = data.MaxUses,
+        CurrentUses = 0,
+        StartDate = now.AddDays(-1),
+        EndDate = now.AddDays(30),
+        IsActive = true,
+        FreeShipping = data.FreeShipping,
+        CreatedAt = now,
+        UpdatedAt = now
+      });
+    }
+
+    await dbContext.SaveChangesAsync();
+  }
+  private async Task SeedDemoOrdersAsync()
+  {
+    var hasOrders = await dbContext.Orders.AnyAsync();
+    if (hasOrders) return;
+
+    var customer = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == "ha.an@example.com");
+    if (customer is null) return;
+
+    var variants = await dbContext.ProductVariants
+      .Include(v => v.Product)
+      .Where(v => v.Product != null && !v.Product.IsDeleted)
+      .Take(6)
+      .ToListAsync();
+    if (variants.Count == 0) return;
+
+    var now = DateTime.UtcNow;
+
+    var statuses = new[]
+    {
+      new { Status = "completed",    DaysAgo = 10, HasShipment = true,  ShipStatus = "delivered" },
+      new { Status = "shipping",     DaysAgo = 3,  HasShipment = true,  ShipStatus = "shipped"   },
+      new { Status = "processing",   DaysAgo = 1,  HasShipment = false, ShipStatus = ""          },
+      new { Status = "confirmed",    DaysAgo = 0,  HasShipment = false, ShipStatus = ""          },
+      new { Status = "pending",      DaysAgo = 0,  HasShipment = false, ShipStatus = ""          },
+      new { Status = "cancelled",    DaysAgo = 5,  HasShipment = false, ShipStatus = ""          },
+    };
+
+    for (var i = 0; i < Math.Min(statuses.Length, variants.Count); i++)
+    {
+      var s = statuses[i];
+      var variant = variants[i];
+      var unitPrice = variant.SalePrice ?? variant.Price;
+      var quantity = 2;
+      var subtotal = unitPrice * quantity;
+      var shippingFee = subtotal >= 500000m ? 0m : 25000m;
+      var placedAt = now.AddDays(-s.DaysAgo).AddHours(-i);
+
+      var order = new Order
+      {
+        OrderCode = $"AD-{placedAt:yyyyMMddHHmmss}{i}",
+        UserId = customer.Id,
+        RecipientName = customer.FullName,
+        RecipientPhone = customer.Phone ?? "0901000001",
+        Province = "TP. Hồ Chí Minh",
+        District = "Quận 1",
+        Ward = "Phường Bến Nghé",
+        AddressLine = $"{100 + i} Nguyễn Huệ",
+        Subtotal = subtotal,
+        DiscountAmount = 0m,
+        ShippingFee = shippingFee,
+        TotalAmount = subtotal + shippingFee,
+        OrderStatus = s.Status,
+        PlacedAt = placedAt,
+        CreatedAt = placedAt,
+        UpdatedAt = placedAt
+      };
+
+      if (s.Status is "confirmed" or "processing" or "shipping" or "completed")
+        order.ConfirmedAt = placedAt.AddHours(1);
+      if (s.Status is "completed")
+        order.CompletedAt = placedAt.AddDays(3);
+      if (s.Status is "cancelled")
+        order.CancelledAt = placedAt.AddHours(2);
+
+      order.Items.Add(new OrderItem
+      {
+        ProductId = variant.ProductId,
+        VariantId = variant.Id,
+        ProductName = variant.Product!.Name,
+        Sku = variant.Sku,
+        Size = variant.Size,
+        Color = variant.Color,
+        UnitPrice = unitPrice,
+        Quantity = quantity,
+        LineTotal = subtotal,
+        CreatedAt = placedAt
+      });
+
+      order.Payment = new Payment
+      {
+        Amount = subtotal + shippingFee,
+        PaidAt = placedAt,
+        Note = "paid_successfully",
+        CreatedAt = placedAt
+      };
+
+      if (s.HasShipment)
+      {
+        order.Shipments.Add(new Shipment
+        {
+          ShippingStatus = s.ShipStatus,
+          Carrier = "GHN",
+          TrackingNumber = $"GHN{placedAt:yyyyMMdd}{i:D4}",
+          ShippedAt = s.ShipStatus is "shipped" or "delivered" ? placedAt.AddHours(6) : null,
+          DeliveredAt = s.ShipStatus == "delivered" ? placedAt.AddDays(3) : null,
+          CreatedAt = placedAt
+        });
+      }
+
+      dbContext.Orders.Add(order);
+    }
+
+    await dbContext.SaveChangesAsync();
+  }
+
+  private async Task SeedLowStockVariantsAsync()
+  {
+    var hasLowStock = await dbContext.ProductVariants.AnyAsync(v => v.StockQty <= 3);
+    if (hasLowStock) return;
+
+    var variants = await dbContext.ProductVariants
+      .OrderBy(v => v.CreatedAt)
+      .Take(4)
+      .ToListAsync();
+
+    if (variants.Count == 0) return;
+
+    var lowStockValues = new[] { 1, 2, 2, 3 };
+    for (var i = 0; i < variants.Count; i++)
+    {
+      variants[i].StockQty = lowStockValues[i];
+      variants[i].UpdatedAt = DateTime.UtcNow;
+    }
+
+    await dbContext.SaveChangesAsync();
+  }
+
 }

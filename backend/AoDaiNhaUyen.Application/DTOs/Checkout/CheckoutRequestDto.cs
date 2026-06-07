@@ -4,4 +4,5 @@ public sealed record CheckoutRequestDto(
   Guid? AddressId,
   CheckoutAddressDto? Address,
   string? Note,
-  string PaymentMethod);
+  string PaymentMethod,
+  string? PromoCode);

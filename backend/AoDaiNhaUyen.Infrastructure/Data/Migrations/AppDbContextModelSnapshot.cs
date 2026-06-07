@@ -1224,6 +1224,64 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.OrderPromoCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<decimal>("DiscountAmountApplied")
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("discount_amount_applied");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("order_id");
+
+                    b.Property<Guid>("PromoCodeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("promo_code_id");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PromoCodeId");
+
+                    b.HasIndex("OrderId", "PromoCodeId")
+                        .IsUnique();
+
+                    b.ToTable("order_promo_codes", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_order_promo_discount", "discount_amount_applied >= 0");
+                        });
+                });
+
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.PasswordResetToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1947,6 +2005,106 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                             t.HasCheckConstraint("ck_variants_status", "status IN ('active', 'inactive')");
 
                             t.HasCheckConstraint("ck_variants_stock", "stock_qty >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.PromoCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<int>("CurrentUses")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("current_uses");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("discount_type");
+
+                    b.Property<decimal>("DiscountValue")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(12,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("discount_value");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("end_date");
+
+                    b.Property<bool>("FreeShipping")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("free_shipping");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_deleted");
+
+                    b.Property<int>("MaxUses")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("max_uses");
+
+                    b.Property<decimal>("MinOrderAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(12,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("min_order_amount");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("start_date");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("promo_codes", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_promo_dates", "end_date > start_date");
+
+                            t.HasCheckConstraint("ck_promo_discount_value", "discount_value >= 0");
+
+                            t.HasCheckConstraint("ck_promo_uses", "current_uses >= 0 AND (max_uses = 0 OR current_uses <= max_uses)");
                         });
                 });
 
@@ -2880,6 +3038,25 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.Navigation("Variant");
                 });
 
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.OrderPromoCode", b =>
+                {
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.Order", "Order")
+                        .WithMany("OrderPromoCodes")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AoDaiNhaUyen.Domain.Entities.PromoCode", "PromoCode")
+                        .WithMany("OrderPromoCodes")
+                        .HasForeignKey("PromoCodeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("PromoCode");
+                });
+
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.PasswordResetToken", b =>
                 {
                     b.HasOne("AoDaiNhaUyen.Domain.Entities.User", "User")
@@ -3150,6 +3327,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                 {
                     b.Navigation("Items");
 
+                    b.Navigation("OrderPromoCodes");
+
                     b.Navigation("Payment");
 
                     b.Navigation("Shipments");
@@ -3183,6 +3362,11 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.Navigation("CartItems");
 
                     b.Navigation("Images");
+                });
+
+            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.PromoCode", b =>
+                {
+                    b.Navigation("OrderPromoCodes");
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.Role", b =>

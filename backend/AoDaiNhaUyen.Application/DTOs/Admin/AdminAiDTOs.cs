@@ -11,4 +11,7 @@ public sealed record AdminPendingAction(
   string ToolName,
   string Description,
   string RiskLevel,
-  DateTime RequestedAt);
+  DateTime RequestedAt,
+  string? ConversationId = null,
+  string? ToolArgsJson = null,
+  string? AssistantText = null);

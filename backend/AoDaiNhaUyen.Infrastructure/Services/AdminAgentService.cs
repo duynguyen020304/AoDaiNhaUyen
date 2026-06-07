@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs.Admin;
@@ -18,8 +17,8 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IAdminDashboardService _dashboard;
   private readonly ILogger<AdminAgentService> _logger;
 
-  private readonly ConcurrentDictionary<string, AdminPendingAction> _pendingActions = new();
-  private readonly ConcurrentDictionary<string, (List<AdminLlmMessage> History, Guid AdminUserId)> _conversations = new();
+  private readonly IPendingActionStore _pendingStore;
+  private readonly IConversationStore _conversationStore;
 
   public AdminAgentService(
     IAdminLlmProvider llm,
@@ -29,7 +28,9 @@ public sealed class AdminAgentService : IAdminAgentService
     IAdminUserService users,
     IAdminRoleService roles,
     IAdminDashboardService dashboard,
-    ILogger<AdminAgentService> logger)
+    ILogger<AdminAgentService> logger,
+    IPendingActionStore pendingStore,
+    IConversationStore conversationStore)
   {
     _llm = llm;
     _safety = safety;
@@ -39,6 +40,8 @@ public sealed class AdminAgentService : IAdminAgentService
     _roles = roles;
     _dashboard = dashboard;
     _logger = logger;
+    _pendingStore = pendingStore;
+    _conversationStore = conversationStore;
   }
 
   private static readonly IReadOnlyList<ToolDefinition> Tools =
@@ -146,43 +149,57 @@ public sealed class AdminAgentService : IAdminAgentService
     [EnumeratorCancellation] CancellationToken ct)
   {
     var conversationId = request.ConversationId ?? Guid.NewGuid().ToString("N");
-    var history = _conversations.GetOrAdd(conversationId, _ => (new List<AdminLlmMessage>(), adminUserId)).History;
+    var history = _conversationStore.GetOrAdd(conversationId, () => (new List<AdminLlmMessage>(), adminUserId)).History;
 
-    history.Add(new AdminLlmMessage(AdminLlmRole.User, request.Message));
+    // Tell frontend the conversation ID so it can continue after confirmations
+    yield return new LlmChunk("conversation", conversationId);
+
+    if (!string.IsNullOrWhiteSpace(request.Message))
+      history.Add(new AdminLlmMessage(AdminLlmRole.User, request.Message));
 
     var maxIterations = 5;
     for (var iteration = 0; iteration < maxIterations; iteration++)
     {
       var hadToolCall = false;
+      var assistantText = "";
 
       await foreach (var chunk in _llm.StreamChatAsync(history, Tools, ct))
       {
+        if (chunk.Type == "text") assistantText += chunk.Content;
         yield return chunk;
 
         if (chunk.Type == "tool_call" && chunk.ToolCallId is not null)
         {
           hadToolCall = true;
           var toolResult = await ExecuteToolAsync(
-            chunk.ToolCallId, chunk.Content, adminUserId, ct);
+            chunk.ToolCallId, chunk.Content, adminUserId, ct, false);
 
           // If tool needs confirmation, hold it
           if (toolResult.NeedsConfirmation)
           {
+            // Save assistant text in history so LLM context continues correctly after confirm
+            if (!string.IsNullOrWhiteSpace(assistantText))
+              history.Add(new AdminLlmMessage(AdminLlmRole.Assistant, assistantText));
+
             var actionId = Guid.NewGuid().ToString("N");
-            _pendingActions[actionId] = new AdminPendingAction(
+            _pendingStore.Add(actionId, new AdminPendingAction(
               actionId, chunk.ToolCallId,
               toolResult.Description,
               toolResult.RiskLevel.ToString(),
-              DateTime.UtcNow);
+              DateTime.UtcNow,
+              conversationId,
+              chunk.Content,
+              assistantText));
 
             yield return new LlmChunk("confirmation", toolResult.Description, chunk.ToolCallId, actionId);
             yield return new LlmChunk("done", "", null, null);
             yield break; // Stop until user confirms
           }
 
-          // Add tool result to history
+          // Add tool result to history (non-confirmation path)
           history.Add(new AdminLlmMessage(AdminLlmRole.User,
             $"[Kết quả từ công cụ '{chunk.ToolCallId}']: {toolResult.Content}"));
+          assistantText = ""; // reset for next iteration
         }
       }
 
@@ -192,7 +209,7 @@ public sealed class AdminAgentService : IAdminAgentService
 
   public async Task<bool> ConfirmActionAsync(string actionId, bool approved, Guid adminUserId, CancellationToken ct)
   {
-    if (!_pendingActions.TryRemove(actionId, out var pending))
+    if (_pendingStore.Remove(actionId) is not { } pending)
     {
       _logger.LogWarning("[AdminAgent] Pending action {ActionId} not found", actionId);
       return false;
@@ -201,8 +218,25 @@ public sealed class AdminAgentService : IAdminAgentService
     _logger.LogInformation("[AdminAgent] Action {ActionId} {Result} by admin {AdminId}",
       actionId, approved ? "approved" : "rejected", adminUserId);
 
-    // TODO: If approved, actually execute the tool now.
-    // For MVP, we just record the decision.
+    // Find the conversation and add the tool result
+    if (pending.ConversationId is not null
+      && _conversationStore.TryGetValue(pending.ConversationId, out var conv))
+    {
+      if (approved)
+      {
+        // Execute the tool and add result to history
+        var toolResult = await ExecuteToolAsync(
+          pending.ToolName, pending.ToolArgsJson ?? "{}", adminUserId, ct, skipConfirmation: true);
+        conv.History.Add(new AdminLlmMessage(AdminLlmRole.User,
+          $"[Kết quả từ công cụ '{pending.ToolName}']: {toolResult.Content}"));
+      }
+      else
+      {
+        conv.History.Add(new AdminLlmMessage(AdminLlmRole.User,
+          $"[Người dùng đã từ chối thực hiện hành động '{pending.ToolName}']"));
+      }
+    }
+
     return true;
   }
 
@@ -272,7 +306,8 @@ public sealed class AdminAgentService : IAdminAgentService
     string toolName,
     string argsJson,
     Guid adminUserId,
-    CancellationToken ct)
+    CancellationToken ct,
+    bool skipConfirmation = false)
   {
     var riskLevel = _safety.Classify(toolName);
     _logger.LogInformation("[AdminAgent] Executing tool {ToolName} (risk={RiskLevel}) by {AdminId}",
@@ -328,7 +363,7 @@ public sealed class AdminAgentService : IAdminAgentService
       };
 
       // Check if confirmation is needed
-      if (_safety.RequiresConfirmation(riskLevel))
+      if (!skipConfirmation && _safety.RequiresConfirmation(riskLevel))
       {
         return new ToolResult(result, true,
           _safety.GetConfirmationPrompt(toolName, result), riskLevel.ToString());

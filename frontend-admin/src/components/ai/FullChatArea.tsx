@@ -1,0 +1,71 @@
+import { useState, useRef, useEffect } from 'react'
+import { X, Loader2 } from 'lucide-react'
+import { useAdminAiStore } from '@/stores/adminAiStore'
+import { MessageBubble } from './MessageBubble'
+import { ChatInput } from './ChatInput'
+import { EmptyChat } from './EmptyChat'
+
+interface FullChatAreaProps {
+  onClear: () => void
+}
+
+export function FullChatArea({ onClear }: FullChatAreaProps) {
+  const { messages, isLoading, sendMessage } = useAdminAiStore()
+  const [input, setInput] = useState('')
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [messages, isLoading])
+
+  async function handleSend() {
+    if (!input.trim() || isLoading) return
+    const msg = input
+    setInput('')
+    await sendMessage({ message: msg })
+  }
+
+  function handleSuggestionClick(message: string) {
+    setInput(message)
+    sendMessage({ message })
+  }
+
+  const hasMessages = messages.length > 0
+
+  return (
+    <div className="flex flex-col h-full relative bg-white">
+      {/* Messages or Empty State */}
+      {hasMessages ? (
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-6 scroll-smooth">
+          <div className="max-w-[95%] mx-auto space-y-6">
+            {messages.map((msg) => (
+              <MessageBubble key={msg.id} message={msg} />
+            ))}
+            {isLoading && (
+              <div className="flex justify-center py-2">
+                <Loader2 className="size-5 animate-spin text-wine/50" />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <EmptyChat onSuggestionClick={handleSuggestionClick} isLoading={isLoading} />
+      )}
+
+      {/* Input — always visible */}
+      <div className="border-t border-gray-200 p-4 bg-white shrink-0">
+        <div className="max-w-[95%] mx-auto">
+          <ChatInput
+            value={input}
+            onChange={setInput}
+            onSend={handleSend}
+            isLoading={isLoading}
+            placeholder="Nhập yêu cầu..."
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
