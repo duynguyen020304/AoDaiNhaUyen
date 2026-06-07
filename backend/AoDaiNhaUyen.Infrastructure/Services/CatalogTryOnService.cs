@@ -148,13 +148,16 @@ public sealed class CatalogTryOnService(
     var resolved = new List<AiTryOnCatalogItemDto>(items.Count);
     foreach (var item in items)
     {
-      if (item.ThumbnailUrl is null || item.ThumbnailUrl.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase))
+      if (item.ThumbnailUrl is null
+          || item.ThumbnailUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+          || item.ThumbnailUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+          || item.ThumbnailUrl.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase))
       {
         resolved.Add(item);
         continue;
       }
 
-      var resolvedUrl = await imageVisibilityService.ResolveUrlAsync(item.ThumbnailUrl, false, null, cancellationToken);
+      var resolvedUrl = await imageVisibilityService.ResolveUrlAsync(item.ThumbnailUrl, item.IsPublic, item.PublicObjectKey, cancellationToken);
       resolved.Add(item with { ThumbnailUrl = resolvedUrl });
     }
 
@@ -169,11 +172,14 @@ public sealed class CatalogTryOnService(
       return null;
     }
 
-    var thumbnailUrl = product.Images
+    var selectedImage = product.Images
       .OrderBy(image => image.SortOrder)
-      .FirstOrDefault(image => image.IsPrimary)?.ImageUrl
-      ?? product.Images.OrderBy(image => image.SortOrder).FirstOrDefault()?.ImageUrl
-      ?? aiAsset.FileUrl;
+      .FirstOrDefault(image => image.IsPrimary)
+      ?? product.Images.OrderBy(image => image.SortOrder).FirstOrDefault();
+
+    var thumbnailUrl = selectedImage?.ImageUrl ?? aiAsset.FileUrl;
+    var isPublic = selectedImage?.IsPublic ?? false;
+    var publicObjectKey = selectedImage?.PublicObjectKey;
 
     var defaultVariantId = product.Variants
       .OrderByDescending(variant => variant.IsDefault)
@@ -189,7 +195,9 @@ public sealed class CatalogTryOnService(
       product.Category.Slug,
       thumbnailUrl,
       aiAsset.FileUrl,
-      product.IsFeatured);
+      product.IsFeatured,
+      isPublic,
+      publicObjectKey);
   }
 
   private async Task<ResolvedTryOnImage> ResolveGarmentSelectionAsync(
