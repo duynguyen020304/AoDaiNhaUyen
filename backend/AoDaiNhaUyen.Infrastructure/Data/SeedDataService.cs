@@ -31,6 +31,7 @@ public sealed class SeedDataService(
     await SeedStyleScenariosAsync();
     await SeedProductStyleDataAsync();
     await SeedProductAiAssetsAsync();
+    await SeedPromoCodesAsync();
     await RemoveStaleCategoriesAsync();
   }
 
@@ -790,5 +791,40 @@ public sealed class SeedDataService(
       ".webp" => "image/webp",
       _ => "application/octet-stream"
     };
+  }
+
+  private async Task SeedPromoCodesAsync()
+  {
+    var now = DateTime.UtcNow;
+    var promoData = new[]
+    {
+      new { Code = "CHAOMUNG", Type = "percentage", Value = 15m, MinOrder = 200000m, MaxUses = 100, FreeShipping = false },
+      new { Code = "FREESHIP", Type = "percentage", Value = 0m, MinOrder = 300000m, MaxUses = 0, FreeShipping = true },
+      new { Code = "NHANQUA", Type = "fixed", Value = 50000m, MinOrder = 500000m, MaxUses = 50, FreeShipping = false },
+    };
+
+    foreach (var data in promoData)
+    {
+      var exists = await dbContext.PromoCodes.AnyAsync(p => p.Code == data.Code);
+      if (exists) continue;
+
+      dbContext.PromoCodes.Add(new PromoCode
+      {
+        Code = data.Code,
+        DiscountType = data.Type,
+        DiscountValue = data.Value,
+        MinOrderAmount = data.MinOrder,
+        MaxUses = data.MaxUses,
+        CurrentUses = 0,
+        StartDate = now.AddDays(-1),
+        EndDate = now.AddDays(30),
+        IsActive = true,
+        FreeShipping = data.FreeShipping,
+        CreatedAt = now,
+        UpdatedAt = now
+      });
+    }
+
+    await dbContext.SaveChangesAsync();
   }
 }

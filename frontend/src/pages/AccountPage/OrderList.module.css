@@ -117,15 +117,122 @@
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.status {
-  font-size: 16px;
-  color: #000;
-}
-
 .total {
   font-size: 16px;
   font-weight: 700;
   color: #680000;
+}
+
+/* Status Badge */
+.statusBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* Status Stepper */
+.stepper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  padding: 16px 0;
+  margin-bottom: 8px;
+}
+
+.stepWrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.stepWrapper:last-child {
+  flex: 0;
+}
+
+.stepLine {
+  height: 2px;
+  flex: 1;
+  background: #e5e7eb;
+  margin: 0 4px;
+}
+
+.stepLineActive {
+  background: #680000;
+}
+
+.stepDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  border: 2px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.stepDotActive {
+  background: #680000;
+  border-color: #680000;
+}
+
+.stepDotCurrent {
+  box-shadow: 0 0 0 3px rgba(104, 0, 0, 0.2);
+}
+
+.stepLabel {
+  font-size: 10px;
+  color: #9ca3af;
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.stepLabelActive {
+  color: #680000;
+  font-weight: 600;
+}
+
+/* Footer Actions */
+.footerActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cancelBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  background: transparent;
+  border: 1px solid #b91c1c;
+  border-radius: 6px;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.cancelBtn:hover:not(:disabled) {
+  background: #b91c1c;
+  color: #fff;
+}
+
+.cancelBtn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.cancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

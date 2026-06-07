@@ -29,4 +29,5 @@ public sealed class Order : BaseEntity
   public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
   public Payment? Payment { get; set; }
   public ICollection<Shipment> Shipments { get; set; } = new List<Shipment>();
+  public ICollection<OrderPromoCode> OrderPromoCodes { get; set; } = new List<OrderPromoCode>();
 }

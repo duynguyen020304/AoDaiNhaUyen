@@ -100,8 +100,78 @@
   font-weight: 400;
   font-size: 10.5px;
   line-height: 1.33;
-  color: #717182;
+  color: #575767;
   margin: 0;
+}
+
+.promoError {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 1.33;
+  color: #e11d48;
+  margin: 0;
+}
+
+.promoApplied {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10.5px;
+  background: #f0fdf4;
+  border: 0.8px solid #bbf7d0;
+  border-radius: 6.75px;
+}
+
+.promoAppliedCode {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 12.25px;
+  color: #166534;
+  text-transform: uppercase;
+}
+
+.promoAppliedLabel {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 11px;
+  color: #16a34a;
+  flex: 1;
+}
+
+.promoRemoveBtn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+
+.promoRemoveBtn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.discountValue {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #721311;
+}
+
+.freeShippingValue {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #16a34a;
 }
 
 /* Order Summary */

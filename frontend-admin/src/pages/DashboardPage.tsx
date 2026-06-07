@@ -8,6 +8,7 @@ import { OrdersByStatusChart } from '@/components/dashboard/OrdersByStatusChart'
 import { RecentOrdersTable } from '@/components/dashboard/RecentOrdersTable'
 import { TopProductsList } from '@/components/dashboard/TopProductsList'
 import { UserGrowthChart } from '@/components/dashboard/UserGrowthChart'
+import { LowStockAlerts } from '@/components/dashboard/LowStockAlerts'
 import { Button } from '@/components/ui/button'
 
 type Period = 7 | 30 | 90
@@ -105,6 +106,9 @@ export function DashboardPage() {
         onUsersClick={() => navigate('/admin/users')}
         onProductsClick={() => navigate('/admin/products')}
       />
+
+      {/* Low stock alerts */}
+      <LowStockAlerts />
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

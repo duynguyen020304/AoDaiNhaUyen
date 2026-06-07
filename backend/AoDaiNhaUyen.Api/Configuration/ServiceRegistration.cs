@@ -130,6 +130,9 @@ public static class ServiceRegistration
     services.AddScoped<IAdminCategoryService, AdminCategoryService>();
     services.AddScoped<ICartService, CartService>();
     services.AddScoped<ICheckoutService, CheckoutService>();
+    services.AddScoped<IPromoService, PromoService>();
+    services.AddScoped<IStockService, StockService>();
+    services.AddScoped<IOrderService, OrderService>();
     services.AddScoped<IUserService, UserService>();
     services.AddScoped<ISeedDataService, SeedDataService>();
 

@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import styles from './CartSummary.module.css';
 import type { UserAddress } from '../../types/address';
 import { formatCurrency } from './currency';
+import { validatePromo } from '../../api/checkout';
 
 interface CartSummaryProps {
   subtotal: number;
@@ -12,6 +14,12 @@ interface CartSummaryProps {
   onCheckout: () => void;
   checkingOut: boolean;
   disabled: boolean;
+  appliedPromoCode: string | null;
+  discountAmount: number;
+  discountLabel: string | null;
+  promoFreeShipping: boolean;
+  onPromoApplied: (code: string, discountAmount: number, discountLabel: string, freeShipping: boolean) => void;
+  onPromoCleared: () => void;
 }
 
 export default function CartSummary({
@@ -24,8 +32,37 @@ export default function CartSummary({
   onCheckout,
   checkingOut,
   disabled,
+  appliedPromoCode,
+  discountAmount,
+  discountLabel,
+  promoFreeShipping,
+  onPromoApplied,
+  onPromoCleared,
 }: CartSummaryProps) {
-  const total = subtotal + shippingFee;
+  const [promoInput, setPromoInput] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+
+  const effectiveShipping = promoFreeShipping ? 0 : shippingFee;
+  const total = subtotal - discountAmount + effectiveShipping;
+
+  async function handleApplyPromo() {
+    if (!promoInput.trim()) return;
+    setPromoLoading(true);
+    setPromoError(null);
+    try {
+      const result = await validatePromo(promoInput.trim(), subtotal);
+      if (result.isValid) {
+        onPromoApplied(promoInput.trim(), result.discountAmount, result.discountLabel ?? 'Giảm giá', result.freeShipping);
+      } else {
+        setPromoError(result.errorMessage ?? 'Mã không hợp lệ.');
+      }
+    } catch (err) {
+      setPromoError(err instanceof Error ? err.message : 'Không thể kiểm tra mã.');
+    } finally {
+      setPromoLoading(false);
+    }
+  }
 
   return (
     <div className={styles.sidebar}>
@@ -43,11 +80,38 @@ export default function CartSummary({
           <h3 className={styles.cardTitle}>Mã giảm giá</h3>
         </div>
         <div className={styles.cardBody}>
-          <div className={styles.promoRow}>
-            <input className={styles.promoInput} type="text" placeholder="Nhập mã" disabled />
-            <button className={styles.promoBtn} type="button" disabled>Nhập</button>
-          </div>
-          <p className={styles.promoHint}>Mã giảm giá chưa được hỗ trợ ở phiên bản này.</p>
+          {appliedPromoCode ? (
+            <div className={styles.promoApplied}>
+              <span className={styles.promoAppliedCode}>{appliedPromoCode}</span>
+              <span className={styles.promoAppliedLabel}>{discountLabel}</span>
+              <button className={styles.promoRemoveBtn} type="button" onClick={onPromoCleared}>×</button>
+            </div>
+          ) : (
+            <>
+              <div className={styles.promoRow}>
+                <input
+                  id="cart-promo-input"
+                  className={styles.promoInput}
+                  type="text"
+                  placeholder="Nhập mã"
+                  value={promoInput}
+                  onChange={(e) => setPromoInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleApplyPromo()}
+                  disabled={promoLoading}
+                />
+                <button
+                  className={styles.promoBtn}
+                  type="button"
+                  onClick={handleApplyPromo}
+                  disabled={promoLoading || !promoInput.trim()}
+                >
+                  {promoLoading ? '...' : 'Áp dụng'}
+                </button>
+              </div>
+              {promoError && <p className={styles.promoError}>{promoError}</p>}
+              <p className={styles.promoHint}>Nhập mã giảm giá nếu bạn có.</p>
+            </>
+          )}
         </div>
       </div>
 
@@ -60,9 +124,17 @@ export default function CartSummary({
             <span>Giá tiền ({totalItemCount} sản phẩm)</span>
             <span className={styles.priceValue}>{formatCurrency(subtotal)}</span>
           </div>
+          {discountAmount > 0 && (
+            <div className={styles.priceRow}>
+              <span>Giảm giá{discountLabel ? ` (${discountLabel})` : ''}</span>
+              <span className={styles.discountValue}>-{formatCurrency(discountAmount)}</span>
+            </div>
+          )}
           <div className={styles.priceRow}>
             <span>Phí vận chuyển</span>
-            <span className={styles.priceValueSmall}>{formatCurrency(shippingFee)}</span>
+            <span className={promoFreeShipping ? styles.freeShippingValue : styles.priceValueSmall}>
+              {promoFreeShipping ? 'Miễn phí' : formatCurrency(shippingFee)}
+            </span>
           </div>
           <div className={styles.divider} />
           <div className={styles.totalRow}>

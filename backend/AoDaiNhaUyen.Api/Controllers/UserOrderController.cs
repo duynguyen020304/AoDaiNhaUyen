@@ -2,8 +2,10 @@ using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.User;
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
@@ -14,6 +16,8 @@ namespace AoDaiNhaUyen.Api.Controllers;
 [Authorize(Policy = "RequireAdminOrCustomer")]
 public sealed class UserOrderController(
     IUserService userService,
+    IOrderService orderService,
+    AppDbContext dbContext,
     ILogger<UserOrderController> logger) : ControllerBase
 {
     [HttpGet]
@@ -45,6 +49,44 @@ public sealed class UserOrderController(
             result.Value.Page,
             result.Value.PageSize,
             result.Value.TotalCount));
+    }
+
+    [HttpPatch("{orderId:guid}/cancel")]
+    public async Task<IActionResult> CancelOrder(Guid orderId, CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(ApiResponseFactory.Failure(
+                "Không có quyền truy cập",
+                "unauthorized",
+                "Vui lòng đăng nhập."));
+        }
+
+        // Verify order belongs to the user
+        var order = await dbContext.Orders
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId, cancellationToken);
+
+        if (order is null)
+        {
+            return NotFound(ApiResponseFactory.Failure(
+                "Không tìm thấy đơn hàng",
+                "order_not_found",
+                "Đơn hàng không tồn tại hoặc không thuộc về bạn."));
+        }
+
+        var result = await orderService.CancelOrderAsync(orderId, cancellationToken);
+
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponseFactory.Failure(
+                result.ErrorMessage ?? "Không thể hủy đơn hàng.",
+                result.ErrorCode ?? "cancel_failed",
+                result.ErrorMessage ?? "Lỗi hủy đơn hàng."));
+        }
+
+        return Ok(ApiResponseFactory.Success(result, "Hủy đơn hàng thành công."));
     }
 
     private Guid GetCurrentUserId()
