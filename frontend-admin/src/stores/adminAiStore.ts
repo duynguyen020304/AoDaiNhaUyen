@@ -21,6 +21,8 @@ interface AdminAiState {
   close: () => void
   sendMessage: (req: AiChatRequest) => Promise<void>
   confirmAction: (actionId: string, approved: boolean) => Promise<boolean>
+  /** Send a continuation message after confirming a tool, without adding a user bubble. */
+  continueAfterConfirm: (conversationId: string) => Promise<void>
   fetchSuggestions: () => Promise<void>
   clearConversation: () => void
 }
@@ -134,6 +136,8 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                     : m,
                 ),
               }))
+            } else if (chunk.type === 'conversation') {
+              set({ conversationId: chunk.content })
             } else if (chunk.type === 'error') {
               fullText += `\n❌ ${chunk.content}`
               set((s) => ({
@@ -151,7 +155,6 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       // Mark final
       set((s) => ({
         isLoading: false,
-        conversationId: req.conversationId || state.conversationId,
         messages: s.messages.map((m) =>
           m.id === assistantMsg.id
             ? { ...m, content: fullText || m.content, toolCalls: toolCalls }
@@ -184,6 +187,123 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       return true
     } catch {
       return false
+    }
+  },
+
+  /** Send a hidden continuation signal after confirming/rejecting a tool.
+   *  Only adds an assistant bubble (no user bubble) since the tool result
+   *  is already in the conversation history. */
+  continueAfterConfirm: async (conversationId: string) => {
+    const state = get()
+    set({ isLoading: true })
+
+    const assistantMsg: AiMessage = {
+      id: genId(),
+      role: 'assistant',
+      content: '',
+      toolCalls: [],
+      createdAt: new Date().toISOString(),
+    }
+
+    set({ messages: [...state.messages, assistantMsg] })
+
+    try {
+      const response = await fetch(`${API}/api/admin/ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ message: '', conversationId }),
+      })
+
+      if (!response.ok || !response.body) throw new Error('No response')
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let fullText = ''
+      const toolCalls: AiMessage['toolCalls'] = []
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const data = line.slice(6).trim()
+          if (!data || data === '[DONE]') continue
+
+          try {
+            const chunk = JSON.parse(data)
+
+            if (chunk.type === 'text') {
+              fullText += chunk.content
+              set((s) => ({
+                messages: s.messages.map((m) =>
+                  m.id === assistantMsg.id ? { ...m, content: fullText } : m,
+                ),
+              }))
+            } else if (chunk.type === 'tool_call') {
+              toolCalls.push({
+                toolName: chunk.toolName || chunk.toolCallId || 'unknown',
+                input: chunk.content,
+              })
+              set((s) => ({
+                messages: s.messages.map((m) =>
+                  m.id === assistantMsg.id ? { ...m, toolCalls: [...toolCalls] } : m,
+                ),
+              }))
+            } else if (chunk.type === 'confirmation') {
+              const pending: AiPendingAction = {
+                actionId: chunk.toolCallId || genId(),
+                toolName: chunk.toolName || 'unknown',
+                description: chunk.content,
+                riskLevel: 'medium',
+                requestedAt: new Date().toISOString(),
+              }
+              set((s) => ({
+                pendingActions: [...s.pendingActions, pending],
+                messages: s.messages.map((m) =>
+                  m.id === assistantMsg.id
+                    ? { ...m, pendingAction: pending }
+                    : m,
+                ),
+              }))
+            } else if (chunk.type === 'conversation') {
+              set({ conversationId: chunk.content })
+            } else if (chunk.type === 'error') {
+              fullText += `\n❌ ${chunk.content}`
+              set((s) => ({
+                messages: s.messages.map((m) =>
+                  m.id === assistantMsg.id ? { ...m, content: fullText } : m,
+                ),
+              }))
+            }
+          } catch { /* skip malformed SSE */ }
+        }
+      }
+
+      set((s) => ({
+        isLoading: false,
+        messages: s.messages.map((m) =>
+          m.id === assistantMsg.id
+            ? { ...m, content: fullText || m.content, toolCalls }
+            : m,
+        ),
+      }))
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+      set((s) => ({
+        isLoading: false,
+        messages: s.messages.map((m) =>
+          m.id === assistantMsg.id
+            ? { ...m, content: `❌ Lỗi: ${errorMsg}` }
+            : m,
+        ),
+      }))
     }
   },
 

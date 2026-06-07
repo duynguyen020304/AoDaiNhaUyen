@@ -174,6 +174,8 @@ public static class ServiceRegistration
     services.AddScoped<IAdminMediaService, AdminMediaService>();
     services.AddScoped<IAdminDashboardService, AdminDashboardService>();
     services.AddScoped<ISafetyGate, SafetyGate>();
+    services.AddSingleton<IPendingActionStore, PendingActionStore>();
+    services.AddSingleton<IConversationStore, ConversationStore>();
     services.AddScoped<IAdminAgentService, AdminAgentService>();
     services.AddHttpClient<IAdminLlmProvider, VertexAiAdminProvider>(httpClient =>
     {
