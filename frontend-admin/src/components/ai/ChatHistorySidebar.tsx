@@ -1,4 +1,4 @@
-import { MessageSquare, Plus, Trash2, Calendar } from 'lucide-react'
+import { MessageSquare, Plus, Trash2, Calendar, X } from 'lucide-react'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 
 function formatTime(iso: string): string {
@@ -17,9 +17,10 @@ function formatTime(iso: string): string {
 
 interface ChatHistorySidebarProps {
   className?: string
+  onSelect?: () => void
 }
 
-export function ChatHistorySidebar({ className = '' }: ChatHistorySidebarProps) {
+export function ChatHistorySidebar({ className = '', onSelect }: ChatHistorySidebarProps) {
   const conversations = useAdminAiStore((s) => s.conversations)
   const activeConversationId = useAdminAiStore((s) => s.activeConversationId)
   const loadConversation = useAdminAiStore((s) => s.loadConversation)
@@ -28,15 +29,27 @@ export function ChatHistorySidebar({ className = '' }: ChatHistorySidebarProps) 
 
   return (
     <div className={`flex flex-col h-full bg-white border-r border-gray-200/80 shadow-sm ${className}`}>
-      {/* New chat action */}
-      <div className="p-4 border-b border-gray-100">
+      {/* New chat action + Mobile close button */}
+      <div className="p-4 border-b border-gray-100 flex items-center gap-2">
         <button
-          onClick={newConversation}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-wine bg-wine/5 border border-wine/25 hover:bg-wine hover:text-white rounded-xl transition-all duration-200 shadow-sm active:scale-98 cursor-pointer"
+          onClick={() => {
+            newConversation()
+            onSelect?.()
+          }}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-wine bg-wine/5 border border-wine/25 hover:bg-wine hover:text-white rounded-xl transition-all duration-200 shadow-sm active:scale-98 cursor-pointer"
         >
           <Plus className="size-4" />
           Cuộc trò chuyện mới
         </button>
+        {onSelect && (
+          <button
+            onClick={onSelect}
+            className="lg:hidden p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl cursor-pointer transition-colors shrink-0"
+            aria-label="Đóng lịch sử"
+          >
+            <X className="size-5" />
+          </button>
+        )}
       </div>
 
       {/* History section header */}
@@ -63,7 +76,10 @@ export function ChatHistorySidebar({ className = '' }: ChatHistorySidebarProps) 
                     ? 'bg-wine text-white border-wine/10 shadow-sm'
                     : 'bg-white hover:bg-gray-50 border-transparent text-gray-700'
                 }`}
-                onClick={() => loadConversation(convo.id)}
+                onClick={() => {
+                  loadConversation(convo.id)
+                  onSelect?.()
+                }}
               >
                 <MessageSquare className={`size-4 shrink-0 ${isActive ? 'text-white/80' : 'text-gray-400'}`} />
                 <div className="flex-1 min-w-0 pr-4">

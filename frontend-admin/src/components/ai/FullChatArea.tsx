@@ -39,7 +39,7 @@ export function FullChatArea({ onClear }: FullChatAreaProps) {
       {/* Messages or Empty State */}
       {hasMessages ? (
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-6 scroll-smooth">
-          <div className="max-w-[90%] mx-auto space-y-6">
+          <div className="max-w-[95%] mx-auto space-y-6">
             {messages.map((msg) => (
               <MessageBubble key={msg.id} message={msg} />
             ))}
@@ -56,7 +56,7 @@ export function FullChatArea({ onClear }: FullChatAreaProps) {
 
       {/* Input — always visible */}
       <div className="border-t border-gray-200 p-4 bg-white shrink-0">
-        <div className="max-w-[90%] mx-auto">
+        <div className="max-w-[95%] mx-auto">
           <ChatInput
             value={input}
             onChange={setInput}

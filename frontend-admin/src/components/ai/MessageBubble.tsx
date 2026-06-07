@@ -153,7 +153,7 @@ export function MessageBubble({ message }: { message: AiMessage }) {
         </div>
       )}
 
-      <div className={`flex flex-col gap-1.5 max-w-[90%] ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex flex-col gap-1.5 max-w-[95%] ${isUser ? 'items-end' : 'items-start'}`}>
         {/* Tool calls rendered as clean badges on top of text response for flow sync */}
         {message.toolCalls && message.toolCalls.length > 0 && (
           <div className="w-full space-y-1.5 mt-1 max-w-md">
