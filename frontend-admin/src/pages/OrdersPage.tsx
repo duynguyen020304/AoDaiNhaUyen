@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { RefreshCw, Truck, CheckCircle2, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { getRecentOrders, updateOrderStatus, createShipment } from '@/api/admin'
+import { updateOrderStatus, createShipment } from '@/api/admin'
+import { getRecentOrders } from '@/api/dashboard'
 import type { RecentOrder } from '@/types/dashboard'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -45,8 +46,8 @@ export function OrdersPage() {
   const [orders, setOrders] = useState<RecentOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
-  const [processingCode, setProcessingCode] = useState<string | null>(null)
-  const [showShipModal, setShowShipModal] = useState<string | null>(null)
+  const [processingId, setProcessingId] = useState<string | null>(null)
+  const [showShipModal, setShowShipModal] = useState<RecentOrder | null>(null)
   const [carrier, setCarrier] = useState('')
   const [trackingNumber, setTrackingNumber] = useState('')
 
@@ -64,27 +65,27 @@ export function OrdersPage() {
 
   const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter)
 
-  async function handleAdvanceStatus(orderCode: string, nextStatus: string) {
+  async function handleAdvanceStatus(orderId: string, nextStatus: string) {
     try {
-      setProcessingCode(orderCode)
-      await updateOrderStatus(orderCode, nextStatus)
+      setProcessingId(orderId)
+      await updateOrderStatus(orderId, nextStatus)
       setOrders((prev) =>
-        prev.map((o) => (o.orderCode === orderCode ? { ...o, status: nextStatus } : o))
+        prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
       )
     } catch {
       // Error handled silently for demo
     } finally {
-      setProcessingCode(null)
+      setProcessingId(null)
     }
   }
 
   async function handleShip() {
     if (!showShipModal) return
     try {
-      setProcessingCode(showShipModal)
-      await createShipment(showShipModal, carrier || undefined, trackingNumber || undefined)
+      setProcessingId(showShipModal.id)
+      await createShipment(showShipModal.id, carrier || undefined, trackingNumber || undefined)
       setOrders((prev) =>
-        prev.map((o) => (o.orderCode === showShipModal ? { ...o, status: 'shipping' } : o))
+        prev.map((o) => (o.id === showShipModal.id ? { ...o, status: 'shipping' } : o))
       )
       setShowShipModal(null)
       setCarrier('')
@@ -92,7 +93,7 @@ export function OrdersPage() {
     } catch {
       // Error handled silently
     } finally {
-      setProcessingCode(null)
+      setProcessingId(null)
     }
   }
 
@@ -167,9 +168,9 @@ export function OrdersPage() {
             <tbody>
               {filtered.map((order) => {
                 const nextStatus = NEXT_STATUS[order.status]
-                const isProcessing = processingCode === order.orderCode
+                const isProcessing = processingId === order.id
                 return (
-                  <tr key={order.orderCode} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                  <tr key={order.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-mono font-medium text-ink">{order.orderCode}</td>
                     <td className="px-4 py-3 text-ink">{order.customerName}</td>
                     <td className="px-4 py-3 text-right font-medium text-ink">{formatPrice(order.totalAmount)}</td>
@@ -186,7 +187,7 @@ export function OrdersPage() {
                           size="sm"
                           className="text-xs gap-1"
                           disabled={isProcessing}
-                          onClick={() => setShowShipModal(order.orderCode)}
+                          onClick={() => setShowShipModal(order)}
                         >
                           <Truck className="size-3.5" />
                           Giao hàng
@@ -197,7 +198,7 @@ export function OrdersPage() {
                           size="sm"
                           className="text-xs gap-1"
                           disabled={isProcessing}
-                          onClick={() => handleAdvanceStatus(order.orderCode, nextStatus)}
+                          onClick={() => handleAdvanceStatus(order.id, nextStatus)}
                         >
                           <ArrowRight className="size-3.5" />
                           {STATUS_LABELS[nextStatus]}
@@ -225,7 +226,7 @@ export function OrdersPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-semibold text-ink">Tạo vận đơn</h2>
-            <p className="text-sm text-muted-foreground">Đơn hàng: {showShipModal}</p>
+            <p className="text-sm text-muted-foreground">Đơn hàng: {showShipModal.orderCode}</p>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-ink mb-1" htmlFor="ship-carrier">Đơn vị vận chuyển</label>
@@ -252,8 +253,8 @@ export function OrdersPage() {
             </div>
             <div className="flex gap-2 justify-end pt-2">
               <Button variant="outline" onClick={() => setShowShipModal(null)}>Hủy</Button>
-              <Button onClick={handleShip} disabled={processingCode === showShipModal}>
-                {processingCode === showShipModal ? 'Đang xử lý...' : 'Xác nhận giao hàng'}
+              <Button onClick={handleShip} disabled={processingId === showShipModal.id}>
+                {processingId === showShipModal.id ? 'Đang xử lý...' : 'Xác nhận giao hàng'}
               </Button>
             </div>
           </div>

@@ -31,6 +31,7 @@ export interface OrderStatusDistribution {
 }
 
 export interface RecentOrder {
+  id: string
   orderCode: string
   customerName: string
   totalAmount: number
