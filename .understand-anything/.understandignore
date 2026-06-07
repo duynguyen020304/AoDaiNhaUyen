@@ -1,0 +1,22 @@
+# .understandignore
+# Built-in defaults always excluded unless negated.
+#
+# --- From .gitignore ---
+
+# **/bin/
+# **/obj/
+# .claude/
+# .omc/
+# .omx/
+# .env
+# .env.local
+# .env.*.local
+# backend/**/.env
+# *.old.*
+# .playwright-mcp/
+
+# --- Test patterns ---
+
+# *.test.*
+# *.spec.*
+# *.snap
