@@ -543,7 +543,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
       builder.HasIndex(x => x.Code).IsUnique();
       builder.ToTable(t => t.HasCheckConstraint("ck_promo_discount_value", "discount_value >= 0"));
-      builder.ToTable(t => t.HasCheckConstraint("ck_promo_uses", "current_uses >= 0 AND current_uses <= max_uses"));
+      builder.ToTable(t => t.HasCheckConstraint("ck_promo_uses", "current_uses >= 0 AND (max_uses = 0 OR current_uses <= max_uses)"));
       builder.ToTable(t => t.HasCheckConstraint("ck_promo_dates", "end_date > start_date"));
     });
 
