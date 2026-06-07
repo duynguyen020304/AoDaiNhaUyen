@@ -145,6 +145,12 @@ public sealed class CheckoutService(
         CreatedAt = now
       };
 
+      order.Shipments.Add(new Shipment
+      {
+        ShippingStatus = "pending",
+        CreatedAt = now
+      });
+
       dbContext.Orders.Add(order);
       await dbContext.SaveChangesAsync(cancellationToken);
 
