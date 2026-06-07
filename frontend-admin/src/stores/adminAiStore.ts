@@ -1,12 +1,39 @@
 import { create } from 'zustand'
-import type { AiMessage, AiSuggestion, AiPendingAction, AiChatRequest } from '@/types/ai'
+import type { AiMessage, AiSuggestion, AiPendingAction, AiChatRequest, SavedConversation } from '@/types/ai'
 import { request } from '@/api/client'
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5043'
+const STORAGE_KEY = 'admin-ai-conversations'
 
 function genId() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
+
+// --- localStorage helpers ---
+
+function loadConversations(): SavedConversation[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function persistConversations(convos: SavedConversation[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(convos))
+  } catch { /* quota exceeded — silent */ }
+}
+
+function makeTitle(messages: AiMessage[]): string {
+  const first = messages.find((m) => m.role === 'user')
+  if (!first) return 'Cuộc trò chuyện mới'
+  const text = first.content.trim()
+  return text.length > 40 ? text.slice(0, 40) + '…' : text
+}
+
+// --- State interface ---
 
 interface AdminAiState {
   isOpen: boolean
@@ -16,15 +43,24 @@ interface AdminAiState {
   pendingActions: AiPendingAction[]
   suggestions: AiSuggestion[]
 
+  // Chat history
+  conversations: SavedConversation[]
+  activeConversationId: string | null
+
   toggle: () => void
   open: () => void
   close: () => void
   sendMessage: (req: AiChatRequest) => Promise<void>
   confirmAction: (actionId: string, approved: boolean) => Promise<boolean>
-  /** Send a continuation message after confirming a tool, without adding a user bubble. */
   continueAfterConfirm: (conversationId: string) => Promise<void>
   fetchSuggestions: () => Promise<void>
   clearConversation: () => void
+
+  // Chat history actions
+  saveCurrentConversation: () => void
+  loadConversation: (id: string) => void
+  deleteConversation: (id: string) => void
+  newConversation: () => void
 }
 
 export const useAdminAiStore = create<AdminAiState>((set, get) => ({
@@ -34,6 +70,8 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
   conversationId: null,
   pendingActions: [],
   suggestions: [],
+  conversations: loadConversations(),
+  activeConversationId: null,
 
   toggle: () => set((s) => ({ isOpen: !s.isOpen })),
   open: () => set({ isOpen: true }),
@@ -127,6 +165,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                 description: chunk.content,
                 riskLevel: 'medium',
                 requestedAt: new Date().toISOString(),
+                status: 'pending',
               }
               set((s) => ({
                 pendingActions: [...s.pendingActions, pending],
@@ -161,6 +200,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
             : m,
         ),
       }))
+      get().saveCurrentConversation()
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
       set((s) => ({
@@ -183,7 +223,13 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       })
       set((s) => ({
         pendingActions: s.pendingActions.filter((a) => a.actionId !== actionId),
+        messages: s.messages.map((m) =>
+          m.pendingAction?.actionId === actionId
+            ? { ...m, pendingAction: { ...m.pendingAction, status: approved ? 'confirmed' : 'rejected' } }
+            : m
+        ),
       }))
+      get().saveCurrentConversation()
       return true
     } catch {
       return false
@@ -263,6 +309,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                 description: chunk.content,
                 riskLevel: 'medium',
                 requestedAt: new Date().toISOString(),
+                status: 'pending',
               }
               set((s) => ({
                 pendingActions: [...s.pendingActions, pending],
@@ -294,6 +341,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
             : m,
         ),
       }))
+      get().saveCurrentConversation()
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
       set((s) => ({
@@ -317,6 +365,65 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
   },
 
   clearConversation: () => {
-    set({ messages: [], conversationId: null, pendingActions: [] })
+    set({ messages: [], conversationId: null, pendingActions: [], activeConversationId: null })
+  },
+
+  // --- Chat history actions ---
+
+  saveCurrentConversation: () => {
+    const { messages, activeConversationId, conversations } = get()
+    if (messages.length === 0) return
+
+    const now = new Date().toISOString()
+    const id = activeConversationId || genId()
+
+    const existing = conversations.find((c) => c.id === id)
+    const updated: SavedConversation = {
+      id,
+      title: existing?.title || makeTitle(messages),
+      messages,
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    }
+
+    const next = existing
+      ? conversations.map((c) => (c.id === id ? updated : c))
+      : [updated, ...conversations]
+
+    persistConversations(next)
+    set({ conversations: next, activeConversationId: id })
+  },
+
+  loadConversation: (id: string) => {
+    const { conversations } = get()
+    const convo = conversations.find((c) => c.id === id)
+    if (!convo) return
+    set({
+      messages: convo.messages,
+      activeConversationId: id,
+      conversationId: null,
+      pendingActions: [],
+    })
+  },
+
+  deleteConversation: (id: string) => {
+    const { conversations, activeConversationId } = get()
+    const next = conversations.filter((c) => c.id !== id)
+    persistConversations(next)
+    set({
+      conversations: next,
+      ...(activeConversationId === id
+        ? { activeConversationId: null, messages: [], conversationId: null, pendingActions: [] }
+        : {}),
+    })
+  },
+
+  newConversation: () => {
+    set({
+      messages: [],
+      conversationId: null,
+      pendingActions: [],
+      activeConversationId: null,
+    })
   },
 }))
