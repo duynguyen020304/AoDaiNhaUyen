@@ -20,15 +20,45 @@
       "fileCategory": "infra"
     },
     {
-      "path": ".understand-anything/.understandignore",
-      "language": "unknown",
-      "sizeLines": 27,
-      "fileCategory": "code"
-    },
-    {
       "path": ".understand-anything/config.json",
       "language": "json",
       "sizeLines": 1,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/fingerprints.json",
+      "language": "json",
+      "sizeLines": 30316,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/batches.json",
+      "language": "json",
+      "sizeLines": 2145,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/fingerprint-input.json",
+      "language": "json",
+      "sizeLines": 0,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/intermediate/scan-result.json",
+      "language": "json",
+      "sizeLines": 3711,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/knowledge-graph.json",
+      "language": "json",
+      "sizeLines": 34265,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".understand-anything/meta.json",
+      "language": "json",
+      "sizeLines": 5,
       "fileCategory": "config"
     },
     {
@@ -88,13 +118,25 @@
     {
       "path": "backend/AoDaiNhaUyen.Api/Configuration/ServiceRegistration.cs",
       "language": "csharp",
-      "sizeLines": 228,
+      "sizeLines": 237,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminAiController.cs",
+      "language": "csharp",
+      "sizeLines": 86,
       "fileCategory": "code"
     },
     {
       "path": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminCategoriesController.cs",
       "language": "csharp",
       "sizeLines": 112,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminDashboardController.cs",
+      "language": "csharp",
+      "sizeLines": 80,
       "fileCategory": "code"
     },
     {
@@ -106,7 +148,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminProductsController.cs",
       "language": "csharp",
-      "sizeLines": 168,
+      "sizeLines": 228,
       "fileCategory": "code"
     },
     {
@@ -164,6 +206,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/CommentsController.cs",
+      "language": "csharp",
+      "sizeLines": 71,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Api/Controllers/HealthController.cs",
       "language": "csharp",
       "sizeLines": 19,
@@ -179,6 +227,12 @@
       "path": "backend/AoDaiNhaUyen.Api/Controllers/ProductsController.cs",
       "language": "csharp",
       "sizeLines": 51,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/ReviewsController.cs",
+      "language": "csharp",
+      "sizeLines": 71,
       "fileCategory": "code"
     },
     {
@@ -572,6 +626,12 @@
       "fileCategory": "config"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/AdminAiDTOs.cs",
+      "language": "csharp",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/AdminCategoryDTOs.cs",
       "language": "csharp",
       "sizeLines": 66,
@@ -800,6 +860,30 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/CommentDto.cs",
+      "language": "csharp",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/CreateCommentRequest.cs",
+      "language": "csharp",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/CreateReviewRequest.cs",
+      "language": "csharp",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Dashboard/DashboardDtos.cs",
+      "language": "csharp",
+      "sizeLines": 75,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Application/DTOs/ImageReferenceDto.cs",
       "language": "csharp",
       "sizeLines": 8,
@@ -832,7 +916,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Application/DTOs/ProductDetailDto.cs",
       "language": "csharp",
-      "sizeLines": 21,
+      "sizeLines": 22,
       "fileCategory": "code"
     },
     {
@@ -850,13 +934,25 @@
     {
       "path": "backend/AoDaiNhaUyen.Application/DTOs/ProductListItemDto.cs",
       "language": "csharp",
-      "sizeLines": 17,
+      "sizeLines": 19,
       "fileCategory": "code"
     },
     {
       "path": "backend/AoDaiNhaUyen.Application/DTOs/ProductVariantDto.cs",
       "language": "csharp",
       "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ReviewDto.cs",
+      "language": "csharp",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/ReviewSummaryDto.cs",
+      "language": "csharp",
+      "sizeLines": 6,
       "fileCategory": "code"
     },
     {
@@ -980,6 +1076,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Repositories/ICommentRepository.cs",
+      "language": "csharp",
+      "sizeLines": 42,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Application/Interfaces/Repositories/IProductRepository.cs",
       "language": "csharp",
       "sizeLines": 17,
@@ -992,9 +1094,27 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminAgentService.cs",
+      "language": "csharp",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminCategoryService.cs",
       "language": "csharp",
       "sizeLines": 27,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminDashboardService.cs",
+      "language": "csharp",
+      "sizeLines": 18,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminLlmProvider.cs",
+      "language": "csharp",
+      "sizeLines": 33,
       "fileCategory": "code"
     },
     {
@@ -1006,7 +1126,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminProductService.cs",
       "language": "csharp",
-      "sizeLines": 34,
+      "sizeLines": 41,
       "fileCategory": "code"
     },
     {
@@ -1067,6 +1187,12 @@
       "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/ICheckoutService.cs",
       "language": "csharp",
       "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/ICommentService.cs",
+      "language": "csharp",
+      "sizeLines": 38,
       "fileCategory": "code"
     },
     {
@@ -1216,7 +1342,13 @@
     {
       "path": "backend/AoDaiNhaUyen.Application/Services/CatalogService.cs",
       "language": "csharp",
-      "sizeLines": 202,
+      "sizeLines": 231,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Services/CommentService.cs",
+      "language": "csharp",
+      "sizeLines": 178,
       "fileCategory": "code"
     },
     {
@@ -1232,6 +1364,12 @@
       "fileCategory": "config"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Domain/Common/AdminAiActionType.cs",
+      "language": "csharp",
+      "sizeLines": 34,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Domain/Common/BaseEntity.cs",
       "language": "csharp",
       "sizeLines": 11,
@@ -1244,9 +1382,21 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Domain/Common/RiskLevel.cs",
+      "language": "csharp",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Domain/Constants/RoleNames.cs",
       "language": "csharp",
       "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/AdminAiAction.cs",
+      "language": "csharp",
+      "sizeLines": 17,
       "fileCategory": "code"
     },
     {
@@ -1298,6 +1448,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Domain/Entities/Comment.cs",
+      "language": "csharp",
+      "sizeLines": 18,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Domain/Entities/EmailVerificationToken.cs",
       "language": "csharp",
       "sizeLines": 13,
@@ -1342,7 +1498,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Domain/Entities/Product.cs",
       "language": "csharp",
-      "sizeLines": 28,
+      "sizeLines": 32,
       "fileCategory": "code"
     },
     {
@@ -1408,7 +1564,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Domain/Entities/User.cs",
       "language": "csharp",
-      "sizeLines": 29,
+      "sizeLines": 30,
       "fileCategory": "code"
     },
     {
@@ -1504,7 +1660,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Data/AppDbContext.cs",
       "language": "csharp",
-      "sizeLines": 643,
+      "sizeLines": 678,
       "fileCategory": "code"
     },
     {
@@ -1574,6 +1730,54 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606120816_AddCommentsAndProductReviewsNav.cs",
+      "language": "csharp",
+      "sizeLines": 76,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606120816_AddCommentsAndProductReviewsNav.Designer.cs",
+      "language": "csharp",
+      "sizeLines": 3119,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606124810_SyncProductIsPublicProperty.cs",
+      "language": "csharp",
+      "sizeLines": 23,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606124810_SyncProductIsPublicProperty.Designer.cs",
+      "language": "csharp",
+      "sizeLines": 3125,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606131041_AddCommentRatingColumn.cs",
+      "language": "csharp",
+      "sizeLines": 37,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606131041_AddCommentRatingColumn.Designer.cs",
+      "language": "csharp",
+      "sizeLines": 3132,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606192857_AddAdminAiAction.cs",
+      "language": "csharp",
+      "sizeLines": 63,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606192857_AddAdminAiAction.Designer.cs",
+      "language": "csharp",
+      "sizeLines": 3230,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/AGENTS.md",
       "language": "markdown",
       "sizeLines": 31,
@@ -1582,13 +1786,13 @@
     {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/AppDbContextModelSnapshot.cs",
       "language": "csharp",
-      "sizeLines": 3010,
+      "sizeLines": 3227,
       "fileCategory": "code"
     },
     {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Data/SeedDataService.cs",
       "language": "csharp",
-      "sizeLines": 783,
+      "sizeLines": 794,
       "fileCategory": "code"
     },
     {
@@ -1610,6 +1814,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Repositories/CommentRepository.cs",
+      "language": "csharp",
+      "sizeLines": 140,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Repositories/ProductRepository.cs",
       "language": "csharp",
       "sizeLines": 71,
@@ -1622,9 +1832,21 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminAgentService.cs",
+      "language": "csharp",
+      "sizeLines": 698,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminCategoryService.cs",
       "language": "csharp",
       "sizeLines": 190,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminDashboardService.cs",
+      "language": "csharp",
+      "sizeLines": 217,
       "fileCategory": "code"
     },
     {
@@ -1636,7 +1858,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminProductService.cs",
       "language": "csharp",
-      "sizeLines": 217,
+      "sizeLines": 320,
       "fileCategory": "code"
     },
     {
@@ -1748,6 +1970,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/SafetyGate.cs",
+      "language": "csharp",
+      "sizeLines": 78,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Services/StylistChatService.cs",
       "language": "csharp",
       "sizeLines": 1553,
@@ -1778,6 +2006,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/VertexAiAdminProvider.cs",
+      "language": "csharp",
+      "sizeLines": 290,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Services/VertexAiImageValidationService.cs",
       "language": "csharp",
       "sizeLines": 357,
@@ -1799,6 +2033,30 @@
       "path": "backend/AoDaiNhaUyen.Infrastructure/Services/ZaloOAuthService.cs",
       "language": "csharp",
       "sizeLines": 193,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Mcp/AoDaiNhaUyen.Mcp.csproj",
+      "language": "csproj",
+      "sizeLines": 20,
+      "fileCategory": "config"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Mcp/Program.cs",
+      "language": "csharp",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Mcp/Tools/AdminDashboardTools.cs",
+      "language": "csharp",
+      "sizeLines": 41,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Mcp/Tools/AdminProductTools.cs",
+      "language": "csharp",
+      "sizeLines": 122,
       "fileCategory": "code"
     },
     {
@@ -1852,13 +2110,13 @@
     {
       "path": "backend/AoDaiNhaUyen.Tests/Services/CatalogStylingServiceTests.cs",
       "language": "csharp",
-      "sizeLines": 132,
+      "sizeLines": 144,
       "fileCategory": "code"
     },
     {
       "path": "backend/AoDaiNhaUyen.Tests/Services/CatalogTryOnServiceTests.cs",
       "language": "csharp",
-      "sizeLines": 195,
+      "sizeLines": 212,
       "fileCategory": "code"
     },
     {
@@ -1882,7 +2140,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Tests/Services/ImageVisibilityServiceTests.cs",
       "language": "csharp",
-      "sizeLines": 185,
+      "sizeLines": 191,
       "fileCategory": "code"
     },
     {
@@ -1900,7 +2158,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Tests/Services/StylistChatServiceTests.cs",
       "language": "csharp",
-      "sizeLines": 1520,
+      "sizeLines": 1522,
       "fileCategory": "code"
     },
     {
@@ -1966,7 +2224,7 @@
     {
       "path": "frontend-admin/package.json",
       "language": "json",
-      "sizeLines": 40,
+      "sizeLines": 41,
       "fileCategory": "config"
     },
     {
@@ -1978,7 +2236,7 @@
     {
       "path": "frontend-admin/src/api/admin.ts",
       "language": "typescript",
-      "sizeLines": 185,
+      "sizeLines": 211,
       "fileCategory": "code"
     },
     {
@@ -1994,6 +2252,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend-admin/src/api/dashboard.ts",
+      "language": "typescript",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend-admin/src/api/media.ts",
       "language": "typescript",
       "sizeLines": 55,
@@ -2002,7 +2266,7 @@
     {
       "path": "frontend-admin/src/App.tsx",
       "language": "typescript",
-      "sizeLines": 59,
+      "sizeLines": 61,
       "fileCategory": "code"
     },
     {
@@ -2050,7 +2314,61 @@
     {
       "path": "frontend-admin/src/components/AdminLayout.tsx",
       "language": "typescript",
-      "sizeLines": 109,
+      "sizeLines": 145,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ai/AiChatSidebar.tsx",
+      "language": "typescript",
+      "sizeLines": 230,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ai/AiSuggestionCards.tsx",
+      "language": "typescript",
+      "sizeLines": 69,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/dashboard/OrdersByStatusChart.tsx",
+      "language": "typescript",
+      "sizeLines": 104,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/dashboard/RecentOrdersTable.tsx",
+      "language": "typescript",
+      "sizeLines": 88,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/dashboard/RevenueChart.tsx",
+      "language": "typescript",
+      "sizeLines": 88,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/dashboard/StatsCard.tsx",
+      "language": "typescript",
+      "sizeLines": 46,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/dashboard/StatsCardGrid.tsx",
+      "language": "typescript",
+      "sizeLines": 87,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/dashboard/TopProductsList.tsx",
+      "language": "typescript",
+      "sizeLines": 73,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/dashboard/UserGrowthChart.tsx",
+      "language": "typescript",
+      "sizeLines": 80,
       "fileCategory": "code"
     },
     {
@@ -2132,6 +2450,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend-admin/src/pages/DashboardPage.tsx",
+      "language": "typescript",
+      "sizeLines": 131,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend-admin/src/pages/LoginPage.tsx",
       "language": "typescript",
       "sizeLines": 79,
@@ -2146,13 +2470,13 @@
     {
       "path": "frontend-admin/src/pages/ProductFormPage.tsx",
       "language": "typescript",
-      "sizeLines": 271,
+      "sizeLines": 402,
       "fileCategory": "code"
     },
     {
       "path": "frontend-admin/src/pages/ProductListPage.tsx",
       "language": "typescript",
-      "sizeLines": 270,
+      "sizeLines": 278,
       "fileCategory": "code"
     },
     {
@@ -2168,6 +2492,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend-admin/src/stores/adminAiStore.ts",
+      "language": "typescript",
+      "sizeLines": 202,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend-admin/src/stores/authStore.ts",
       "language": "typescript",
       "sizeLines": 52,
@@ -2180,9 +2510,15 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend-admin/src/stores/dashboardStore.ts",
+      "language": "typescript",
+      "sizeLines": 142,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend-admin/src/stores/productStore.ts",
       "language": "typescript",
-      "sizeLines": 124,
+      "sizeLines": 191,
       "fileCategory": "code"
     },
     {
@@ -2206,7 +2542,13 @@
     {
       "path": "frontend-admin/src/types/admin.ts",
       "language": "typescript",
-      "sizeLines": 182,
+      "sizeLines": 183,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/types/ai.ts",
+      "language": "typescript",
+      "sizeLines": 50,
       "fileCategory": "code"
     },
     {
@@ -2219,6 +2561,12 @@
       "path": "frontend-admin/src/types/auth.ts",
       "language": "typescript",
       "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/types/dashboard.ts",
+      "language": "typescript",
+      "sizeLines": 57,
       "fileCategory": "code"
     },
     {
@@ -2350,7 +2698,7 @@
     {
       "path": "frontend/src/api/catalog.ts",
       "language": "typescript",
-      "sizeLines": 46,
+      "sizeLines": 50,
       "fileCategory": "code"
     },
     {
@@ -2372,9 +2720,21 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend/src/api/comment.ts",
+      "language": "typescript",
+      "sizeLines": 27,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend/src/api/media.ts",
       "language": "typescript",
       "sizeLines": 44,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/api/review.ts",
+      "language": "typescript",
+      "sizeLines": 23,
       "fileCategory": "code"
     },
     {
@@ -2386,7 +2746,7 @@
     {
       "path": "frontend/src/App.tsx",
       "language": "typescript",
-      "sizeLines": 169,
+      "sizeLines": 171,
       "fileCategory": "code"
     },
     {
@@ -2494,7 +2854,7 @@
     {
       "path": "frontend/src/components/CollectionSection/CollectionSection.module.css",
       "language": "css",
-      "sizeLines": 218,
+      "sizeLines": 223,
       "fileCategory": "markup"
     },
     {
@@ -2564,6 +2924,18 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend/src/components/ImageGallery/ImageGallery.module.css",
+      "language": "css",
+      "sizeLines": 147,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/ImageGallery/ImageGallery.tsx",
+      "language": "typescript",
+      "sizeLines": 113,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend/src/components/LoadingScreen/LoadingScreen.module.css",
       "language": "css",
       "sizeLines": 179,
@@ -2590,13 +2962,25 @@
     {
       "path": "frontend/src/components/ProductCard/ProductCard.module.css",
       "language": "css",
-      "sizeLines": 122,
+      "sizeLines": 128,
       "fileCategory": "markup"
     },
     {
       "path": "frontend/src/components/ProductCard/ProductCard.tsx",
       "language": "typescript",
-      "sizeLines": 76,
+      "sizeLines": 78,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/ProductInfo/ProductInfo.module.css",
+      "language": "css",
+      "sizeLines": 346,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/ProductInfo/ProductInfo.tsx",
+      "language": "typescript",
+      "sizeLines": 286,
       "fileCategory": "code"
     },
     {
@@ -2636,6 +3020,18 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend/src/components/StarRating/StarRating.module.css",
+      "language": "css",
+      "sizeLines": 65,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/StarRating/StarRating.tsx",
+      "language": "typescript",
+      "sizeLines": 126,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend/src/components/StoreSection/StoreSection.module.css",
       "language": "css",
       "sizeLines": 165,
@@ -2672,6 +3068,18 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend/src/components/UserFeedbackSection/UserFeedbackSection.module.css",
+      "language": "css",
+      "sizeLines": 470,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/components/UserFeedbackSection/UserFeedbackSection.tsx",
+      "language": "typescript",
+      "sizeLines": 269,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend/src/main.tsx",
       "language": "typescript",
       "sizeLines": 22,
@@ -2686,7 +3094,7 @@
     {
       "path": "frontend/src/pages/AccessoriesPage/AccessoriesPage.tsx",
       "language": "typescript",
-      "sizeLines": 187,
+      "sizeLines": 189,
       "fileCategory": "code"
     },
     {
@@ -3068,9 +3476,21 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend/src/pages/ProductDetailPage/ProductDetailPage.module.css",
+      "language": "css",
+      "sizeLines": 140,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "frontend/src/pages/ProductDetailPage/ProductDetailPage.tsx",
+      "language": "typescript",
+      "sizeLines": 119,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend/src/pages/ProductsPage/data.ts",
       "language": "typescript",
-      "sizeLines": 21,
+      "sizeLines": 23,
       "fileCategory": "code"
     },
     {
@@ -3082,7 +3502,7 @@
     {
       "path": "frontend/src/pages/ProductsPage/ProductsPage.tsx",
       "language": "typescript",
-      "sizeLines": 299,
+      "sizeLines": 301,
       "fileCategory": "code"
     },
     {
@@ -3172,7 +3592,7 @@
     {
       "path": "frontend/src/types/catalog.ts",
       "language": "typescript",
-      "sizeLines": 35,
+      "sizeLines": 110,
       "fileCategory": "code"
     },
     {
@@ -3252,41 +3672,35 @@
       "language": "markdown",
       "sizeLines": 191,
       "fileCategory": "docs"
-    },
-    {
-      "path": "spec.md",
-      "language": "markdown",
-      "sizeLines": 366,
-      "fileCategory": "docs"
     }
   ],
-  "totalFiles": 543,
+  "totalFiles": 612,
   "filteredByIgnore": 0,
   "estimatedComplexity": "very-large",
   "stats": {
-    "filesScanned": 543,
+    "filesScanned": 612,
     "byCategory": {
-      "docs": 31,
+      "docs": 30,
       "infra": 2,
-      "code": 433,
-      "config": 20,
-      "markup": 57
+      "config": 27,
+      "code": 491,
+      "markup": 62
     },
     "byLanguage": {
-      "markdown": 32,
+      "markdown": 31,
       "yaml": 1,
-      "unknown": 4,
-      "json": 13,
+      "json": 19,
       "config": 2,
-      "csproj": 5,
+      "csproj": 6,
       "http": 2,
-      "csharp": 242,
+      "csharp": 279,
       "webp": 49,
+      "unknown": 3,
       "slnx": 1,
       "javascript": 4,
       "html": 3,
-      "typescript": 131,
-      "css": 54
+      "typescript": 153,
+      "css": 59
     }
   }
 }

@@ -1,6 +1,6 @@
 {
-  "lastAnalyzedAt": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')",
-  "gitCommitHash": "$(git rev-parse HEAD)",
+  "gitCommitHash": "121463022529070a6477bc0b05e6153f2bac1a7f",
+  "lastAnalyzedAt": "2026-06-07T13:53:22Z",
   "version": "1.0.0",
   "analyzedFiles": 465
 }

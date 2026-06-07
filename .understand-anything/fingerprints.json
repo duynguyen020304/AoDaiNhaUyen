@@ -1,8 +1,98 @@
 {
   "version": "1.0.0",
-  "gitCommitHash": "HEAD",
-  "generatedAt": "2026-06-06T14:08:26.016Z",
+  "gitCommitHash": "121463022529070a6477bc0b05e6153f2bac1a7f",
+  "generatedAt": "2026-06-07T13:55:27.366Z",
   "files": {
+    ".github/AGENTS.md": {
+      "filePath": ".github/AGENTS.md",
+      "contentHash": "09458759f6ff722d0b6fff772781d3cee6b284d80a6998778618f85b0a3d25cb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": true
+    },
+    ".github/workflows/AGENTS.md": {
+      "filePath": ".github/workflows/AGENTS.md",
+      "contentHash": "da557cfdb310c615fa6ba59aefd38eb331f63d9ee5e05f5f62f78d1ec36757bf",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 30,
+      "hasStructuralAnalysis": true
+    },
+    ".github/workflows/deploy-dev.yml": {
+      "filePath": ".github/workflows/deploy-dev.yml",
+      "contentHash": "8be40c76bc9f0e1930407f0369041f03b0a009bbcc29e094a7c43ec221503c40",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 930,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/config.json": {
+      "filePath": ".understand-anything/config.json",
+      "contentHash": "3b7261a81d69f50685b9bb8b0690d0fcbde445a71e36781cc0cdce7167c0a8a7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/fingerprints.json": {
+      "filePath": ".understand-anything/fingerprints.json",
+      "contentHash": "67093e6572aa145395ea709b668f1d7c103e8c1c26aef982665e78aa745e9f01",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 25436,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/batches.json": {
+      "filePath": ".understand-anything/intermediate/batches.json",
+      "contentHash": "7380f8da24f96f15c90e3b93d2574aa91b5b026e46b04222af6de86fcbb1957f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2146,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/intermediate/scan-result.json": {
+      "filePath": ".understand-anything/intermediate/scan-result.json",
+      "contentHash": "bc271bc869bbac1a66c9297b033b682e9f066a15c8a0c49b7bd13df9e9012bf4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3712,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/knowledge-graph.json": {
+      "filePath": ".understand-anything/knowledge-graph.json",
+      "contentHash": "f67c48f4bda6a992e854b697e615f545fdcc96c74b81604965c4c1196d13b11c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 34266,
+      "hasStructuralAnalysis": true
+    },
+    ".understand-anything/meta.json": {
+      "filePath": ".understand-anything/meta.json",
+      "contentHash": "8c0254e93611a46c9a4f10b0a087c7d8b17ed2096818cfc0f8d9f1aa22ec9a30",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
     "AGENTS.md": {
       "filePath": "AGENTS.md",
       "contentHash": "20fd652fadaaa8eab05ca01a4f2b7a3c8306dce5de7dfa8051ec4fa8963a8be2",
@@ -13,24 +103,14 @@
       "totalLines": 69,
       "hasStructuralAnalysis": true
     },
-    "README.md": {
-      "filePath": "README.md",
-      "contentHash": "bdeb05ebae0696bee93675d0e3b26e7ec39c2f198741339e0272101ee791d61b",
+    "backend/AGENTS.md": {
+      "filePath": "backend/AGENTS.md",
+      "contentHash": "d9f49d71f64f19aad6617b4e70d1aef1a49c6eec9cc18c5b22109919a88f1f90",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 192,
-      "hasStructuralAnalysis": true
-    },
-    "spec.md": {
-      "filePath": "spec.md",
-      "contentHash": "ecfa49300aa54528602883a86fbff36abcb4a835b06d774dea31c1242799a740",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 367,
+      "totalLines": 53,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/.env.example": {
@@ -63,6 +143,16 @@
       "totalLines": 35,
       "hasStructuralAnalysis": false
     },
+    "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.http": {
+      "filePath": "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.http",
+      "contentHash": "8076d45a0a56d627e1738a2e2095388ce0570731f29f02d39f1ac0b1c04f61d8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 7,
+      "hasStructuralAnalysis": false
+    },
     "backend/AoDaiNhaUyen.Api/appsettings.Development.json": {
       "filePath": "backend/AoDaiNhaUyen.Api/appsettings.Development.json",
       "contentHash": "40fb44aeb667bbb3466c2d75a97c6e4249bd8000e8a3b54d45cc25c77befe55d",
@@ -82,266 +172,6 @@
       "exports": [],
       "totalLines": 81,
       "hasStructuralAnalysis": true
-    },
-    "frontend-admin/AGENTS.md": {
-      "filePath": "frontend-admin/AGENTS.md",
-      "contentHash": "b592eb1d53af0d084cab67130be820e065bf7ced6455075d9e65debd400b3944",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 70,
-      "hasStructuralAnalysis": true
-    },
-    "frontend-admin/README.md": {
-      "filePath": "frontend-admin/README.md",
-      "contentHash": "bf14fbe337274f08ba3d9c2d6fe3e8723f13c16b605583bff70483717e3d4f3a",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 74,
-      "hasStructuralAnalysis": true
-    },
-    "frontend-admin/index.html": {
-      "filePath": "frontend-admin/index.html",
-      "contentHash": "338c51b7bfd5856e8d15344122442bf9a7ec7a823e24594a53a6e8235a8e74ad",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 14,
-      "hasStructuralAnalysis": false
-    },
-    "frontend-admin/package.json": {
-      "filePath": "frontend-admin/package.json",
-      "contentHash": "82d44d989bb697ea993e6847a8c138e1961e98de47717955e5707dee0e28638d",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 41,
-      "hasStructuralAnalysis": true
-    },
-    "frontend-admin/tsconfig.app.json": {
-      "filePath": "frontend-admin/tsconfig.app.json",
-      "contentHash": "d07d41f9fa0c1a4d6ae173d31f7ab1ed50a35585ee7f330508347e482d1d2015",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 29,
-      "hasStructuralAnalysis": true
-    },
-    "frontend-admin/tsconfig.json": {
-      "filePath": "frontend-admin/tsconfig.json",
-      "contentHash": "ad28d132ee48d6e23917cf5827cace785d0fc01a44ca68b0dda51cc8c3fd3f52",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 8,
-      "hasStructuralAnalysis": true
-    },
-    "frontend-admin/tsconfig.node.json": {
-      "filePath": "frontend-admin/tsconfig.node.json",
-      "contentHash": "e0f1936992f77a707102795e8ea311ae74cb54de87b221bb32b44055af66ff7e",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 25,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/.env.example": {
-      "filePath": "frontend/.env.example",
-      "contentHash": "3c897ec5a11aa5979981a3e56c0781eb6729796d75a271606932aa44d7c64681",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 10,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/AGENTS.md": {
-      "filePath": "frontend/AGENTS.md",
-      "contentHash": "20b63624c258db90f9ee923d04b25510a42bdd867f4927904ce4cc3c5fef4ff1",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 55,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/index.html": {
-      "filePath": "frontend/index.html",
-      "contentHash": "88c3ee7a3ffbe09f7c30bb516b7b63cda4695b0e99ccf160ca36b39cdf7319c5",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 29,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/package.json": {
-      "filePath": "frontend/package.json",
-      "contentHash": "eca6b5cc25ff5311541f8dff4a173597489b420544f7d0547f2c85ecccb0c39e",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 40,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/tsconfig.app.json": {
-      "filePath": "frontend/tsconfig.app.json",
-      "contentHash": "dfaeb7e13cd844712d3830b69392bb8794a55117105e258388448a7d3ec76245",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 26,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/tsconfig.json": {
-      "filePath": "frontend/tsconfig.json",
-      "contentHash": "770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 8,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/tsconfig.node.json": {
-      "filePath": "frontend/tsconfig.node.json",
-      "contentHash": "90a22c920cbc14624fb4658b58f15c875abf3234224f3933f211849c3ada3242",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 25,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/src/styles/AGENTS.md": {
-      "filePath": "frontend/src/styles/AGENTS.md",
-      "contentHash": "f9536f270acef3584d2db7813e75a8a7361835d7e83bca62865d7f368ff05c73",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 38,
-      "hasStructuralAnalysis": true
-    },
-    "frontend/src/styles/global.css": {
-      "filePath": "frontend/src/styles/global.css",
-      "contentHash": "cc7c5b466d6bcc6e39207ae175599aea0e68da78c587b427c7c88023f86e825c",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 17,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/src/styles/reset.css": {
-      "filePath": "frontend/src/styles/reset.css",
-      "contentHash": "69d407810d57626f863c547f6088f6174da61fe5e13925d8e14b717fbb7239b7",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 45,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/src/styles/texture.css": {
-      "filePath": "frontend/src/styles/texture.css",
-      "contentHash": "b1513ef138ba0abee2653360a08698264480244abea2308520619c96cce1e208",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 16,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/src/styles/transitions.css": {
-      "filePath": "frontend/src/styles/transitions.css",
-      "contentHash": "f87de07648eff4a559a614a131699d25a4f0eccdf9ad2bcc2f7f5daf5e264786",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 11,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/src/styles/typography.css": {
-      "filePath": "frontend/src/styles/typography.css",
-      "contentHash": "3561ddb112a408c62ef818acb66f335121cfe2b49d0aaa635512632336071454",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 23,
-      "hasStructuralAnalysis": false
-    },
-    "frontend/src/styles/variables.css": {
-      "filePath": "frontend/src/styles/variables.css",
-      "contentHash": "da359b5568eaacd9449e80f9e70499f942aa5f03e89b56b3140a7eb40437a19c",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 35,
-      "hasStructuralAnalysis": false
-    },
-    ".github/AGENTS.md": {
-      "filePath": ".github/AGENTS.md",
-      "contentHash": "09458759f6ff722d0b6fff772781d3cee6b284d80a6998778618f85b0a3d25cb",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 24,
-      "hasStructuralAnalysis": true
-    },
-    ".github/workflows/AGENTS.md": {
-      "filePath": ".github/workflows/AGENTS.md",
-      "contentHash": "da557cfdb310c615fa6ba59aefd38eb331f63d9ee5e05f5f62f78d1ec36757bf",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 30,
-      "hasStructuralAnalysis": true
-    },
-    ".understand-anything/config.json": {
-      "filePath": ".understand-anything/config.json",
-      "contentHash": "3b7261a81d69f50685b9bb8b0690d0fcbde445a71e36781cc0cdce7167c0a8a7",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 2,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AGENTS.md": {
-      "filePath": "backend/AGENTS.md",
-      "contentHash": "d9f49d71f64f19aad6617b4e70d1aef1a49c6eec9cc18c5b22109919a88f1f90",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 53,
-      "hasStructuralAnalysis": true
-    },
-    "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.http": {
-      "filePath": "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.http",
-      "contentHash": "8076d45a0a56d627e1738a2e2095388ce0570731f29f02d39f1ac0b1c04f61d8",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 7,
-      "hasStructuralAnalysis": false
     },
     "backend/AoDaiNhaUyen.Api/Configuration/S3StorageSettings.cs": {
       "filePath": "backend/AoDaiNhaUyen.Api/Configuration/S3StorageSettings.cs",
@@ -382,7 +212,7 @@
     },
     "backend/AoDaiNhaUyen.Api/Configuration/ServiceRegistration.cs": {
       "filePath": "backend/AoDaiNhaUyen.Api/Configuration/ServiceRegistration.cs",
-      "contentHash": "0766fad6a4ba705b4eae3231c99a87043656b0d29640e9cd3d651e2e09fb63cc",
+      "contentHash": "5fd765db764b33a11ea628e1d8959506d14eb819499aeef73badfba6a04f6cd9",
       "functions": [
         {
           "name": "AddBackendServices",
@@ -392,7 +222,7 @@
           ],
           "returnType": "IServiceCollection",
           "exported": true,
-          "lineCount": 204
+          "lineCount": 211
         }
       ],
       "classes": [
@@ -403,7 +233,7 @@
           ],
           "properties": [],
           "exported": true,
-          "lineCount": 207
+          "lineCount": 214
         }
       ],
       "imports": [
@@ -532,7 +362,109 @@
         "AddBackendServices",
         "ServiceRegistration"
       ],
-      "totalLines": 231,
+      "totalLines": 238,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminAiController.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminAiController.cs",
+      "contentHash": "8770f12be1011af43ca064b96c26708c3ed435fef50609d710b5f63a6dd75963",
+      "functions": [
+        {
+          "name": "StreamChat",
+          "params": [
+            "request",
+            "cancellationToken"
+          ],
+          "returnType": "Task",
+          "exported": true,
+          "lineCount": 38
+        },
+        {
+          "name": "ConfirmAction",
+          "params": [
+            "request",
+            "cancellationToken"
+          ],
+          "returnType": "Task<ActionResult<ApiResponse<object>>>",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "GetSuggestions",
+          "params": [
+            "cancellationToken"
+          ],
+          "returnType": "Task<ActionResult<ApiResponse<IReadOnlyList<AdminAiSuggestionResponse>>>>",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "GetAdminUserId",
+          "params": [],
+          "returnType": "Guid?",
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "AdminAiController",
+          "methods": [
+            "StreamChat",
+            "ConfirmAction",
+            "GetSuggestions",
+            "GetAdminUserId"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 76
+        }
+      ],
+      "imports": [
+        {
+          "source": "System.Text.Json",
+          "specifiers": [
+            "Json"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Api.Responses",
+          "specifiers": [
+            "Responses"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs.Admin",
+          "specifiers": [
+            "Admin"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "Microsoft.AspNetCore.Authorization",
+          "specifiers": [
+            "Authorization"
+          ]
+        },
+        {
+          "source": "Microsoft.AspNetCore.Mvc",
+          "specifiers": [
+            "Mvc"
+          ]
+        }
+      ],
+      "exports": [
+        "StreamChat",
+        "ConfirmAction",
+        "GetSuggestions",
+        "AdminAiController"
+      ],
+      "totalLines": 87,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminCategoriesController.cs": {
@@ -659,6 +591,123 @@
         "AdminCategoriesController"
       ],
       "totalLines": 113,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminDashboardController.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminDashboardController.cs",
+      "contentHash": "ffca2923e1dd2d73b371557e5c50cfcb2e3d92b22ce81b015b88b17b6a1bee48",
+      "functions": [
+        {
+          "name": "GetSummary",
+          "params": [
+            "cancellationToken"
+          ],
+          "returnType": "Task<IActionResult>",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "GetRevenue",
+          "params": [
+            "period",
+            "cancellationToken"
+          ],
+          "returnType": "Task<IActionResult>",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "GetOrdersByStatus",
+          "params": [
+            "cancellationToken"
+          ],
+          "returnType": "Task<IActionResult>",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "GetRecentOrders",
+          "params": [
+            "limit",
+            "cancellationToken"
+          ],
+          "returnType": "Task<IActionResult>",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "GetTopProducts",
+          "params": [
+            "limit",
+            "cancellationToken"
+          ],
+          "returnType": "Task<IActionResult>",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "GetUserGrowth",
+          "params": [
+            "period",
+            "cancellationToken"
+          ],
+          "returnType": "Task<IActionResult>",
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [
+        {
+          "name": "AdminDashboardController",
+          "methods": [
+            "GetSummary",
+            "GetRevenue",
+            "GetOrdersByStatus",
+            "GetRecentOrders",
+            "GetTopProducts",
+            "GetUserGrowth"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 73
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Api.Responses",
+          "specifiers": [
+            "Responses"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "Microsoft.AspNetCore.Authorization",
+          "specifiers": [
+            "Authorization"
+          ]
+        },
+        {
+          "source": "Microsoft.AspNetCore.Mvc",
+          "specifiers": [
+            "Mvc"
+          ]
+        }
+      ],
+      "exports": [
+        "GetSummary",
+        "GetRevenue",
+        "GetOrdersByStatus",
+        "GetRecentOrders",
+        "GetTopProducts",
+        "GetUserGrowth",
+        "AdminDashboardController"
+      ],
+      "totalLines": 81,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminMediaController.cs": {
@@ -2033,6 +2082,100 @@
       "totalLines": 33,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Api/Controllers/CommentsController.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Api/Controllers/CommentsController.cs",
+      "contentHash": "cf0067f3f7dc8c2bb61d00ab167af1fa108dcffd77f157e75f56ea062fc1c723",
+      "functions": [
+        {
+          "name": "GetComments",
+          "params": [
+            "productId",
+            "page",
+            "pageSize",
+            "cancellationToken"
+          ],
+          "returnType": "Task<IActionResult>",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "CreateComment",
+          "params": [
+            "productId",
+            "request",
+            "cancellationToken"
+          ],
+          "returnType": "Task<IActionResult>",
+          "exported": true,
+          "lineCount": 36
+        },
+        {
+          "name": "GetCurrentUserId",
+          "params": [],
+          "returnType": "Guid",
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "CommentsController",
+          "methods": [
+            "GetComments",
+            "CreateComment",
+            "GetCurrentUserId"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 62
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Api.Responses",
+          "specifiers": [
+            "Responses"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs",
+          "specifiers": [
+            "DTOs"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "Microsoft.AspNetCore.Authorization",
+          "specifiers": [
+            "Authorization"
+          ]
+        },
+        {
+          "source": "Microsoft.AspNetCore.Mvc",
+          "specifiers": [
+            "Mvc"
+          ]
+        },
+        {
+          "source": "System.Security.Claims",
+          "specifiers": [
+            "Claims"
+          ]
+        }
+      ],
+      "exports": [
+        "GetComments",
+        "CreateComment",
+        "CommentsController"
+      ],
+      "totalLines": 72,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Api/Controllers/HealthController.cs": {
       "filePath": "backend/AoDaiNhaUyen.Api/Controllers/HealthController.cs",
       "contentHash": "bdd1fdb60a278fe76dc0248ee0e1607c159760d6c9c5ba8ea8d5f0a202cfbc52",
@@ -2254,6 +2397,100 @@
         "ProductsController"
       ],
       "totalLines": 52,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Api/Controllers/ReviewsController.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Api/Controllers/ReviewsController.cs",
+      "contentHash": "36f54a3aea9c43e3267afaea69dd541a9098f08198b62db6d320a31a5edd4569",
+      "functions": [
+        {
+          "name": "GetReviews",
+          "params": [
+            "productId",
+            "page",
+            "pageSize",
+            "cancellationToken"
+          ],
+          "returnType": "Task<IActionResult>",
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "CreateReview",
+          "params": [
+            "productId",
+            "request",
+            "cancellationToken"
+          ],
+          "returnType": "Task<IActionResult>",
+          "exported": true,
+          "lineCount": 36
+        },
+        {
+          "name": "GetCurrentUserId",
+          "params": [],
+          "returnType": "Guid",
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "ReviewsController",
+          "methods": [
+            "GetReviews",
+            "CreateReview",
+            "GetCurrentUserId"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 62
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Api.Responses",
+          "specifiers": [
+            "Responses"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs",
+          "specifiers": [
+            "DTOs"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "Microsoft.AspNetCore.Authorization",
+          "specifiers": [
+            "Authorization"
+          ]
+        },
+        {
+          "source": "Microsoft.AspNetCore.Mvc",
+          "specifiers": [
+            "Mvc"
+          ]
+        },
+        {
+          "source": "System.Security.Claims",
+          "specifiers": [
+            "Claims"
+          ]
+        }
+      ],
+      "exports": [
+        "GetReviews",
+        "CreateReview",
+        "ReviewsController"
+      ],
+      "totalLines": 72,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/Controllers/UserAddressController.cs": {
@@ -3383,6 +3620,256 @@
       "totalLines": 393,
       "hasStructuralAnalysis": false
     },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-3.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-3.webp",
+      "contentHash": "1807387e7406e84a8ffd5a069568ab9b928ab1d4b34ec98002783e24aa896bea",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 544,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-5.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-5.webp",
+      "contentHash": "ec926070d0f74845afd771a7c33fd7a73c3a37f285d692b437476dd47dfa6cb3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 188,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-6.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-6.webp",
+      "contentHash": "1fb0bd9aad271d3e2612711feb257578cc31c8704f5ec28eaa90e81522a0b8e0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1056,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-1.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-1.webp",
+      "contentHash": "7bc6d57b77412038c1f036283f53bc1687211ee02468fad74528972c299d5342",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 665,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-2.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-2.webp",
+      "contentHash": "06cbd95778bf2ccef67c4b48acb4b52b384ea2464c3ed02e83910eb537937d1f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 859,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-4.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-4.webp",
+      "contentHash": "f1381be4dfa88e7a3c2075773eb90adef88aea066406c7f5ca60da92de34421d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1130,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-5.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-5.webp",
+      "contentHash": "4a3748c7cddd7bec623c580fccfbb6b28d801cce29aaec9aa0f37981bd08c329",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 662,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-6.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-6.webp",
+      "contentHash": "aef5c34e45822c7b1ca0d9f278ae09a9c631151023cb3a389058e84cc0321284",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 951,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-buom-trang.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-buom-trang.webp",
+      "contentHash": "f9a39dae75c01dbc173f9ddeef8c336f479151f31f5494eb97cae321cf3ecaca",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 277,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa-cach-dieu.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa-cach-dieu.webp",
+      "contentHash": "62a20ebc10245c74da23acaf20bdfbf79b3e5322c4d582867a2dbd6c9a64784f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 360,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa.webp",
+      "contentHash": "95a15542bc514685d8246847d291877a4b1215f68e291304904ab1c9d51639be",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 138,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-kieu-cao.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-kieu-cao.webp",
+      "contentHash": "7053b6f1a16242f8a5f48579006997858f97259d1010f18340395632603e5c47",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 467,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no-de-bang.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no-de-bang.webp",
+      "contentHash": "b36c110632353dc268585682281ff566433ec12cc031940af09614d7d718ed43",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 577,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no.webp",
+      "contentHash": "4260d5d4efdb3749f0d8af68be4fb2a22c44f836685ef9939e029d6f18866d18",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 438,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong-node.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong-node.webp",
+      "contentHash": "5dad482bbba00f309d26b293cd0ff23638a8610283b9d27a1a812c1a0e131cd9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 266,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong.webp",
+      "contentHash": "177afeea90360abec6e6e0326169119b62635896dbd08d353c2322b674570171",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1173,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-bau.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-bau.webp",
+      "contentHash": "fc65340ae610f3e36a70d592816247a9d8e3e415c125f19614f488761eebdc15",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 471,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-gap-tua-rua.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-gap-tua-rua.webp",
+      "contentHash": "787e2ba834cd2e677e327c1203238d4b56fe77470a04c8a15cc217371168f70f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 580,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-hoa-sen.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-hoa-sen.webp",
+      "contentHash": "1c5d1161bbd3fb109a18f7f13e56480eea623dd6690fa292a0a1d3199e71b898",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 735,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tre-gap.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tre-gap.webp",
+      "contentHash": "3e3e09330964d66f7d2dfdf418a19cc33c67529ca839177f0cd0582f2cf9e8aa",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 713,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tron.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tron.webp",
+      "contentHash": "9c0afce6c4850d3a5862bc443e99f6ab1cef16c4ed76af0264b0cbbac23e7b1d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 89,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-van-may.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-van-may.webp",
+      "contentHash": "d35b443f008ec9fb878279e9a03657fd899f4fdfb89208632e5a449bc84610ed",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1676,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-hoa-van.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-hoa-van.webp",
+      "contentHash": "f2b19f4069efec9fcb8abe3d03fb9f53a5291481f747f9e613e5630d8af41bb7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 203,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-kieu.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-kieu.webp",
+      "contentHash": "90c4064a3b48684aa30ac259b6ed63395084b51de0f61497acf6f96ed3a3d23f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 115,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-thanh.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-thanh.webp",
+      "contentHash": "f2b19f4069efec9fcb8abe3d03fb9f53a5291481f747f9e613e5630d8af41bb7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 203,
+      "hasStructuralAnalysis": false
+    },
     "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-theu-hoa.webp": {
       "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-theu-hoa.webp",
       "contentHash": "e0683957f101c06e83123fe2ed0c969ec651703af095947edce000ce7c89095b",
@@ -3512,6 +3999,16 @@
       "exports": [],
       "totalLines": 14,
       "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Admin/AdminAiDTOs.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Admin/AdminAiDTOs.cs",
+      "contentHash": "fa9c4e548fe5b7799a759467987f4cd5f989aa70bc25b9ad72e9824f93e5ac86",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Application/DTOs/Admin/AdminCategoryDTOs.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Admin/AdminCategoryDTOs.cs",
@@ -3689,6 +4186,312 @@
       "totalLines": 9,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnCatalogDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnCatalogDto.cs",
+      "contentHash": "fe8e70e9fe535ae7ba76b0451b47fd523632e101cfd1f3c8bdbd8e0dfe9b2c0d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 26,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnCatalogItemDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnCatalogItemDto.cs",
+      "contentHash": "97069c1a3d61e77dc1a88f23cb23623d06c2ccb04ea26760093e244e18a02031",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 12,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnRequestDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnRequestDto.cs",
+      "contentHash": "496c126d39b1901f33f0a13259d0b41064b65c8c410c84882e6272c0a7a6b86f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnResultDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/AiTryOnResultDto.cs",
+      "contentHash": "b1f83ea2327e4dddb4c371ff03ba278eb46fac3c36430fc0b559edfc106eb356",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthResult.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthResult.cs",
+      "contentHash": "ceb6b0dab7478051213ebe6d16036ce6af9e5027b58c91f9e41e120ce482005b",
+      "functions": [
+        {
+          "name": "AuthResult",
+          "params": [
+            "succeeded",
+            "value",
+            "errorCode",
+            "errorMessage"
+          ],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "Success",
+          "params": [
+            "value"
+          ],
+          "returnType": "AuthResult<T>",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "Failure",
+          "params": [
+            "errorCode",
+            "errorMessage"
+          ],
+          "returnType": "AuthResult<T>",
+          "exported": true,
+          "lineCount": 2
+        }
+      ],
+      "classes": [
+        {
+          "name": "AuthResult",
+          "methods": [
+            "AuthResult",
+            "Success",
+            "Failure"
+          ],
+          "properties": [
+            "Succeeded",
+            "Value",
+            "ErrorCode",
+            "ErrorMessage"
+          ],
+          "exported": true,
+          "lineCount": 20
+        }
+      ],
+      "imports": [],
+      "exports": [
+        "Succeeded",
+        "Value",
+        "ErrorCode",
+        "ErrorMessage",
+        "Success",
+        "Failure",
+        "AuthResult"
+      ],
+      "totalLines": 23,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthSessionDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthSessionDto.cs",
+      "contentHash": "be26a45b22fe8b4aeb695e4ca11a4f8ce3ef50646cfcb3c882fde53b97fbdb32",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 7,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthUserDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Auth/AuthUserDto.cs",
+      "contentHash": "2a59ba33cd2b9cfbe4cda9b45d1ec46cb6bd96b9353d7424536031c649501f30",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Auth/GoogleUserInfoDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Auth/GoogleUserInfoDto.cs",
+      "contentHash": "6a2880441f3bea3f26698d991ba956f90c82862ed0bbe172f2127fab2f8df22f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Auth/TokenValidationResult.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Auth/TokenValidationResult.cs",
+      "contentHash": "62b82bf8d6080b6c857651c0fb246ba008f612d7335e720cfec9701cc5f2808d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 17,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Auth/ZaloUserInfoDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Auth/ZaloUserInfoDto.cs",
+      "contentHash": "94fc261a8a42c325b5c820d422b02d983705532c3b4b046a298265def113f0cd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 7,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Cart/AddCartItemDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Cart/AddCartItemDto.cs",
+      "contentHash": "1f1fd9c0a275b4cc36a1c089b0f6e7df205011622881b58b06c52e048d803af2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Cart/CartDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Cart/CartDto.cs",
+      "contentHash": "c856d880be873557f837d9a3f2eb815d2338281d88c569385d3a64f02c641952",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Cart/CartItemDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Cart/CartItemDto.cs",
+      "contentHash": "3878cf32cf821bb35fab22bfa1b9b59a3826b20141b7ed6e929df8f6d31841be",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 18,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Cart/UpdateCartItemDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Cart/UpdateCartItemDto.cs",
+      "contentHash": "3c4b624b69737a944f5c5a7b524cd0fa1cb482ad4cec8b970fdea7bdb53f3a4a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 5,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/CatalogAiTryOnRequestDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/CatalogAiTryOnRequestDto.cs",
+      "contentHash": "c2d85ecbbefd64c7f4136d7210cf89ce2d6894b56eba00b6236efe8c0b9bb8dc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/CategoryDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/CategoryDto.cs",
+      "contentHash": "892285da5eb96ef4a0a75f843a55426177ee227a74b16f03053cb9d93fa1a20a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 12,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/CategoryTreeDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/CategoryTreeDto.cs",
+      "contentHash": "52d5d67d18dbb48974c8969554c9ec2257b4b67770339ce01fc48604199886b0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/ChatAttachmentDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ChatAttachmentDto.cs",
+      "contentHash": "10c3ed22e075b249b5754f9c3cb60fd12409c6ba78cae87933e01038e0eace0e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/ChatMessageDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ChatMessageDto.cs",
+      "contentHash": "b53ead6aec0d25361825f413df2736d46547a6b833adba52498a1848a43e6741",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/ChatRecommendationItemDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ChatRecommendationItemDto.cs",
+      "contentHash": "bac09e03040a3bfdfb9293cdf3dcd51e6c478dabf5efb744260ad341724b519a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 13,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/ChatStructuredPayloadDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ChatStructuredPayloadDto.cs",
+      "contentHash": "377b7143b200530c2b6255d37d3d0a514e86538229d2a9042756dd96b9a3dfee",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/ChatThreadDetailDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ChatThreadDetailDto.cs",
+      "contentHash": "033806f50c5cc01c23cb2e3a1d19f8b8e6f661b699d51321463b0576ebbf2b14",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/ChatThreadSummaryDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ChatThreadSummaryDto.cs",
+      "contentHash": "8e99aaef0f35d67e13cadb2d854b013df5942cf73ee352edf1c0fef0b1ed2f00",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutAddressDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutAddressDto.cs",
+      "contentHash": "42f56b5bbd8b5c2cdd2199b9040ea511a4967c7a70a65a50bd41e9494dd6bb0b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutRequestDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutRequestDto.cs",
+      "contentHash": "aedfb4ab015f2c7b497ec565c27938854617bb9c82901514d41b2548da979316",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutResultDto.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Checkout/CheckoutResultDto.cs",
       "contentHash": "e2e17bb8a1986b0040b6ebafce93303bce0e0c82e799a4e8f42c01e15a731af3",
@@ -3697,6 +4500,46 @@
       "imports": [],
       "exports": [],
       "totalLines": 13,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/CommentDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/CommentDto.cs",
+      "contentHash": "1cfe8dfa749aa33b4c8d34e356ca28dc7606b1dc03369ee6ba10d0fce46b1fe7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 13,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/CreateCommentRequest.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/CreateCommentRequest.cs",
+      "contentHash": "142f6bc78cb31b515be8aa9c5cb660dd9927460c2aa4599b827e9f43934c5cd4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/CreateReviewRequest.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/CreateReviewRequest.cs",
+      "contentHash": "198b367ae87d12ed94b55759c86976fe54c410de3b9f95e9a36606872174bbe0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Dashboard/DashboardDtos.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Dashboard/DashboardDtos.cs",
+      "contentHash": "d04de25af59d76a973bfcb1b5a22ce72592659a826a8580241450515d7dd5e3c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 76,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Application/DTOs/ImageReferenceDto.cs": {
@@ -3781,12 +4624,12 @@
     },
     "backend/AoDaiNhaUyen.Application/DTOs/ProductListItemDto.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ProductListItemDto.cs",
-      "contentHash": "59bb5a75bb2bce5029ff3304d5feeda39665777d34ff08ac2d890c355f0dafea",
+      "contentHash": "41ca388f4ec4afb8cb2c39bfbeda4fbaccafe45c3c966608bb1d3d659c60fe40",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 18,
+      "totalLines": 20,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Application/DTOs/ProductVariantDto.cs": {
@@ -3797,6 +4640,26 @@
       "imports": [],
       "exports": [],
       "totalLines": 14,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/ReviewDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ReviewDto.cs",
+      "contentHash": "155c504cbb3dff05637b5e487bfda63164615d77a969299a80afb11ca995e766",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/ReviewSummaryDto.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/ReviewSummaryDto.cs",
+      "contentHash": "dd85e43081571eea8e7d421628e2188e6b1ca9c953e6bd4383d1d8979ab31b6a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 7,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Application/DTOs/SseChatEvent.cs": {
@@ -4210,6 +5073,41 @@
       "totalLines": 9,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Application/Interfaces/Repositories/ICommentRepository.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/Interfaces/Repositories/ICommentRepository.cs",
+      "contentHash": "621e8b9d24868995f6832d35811d013c719f7ef8f8e5012988f496a34621ac72",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ICommentRepository",
+          "methods": [
+            "GetByProductIdAsync",
+            "GetRepliesAsync",
+            "AddAsync",
+            "GetRatedByProductIdAsync",
+            "HasUserRatedAsync",
+            "GetReviewSummaryAsync",
+            "GetReviewSummariesAsync"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 33
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Domain.Entities",
+          "specifiers": [
+            "Entities"
+          ]
+        }
+      ],
+      "exports": [
+        "ICommentRepository"
+      ],
+      "totalLines": 43,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Application/Interfaces/Repositories/IProductRepository.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/Interfaces/Repositories/IProductRepository.cs",
       "contentHash": "6d7601a1f279c3e6b59ac07d612e433ca8f61a92f27b0d649fdf99d260e82c87",
@@ -4283,6 +5181,37 @@
       "totalLines": 12,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminAgentService.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminAgentService.cs",
+      "contentHash": "a3391f63dbf92632d379c5d3b534aad6d37745ec79c54ead807c2f310f4c1ea7",
+      "functions": [],
+      "classes": [
+        {
+          "name": "IAdminAgentService",
+          "methods": [
+            "StreamChatAsync",
+            "ConfirmActionAsync",
+            "GetSuggestionsAsync"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs.Admin",
+          "specifiers": [
+            "Admin"
+          ]
+        }
+      ],
+      "exports": [
+        "IAdminAgentService"
+      ],
+      "totalLines": 23,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminCategoryService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminCategoryService.cs",
       "contentHash": "5451ecead2512fad44fd7cede622b6e9e0048689237084a91ed53c6acb5ef81e",
@@ -4315,6 +5244,81 @@
         "IAdminCategoryService"
       ],
       "totalLines": 28,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminDashboardService.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminDashboardService.cs",
+      "contentHash": "2a14d5777576d1612652a34e409882304f36de9fa7ef3b83c8e474545b59b3b6",
+      "functions": [],
+      "classes": [
+        {
+          "name": "IAdminDashboardService",
+          "methods": [
+            "GetSummaryAsync",
+            "GetRevenueAsync",
+            "GetOrdersByStatusAsync",
+            "GetRecentOrdersAsync",
+            "GetTopProductsAsync",
+            "GetUserGrowthAsync"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs.Dashboard",
+          "specifiers": [
+            "Dashboard"
+          ]
+        }
+      ],
+      "exports": [
+        "IAdminDashboardService"
+      ],
+      "totalLines": 19,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminLlmProvider.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminLlmProvider.cs",
+      "contentHash": "2406775926188322f3e6c2e4f14a07da69f02244f7fc2a8720aa067ccac86900",
+      "functions": [],
+      "classes": [
+        {
+          "name": "IAdminLlmProvider",
+          "methods": [
+            "StreamChatAsync"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 11
+        }
+      ],
+      "imports": [
+        {
+          "source": "System.Runtime.CompilerServices",
+          "specifiers": [
+            "CompilerServices"
+          ]
+        },
+        {
+          "source": "System.Text.Json.Serialization",
+          "specifiers": [
+            "Serialization"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs.Admin",
+          "specifiers": [
+            "Admin"
+          ]
+        }
+      ],
+      "exports": [
+        "IAdminLlmProvider"
+      ],
+      "totalLines": 34,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Application/Interfaces/Services/IAdminMediaService.cs": {
@@ -4723,6 +5727,40 @@
         "ICheckoutService"
       ],
       "totalLines": 10,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/Interfaces/Services/ICommentService.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/Interfaces/Services/ICommentService.cs",
+      "contentHash": "d1e00b0b889dfba93801ab141015395fa877dbfe4ba23c51d30208c6520143a2",
+      "functions": [],
+      "classes": [
+        {
+          "name": "ICommentService",
+          "methods": [
+            "GetProductCommentsAsync",
+            "CreateCommentAsync",
+            "GetProductReviewsAsync",
+            "GetReviewSummaryAsync",
+            "GetReviewSummariesAsync",
+            "CreateReviewAsync"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 34
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs",
+          "specifiers": [
+            "DTOs"
+          ]
+        }
+      ],
+      "exports": [
+        "ICommentService"
+      ],
+      "totalLines": 39,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Application/Interfaces/Services/IEmailService.cs": {
@@ -5495,7 +6533,7 @@
     },
     "backend/AoDaiNhaUyen.Application/Services/CatalogService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/Services/CatalogService.cs",
-      "contentHash": "6e481403a757cdcf8f8684908bb5d642e5f663ed0019984ac0e7c05b8da22bc2",
+      "contentHash": "b5d8497bbd04595c548ffff26609a5eaf439354cf04fa634d96f012e3bb248db",
       "functions": [
         {
           "name": "GetCategoriesAsync",
@@ -5528,7 +6566,7 @@
           ],
           "returnType": "Task<PagedResult<ProductListItemDto>>",
           "exported": true,
-          "lineCount": 75
+          "lineCount": 95
         },
         {
           "name": "GetProductBySlugAsync",
@@ -5563,7 +6601,7 @@
           ],
           "properties": [],
           "exported": true,
-          "lineCount": 205
+          "lineCount": 225
         }
       ],
       "imports": [
@@ -5593,7 +6631,158 @@
         "GetProductBySlugAsync",
         "CatalogService"
       ],
-      "totalLines": 212,
+      "totalLines": 232,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/Services/CommentService.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/Services/CommentService.cs",
+      "contentHash": "f4ae834af273b67eac799c02b4b69597450fac895013b32573e41f7a370bac2f",
+      "functions": [
+        {
+          "name": "GetProductCommentsAsync",
+          "params": [
+            "productId",
+            "page",
+            "pageSize",
+            "cancellationToken"
+          ],
+          "returnType": "Task<PagedResult<CommentDto>>",
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "CreateCommentAsync",
+          "params": [
+            "userId",
+            "productId",
+            "request",
+            "cancellationToken"
+          ],
+          "returnType": "Task<CommentDto>",
+          "exported": true,
+          "lineCount": 49
+        },
+        {
+          "name": "GetProductReviewsAsync",
+          "params": [
+            "productId",
+            "page",
+            "pageSize",
+            "cancellationToken"
+          ],
+          "returnType": "Task<PagedResult<ReviewDto>>",
+          "exported": true,
+          "lineCount": 23
+        },
+        {
+          "name": "GetReviewSummaryAsync",
+          "params": [
+            "productId",
+            "cancellationToken"
+          ],
+          "returnType": "Task<ReviewSummaryDto?>",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "GetReviewSummariesAsync",
+          "params": [
+            "productIds",
+            "cancellationToken"
+          ],
+          "returnType": "Task<IReadOnlyDictionary<Guid, ReviewSummaryDto>>",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "CreateReviewAsync",
+          "params": [
+            "userId",
+            "productId",
+            "request",
+            "cancellationToken"
+          ],
+          "returnType": "Task<ReviewDto>",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "CreateCommentAsReviewAsync",
+          "params": [
+            "userId",
+            "productId",
+            "request",
+            "ct"
+          ],
+          "returnType": "Task<ReviewDto>",
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "MapCommentToDtoAsync",
+          "params": [
+            "comment",
+            "cancellationToken"
+          ],
+          "returnType": "Task<CommentDto>",
+          "exported": false,
+          "lineCount": 11
+        }
+      ],
+      "classes": [
+        {
+          "name": "CommentService",
+          "methods": [
+            "GetProductCommentsAsync",
+            "CreateCommentAsync",
+            "GetProductReviewsAsync",
+            "GetReviewSummaryAsync",
+            "GetReviewSummariesAsync",
+            "CreateReviewAsync",
+            "CreateCommentAsReviewAsync",
+            "MapCommentToDtoAsync"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 171
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs",
+          "specifiers": [
+            "DTOs"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Repositories",
+          "specifiers": [
+            "Repositories"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Domain.Entities",
+          "specifiers": [
+            "Entities"
+          ]
+        }
+      ],
+      "exports": [
+        "GetProductCommentsAsync",
+        "CreateCommentAsync",
+        "GetProductReviewsAsync",
+        "GetReviewSummaryAsync",
+        "GetReviewSummariesAsync",
+        "CreateReviewAsync",
+        "CommentService"
+      ],
+      "totalLines": 179,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Domain/AGENTS.md": {
@@ -5615,6 +6804,16 @@
       "exports": [],
       "totalLines": 10,
       "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Domain/Common/AdminAiActionType.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Domain/Common/AdminAiActionType.cs",
+      "contentHash": "bfd2298acf395877b800cc361d109767aef6c5232dd75c852891677e46524eec",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Domain/Common/BaseEntity.cs": {
       "filePath": "backend/AoDaiNhaUyen.Domain/Common/BaseEntity.cs",
@@ -5672,6 +6871,16 @@
       "totalLines": 8,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Domain/Common/RiskLevel.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Domain/Common/RiskLevel.cs",
+      "contentHash": "ab5955b408535344b00560439f42732f6b12f7be3505b8ddfb27ce0b632e9788",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 21,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Domain/Constants/RoleNames.cs": {
       "filePath": "backend/AoDaiNhaUyen.Domain/Constants/RoleNames.cs",
       "contentHash": "452214d76054c092dc6384c17862fa2cef2bc61f9847d8ae0a3de4481801e368",
@@ -5695,6 +6904,54 @@
         "RoleNames"
       ],
       "totalLines": 9,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Domain/Entities/AdminAiAction.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Domain/Entities/AdminAiAction.cs",
+      "contentHash": "a1e02fe0c463929fdd2fb202cb9c75cb92ffb4bf674446f90986472c889e6c32",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AdminAiAction",
+          "methods": [],
+          "properties": [
+            "AdminUserId",
+            "AdminUser",
+            "ActionType",
+            "RiskLevel",
+            "ToolName",
+            "ToolInput",
+            "ToolResult",
+            "Success",
+            "ConfirmedBy",
+            "ConfirmedAt"
+          ],
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Domain.Common",
+          "specifiers": [
+            "Common"
+          ]
+        }
+      ],
+      "exports": [
+        "AdminUserId",
+        "AdminUser",
+        "ActionType",
+        "RiskLevel",
+        "ToolName",
+        "ToolInput",
+        "ToolResult",
+        "Success",
+        "ConfirmedBy",
+        "ConfirmedAt",
+        "AdminAiAction"
+      ],
+      "totalLines": 18,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Domain/Entities/AGENTS.md": {
@@ -6011,6 +7268,54 @@
         "ChatThreadMemory"
       ],
       "totalLines": 16,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Domain/Entities/Comment.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Domain/Entities/Comment.cs",
+      "contentHash": "ff09155316fd1b61b1d6b081ce0cc1b32cd9fbb808e6b1d635d23cc487952657",
+      "functions": [],
+      "classes": [
+        {
+          "name": "Comment",
+          "methods": [],
+          "properties": [
+            "UserId",
+            "ProductId",
+            "ParentCommentId",
+            "Content",
+            "Rating",
+            "IsVisible",
+            "User",
+            "Product",
+            "ParentComment",
+            "Replies"
+          ],
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Domain.Common",
+          "specifiers": [
+            "Common"
+          ]
+        }
+      ],
+      "exports": [
+        "UserId",
+        "ProductId",
+        "ParentCommentId",
+        "Content",
+        "Rating",
+        "IsVisible",
+        "User",
+        "Product",
+        "ParentComment",
+        "Replies",
+        "Comment"
+      ],
+      "totalLines": 19,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Domain/Entities/EmailVerificationToken.cs": {
@@ -7444,7 +8749,7 @@
     },
     "backend/AoDaiNhaUyen.Infrastructure/Data/AppDbContext.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/AppDbContext.cs",
-      "contentHash": "634e28144f6adf20201cbb421358c05622ad4f5d24a7360305c09c3671fbeccb",
+      "contentHash": "7ecbf1f79eccdd578f961052342fab24bcbbae9744b8bb8ae522f0ee523a35dc",
       "functions": [
         {
           "name": "OnModelCreating",
@@ -7453,7 +8758,7 @@
           ],
           "returnType": "void",
           "exported": false,
-          "lineCount": 558
+          "lineCount": 573
         },
         {
           "name": "ApplySnakeCaseColumnNames",
@@ -7524,10 +8829,11 @@
             "Reviews",
             "Comments",
             "ImageValidationCacheEntries",
-            "UserGeneratedImages"
+            "UserGeneratedImages",
+            "AdminAiActions"
           ],
           "exported": true,
-          "lineCount": 654
+          "lineCount": 670
         }
       ],
       "imports": [
@@ -7595,9 +8901,10 @@
         "Comments",
         "ImageValidationCacheEntries",
         "UserGeneratedImages",
+        "AdminAiActions",
         "AppDbContext"
       ],
-      "totalLines": 663,
+      "totalLines": 679,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Infrastructure/Data/AppDbContextFactory.cs": {
@@ -8316,6 +9623,530 @@
       "totalLines": 3023,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606120816_AddCommentsAndProductReviewsNav.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606120816_AddCommentsAndProductReviewsNav.cs",
+      "contentHash": "4c160f9f545036983f059f3216fabe2c46c7d1d81b4ed718f24b78de4d698889",
+      "functions": [
+        {
+          "name": "Up",
+          "params": [
+            "migrationBuilder"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 56
+        },
+        {
+          "name": "Down",
+          "params": [
+            "migrationBuilder"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "AddCommentsAndProductReviewsNav",
+          "methods": [
+            "Up",
+            "Down"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 67
+        }
+      ],
+      "imports": [
+        {
+          "source": "System",
+          "specifiers": [
+            "System"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Migrations",
+          "specifiers": [
+            "Migrations"
+          ]
+        }
+      ],
+      "exports": [
+        "AddCommentsAndProductReviewsNav"
+      ],
+      "totalLines": 77,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606120816_AddCommentsAndProductReviewsNav.Designer.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606120816_AddCommentsAndProductReviewsNav.Designer.cs",
+      "contentHash": "b2049bfaadb84d0f0281245513969275afe0bcc1210e1a034b66f5d74552a0af",
+      "functions": [
+        {
+          "name": "BuildTargetModel",
+          "params": [
+            "modelBuilder"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 3098
+        }
+      ],
+      "classes": [
+        {
+          "name": "AddCommentsAndProductReviewsNav",
+          "methods": [
+            "BuildTargetModel"
+          ],
+          "properties": [],
+          "exported": false,
+          "lineCount": 3104
+        }
+      ],
+      "imports": [
+        {
+          "source": "System",
+          "specifiers": [
+            "System"
+          ]
+        },
+        {
+          "source": "System.Net",
+          "specifiers": [
+            "Net"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Infrastructure.Data",
+          "specifiers": [
+            "Data"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore",
+          "specifiers": [
+            "EntityFrameworkCore"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Infrastructure",
+          "specifiers": [
+            "Infrastructure"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Migrations",
+          "specifiers": [
+            "Migrations"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Storage.ValueConversion",
+          "specifiers": [
+            "ValueConversion"
+          ]
+        },
+        {
+          "source": "Npgsql.EntityFrameworkCore.PostgreSQL.Metadata",
+          "specifiers": [
+            "Metadata"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 3120,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606124810_SyncProductIsPublicProperty.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606124810_SyncProductIsPublicProperty.cs",
+      "contentHash": "9793ff950e1ac56ca4865e548693d65ac004aec332a9fc838b9037a1b04ea0c1",
+      "functions": [
+        {
+          "name": "Up",
+          "params": [
+            "migrationBuilder"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "Down",
+          "params": [
+            "migrationBuilder"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "SyncProductIsPublicProperty",
+          "methods": [
+            "Up",
+            "Down"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 15
+        }
+      ],
+      "imports": [
+        {
+          "source": "Microsoft.EntityFrameworkCore.Migrations",
+          "specifiers": [
+            "Migrations"
+          ]
+        }
+      ],
+      "exports": [
+        "SyncProductIsPublicProperty"
+      ],
+      "totalLines": 24,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606124810_SyncProductIsPublicProperty.Designer.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606124810_SyncProductIsPublicProperty.Designer.cs",
+      "contentHash": "38fd752538064e2ce410bfa79037adc0803ba28411e5b0c9afada26daed84131",
+      "functions": [
+        {
+          "name": "BuildTargetModel",
+          "params": [
+            "modelBuilder"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 3104
+        }
+      ],
+      "classes": [
+        {
+          "name": "SyncProductIsPublicProperty",
+          "methods": [
+            "BuildTargetModel"
+          ],
+          "properties": [],
+          "exported": false,
+          "lineCount": 3110
+        }
+      ],
+      "imports": [
+        {
+          "source": "System",
+          "specifiers": [
+            "System"
+          ]
+        },
+        {
+          "source": "System.Net",
+          "specifiers": [
+            "Net"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Infrastructure.Data",
+          "specifiers": [
+            "Data"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore",
+          "specifiers": [
+            "EntityFrameworkCore"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Infrastructure",
+          "specifiers": [
+            "Infrastructure"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Migrations",
+          "specifiers": [
+            "Migrations"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Storage.ValueConversion",
+          "specifiers": [
+            "ValueConversion"
+          ]
+        },
+        {
+          "source": "Npgsql.EntityFrameworkCore.PostgreSQL.Metadata",
+          "specifiers": [
+            "Metadata"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 3126,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606131041_AddCommentRatingColumn.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606131041_AddCommentRatingColumn.cs",
+      "contentHash": "dd8aa38dab5e578ced481cc9dea14d8a6899fcb028512a591ffd51bb44c4657d",
+      "functions": [
+        {
+          "name": "Up",
+          "params": [
+            "migrationBuilder"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "Down",
+          "params": [
+            "migrationBuilder"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 10
+        }
+      ],
+      "classes": [
+        {
+          "name": "AddCommentRatingColumn",
+          "methods": [
+            "Up",
+            "Down"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 29
+        }
+      ],
+      "imports": [
+        {
+          "source": "Microsoft.EntityFrameworkCore.Migrations",
+          "specifiers": [
+            "Migrations"
+          ]
+        }
+      ],
+      "exports": [
+        "AddCommentRatingColumn"
+      ],
+      "totalLines": 38,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606131041_AddCommentRatingColumn.Designer.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606131041_AddCommentRatingColumn.Designer.cs",
+      "contentHash": "eaa1d6c33c7dfbd6d6b59525ed517febd97bf26775d1de8cb45a0fac577188f1",
+      "functions": [
+        {
+          "name": "BuildTargetModel",
+          "params": [
+            "modelBuilder"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 3111
+        }
+      ],
+      "classes": [
+        {
+          "name": "AddCommentRatingColumn",
+          "methods": [
+            "BuildTargetModel"
+          ],
+          "properties": [],
+          "exported": false,
+          "lineCount": 3117
+        }
+      ],
+      "imports": [
+        {
+          "source": "System",
+          "specifiers": [
+            "System"
+          ]
+        },
+        {
+          "source": "System.Net",
+          "specifiers": [
+            "Net"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Infrastructure.Data",
+          "specifiers": [
+            "Data"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore",
+          "specifiers": [
+            "EntityFrameworkCore"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Infrastructure",
+          "specifiers": [
+            "Infrastructure"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Migrations",
+          "specifiers": [
+            "Migrations"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Storage.ValueConversion",
+          "specifiers": [
+            "ValueConversion"
+          ]
+        },
+        {
+          "source": "Npgsql.EntityFrameworkCore.PostgreSQL.Metadata",
+          "specifiers": [
+            "Metadata"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 3133,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606192857_AddAdminAiAction.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606192857_AddAdminAiAction.cs",
+      "contentHash": "d841f5cbbc27d57a7c5c88ffaec88c5a458020454ed5986dbf275595c79ff0e6",
+      "functions": [
+        {
+          "name": "Up",
+          "params": [
+            "migrationBuilder"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 43
+        },
+        {
+          "name": "Down",
+          "params": [
+            "migrationBuilder"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "AddAdminAiAction",
+          "methods": [
+            "Up",
+            "Down"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 54
+        }
+      ],
+      "imports": [
+        {
+          "source": "System",
+          "specifiers": [
+            "System"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Migrations",
+          "specifiers": [
+            "Migrations"
+          ]
+        }
+      ],
+      "exports": [
+        "AddAdminAiAction"
+      ],
+      "totalLines": 64,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606192857_AddAdminAiAction.Designer.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/20260606192857_AddAdminAiAction.Designer.cs",
+      "contentHash": "8720b328c1862396c86bd5a5716742cf2a841a3080b7c0dedf9492ac38a70c25",
+      "functions": [
+        {
+          "name": "BuildTargetModel",
+          "params": [
+            "modelBuilder"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 3209
+        }
+      ],
+      "classes": [
+        {
+          "name": "AddAdminAiAction",
+          "methods": [
+            "BuildTargetModel"
+          ],
+          "properties": [],
+          "exported": false,
+          "lineCount": 3215
+        }
+      ],
+      "imports": [
+        {
+          "source": "System",
+          "specifiers": [
+            "System"
+          ]
+        },
+        {
+          "source": "System.Net",
+          "specifiers": [
+            "Net"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Infrastructure.Data",
+          "specifiers": [
+            "Data"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore",
+          "specifiers": [
+            "EntityFrameworkCore"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Infrastructure",
+          "specifiers": [
+            "Infrastructure"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Migrations",
+          "specifiers": [
+            "Migrations"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore.Storage.ValueConversion",
+          "specifiers": [
+            "ValueConversion"
+          ]
+        },
+        {
+          "source": "Npgsql.EntityFrameworkCore.PostgreSQL.Metadata",
+          "specifiers": [
+            "Metadata"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 3231,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/AGENTS.md": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/AGENTS.md",
       "contentHash": "e8b61e41df628b4060302761f0779ffce2a442a2c7f7154fbeba8c752a87eaf8",
@@ -8328,7 +10159,7 @@
     },
     "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/AppDbContextModelSnapshot.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/Migrations/AppDbContextModelSnapshot.cs",
-      "contentHash": "7f29daf2d702c55d4b9a5607f37322cb7ca92717204388db04495b65b3b326c8",
+      "contentHash": "7b5c70ea5437aaeb2d09430d0115fdb670df36ad70f51db6917f494446cb5a46",
       "functions": [
         {
           "name": "BuildModel",
@@ -8337,7 +10168,7 @@
           ],
           "returnType": "void",
           "exported": false,
-          "lineCount": 3111
+          "lineCount": 3209
         }
       ],
       "classes": [
@@ -8348,7 +10179,7 @@
           ],
           "properties": [],
           "exported": false,
-          "lineCount": 3115
+          "lineCount": 3213
         }
       ],
       "imports": [
@@ -8396,7 +10227,7 @@
         }
       ],
       "exports": [],
-      "totalLines": 3130,
+      "totalLines": 3228,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Infrastructure/Data/SeedDataService.cs": {
@@ -8879,6 +10710,142 @@
       "totalLines": 21,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Infrastructure/Repositories/CommentRepository.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Repositories/CommentRepository.cs",
+      "contentHash": "a09827c4d2ba03f541be55f9f3b97051c6e6d33c1f1ff3d5049668f49f5e519a",
+      "functions": [
+        {
+          "name": "GetByProductIdAsync",
+          "params": [
+            "productId",
+            "page",
+            "pageSize",
+            "cancellationToken"
+          ],
+          "returnType": "Task<(IReadOnlyList<Comment> Items, int TotalCount)>",
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "GetRepliesAsync",
+          "params": [
+            "parentCommentId",
+            "cancellationToken"
+          ],
+          "returnType": "Task<IReadOnlyList<Comment>>",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "AddAsync",
+          "params": [
+            "comment",
+            "cancellationToken"
+          ],
+          "returnType": "Task",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "GetRatedByProductIdAsync",
+          "params": [
+            "productId",
+            "page",
+            "pageSize",
+            "cancellationToken"
+          ],
+          "returnType": "Task<(IReadOnlyList<Comment> Items, int TotalCount)>",
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "HasUserRatedAsync",
+          "params": [
+            "userId",
+            "productId",
+            "cancellationToken"
+          ],
+          "returnType": "Task<bool>",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "GetReviewSummaryAsync",
+          "params": [
+            "productId",
+            "cancellationToken"
+          ],
+          "returnType": "Task<ReviewSummaryData?>",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "GetReviewSummariesAsync",
+          "params": [
+            "productIds",
+            "cancellationToken"
+          ],
+          "returnType": "Task<IReadOnlyDictionary<Guid, ReviewSummaryData>>",
+          "exported": true,
+          "lineCount": 41
+        }
+      ],
+      "classes": [
+        {
+          "name": "CommentRepository",
+          "methods": [
+            "GetByProductIdAsync",
+            "GetRepliesAsync",
+            "AddAsync",
+            "GetRatedByProductIdAsync",
+            "HasUserRatedAsync",
+            "GetReviewSummaryAsync",
+            "GetReviewSummariesAsync"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 133
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Repositories",
+          "specifiers": [
+            "Repositories"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Domain.Entities",
+          "specifiers": [
+            "Entities"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Infrastructure.Data",
+          "specifiers": [
+            "Data"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore",
+          "specifiers": [
+            "EntityFrameworkCore"
+          ]
+        }
+      ],
+      "exports": [
+        "GetByProductIdAsync",
+        "GetRepliesAsync",
+        "AddAsync",
+        "GetRatedByProductIdAsync",
+        "HasUserRatedAsync",
+        "GetReviewSummaryAsync",
+        "GetReviewSummariesAsync",
+        "CommentRepository"
+      ],
+      "totalLines": 141,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Infrastructure/Repositories/ProductRepository.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Repositories/ProductRepository.cs",
       "contentHash": "82b02bb06a6995ebf0f709bfba6db4e1cb34fa7abfb03ae99e59174a1eaca9f4",
@@ -9068,6 +11035,456 @@
       "totalLines": 152,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Infrastructure/Services/AdminAgentService.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminAgentService.cs",
+      "contentHash": "456656d28894fb3b051e8de36773c76738af2a3446184afc495677508bb46880",
+      "functions": [
+        {
+          "name": "AdminAgentService",
+          "params": [
+            "llm",
+            "safety",
+            "products",
+            "categories",
+            "users",
+            "roles",
+            "dashboard",
+            "logger"
+          ],
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "StreamChatAsync",
+          "params": [
+            "request",
+            "adminUserId",
+            "ct"
+          ],
+          "returnType": "IAsyncEnumerable<LlmChunk>",
+          "exported": true,
+          "lineCount": 49
+        },
+        {
+          "name": "ConfirmActionAsync",
+          "params": [
+            "actionId",
+            "approved",
+            "adminUserId",
+            "ct"
+          ],
+          "returnType": "Task<bool>",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "GetSuggestionsAsync",
+          "params": [
+            "ct"
+          ],
+          "returnType": "Task<IReadOnlyList<AdminAiSuggestionResponse>>",
+          "exported": true,
+          "lineCount": 59
+        },
+        {
+          "name": "ExecuteToolAsync",
+          "params": [
+            "toolName",
+            "argsJson",
+            "adminUserId",
+            "ct"
+          ],
+          "returnType": "Task<ToolResult>",
+          "exported": false,
+          "lineCount": 74
+        },
+        {
+          "name": "DashboardSummary",
+          "params": [
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "GetRevenue",
+          "params": [
+            "periodDays",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "OrdersByStatus",
+          "params": [
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "RecentOrders",
+          "params": [
+            "limit",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "TopProducts",
+          "params": [
+            "limit",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "ListProducts",
+          "params": [
+            "page",
+            "pageSize",
+            "search",
+            "status",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "GetProduct",
+          "params": [
+            "id",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "CreateProduct",
+          "params": [
+            "args",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 32
+        },
+        {
+          "name": "UpdateProduct",
+          "params": [
+            "args",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 25
+        },
+        {
+          "name": "DeleteProduct",
+          "params": [
+            "id",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "ToggleProductStatus",
+          "params": [
+            "id",
+            "status",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "ListCategories",
+          "params": [
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "CreateCategory",
+          "params": [
+            "args",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "UpdateCategory",
+          "params": [
+            "args",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "DeleteCategory",
+          "params": [
+            "id",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "ListUsers",
+          "params": [
+            "page",
+            "pageSize",
+            "search",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "GetUser",
+          "params": [
+            "id",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "UpdateUserStatus",
+          "params": [
+            "id",
+            "status",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "UpdateUserRole",
+          "params": [
+            "id",
+            "role",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "GenerateProductDescription",
+          "params": [
+            "args",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 42
+        },
+        {
+          "name": "GenerateWeeklyReport",
+          "params": [
+            "periodDays",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 32
+        },
+        {
+          "name": "CheckInventoryAlerts",
+          "params": [
+            "threshold",
+            "ct"
+          ],
+          "returnType": "Task<string>",
+          "exported": false,
+          "lineCount": 33
+        },
+        {
+          "name": "GetStrArg",
+          "params": [
+            "args",
+            "name"
+          ],
+          "returnType": "string?",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "GetIntArg",
+          "params": [
+            "args",
+            "name",
+            "defaultValue"
+          ],
+          "returnType": "int",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "T",
+          "params": [
+            "name",
+            "desc",
+            "parameters"
+          ],
+          "returnType": "ToolDefinition",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "P",
+          "params": [],
+          "returnType": "Dictionary<string, object?>",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "O",
+          "params": [
+            "type",
+            "desc"
+          ],
+          "returnType": "Dictionary<string, object?>",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "Slugify",
+          "params": [
+            "text"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 17
+        }
+      ],
+      "classes": [
+        {
+          "name": "AdminAgentService",
+          "methods": [
+            "AdminAgentService",
+            "StreamChatAsync",
+            "ConfirmActionAsync",
+            "GetSuggestionsAsync",
+            "ExecuteToolAsync",
+            "DashboardSummary",
+            "GetRevenue",
+            "OrdersByStatus",
+            "RecentOrders",
+            "TopProducts",
+            "ListProducts",
+            "GetProduct",
+            "CreateProduct",
+            "UpdateProduct",
+            "DeleteProduct",
+            "ToggleProductStatus",
+            "ListCategories",
+            "CreateCategory",
+            "UpdateCategory",
+            "DeleteCategory",
+            "ListUsers",
+            "GetUser",
+            "UpdateUserStatus",
+            "UpdateUserRole",
+            "GenerateProductDescription",
+            "GenerateWeeklyReport",
+            "CheckInventoryAlerts",
+            "GetStrArg",
+            "GetIntArg",
+            "T",
+            "P",
+            "O",
+            "Slugify"
+          ],
+          "properties": [
+            "_llm",
+            "_safety",
+            "_products",
+            "_categories",
+            "_users",
+            "_roles",
+            "_dashboard",
+            "_logger",
+            "_pendingActions",
+            "_conversations",
+            "Tools"
+          ],
+          "exported": true,
+          "lineCount": 689
+        }
+      ],
+      "imports": [
+        {
+          "source": "System.Collections.Concurrent",
+          "specifiers": [
+            "Concurrent"
+          ]
+        },
+        {
+          "source": "System.Runtime.CompilerServices",
+          "specifiers": [
+            "CompilerServices"
+          ]
+        },
+        {
+          "source": "System.Text.Json",
+          "specifiers": [
+            "Json"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs.Admin",
+          "specifiers": [
+            "Admin"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "Microsoft.Extensions.Logging",
+          "specifiers": [
+            "Logging"
+          ]
+        }
+      ],
+      "exports": [
+        "AdminAgentService",
+        "StreamChatAsync",
+        "ConfirmActionAsync",
+        "GetSuggestionsAsync",
+        "AdminAgentService"
+      ],
+      "totalLines": 699,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Infrastructure/Services/AdminCategoryService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminCategoryService.cs",
       "contentHash": "59f24c6e094b744889cc1fd90f7cf37909c583bafea9ea8ec20514e4443a5de0",
@@ -9219,6 +11636,123 @@
         "AdminCategoryService"
       ],
       "totalLines": 191,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Infrastructure/Services/AdminDashboardService.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/AdminDashboardService.cs",
+      "contentHash": "d57eab059f115fc6d0a1a2e8610c45ac6a185e41842b5586bd925c78fdab1bda",
+      "functions": [
+        {
+          "name": "GetSummaryAsync",
+          "params": [
+            "ct"
+          ],
+          "returnType": "Task<DashboardSummaryDto>",
+          "exported": true,
+          "lineCount": 67
+        },
+        {
+          "name": "GetRevenueAsync",
+          "params": [
+            "periodDays",
+            "ct"
+          ],
+          "returnType": "Task<RevenueDataDto>",
+          "exported": true,
+          "lineCount": 29
+        },
+        {
+          "name": "GetOrdersByStatusAsync",
+          "params": [
+            "ct"
+          ],
+          "returnType": "Task<OrderStatusDistributionDto>",
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "GetRecentOrdersAsync",
+          "params": [
+            "limit",
+            "ct"
+          ],
+          "returnType": "Task<IReadOnlyList<RecentOrderDto>>",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "GetTopProductsAsync",
+          "params": [
+            "limit",
+            "ct"
+          ],
+          "returnType": "Task<IReadOnlyList<TopProductDto>>",
+          "exported": true,
+          "lineCount": 37
+        },
+        {
+          "name": "GetUserGrowthAsync",
+          "params": [
+            "periodDays",
+            "ct"
+          ],
+          "returnType": "Task<UserGrowthDataDto>",
+          "exported": true,
+          "lineCount": 30
+        }
+      ],
+      "classes": [
+        {
+          "name": "AdminDashboardService",
+          "methods": [
+            "GetSummaryAsync",
+            "GetRevenueAsync",
+            "GetOrdersByStatusAsync",
+            "GetRecentOrdersAsync",
+            "GetTopProductsAsync",
+            "GetUserGrowthAsync"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 210
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs.Dashboard",
+          "specifiers": [
+            "Dashboard"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Infrastructure.Data",
+          "specifiers": [
+            "Data"
+          ]
+        },
+        {
+          "source": "Microsoft.EntityFrameworkCore",
+          "specifiers": [
+            "EntityFrameworkCore"
+          ]
+        }
+      ],
+      "exports": [
+        "GetSummaryAsync",
+        "GetRevenueAsync",
+        "GetOrdersByStatusAsync",
+        "GetRecentOrdersAsync",
+        "GetTopProductsAsync",
+        "GetUserGrowthAsync",
+        "AdminDashboardService"
+      ],
+      "totalLines": 218,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Infrastructure/Services/AdminMediaService.cs": {
@@ -12511,6 +15045,118 @@
       "totalLines": 32,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Infrastructure/Services/SafetyGate.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/SafetyGate.cs",
+      "contentHash": "55304fb89cbbf2b7b5199325c15eaa20594303827b4079aacf770e0eab9f85e3",
+      "functions": [
+        {
+          "name": "SafetyGate",
+          "params": [
+            "logger"
+          ],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "Classify",
+          "params": [
+            "toolName"
+          ],
+          "returnType": "RiskLevel",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "RequiresConfirmation",
+          "params": [
+            "level"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "IsAutoApproved",
+          "params": [
+            "level"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "GetConfirmationPrompt",
+          "params": [
+            "toolName",
+            "description"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "classes": [
+        {
+          "name": "ISafetyGate",
+          "methods": [
+            "Classify",
+            "RequiresConfirmation",
+            "IsAutoApproved",
+            "GetConfirmationPrompt"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "SafetyGate",
+          "methods": [
+            "SafetyGate",
+            "Classify",
+            "RequiresConfirmation",
+            "IsAutoApproved",
+            "GetConfirmationPrompt"
+          ],
+          "properties": [
+            "_logger",
+            "ToolRiskMap"
+          ],
+          "exported": true,
+          "lineCount": 64
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Domain.Common",
+          "specifiers": [
+            "Common"
+          ]
+        },
+        {
+          "source": "Microsoft.Extensions.Logging",
+          "specifiers": [
+            "Logging"
+          ]
+        }
+      ],
+      "exports": [
+        "ISafetyGate",
+        "SafetyGate",
+        "Classify",
+        "RequiresConfirmation",
+        "IsAutoApproved",
+        "GetConfirmationPrompt",
+        "SafetyGate"
+      ],
+      "totalLines": 79,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Infrastructure/Services/StylistChatService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/StylistChatService.cs",
       "contentHash": "f3dd7b2284c4aa9ac99063f4c2b72ed2111db738f02993e59b27dd5fe8b37652",
@@ -13672,6 +16318,156 @@
       "totalLines": 194,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Infrastructure/Services/VertexAiAdminProvider.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/VertexAiAdminProvider.cs",
+      "contentHash": "dfb3839b3e67f45fd763810af831900723d2ef0d47666ec734484d0d86a92a69",
+      "functions": [
+        {
+          "name": "StreamChatAsync",
+          "params": [
+            "history",
+            "tools",
+            "ct"
+          ],
+          "returnType": "IAsyncEnumerable<LlmChunk>",
+          "exported": true,
+          "lineCount": 41
+        },
+        {
+          "name": "SendAndReadAsync",
+          "params": [
+            "httpClient",
+            "endpoint",
+            "payload",
+            "ct"
+          ],
+          "returnType": "Task<IReadOnlyList<LlmChunk>>",
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "BuildContents",
+          "params": [
+            "history"
+          ],
+          "returnType": "List<GeminiContent>",
+          "exported": false,
+          "lineCount": 20
+        },
+        {
+          "name": "BuildToolDeclarations",
+          "params": [
+            "tools"
+          ],
+          "returnType": "List<GeminiFunctionDeclaration>",
+          "exported": false,
+          "lineCount": 24
+        },
+        {
+          "name": "BuildStreamEndpoint",
+          "params": [],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "ReadStreamChunksAsync",
+          "params": [
+            "reader",
+            "ct"
+          ],
+          "returnType": "Task<List<LlmChunk>>",
+          "exported": false,
+          "lineCount": 82
+        },
+        {
+          "name": "Truncate",
+          "params": [
+            "text",
+            "maxLen"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 2
+        }
+      ],
+      "classes": [
+        {
+          "name": "VertexAiAdminProvider",
+          "methods": [
+            "StreamChatAsync",
+            "SendAndReadAsync",
+            "BuildContents",
+            "BuildToolDeclarations",
+            "BuildStreamEndpoint",
+            "ReadStreamChunksAsync",
+            "Truncate"
+          ],
+          "properties": [
+            "_config",
+            "SystemPrompt"
+          ],
+          "exported": true,
+          "lineCount": 228
+        }
+      ],
+      "imports": [
+        {
+          "source": "System.Net.Http.Json",
+          "specifiers": [
+            "Json"
+          ]
+        },
+        {
+          "source": "System.Runtime.CompilerServices",
+          "specifiers": [
+            "CompilerServices"
+          ]
+        },
+        {
+          "source": "System.Text",
+          "specifiers": [
+            "Text"
+          ]
+        },
+        {
+          "source": "System.Text.Json",
+          "specifiers": [
+            "Json"
+          ]
+        },
+        {
+          "source": "System.Text.Json.Serialization",
+          "specifiers": [
+            "Serialization"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Infrastructure.Configuration",
+          "specifiers": [
+            "Configuration"
+          ]
+        },
+        {
+          "source": "Microsoft.Extensions.Options",
+          "specifiers": [
+            "Options"
+          ]
+        }
+      ],
+      "exports": [
+        "StreamChatAsync",
+        "VertexAiAdminProvider"
+      ],
+      "totalLines": 291,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Infrastructure/Services/VertexAiImageValidationService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/VertexAiImageValidationService.cs",
       "contentHash": "3870e3ec9906bbd2fe3e1f53c16fe0536592cc2bb8200f35c7e18b4a60a9c693",
@@ -14454,6 +17250,287 @@
         "ZaloOAuthService"
       ],
       "totalLines": 194,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Mcp/AoDaiNhaUyen.Mcp.csproj": {
+      "filePath": "backend/AoDaiNhaUyen.Mcp/AoDaiNhaUyen.Mcp.csproj",
+      "contentHash": "a7af14bb217e755b8f0b4d108ac58e419120fe8850a864eef552dcab4517e2bf",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 21,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Mcp/Program.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Mcp/Program.cs",
+      "contentHash": "ebf0300973c981275aef14ad0d682496dc35073a7332aec72ea626fb10814682",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "Microsoft.Extensions.DependencyInjection",
+          "specifiers": [
+            "DependencyInjection"
+          ]
+        },
+        {
+          "source": "Microsoft.Extensions.Hosting",
+          "specifiers": [
+            "Hosting"
+          ]
+        },
+        {
+          "source": "Microsoft.Extensions.Logging",
+          "specifiers": [
+            "Logging"
+          ]
+        },
+        {
+          "source": "ModelContextProtocol.Server",
+          "specifiers": [
+            "Server"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 18,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Mcp/Tools/AdminDashboardTools.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Mcp/Tools/AdminDashboardTools.cs",
+      "contentHash": "145d8f9a7a23464cf385451d2b0185357cedc3cd90eac6854c31d70cfa69663c",
+      "functions": [
+        {
+          "name": "GetDashboardSummary",
+          "params": [
+            "period",
+            "dashboard"
+          ],
+          "returnType": "Task<string>",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "GetRevenue",
+          "params": [
+            "period",
+            "dashboard"
+          ],
+          "returnType": "Task<string>",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "GetOrdersByStatus",
+          "params": [
+            "dashboard"
+          ],
+          "returnType": "Task<string>",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "Error",
+          "params": [
+            "code",
+            "msg"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 2
+        }
+      ],
+      "classes": [
+        {
+          "name": "AdminDashboardTools",
+          "methods": [
+            "GetDashboardSummary",
+            "GetRevenue",
+            "GetOrdersByStatus",
+            "Error"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 34
+        }
+      ],
+      "imports": [
+        {
+          "source": "System.ComponentModel",
+          "specifiers": [
+            "ComponentModel"
+          ]
+        },
+        {
+          "source": "System.Text.Json",
+          "specifiers": [
+            "Json"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "ModelContextProtocol.Server",
+          "specifiers": [
+            "Server"
+          ]
+        }
+      ],
+      "exports": [
+        "GetDashboardSummary",
+        "GetRevenue",
+        "GetOrdersByStatus",
+        "AdminDashboardTools"
+      ],
+      "totalLines": 42,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Mcp/Tools/AdminProductTools.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Mcp/Tools/AdminProductTools.cs",
+      "contentHash": "208bc51839b8228c23edf6eb025adf0e1dd0b8c7a40dc5fb1ec1f720bdf49c3b",
+      "functions": [
+        {
+          "name": "ListProducts",
+          "params": [
+            "page",
+            "pageSize",
+            "search",
+            "status",
+            "products"
+          ],
+          "returnType": "Task<string>",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "GetProduct",
+          "params": [
+            "id",
+            "products"
+          ],
+          "returnType": "Task<string>",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "CreateProduct",
+          "params": [
+            "name",
+            "productType",
+            "description",
+            "categoryId",
+            "products",
+            "categories"
+          ],
+          "returnType": "Task<string>",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "UpdateProduct",
+          "params": [
+            "id",
+            "name",
+            "description",
+            "products"
+          ],
+          "returnType": "Task<string>",
+          "exported": true,
+          "lineCount": 26
+        },
+        {
+          "name": "ToggleProductStatus",
+          "params": [
+            "id",
+            "status",
+            "products"
+          ],
+          "returnType": "Task<string>",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "Err",
+          "params": [
+            "svc"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "Slugify",
+          "params": [
+            "text"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 13
+        }
+      ],
+      "classes": [
+        {
+          "name": "AdminProductTools",
+          "methods": [
+            "ListProducts",
+            "GetProduct",
+            "CreateProduct",
+            "UpdateProduct",
+            "ToggleProductStatus",
+            "Err",
+            "Slugify"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 114
+        }
+      ],
+      "imports": [
+        {
+          "source": "System.ComponentModel",
+          "specifiers": [
+            "ComponentModel"
+          ]
+        },
+        {
+          "source": "System.Text.Json",
+          "specifiers": [
+            "Json"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs.Admin",
+          "specifiers": [
+            "Admin"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "ModelContextProtocol.Server",
+          "specifiers": [
+            "Server"
+          ]
+        }
+      ],
+      "exports": [
+        "ListProducts",
+        "GetProduct",
+        "CreateProduct",
+        "UpdateProduct",
+        "ToggleProductStatus",
+        "AdminProductTools"
+      ],
+      "totalLines": 123,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.slnx": {
@@ -17392,6 +20469,16 @@
       "totalLines": 152,
       "hasStructuralAnalysis": true
     },
+    "frontend-admin/AGENTS.md": {
+      "filePath": "frontend-admin/AGENTS.md",
+      "contentHash": "b592eb1d53af0d084cab67130be820e065bf7ced6455075d9e65debd400b3944",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 70,
+      "hasStructuralAnalysis": true
+    },
     "frontend-admin/eslint.config.js": {
       "filePath": "frontend-admin/eslint.config.js",
       "contentHash": "f19395caf80173ffbd41ab74f8eef4fc26c042f84a937de4a6286ec5c13ad401",
@@ -17438,6 +20525,36 @@
       ],
       "exports": [],
       "totalLines": 23,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/index.html": {
+      "filePath": "frontend-admin/index.html",
+      "contentHash": "338c51b7bfd5856e8d15344122442bf9a7ec7a823e24594a53a6e8235a8e74ad",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 14,
+      "hasStructuralAnalysis": false
+    },
+    "frontend-admin/package.json": {
+      "filePath": "frontend-admin/package.json",
+      "contentHash": "51eab50b48e21a67fbbbacf70431f78e0cbac715536e2d68763a35da0ad1ec7b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 42,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/README.md": {
+      "filePath": "frontend-admin/README.md",
+      "contentHash": "bf14fbe337274f08ba3d9c2d6fe3e8723f13c16b605583bff70483717e3d4f3a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 74,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/api/admin.ts": {
@@ -17912,6 +21029,92 @@
       "totalLines": 75,
       "hasStructuralAnalysis": true
     },
+    "frontend-admin/src/api/dashboard.ts": {
+      "filePath": "frontend-admin/src/api/dashboard.ts",
+      "contentHash": "4c12fec3df0136b49a042c294d6579e29b622ca74f408e7cd6e989d5641f0614",
+      "functions": [
+        {
+          "name": "getDashboardSummary",
+          "params": [],
+          "returnType": "Promise<DashboardSummary>",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getRevenue",
+          "params": [
+            "period"
+          ],
+          "returnType": "Promise<RevenueData>",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getOrdersByStatus",
+          "params": [],
+          "returnType": "Promise<OrderStatusDistribution>",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getRecentOrders",
+          "params": [
+            "limit"
+          ],
+          "returnType": "Promise<RecentOrder[]>",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getTopProducts",
+          "params": [
+            "limit"
+          ],
+          "returnType": "Promise<TopProduct[]>",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "getUserGrowth",
+          "params": [
+            "period"
+          ],
+          "returnType": "Promise<UserGrowthData>",
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./client",
+          "specifiers": [
+            "request"
+          ]
+        },
+        {
+          "source": "@/types/dashboard",
+          "specifiers": [
+            "DashboardSummary",
+            "RevenueData",
+            "OrderStatusDistribution",
+            "RecentOrder",
+            "TopProduct",
+            "UserGrowthData"
+          ]
+        }
+      ],
+      "exports": [
+        "getDashboardSummary",
+        "getRevenue",
+        "getOrdersByStatus",
+        "getRecentOrders",
+        "getTopProducts",
+        "getUserGrowth"
+      ],
+      "totalLines": 34,
+      "hasStructuralAnalysis": true
+    },
     "frontend-admin/src/api/media.ts": {
       "filePath": "frontend-admin/src/api/media.ts",
       "contentHash": "283c2d572c41283c1c1103ea18817e07cbf07fe711094f6d594aa42468b419b7",
@@ -17974,13 +21177,13 @@
     },
     "frontend-admin/src/App.tsx": {
       "filePath": "frontend-admin/src/App.tsx",
-      "contentHash": "3dba6521f0902516834eb9c4565dcf45f94b332a8a15095bb5ea3c3df2f0eee6",
+      "contentHash": "5af727f3461c2ec429655e93556502de8d7d6a48e5e6356b89ea854427204227",
       "functions": [
         {
           "name": "App",
           "params": [],
           "exported": true,
-          "lineCount": 44
+          "lineCount": 45
         }
       ],
       "classes": [],
@@ -18037,6 +21240,12 @@
           ]
         },
         {
+          "source": "@/pages/DashboardPage",
+          "specifiers": [
+            "DashboardPage"
+          ]
+        },
+        {
           "source": "@/pages/ProductListPage",
           "specifiers": [
             "ProductListPage"
@@ -18076,7 +21285,7 @@
       "exports": [
         "App"
       ],
-      "totalLines": 60,
+      "totalLines": 62,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/auth/AdminRoute.tsx": {
@@ -18480,7 +21689,7 @@
     },
     "frontend-admin/src/components/AdminLayout.tsx": {
       "filePath": "frontend-admin/src/components/AdminLayout.tsx",
-      "contentHash": "059169117e467e6afb79a47f8b19a2a6bf76dcb3e7d3dbb57a021fb149d47432",
+      "contentHash": "cdab88bd04f6fd258b7f01b6ff3bfc9521d09f2f87e3aaa184498856102634c4",
       "functions": [
         {
           "name": "SidebarContent",
@@ -18488,7 +21697,7 @@
             "{ onNavigate }"
           ],
           "exported": false,
-          "lineCount": 51
+          "lineCount": 63
         },
         {
           "name": "AdminSidebar",
@@ -18500,7 +21709,7 @@
           "name": "AdminLayout",
           "params": [],
           "exported": true,
-          "lineCount": 10
+          "lineCount": 30
         }
       ],
       "classes": [],
@@ -18528,13 +21737,21 @@
             "FolderTree",
             "LogOut",
             "Menu",
-            "Image"
+            "Image",
+            "LayoutDashboard",
+            "Bot"
           ]
         },
         {
           "source": "@/stores/authStore",
           "specifiers": [
             "useAuthStore"
+          ]
+        },
+        {
+          "source": "@/stores/adminAiStore",
+          "specifiers": [
+            "useAdminAiStore"
           ]
         },
         {
@@ -18550,13 +21767,504 @@
             "SheetHeader",
             "SheetTrigger"
           ]
+        },
+        {
+          "source": "@/components/ai/AiChatSidebar",
+          "specifiers": [
+            "AiChatSidebar"
+          ]
         }
       ],
       "exports": [
         "AdminSidebar",
         "AdminLayout"
       ],
-      "totalLines": 110,
+      "totalLines": 146,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/src/components/ai/AiChatSidebar.tsx": {
+      "filePath": "frontend-admin/src/components/ai/AiChatSidebar.tsx",
+      "contentHash": "b34db05c4ddf1be59b8c93bc3f8346a12631694bcc74ca35afd73ca29862b0b2",
+      "functions": [
+        {
+          "name": "AiChatSidebar",
+          "params": [],
+          "exported": true,
+          "lineCount": 95
+        },
+        {
+          "name": "MessageBubble",
+          "params": [
+            "{ message }"
+          ],
+          "exported": false,
+          "lineCount": 30
+        },
+        {
+          "name": "ToolCallCard",
+          "params": [
+            "{ toolCall }"
+          ],
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "ConfirmCard",
+          "params": [
+            "{ action }"
+          ],
+          "exported": false,
+          "lineCount": 46
+        },
+        {
+          "name": "toolLabel",
+          "params": [
+            "name"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 24
+        },
+        {
+          "name": "truncate",
+          "params": [
+            "text",
+            "len"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useState",
+            "useRef",
+            "useEffect"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "Bot",
+            "X",
+            "Send",
+            "Loader2",
+            "AlertTriangle",
+            "Check",
+            "ChevronDown",
+            "ChevronUp"
+          ]
+        },
+        {
+          "source": "@/stores/adminAiStore",
+          "specifiers": [
+            "useAdminAiStore"
+          ]
+        },
+        {
+          "source": "@/types/ai",
+          "specifiers": [
+            "AiMessage",
+            "AiToolCall",
+            "AiPendingAction"
+          ]
+        },
+        {
+          "source": "@/components/ui/button",
+          "specifiers": [
+            "Button"
+          ]
+        }
+      ],
+      "exports": [
+        "AiChatSidebar"
+      ],
+      "totalLines": 231,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/src/components/ai/AiSuggestionCards.tsx": {
+      "filePath": "frontend-admin/src/components/ai/AiSuggestionCards.tsx",
+      "contentHash": "16cf91766cd07873a44b76a74410b9dace3408f75ec1ff72ee291fc5894b341e",
+      "functions": [
+        {
+          "name": "AiSuggestionCards",
+          "params": [],
+          "exported": true,
+          "lineCount": 56
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useEffect"
+          ]
+        },
+        {
+          "source": "react-router-dom",
+          "specifiers": [
+            "useNavigate"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "Sparkles",
+            "TrendingUp",
+            "Package",
+            "Users",
+            "FileText"
+          ]
+        },
+        {
+          "source": "@/stores/adminAiStore",
+          "specifiers": [
+            "useAdminAiStore"
+          ]
+        },
+        {
+          "source": "@/types/ai",
+          "specifiers": [
+            "AiSuggestion"
+          ]
+        }
+      ],
+      "exports": [
+        "AiSuggestionCards"
+      ],
+      "totalLines": 70,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/src/components/dashboard/OrdersByStatusChart.tsx": {
+      "filePath": "frontend-admin/src/components/dashboard/OrdersByStatusChart.tsx",
+      "contentHash": "de1b92460ba5debed6542e0ee72164202ce0796f60738169ce1fe96500837e4a",
+      "functions": [
+        {
+          "name": "OrdersByStatusChart",
+          "params": [
+            "{ data, loading }"
+          ],
+          "exported": true,
+          "lineCount": 76
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "recharts",
+          "specifiers": [
+            "PieChart",
+            "Pie",
+            "Cell",
+            "ResponsiveContainer",
+            "Legend",
+            "Tooltip"
+          ]
+        },
+        {
+          "source": "@/types/dashboard",
+          "specifiers": [
+            "OrderStatusDistribution"
+          ]
+        }
+      ],
+      "exports": [
+        "OrdersByStatusChart"
+      ],
+      "totalLines": 105,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/src/components/dashboard/RecentOrdersTable.tsx": {
+      "filePath": "frontend-admin/src/components/dashboard/RecentOrdersTable.tsx",
+      "contentHash": "c7030a88d22fa47cf1e9fb786484eb502c6057802ab23ccc5f149ad89aa75d6e",
+      "functions": [
+        {
+          "name": "formatCurrency",
+          "params": [
+            "n"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "formatDate",
+          "params": [
+            "dateStr"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "RecentOrdersTable",
+          "params": [
+            "{ orders, loading }"
+          ],
+          "exported": true,
+          "lineCount": 52
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/types/dashboard",
+          "specifiers": [
+            "RecentOrder"
+          ]
+        }
+      ],
+      "exports": [
+        "RecentOrdersTable"
+      ],
+      "totalLines": 89,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/src/components/dashboard/RevenueChart.tsx": {
+      "filePath": "frontend-admin/src/components/dashboard/RevenueChart.tsx",
+      "contentHash": "bad8ef636f650c0a6e8dbe57435f221681f5b79fec489b88899f6f2eaf6e21fb",
+      "functions": [
+        {
+          "name": "formatDate",
+          "params": [
+            "dateStr"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "formatTooltip",
+          "params": [
+            "value"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "RevenueChart",
+          "params": [
+            "{ data, loading }"
+          ],
+          "exported": true,
+          "lineCount": 62
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "recharts",
+          "specifiers": [
+            "AreaChart",
+            "Area",
+            "XAxis",
+            "YAxis",
+            "CartesianGrid",
+            "Tooltip",
+            "ResponsiveContainer"
+          ]
+        },
+        {
+          "source": "@/types/dashboard",
+          "specifiers": [
+            "RevenuePoint"
+          ]
+        }
+      ],
+      "exports": [
+        "RevenueChart"
+      ],
+      "totalLines": 89,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/src/components/dashboard/StatsCard.tsx": {
+      "filePath": "frontend-admin/src/components/dashboard/StatsCard.tsx",
+      "contentHash": "541fec1bb9ac0781a9657211dfedd121bb0b03ca8ac3d86edc3f3a647a16b329",
+      "functions": [
+        {
+          "name": "formatGrowth",
+          "params": [
+            "n"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "StatsCard",
+          "params": [
+            "{ icon: Icon, label, value, growth, growthLabel, onClick }"
+          ],
+          "exported": true,
+          "lineCount": 29
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "LucideIcon"
+          ]
+        }
+      ],
+      "exports": [
+        "StatsCard"
+      ],
+      "totalLines": 47,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/src/components/dashboard/StatsCardGrid.tsx": {
+      "filePath": "frontend-admin/src/components/dashboard/StatsCardGrid.tsx",
+      "contentHash": "07f076ba60e3f4a3e3a5be27dbbe6f2edf080ec9a5e5fb50a9a3e3f79672597a",
+      "functions": [
+        {
+          "name": "formatCurrency",
+          "params": [
+            "n"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "formatCount",
+          "params": [
+            "n"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "StatsCardGrid",
+          "params": [
+            "{\n  summary,\n  loading,\n  onRevenueClick,\n  onOrdersClick,\n  onUsersClick,\n  onProductsClick,\n}"
+          ],
+          "exported": true,
+          "lineCount": 64
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./StatsCard",
+          "specifiers": [
+            "StatsCard"
+          ]
+        },
+        {
+          "source": "@/types/dashboard",
+          "specifiers": [
+            "DashboardSummary"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "DollarSign",
+            "ShoppingBag",
+            "Users",
+            "Package"
+          ]
+        }
+      ],
+      "exports": [
+        "StatsCardGrid"
+      ],
+      "totalLines": 88,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/src/components/dashboard/TopProductsList.tsx": {
+      "filePath": "frontend-admin/src/components/dashboard/TopProductsList.tsx",
+      "contentHash": "7c98077d2400070885dab3551564f8fe87076f3f7edbd6847cbd8c70b023bd29",
+      "functions": [
+        {
+          "name": "formatCurrency",
+          "params": [
+            "n"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "TopProductsList",
+          "params": [
+            "{ products, loading }"
+          ],
+          "exported": true,
+          "lineCount": 61
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/types/dashboard",
+          "specifiers": [
+            "TopProduct"
+          ]
+        }
+      ],
+      "exports": [
+        "TopProductsList"
+      ],
+      "totalLines": 74,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/src/components/dashboard/UserGrowthChart.tsx": {
+      "filePath": "frontend-admin/src/components/dashboard/UserGrowthChart.tsx",
+      "contentHash": "78d837c8de88c31538b21c4acf07d8ba69444446000956ea10ae6b1aed3dc2f8",
+      "functions": [
+        {
+          "name": "formatDate",
+          "params": [
+            "dateStr"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "UserGrowthChart",
+          "params": [
+            "{ data, loading }"
+          ],
+          "exported": true,
+          "lineCount": 59
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "recharts",
+          "specifiers": [
+            "LineChart",
+            "Line",
+            "XAxis",
+            "YAxis",
+            "CartesianGrid",
+            "Tooltip",
+            "ResponsiveContainer"
+          ]
+        },
+        {
+          "source": "@/types/dashboard",
+          "specifiers": [
+            "UserGrowthPoint"
+          ]
+        }
+      ],
+      "exports": [
+        "UserGrowthChart"
+      ],
+      "totalLines": 81,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/components/ui/badge.tsx": {
@@ -19181,6 +22889,100 @@
       "totalLines": 207,
       "hasStructuralAnalysis": true
     },
+    "frontend-admin/src/pages/DashboardPage.tsx": {
+      "filePath": "frontend-admin/src/pages/DashboardPage.tsx",
+      "contentHash": "9a619df58808c54ff122524061a38ebcffe6ec774d961d25a07bbe3d7bf2d6ea",
+      "functions": [
+        {
+          "name": "DashboardPage",
+          "params": [],
+          "exported": true,
+          "lineCount": 110
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useEffect",
+            "useCallback",
+            "useRef"
+          ]
+        },
+        {
+          "source": "react-router-dom",
+          "specifiers": [
+            "useNavigate"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "RefreshCw"
+          ]
+        },
+        {
+          "source": "@/stores/dashboardStore",
+          "specifiers": [
+            "useDashboardStore"
+          ]
+        },
+        {
+          "source": "@/components/dashboard/StatsCardGrid",
+          "specifiers": [
+            "StatsCardGrid"
+          ]
+        },
+        {
+          "source": "@/components/dashboard/RevenueChart",
+          "specifiers": [
+            "RevenueChart"
+          ]
+        },
+        {
+          "source": "@/components/dashboard/OrdersByStatusChart",
+          "specifiers": [
+            "OrdersByStatusChart"
+          ]
+        },
+        {
+          "source": "@/components/dashboard/RecentOrdersTable",
+          "specifiers": [
+            "RecentOrdersTable"
+          ]
+        },
+        {
+          "source": "@/components/dashboard/TopProductsList",
+          "specifiers": [
+            "TopProductsList"
+          ]
+        },
+        {
+          "source": "@/components/dashboard/UserGrowthChart",
+          "specifiers": [
+            "UserGrowthChart"
+          ]
+        },
+        {
+          "source": "@/components/ui/button",
+          "specifiers": [
+            "Button"
+          ]
+        },
+        {
+          "source": "@/components/ai/AiSuggestionCards",
+          "specifiers": [
+            "AiSuggestionCards"
+          ]
+        }
+      ],
+      "exports": [
+        "DashboardPage"
+      ],
+      "totalLines": 132,
+      "hasStructuralAnalysis": true
+    },
     "frontend-admin/src/pages/LoginPage.tsx": {
       "filePath": "frontend-admin/src/pages/LoginPage.tsx",
       "contentHash": "8859c7180347bba5640eada3927170b98788d750fcf494b46763ecb0bb5fc111",
@@ -19780,6 +23582,47 @@
       "totalLines": 254,
       "hasStructuralAnalysis": true
     },
+    "frontend-admin/src/stores/adminAiStore.ts": {
+      "filePath": "frontend-admin/src/stores/adminAiStore.ts",
+      "contentHash": "27a15cf0aa8ea63f47e7ba7ff647b5340e77d9877f204377ff67025c5c5471cb",
+      "functions": [
+        {
+          "name": "genId",
+          "params": [],
+          "exported": false,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "zustand",
+          "specifiers": [
+            "create"
+          ]
+        },
+        {
+          "source": "@/types/ai",
+          "specifiers": [
+            "AiMessage",
+            "AiSuggestion",
+            "AiPendingAction",
+            "AiChatRequest"
+          ]
+        },
+        {
+          "source": "@/api/client",
+          "specifiers": [
+            "request"
+          ]
+        }
+      ],
+      "exports": [
+        "useAdminAiStore"
+      ],
+      "totalLines": 203,
+      "hasStructuralAnalysis": true
+    },
     "frontend-admin/src/stores/authStore.ts": {
       "filePath": "frontend-admin/src/stores/authStore.ts",
       "contentHash": "cd9f1a07a9863899e16c6d2df5e3770a946b3604431fa3f6d6a2d648f995ca9c",
@@ -19843,6 +23686,42 @@
         "useCategoryStore"
       ],
       "totalLines": 89,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/src/stores/dashboardStore.ts": {
+      "filePath": "frontend-admin/src/stores/dashboardStore.ts",
+      "contentHash": "058fd42524d3c641faca5bc26d0c07cfd3619ea52f35cdd6888d579a0e2cfd12",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "zustand",
+          "specifiers": [
+            "create"
+          ]
+        },
+        {
+          "source": "@/types/dashboard",
+          "specifiers": [
+            "DashboardSummary",
+            "RevenuePoint",
+            "OrderStatusDistribution",
+            "RecentOrder",
+            "TopProduct",
+            "UserGrowthPoint"
+          ]
+        },
+        {
+          "source": "@/api/dashboard",
+          "specifiers": [
+            "* as dashboardApi"
+          ]
+        }
+      ],
+      "exports": [
+        "useDashboardStore"
+      ],
+      "totalLines": 143,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/stores/productStore.ts": {
@@ -19966,6 +23845,16 @@
       "totalLines": 184,
       "hasStructuralAnalysis": true
     },
+    "frontend-admin/src/types/ai.ts": {
+      "filePath": "frontend-admin/src/types/ai.ts",
+      "contentHash": "ab2454f39be6148a6dbb7c627f7cd550459813a0a99ada20457a8cb06665bcc4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 51,
+      "hasStructuralAnalysis": true
+    },
     "frontend-admin/src/types/api.ts": {
       "filePath": "frontend-admin/src/types/api.ts",
       "contentHash": "d92c0cfe56364ffc31d6954f56a7030e5b3bc58a019dd34d286d7e03d7e66c03",
@@ -19984,6 +23873,46 @@
       "imports": [],
       "exports": [],
       "totalLines": 10,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/src/types/dashboard.ts": {
+      "filePath": "frontend-admin/src/types/dashboard.ts",
+      "contentHash": "56859dc95f4e84def50a0f201bd258cfdf910ad3aebdfc1e8749909873f6da03",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 58,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/tsconfig.app.json": {
+      "filePath": "frontend-admin/tsconfig.app.json",
+      "contentHash": "d07d41f9fa0c1a4d6ae173d31f7ab1ed50a35585ee7f330508347e482d1d2015",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/tsconfig.json": {
+      "filePath": "frontend-admin/tsconfig.json",
+      "contentHash": "ad28d132ee48d6e23917cf5827cace785d0fc01a44ca68b0dda51cc8c3fd3f52",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "frontend-admin/tsconfig.node.json": {
+      "filePath": "frontend-admin/tsconfig.node.json",
+      "contentHash": "e0f1936992f77a707102795e8ea311ae74cb54de87b221bb32b44055af66ff7e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 25,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/vite.config.ts": {
@@ -20019,6 +23948,26 @@
       ],
       "exports": [],
       "totalLines": 13,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/.env.example": {
+      "filePath": "frontend/.env.example",
+      "contentHash": "3c897ec5a11aa5979981a3e56c0781eb6729796d75a271606932aa44d7c64681",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/AGENTS.md": {
+      "filePath": "frontend/AGENTS.md",
+      "contentHash": "20b63624c258db90f9ee923d04b25510a42bdd867f4927904ce4cc3c5fef4ff1",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 55,
       "hasStructuralAnalysis": true
     },
     "frontend/eslint.config.js": {
@@ -20069,6 +24018,26 @@
       "totalLines": 24,
       "hasStructuralAnalysis": true
     },
+    "frontend/index.html": {
+      "filePath": "frontend/index.html",
+      "contentHash": "88c3ee7a3ffbe09f7c30bb516b7b63cda4695b0e99ccf160ca36b39cdf7319c5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 29,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/package.json": {
+      "filePath": "frontend/package.json",
+      "contentHash": "eca6b5cc25ff5311541f8dff4a173597489b420544f7d0547f2c85ecccb0c39e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 40,
+      "hasStructuralAnalysis": true
+    },
     "frontend/postcss.config.js": {
       "filePath": "frontend/postcss.config.js",
       "contentHash": "3948c9452169e807c620529e4a358e35f1ba7919cd1eeeaf67e8b06eccfc1b22",
@@ -20104,6 +24073,16 @@
       "totalLines": 14,
       "hasStructuralAnalysis": true
     },
+    "frontend/public/AGENTS.md": {
+      "filePath": "frontend/public/AGENTS.md",
+      "contentHash": "baca1805e0522935211a651d772c653d14b8a75a9353cc40f7bf031c467d0ba7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 45,
+      "hasStructuralAnalysis": true
+    },
     "frontend/public/assets/product-section/xanh 2.webp": {
       "filePath": "frontend/public/assets/product-section/xanh 2.webp",
       "contentHash": "410b6a0f165e4ab8bda2f67b31c6c7e636828cca5546460039abe4a11ed6e799",
@@ -20113,6 +24092,16 @@
       "exports": [],
       "totalLines": 627,
       "hasStructuralAnalysis": false
+    },
+    "frontend/public/serve.json": {
+      "filePath": "frontend/public/serve.json",
+      "contentHash": "95cd39b4f71bf654ebe96bb6bfdf0e285f14ae0fe0f1e77f194e82451445c8cc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
     },
     "frontend/public/sw.js": {
       "filePath": "frontend/public/sw.js",
@@ -20354,6 +24343,16 @@
     },
     "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co": {
       "filePath": "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co",
+      "contentHash": "bc26a148c5a1a9b1b2ed0be8ca250548f38858d9095db10941f94f222bf9ea26",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 13,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co.html": {
+      "filePath": "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co.html",
       "contentHash": "bc26a148c5a1a9b1b2ed0be8ca250548f38858d9095db10941f94f222bf9ea26",
       "functions": [],
       "classes": [],
@@ -20916,6 +24915,57 @@
       "totalLines": 128,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/api/comment.ts": {
+      "filePath": "frontend/src/api/comment.ts",
+      "contentHash": "99ad7b342abeb47c7f8547c371358122f98f21ca4bd66ce2062ff9ca6b2f10b5",
+      "functions": [
+        {
+          "name": "getProductComments",
+          "params": [
+            "productId",
+            "page",
+            "pageSize"
+          ],
+          "returnType": "Promise<PaginatedComments>",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "createComment",
+          "params": [
+            "productId",
+            "content",
+            "options"
+          ],
+          "returnType": "Promise<Comment>",
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./client",
+          "specifiers": [
+            "request",
+            "requestPaginated"
+          ]
+        },
+        {
+          "source": "../types/catalog",
+          "specifiers": [
+            "Comment",
+            "PaginatedComments"
+          ]
+        }
+      ],
+      "exports": [
+        "getProductComments",
+        "createComment"
+      ],
+      "totalLines": 28,
+      "hasStructuralAnalysis": true
+    },
     "frontend/src/api/media.ts": {
       "filePath": "frontend/src/api/media.ts",
       "contentHash": "74bf831da8ba01940153195aed55f100dbd11d0d88ea4f4b62e9860ca9cd7919",
@@ -20955,6 +25005,57 @@
         "getImagePresignedUrl"
       ],
       "totalLines": 45,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/api/review.ts": {
+      "filePath": "frontend/src/api/review.ts",
+      "contentHash": "6712bf34c0835e00bf614bb2d28c34734a4780451fbe1e1919c035ea62c94d7a",
+      "functions": [
+        {
+          "name": "getProductReviews",
+          "params": [
+            "productId",
+            "page",
+            "pageSize"
+          ],
+          "returnType": "Promise<PaginatedReviews>",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "createReview",
+          "params": [
+            "productId",
+            "rating",
+            "comment"
+          ],
+          "returnType": "Promise<Review>",
+          "exported": true,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./client",
+          "specifiers": [
+            "request",
+            "requestPaginated"
+          ]
+        },
+        {
+          "source": "../types/catalog",
+          "specifiers": [
+            "Review",
+            "PaginatedReviews"
+          ]
+        }
+      ],
+      "exports": [
+        "getProductReviews",
+        "createReview"
+      ],
+      "totalLines": 24,
       "hasStructuralAnalysis": true
     },
     "frontend/src/api/user.ts": {
@@ -22188,6 +26289,64 @@
       "totalLines": 149,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/components/ImageGallery/ImageGallery.module.css": {
+      "filePath": "frontend/src/components/ImageGallery/ImageGallery.module.css",
+      "contentHash": "75df80217dc5d731bb4bc46e1b8cf4c800ca9569a1a6eb78e4652654faef7dc8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 148,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/components/ImageGallery/ImageGallery.tsx": {
+      "filePath": "frontend/src/components/ImageGallery/ImageGallery.tsx",
+      "contentHash": "21ecea35c212b3846c8abc98c792cea507a1b2f6f813ceb543e63553b5106022",
+      "functions": [
+        {
+          "name": "ImageGallery",
+          "params": [
+            "{ images }"
+          ],
+          "exported": true,
+          "lineCount": 99
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useState",
+            "useCallback"
+          ]
+        },
+        {
+          "source": "framer-motion",
+          "specifiers": [
+            "AnimatePresence",
+            "motion"
+          ]
+        },
+        {
+          "source": "../../utils/motion",
+          "specifiers": [
+            "fadeScale"
+          ]
+        },
+        {
+          "source": "./ImageGallery.module.css",
+          "specifiers": [
+            "styles"
+          ]
+        }
+      ],
+      "exports": [
+        "ImageGallery"
+      ],
+      "totalLines": 114,
+      "hasStructuralAnalysis": true
+    },
     "frontend/src/components/LoadingScreen/LoadingScreen.module.css": {
       "filePath": "frontend/src/components/LoadingScreen/LoadingScreen.module.css",
       "contentHash": "aae22273e386a987929547a546e5bdc969031e2501cb9794d852707e8d4cb944",
@@ -22315,14 +26474,8 @@
     },
     "frontend/src/components/ProductCard/ProductCard.tsx": {
       "filePath": "frontend/src/components/ProductCard/ProductCard.tsx",
-      "contentHash": "b1a055ac82979f087f3f111d84ed86d81364caedaf2a07a007a35a3f2981a164",
+      "contentHash": "0f4db1e5a53ae7696ecb4648af3f788dd74a3579bf37db33f4f8ca181a324aa3",
       "functions": [
-        {
-          "name": "StarIcon",
-          "params": [],
-          "exported": false,
-          "lineCount": 7
-        },
         {
           "name": "CartIcon",
           "params": [],
@@ -22335,7 +26488,7 @@
             "{ data, onAddToCart }"
           ],
           "exported": true,
-          "lineCount": 46
+          "lineCount": 52
         }
       ],
       "classes": [],
@@ -22367,6 +26520,12 @@
           ]
         },
         {
+          "source": "../StarRating/StarRating",
+          "specifiers": [
+            "StarRating"
+          ]
+        },
+        {
           "source": "../../pages/ProductsPage/data",
           "specifiers": [
             "Product",
@@ -22377,7 +26536,112 @@
       "exports": [
         "ProductCard"
       ],
-      "totalLines": 80,
+      "totalLines": 79,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/components/ProductInfo/ProductInfo.module.css": {
+      "filePath": "frontend/src/components/ProductInfo/ProductInfo.module.css",
+      "contentHash": "d7642d5ce158f778bc16a2abf663a95d1bf3168f7d57b38b4cac577c9c0e5a39",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 347,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/components/ProductInfo/ProductInfo.tsx": {
+      "filePath": "frontend/src/components/ProductInfo/ProductInfo.tsx",
+      "contentHash": "808c046fe9a7bbb99528991835b42cad43a7dcc176b12d71854748431c221740",
+      "functions": [
+        {
+          "name": "getDefaultVariant",
+          "params": [
+            "variants"
+          ],
+          "returnType": "ProductVariant",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "getDisplayPrice",
+          "params": [
+            "variant"
+          ],
+          "returnType": "{ current: number; original: number | null }",
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "formatPrice",
+          "params": [
+            "amount"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "ProductInfo",
+          "params": [
+            "{ product }"
+          ],
+          "exported": true,
+          "lineCount": 256
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useState",
+            "useCallback"
+          ]
+        },
+        {
+          "source": "react-router-dom",
+          "specifiers": [
+            "Link"
+          ]
+        },
+        {
+          "source": "framer-motion",
+          "specifiers": [
+            "motion"
+          ]
+        },
+        {
+          "source": "../StarRating/StarRating",
+          "specifiers": [
+            "StarRating"
+          ]
+        },
+        {
+          "source": "../../utils/motion",
+          "specifiers": [
+            "fadeUp",
+            "staggerContainer",
+            "cardReveal"
+          ]
+        },
+        {
+          "source": "../../types/catalog",
+          "specifiers": [
+            "ProductDetail",
+            "ProductVariant"
+          ]
+        },
+        {
+          "source": "./ProductInfo.module.css",
+          "specifiers": [
+            "styles"
+          ]
+        }
+      ],
+      "exports": [
+        "ProductInfo"
+      ],
+      "totalLines": 287,
       "hasStructuralAnalysis": true
     },
     "frontend/src/components/ProductSection/ProductSection.module.css": {
@@ -22629,6 +26893,59 @@
       "totalLines": 134,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/components/StarRating/StarRating.module.css": {
+      "filePath": "frontend/src/components/StarRating/StarRating.module.css",
+      "contentHash": "633e66baacd7c48350823afd71e5203dd04c8e3e5f82402994b760588e61b612",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 66,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/components/StarRating/StarRating.tsx": {
+      "filePath": "frontend/src/components/StarRating/StarRating.tsx",
+      "contentHash": "3f2cc924fba64f5edc16acc9feb600a562a0e6500faf58ab491e5778eac9e3ff",
+      "functions": [
+        {
+          "name": "StarSvg",
+          "params": [
+            "{\r\n  size,\r\n  filled,\r\n  fraction,\r\n}"
+          ],
+          "exported": false,
+          "lineCount": 44
+        },
+        {
+          "name": "StarRating",
+          "params": [
+            "{\r\n  rating,\r\n  size = 'md',\r\n  interactive = false,\r\n  onRate,\r\n  showValue = false,\r\n}"
+          ],
+          "exported": true,
+          "lineCount": 62
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useState",
+            "useCallback"
+          ]
+        },
+        {
+          "source": "./StarRating.module.css",
+          "specifiers": [
+            "styles"
+          ]
+        }
+      ],
+      "exports": [
+        "StarRating"
+      ],
+      "totalLines": 127,
+      "hasStructuralAnalysis": true
+    },
     "frontend/src/components/StoreSection/StoreSection.module.css": {
       "filePath": "frontend/src/components/StoreSection/StoreSection.module.css",
       "contentHash": "befed06005e90c28a1addacab43524e339296b24d07d0ef8c1df0fe68bc708af",
@@ -22792,6 +27109,138 @@
       "totalLines": 12,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/components/UserFeedbackSection/UserFeedbackSection.module.css": {
+      "filePath": "frontend/src/components/UserFeedbackSection/UserFeedbackSection.module.css",
+      "contentHash": "ed0f1da30c9b41a7119adc266c7973beb0232784d95d6200b25bfcfa3591d8ab",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 471,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/components/UserFeedbackSection/UserFeedbackSection.tsx": {
+      "filePath": "frontend/src/components/UserFeedbackSection/UserFeedbackSection.tsx",
+      "contentHash": "1b6a8e0a9ae62bf040e7e9b03e850efbda014b967b8d2a5446e0a83c927eaa3e",
+      "functions": [
+        {
+          "name": "formatDate",
+          "params": [
+            "dateStr"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "relativeTime",
+          "params": [
+            "dateStr"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "Avatar",
+          "params": [
+            "{ name, url, size }"
+          ],
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "Skeleton",
+          "params": [],
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "UnifiedForm",
+          "params": [
+            "{\r\n  isReply,\r\n  onSubmit,\r\n  onCancel,\r\n}"
+          ],
+          "exported": false,
+          "lineCount": 67
+        },
+        {
+          "name": "UserFeedbackSection",
+          "params": [
+            "{ productId, reviewSummary }"
+          ],
+          "exported": true,
+          "lineCount": 129
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useState",
+            "useEffect",
+            "useCallback"
+          ]
+        },
+        {
+          "source": "framer-motion",
+          "specifiers": [
+            "motion",
+            "AnimatePresence"
+          ]
+        },
+        {
+          "source": "./UserFeedbackSection.module.css",
+          "specifiers": [
+            "styles"
+          ]
+        },
+        {
+          "source": "../StarRating/StarRating",
+          "specifiers": [
+            "StarRating"
+          ]
+        },
+        {
+          "source": "../../auth/useAuth",
+          "specifiers": [
+            "useAuth"
+          ]
+        },
+        {
+          "source": "../../auth/AuthModalContext",
+          "specifiers": [
+            "useAuthModal"
+          ]
+        },
+        {
+          "source": "../../api/comment",
+          "specifiers": [
+            "getProductComments",
+            "createComment"
+          ]
+        },
+        {
+          "source": "../../utils/motion",
+          "specifiers": [
+            "staggerContainer",
+            "fadeUp"
+          ]
+        },
+        {
+          "source": "../../types/catalog",
+          "specifiers": [
+            "ReviewSummary",
+            "Comment"
+          ]
+        }
+      ],
+      "exports": [
+        "UserFeedbackSection"
+      ],
+      "totalLines": 270,
+      "hasStructuralAnalysis": true
+    },
     "frontend/src/main.tsx": {
       "filePath": "frontend/src/main.tsx",
       "contentHash": "85da16dc74553eee163ee239335887d4f064b6dff88b52405970506439cd7031",
@@ -22861,7 +27310,7 @@
     },
     "frontend/src/pages/AccessoriesPage/AccessoriesPage.tsx": {
       "filePath": "frontend/src/pages/AccessoriesPage/AccessoriesPage.tsx",
-      "contentHash": "5ec3e096486390ac8df0cf538fe907cdfcc858bf2803d3cd01702dfaef7cfed4",
+      "contentHash": "cbf314c690acfbec9d4306b1d5576c355f66aa68b43905231b69b34098646a4b",
       "functions": [
         {
           "name": "formatPrice",
@@ -22889,7 +27338,7 @@
           ],
           "returnType": "Product",
           "exported": false,
-          "lineCount": 13
+          "lineCount": 14
         },
         {
           "name": "AccessoriesPage",
@@ -23002,8 +27451,18 @@
       "exports": [
         "AccessoriesPage"
       ],
-      "totalLines": 189,
+      "totalLines": 190,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/AccountPage/AccountEditForm.module.css": {
+      "filePath": "frontend/src/pages/AccountPage/AccountEditForm.module.css",
+      "contentHash": "23bf423a558e179c00ef2f45786c46897ea1e74e5a2026f11cc2a64fb916a41b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 87,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AccountPage/AccountEditForm.tsx": {
       "filePath": "frontend/src/pages/AccountPage/AccountEditForm.tsx",
@@ -23054,6 +27513,16 @@
       "totalLines": 112,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/pages/AccountPage/AccountInfo.module.css": {
+      "filePath": "frontend/src/pages/AccountPage/AccountInfo.module.css",
+      "contentHash": "dca3a67b9ad459f85fb870d4a20f65a1b5c04bf6228e300769108408770b2bbe",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 66,
+      "hasStructuralAnalysis": false
+    },
     "frontend/src/pages/AccountPage/AccountInfo.tsx": {
       "filePath": "frontend/src/pages/AccountPage/AccountInfo.tsx",
       "contentHash": "d473e056b99c8885af7f7d42984568c653dfabb048230736ac65280b37446942",
@@ -23100,6 +27569,16 @@
       ],
       "totalLines": 63,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/AccountPage/AccountPage.module.css": {
+      "filePath": "frontend/src/pages/AccountPage/AccountPage.module.css",
+      "contentHash": "be034d0defbe79b75fc13efc3721fc9f17b5f28fffdaff202e65f84298b7e08a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 75,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AccountPage/AccountPage.tsx": {
       "filePath": "frontend/src/pages/AccountPage/AccountPage.tsx",
@@ -23185,6 +27664,16 @@
       "totalLines": 98,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/pages/AccountPage/AccountSidebar.module.css": {
+      "filePath": "frontend/src/pages/AccountPage/AccountSidebar.module.css",
+      "contentHash": "aa29d729c5bb7538c5d9722885ceaafb9fefd11fa226ee0cf3233000340973c0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 149,
+      "hasStructuralAnalysis": false
+    },
     "frontend/src/pages/AccountPage/AccountSidebar.tsx": {
       "filePath": "frontend/src/pages/AccountPage/AccountSidebar.tsx",
       "contentHash": "b48c684597d40bdd5bbbeff3b9bcdc9a561cc09ee62e6a57e32841c7b8521b32",
@@ -23236,6 +27725,16 @@
       ],
       "totalLines": 79,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/AccountPage/AddressList.module.css": {
+      "filePath": "frontend/src/pages/AccountPage/AddressList.module.css",
+      "contentHash": "67578c89b0276df9bb691706a68d19a362dea9684828b70fbd63a206db8daf42",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 129,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AccountPage/AddressList.tsx": {
       "filePath": "frontend/src/pages/AccountPage/AddressList.tsx",
@@ -23290,6 +27789,16 @@
       "totalLines": 149,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/pages/AccountPage/ImageHistory.module.css": {
+      "filePath": "frontend/src/pages/AccountPage/ImageHistory.module.css",
+      "contentHash": "fda35eff333a8b27a80c1a6b435c721e3b098bf914845792ada382166e4dfdbb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 226,
+      "hasStructuralAnalysis": false
+    },
     "frontend/src/pages/AccountPage/ImageHistory.tsx": {
       "filePath": "frontend/src/pages/AccountPage/ImageHistory.tsx",
       "contentHash": "857e0d130994a014f4906c0573e599e20efa97a1235e7178c85a4adab071b63a",
@@ -23337,6 +27846,16 @@
       ],
       "totalLines": 191,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/AccountPage/OrderList.module.css": {
+      "filePath": "frontend/src/pages/AccountPage/OrderList.module.css",
+      "contentHash": "25f1caad554499f105f6975b7585610cd4ced46263fe9594fe8e85ed67949503",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 150,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AccountPage/OrderList.tsx": {
       "filePath": "frontend/src/pages/AccountPage/OrderList.tsx",
@@ -23398,6 +27917,16 @@
       "exports": [],
       "totalLines": 40,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/AiTryonPage/AccessoryPanel.module.css": {
+      "filePath": "frontend/src/pages/AiTryonPage/AccessoryPanel.module.css",
+      "contentHash": "b92301a88f1c30938b89094e04d79525f411e9d8826737e08cca6f5ed977e779",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 118,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AiTryonPage/AccessoryPanel.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/AccessoryPanel.tsx",
@@ -23465,6 +27994,16 @@
       ],
       "totalLines": 83,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/AiTryonPage/AiTryonPage.module.css": {
+      "filePath": "frontend/src/pages/AiTryonPage/AiTryonPage.module.css",
+      "contentHash": "ee359b591a76072b9a443471b14abb191c86532353f2ddc8d6e186fe94b86763",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 260,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AiTryonPage/AiTryonPage.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/AiTryonPage.tsx",
@@ -23597,6 +28136,16 @@
       "totalLines": 464,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/pages/AiTryonPage/CategoryTabs.module.css": {
+      "filePath": "frontend/src/pages/AiTryonPage/CategoryTabs.module.css",
+      "contentHash": "90cfc466a1a1431bc5e6562b95294af806354c2df1e0e7ca83a3f402f958adc1",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 56,
+      "hasStructuralAnalysis": false
+    },
     "frontend/src/pages/AiTryonPage/CategoryTabs.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/CategoryTabs.tsx",
       "contentHash": "a7ca6e357a72e4073c5b744d9a06beb669018f990663ba496bb87f52764c6c36",
@@ -23637,6 +28186,16 @@
       ],
       "totalLines": 44,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/AiTryonPage/ClothingPanel.module.css": {
+      "filePath": "frontend/src/pages/AiTryonPage/ClothingPanel.module.css",
+      "contentHash": "13df4a0f8b0d02447eb2df85527fcfa9dee1b7106346c54aa76c6c6b12504549",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 126,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AiTryonPage/ClothingPanel.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/ClothingPanel.tsx",
@@ -23704,6 +28263,16 @@
       ],
       "totalLines": 82,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/AiTryonPage/ImageDropZone.module.css": {
+      "filePath": "frontend/src/pages/AiTryonPage/ImageDropZone.module.css",
+      "contentHash": "facd41d60ceee00cac25bf27c30ae2fa4ffb29656bed5976eaf8a62da57980a9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 227,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AiTryonPage/ImageDropZone.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/ImageDropZone.tsx",
@@ -23779,6 +28348,16 @@
       "totalLines": 187,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/pages/AiTryonPage/PaginationControls.module.css": {
+      "filePath": "frontend/src/pages/AiTryonPage/PaginationControls.module.css",
+      "contentHash": "3c610536b8fcc284d7af40d603957b2f3b19e7d57ae50300a189334eb2c0869e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 76,
+      "hasStructuralAnalysis": false
+    },
     "frontend/src/pages/AiTryonPage/PaginationControls.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/PaginationControls.tsx",
       "contentHash": "4bc85557d2285525daa7a682cea46f25c4f07f6abd6da50ea71f90393330997d",
@@ -23806,6 +28385,16 @@
       ],
       "totalLines": 56,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/AiTryonPage/ResultPanel.module.css": {
+      "filePath": "frontend/src/pages/AiTryonPage/ResultPanel.module.css",
+      "contentHash": "b823d24e934e156ace7b32dbde52823489d5abe506fbb08070007e11e0c660b4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 261,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/AiTryonPage/ResultPanel.tsx": {
       "filePath": "frontend/src/pages/AiTryonPage/ResultPanel.tsx",
@@ -23996,6 +28585,16 @@
       "totalLines": 6,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/pages/CartPage/CartItem.module.css": {
+      "filePath": "frontend/src/pages/CartPage/CartItem.module.css",
+      "contentHash": "5e8f19e68852d3e38b162a7221046ee7fbd14b2266e239b69eaa5d63c3f1becd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 151,
+      "hasStructuralAnalysis": false
+    },
     "frontend/src/pages/CartPage/CartItem.tsx": {
       "filePath": "frontend/src/pages/CartPage/CartItem.tsx",
       "contentHash": "6d74d27647f5289f2a30190e9cc0a9d4eddc41afa615315b3538eb483dfdd6b9",
@@ -24035,6 +28634,16 @@
       ],
       "totalLines": 65,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/CartPage/CartPage.module.css": {
+      "filePath": "frontend/src/pages/CartPage/CartPage.module.css",
+      "contentHash": "779003812d1bfa14728bbfcebe6172d02c158b4b9e194b3c9c61fa647253381c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 113,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/CartPage/CartPage.tsx": {
       "filePath": "frontend/src/pages/CartPage/CartPage.tsx",
@@ -24157,6 +28766,16 @@
       "totalLines": 178,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/pages/CartPage/CartSummary.module.css": {
+      "filePath": "frontend/src/pages/CartPage/CartSummary.module.css",
+      "contentHash": "e4416e77618b999917413647ace2fc240afc0da793e854e0263c3b2d545d6159",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 215,
+      "hasStructuralAnalysis": false
+    },
     "frontend/src/pages/CartPage/CartSummary.tsx": {
       "filePath": "frontend/src/pages/CartPage/CartSummary.tsx",
       "contentHash": "f904329baf9a2718a6da08a4f48d59d9e00e80a7a3125872dc11cd4157d2643f",
@@ -24218,6 +28837,16 @@
       "totalLines": 10,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/pages/CartPage/CustomerNotes.module.css": {
+      "filePath": "frontend/src/pages/CartPage/CustomerNotes.module.css",
+      "contentHash": "ccb487efcf1c3ae95e1a4da11fc0df2c40f9fcd42344961ccc06bc55142897aa",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 70,
+      "hasStructuralAnalysis": false
+    },
     "frontend/src/pages/CartPage/CustomerNotes.tsx": {
       "filePath": "frontend/src/pages/CartPage/CustomerNotes.tsx",
       "contentHash": "1543db83668818dc57587a60f1062a086d9018e55bb277a2b7e6796b2c11b845",
@@ -24245,6 +28874,16 @@
       ],
       "totalLines": 41,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/CollectionPage/BrandStorySection.module.css": {
+      "filePath": "frontend/src/pages/CollectionPage/BrandStorySection.module.css",
+      "contentHash": "9587c082e7eb035e0a163ba6816dd8319942b98ba896776e7cf8878a4f2db9f5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 161,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/CollectionPage/BrandStorySection.tsx": {
       "filePath": "frontend/src/pages/CollectionPage/BrandStorySection.tsx",
@@ -24293,6 +28932,16 @@
       "totalLines": 53,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/pages/CollectionPage/CollectionHero.module.css": {
+      "filePath": "frontend/src/pages/CollectionPage/CollectionHero.module.css",
+      "contentHash": "92b6510f06321100195d93b0c2500b94953820387e67e8a10267cd571243a61e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 47,
+      "hasStructuralAnalysis": false
+    },
     "frontend/src/pages/CollectionPage/CollectionHero.tsx": {
       "filePath": "frontend/src/pages/CollectionPage/CollectionHero.tsx",
       "contentHash": "a96a43723c87ac9b448207c9752c954f598326cc7110d9d240b45c446d449b71",
@@ -24330,6 +28979,16 @@
       ],
       "totalLines": 26,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/CollectionPage/CollectionPage.module.css": {
+      "filePath": "frontend/src/pages/CollectionPage/CollectionPage.module.css",
+      "contentHash": "6396eb162129e21b89272ac7be4974a760c28ea24404f9c993cd07d7010518c6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 223,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/CollectionPage/CollectionPage.tsx": {
       "filePath": "frontend/src/pages/CollectionPage/CollectionPage.tsx",
@@ -24441,6 +29100,16 @@
       "totalLines": 194,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/pages/CollectionPage/EraSection.module.css": {
+      "filePath": "frontend/src/pages/CollectionPage/EraSection.module.css",
+      "contentHash": "9fd7d39d1a7c220fa346739c01b2ed72d2a31860094c703eaa2944174048a754",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 446,
+      "hasStructuralAnalysis": false
+    },
     "frontend/src/pages/CollectionPage/EraSection.tsx": {
       "filePath": "frontend/src/pages/CollectionPage/EraSection.tsx",
       "contentHash": "91c8fa62aebbbe115ce26fb6dc74f6dc6504eefab5856ae26bcbef3070c6fe60",
@@ -24495,6 +29164,16 @@
       ],
       "totalLines": 60,
       "hasStructuralAnalysis": true
+    },
+    "frontend/src/pages/CollectionPage/GallerySection.module.css": {
+      "filePath": "frontend/src/pages/CollectionPage/GallerySection.module.css",
+      "contentHash": "170721a6d421aad3c20de89ba55fde527f45ea8b443910a8cf56040864b20bdc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 384,
+      "hasStructuralAnalysis": false
     },
     "frontend/src/pages/CollectionPage/GallerySection.tsx": {
       "filePath": "frontend/src/pages/CollectionPage/GallerySection.tsx",
@@ -24899,16 +29578,108 @@
       "totalLines": 412,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/pages/ProductDetailPage/ProductDetailPage.module.css": {
+      "filePath": "frontend/src/pages/ProductDetailPage/ProductDetailPage.module.css",
+      "contentHash": "92d2ec4d636c5929e5282137e2f1a1ddd8bf276b28e5b694762f5f54a6a666ac",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 141,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/pages/ProductDetailPage/ProductDetailPage.tsx": {
+      "filePath": "frontend/src/pages/ProductDetailPage/ProductDetailPage.tsx",
+      "contentHash": "6122bc1629f1f815bb8fbb35de1907c0b323483eca81f75de8439d6eb30d0b2c",
+      "functions": [
+        {
+          "name": "ProductDetailPage",
+          "params": [],
+          "exported": true,
+          "lineCount": 108
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useState",
+            "useEffect"
+          ]
+        },
+        {
+          "source": "react-router-dom",
+          "specifiers": [
+            "useParams",
+            "Link"
+          ]
+        },
+        {
+          "source": "framer-motion",
+          "specifiers": [
+            "motion"
+          ]
+        },
+        {
+          "source": "./ProductDetailPage.module.css",
+          "specifiers": [
+            "styles"
+          ]
+        },
+        {
+          "source": "../../api/catalog",
+          "specifiers": [
+            "getProductBySlug"
+          ]
+        },
+        {
+          "source": "../../utils/motion",
+          "specifiers": [
+            "fadeUp"
+          ]
+        },
+        {
+          "source": "../../components/ImageGallery/ImageGallery",
+          "specifiers": [
+            "ImageGallery"
+          ]
+        },
+        {
+          "source": "../../components/ProductInfo/ProductInfo",
+          "specifiers": [
+            "ProductInfo"
+          ]
+        },
+        {
+          "source": "../../components/UserFeedbackSection/UserFeedbackSection",
+          "specifiers": [
+            "UserFeedbackSection"
+          ]
+        },
+        {
+          "source": "../../types/catalog",
+          "specifiers": [
+            "ProductDetail"
+          ]
+        }
+      ],
+      "exports": [
+        "ProductDetailPage"
+      ],
+      "totalLines": 120,
+      "hasStructuralAnalysis": true
+    },
     "frontend/src/pages/ProductsPage/data.ts": {
       "filePath": "frontend/src/pages/ProductsPage/data.ts",
-      "contentHash": "bc353a20b07f00539976fe8678f67881f1be7c0b9be786e409cc3a107a37e8ae",
+      "contentHash": "183037f813e67a26e3fde14c50228a586a4abbc5c2b3a877e600bd2a9d1d4dac",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [
         "SIZES"
       ],
-      "totalLines": 23,
+      "totalLines": 24,
       "hasStructuralAnalysis": true
     },
     "frontend/src/pages/ProductsPage/ProductsPage.module.css": {
@@ -24923,7 +29694,7 @@
     },
     "frontend/src/pages/ProductsPage/ProductsPage.tsx": {
       "filePath": "frontend/src/pages/ProductsPage/ProductsPage.tsx",
-      "contentHash": "a8b80e82071b55f66fc09145dd0e2137238691b5d0fdf05ed9c93e399a1c2178",
+      "contentHash": "bacae73bf1b62bd6b83d1693b71634fc2179b9545797dbf466d853a70a18b662",
       "functions": [
         {
           "name": "formatPrice",
@@ -24951,7 +29722,7 @@
           ],
           "returnType": "Product",
           "exported": false,
-          "lineCount": 16
+          "lineCount": 17
         },
         {
           "name": "getSizeParamKey",
@@ -25091,7 +29862,7 @@
       "exports": [
         "ProductsPage"
       ],
-      "totalLines": 301,
+      "totalLines": 302,
       "hasStructuralAnalysis": true
     },
     "frontend/src/pages/ResetPasswordPage/ResetPasswordPage.module.css": {
@@ -25156,6 +29927,76 @@
       "totalLines": 117,
       "hasStructuralAnalysis": true
     },
+    "frontend/src/styles/AGENTS.md": {
+      "filePath": "frontend/src/styles/AGENTS.md",
+      "contentHash": "f9536f270acef3584d2db7813e75a8a7361835d7e83bca62865d7f368ff05c73",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 38,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/src/styles/global.css": {
+      "filePath": "frontend/src/styles/global.css",
+      "contentHash": "cc7c5b466d6bcc6e39207ae175599aea0e68da78c587b427c7c88023f86e825c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 17,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/styles/reset.css": {
+      "filePath": "frontend/src/styles/reset.css",
+      "contentHash": "69d407810d57626f863c547f6088f6174da61fe5e13925d8e14b717fbb7239b7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 45,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/styles/texture.css": {
+      "filePath": "frontend/src/styles/texture.css",
+      "contentHash": "b1513ef138ba0abee2653360a08698264480244abea2308520619c96cce1e208",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 16,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/styles/transitions.css": {
+      "filePath": "frontend/src/styles/transitions.css",
+      "contentHash": "f87de07648eff4a559a614a131699d25a4f0eccdf9ad2bcc2f7f5daf5e264786",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/styles/typography.css": {
+      "filePath": "frontend/src/styles/typography.css",
+      "contentHash": "3561ddb112a408c62ef818acb66f335121cfe2b49d0aaa635512632336071454",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 23,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/src/styles/variables.css": {
+      "filePath": "frontend/src/styles/variables.css",
+      "contentHash": "da359b5568eaacd9449e80f9e70499f942aa5f03e89b56b3140a7eb40437a19c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35,
+      "hasStructuralAnalysis": false
+    },
     "frontend/src/types/address.ts": {
       "filePath": "frontend/src/types/address.ts",
       "contentHash": "476f291f25c973bc56b28d957edce5a8116bffb847e619aa12124e5e9c7c9ebc",
@@ -25208,7 +30049,7 @@
     },
     "frontend/src/types/catalog.ts": {
       "filePath": "frontend/src/types/catalog.ts",
-      "contentHash": "e8a90ae86dad6062581b703a60c031d473551f56bd8462b32ec4062548ab99f9",
+      "contentHash": "8ebe74eb91bcbdbaa6717a79a7fcd72944a781b48d96c2ea920639c388883486",
       "functions": [],
       "classes": [],
       "imports": [
@@ -25220,7 +30061,7 @@
         }
       ],
       "exports": [],
-      "totalLines": 109,
+      "totalLines": 111,
       "hasStructuralAnalysis": true
     },
     "frontend/src/types/order.ts": {
@@ -25390,6 +30231,36 @@
       "totalLines": 2,
       "hasStructuralAnalysis": true
     },
+    "frontend/tsconfig.app.json": {
+      "filePath": "frontend/tsconfig.app.json",
+      "contentHash": "dfaeb7e13cd844712d3830b69392bb8794a55117105e258388448a7d3ec76245",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 26,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/tsconfig.json": {
+      "filePath": "frontend/tsconfig.json",
+      "contentHash": "770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "frontend/tsconfig.node.json": {
+      "filePath": "frontend/tsconfig.node.json",
+      "contentHash": "90a22c920cbc14624fb4658b58f15c875abf3234224f3933f211849c3ada3242",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 25,
+      "hasStructuralAnalysis": true
+    },
     "frontend/vite.config.ts": {
       "filePath": "frontend/vite.config.ts",
       "contentHash": "37cce9e5ff74e147057dbd523febdfe66b914da24aff32b78250c9f6f9dc95ba",
@@ -25430,6 +30301,16 @@
       "imports": [],
       "exports": [],
       "totalLines": 19,
+      "hasStructuralAnalysis": true
+    },
+    "README.md": {
+      "filePath": "README.md",
+      "contentHash": "bdeb05ebae0696bee93675d0e3b26e7ec39c2f198741339e0272101ee791d61b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 192,
       "hasStructuralAnalysis": true
     }
   }
