@@ -11,13 +11,15 @@ public sealed record AdminLlmMessage(
   string Content,
   string? ToolName = null,
   string? ToolCallId = null,
-  string? ToolResponseJson = null);
+  string? ToolResponseJson = null,
+  string? ThoughtSignature = null);
 
 public sealed record LlmChunk(
   [property: JsonPropertyName("type")] string Type,
   [property: JsonPropertyName("content")] string Content,
   [property: JsonPropertyName("toolName")] string? ToolName = null,
-  [property: JsonPropertyName("toolCallId")] string? ToolCallId = null);
+  [property: JsonPropertyName("toolCallId")] string? ToolCallId = null,
+  [property: JsonPropertyName("thoughtSignature")] string? ThoughtSignature = null);
 
 public sealed record ToolDefinition(
   string Name,

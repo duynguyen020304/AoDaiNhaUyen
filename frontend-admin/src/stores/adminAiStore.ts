@@ -404,7 +404,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       title: existing?.title || makeTitle(messages),
       messages: messages.map((m) => ({
         ...m,
-        content: m.role === 'user' ? m.content : '',
+        content: m.content,
         toolCalls: undefined,
         pendingAction: undefined,
       })),

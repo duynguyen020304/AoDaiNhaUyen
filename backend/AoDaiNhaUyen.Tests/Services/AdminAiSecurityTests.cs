@@ -133,6 +133,21 @@ public sealed class AdminAiSecurityTests
     Assert.Contains("untrusted_tool_data", response.ToolResponseJson);
   }
 
+  [Fact]
+  public async Task ToolCallReplay_PreservesThoughtSignature()
+  {
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", "{}", "get_dashboard_summary", "call-dashboard", "sig-123"),
+      new LlmChunk("text", "Tóm tắt xong"));
+    var service = CreateService(llm);
+
+    await service.StreamChatAsync(new AdminAiChatRequest("Tóm tắt dashboard", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    var replayHistory = Assert.Single(llm.HistorySnapshots, h => h.Any(m => m.Role == AdminLlmRole.ToolResponse));
+    var call = Assert.Single(replayHistory, m => m.Role == AdminLlmRole.ToolCall);
+    Assert.Equal("sig-123", call.ThoughtSignature);
+  }
+
   private static AdminAgentService CreateService(
     IAdminLlmProvider llm,
     FakeProductService? products = null,

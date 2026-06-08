@@ -139,8 +139,8 @@ BẢO MẬT / RIÊNG TƯ:
       {
         contents.Add(new GeminiContent("model", [GeminiPart.FromFunctionCall(
           msg.ToolName,
-          msg.ToolCallId,
-          ParseJsonObject(msg.Content))]));
+          ParseJsonObject(msg.Content),
+          msg.ThoughtSignature)]));
         continue;
       }
 
@@ -148,7 +148,6 @@ BẢO MẬT / RIÊNG TƯ:
       {
         contents.Add(new GeminiContent("user", [GeminiPart.FromFunctionResponse(
           msg.ToolName,
-          msg.ToolCallId,
           ParseJsonObject(msg.ToolResponseJson ?? msg.Content))]));
         continue;
       }
@@ -224,6 +223,7 @@ BẢO MẬT / RIÊNG TƯ:
     var textBuffer = new StringBuilder();
     string? pendingToolName = null;
     string? pendingToolId = null;
+    string? pendingThoughtSignature = null;
     var argsBuffer = new StringBuilder();
 
     while (true)
@@ -266,11 +266,12 @@ BẢO MẬT / RIÊNG TƯ:
                 {
                   if (pendingToolName is not null)
                   {
-                    chunks.Add(new LlmChunk("tool_call", argsBuffer.ToString(), pendingToolName, pendingToolId ?? $"{pendingToolName}-{Guid.NewGuid():N}"));
+                    chunks.Add(new LlmChunk("tool_call", argsBuffer.ToString(), pendingToolName, pendingToolId ?? $"{pendingToolName}-{Guid.NewGuid():N}", pendingThoughtSignature));
                     argsBuffer.Clear();
                   }
                   pendingToolName = fnName;
                   pendingToolId = fnId;
+                  pendingThoughtSignature = part.TryGetProperty("thoughtSignature", out var sigEl) ? sigEl.GetString() : null;
                   argsBuffer.Clear();
                   if (fnCall.TryGetProperty("args", out var a))
                     argsBuffer.Append(a.GetRawText());
@@ -298,7 +299,7 @@ BẢO MẬT / RIÊNG TƯ:
     }
 
     if (pendingToolName is not null && argsBuffer.Length > 0)
-      chunks.Add(new LlmChunk("tool_call", argsBuffer.ToString(), pendingToolName, pendingToolId ?? $"{pendingToolName}-{Guid.NewGuid():N}"));
+      chunks.Add(new LlmChunk("tool_call", argsBuffer.ToString(), pendingToolName, pendingToolId ?? $"{pendingToolName}-{Guid.NewGuid():N}", pendingThoughtSignature));
 
     if (textBuffer.Length > 0 || pendingToolName is not null)
       chunks.Add(new LlmChunk("done", "", null, null));
@@ -326,23 +327,22 @@ internal sealed record GeminiContent(
 internal sealed record GeminiPart(
   [property: JsonPropertyName("text"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Text,
   [property: JsonPropertyName("functionCall"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] GeminiFunctionCallContent? FunctionCall,
-  [property: JsonPropertyName("functionResponse"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] GeminiFunctionResponseContent? FunctionResponse)
+  [property: JsonPropertyName("functionResponse"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] GeminiFunctionResponseContent? FunctionResponse,
+  [property: JsonPropertyName("thoughtSignature"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ThoughtSignature)
 {
-  public static GeminiPart FromText(string text) => new(text, null, null);
-  public static GeminiPart FromFunctionCall(string name, string? id, Dictionary<string, object?> args) =>
-    new(null, new GeminiFunctionCallContent(name, id, args), null);
-  public static GeminiPart FromFunctionResponse(string name, string? id, Dictionary<string, object?> response) =>
-    new(null, null, new GeminiFunctionResponseContent(name, id, response));
+  public static GeminiPart FromText(string text) => new(text, null, null, null);
+  public static GeminiPart FromFunctionCall(string name, Dictionary<string, object?> args, string? thoughtSignature) =>
+    new(null, new GeminiFunctionCallContent(name, args), null, thoughtSignature);
+  public static GeminiPart FromFunctionResponse(string name, Dictionary<string, object?> response) =>
+    new(null, null, new GeminiFunctionResponseContent(name, response), null);
 }
 
 internal sealed record GeminiFunctionCallContent(
   [property: JsonPropertyName("name")] string Name,
-  [property: JsonPropertyName("id"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Id,
   [property: JsonPropertyName("args")] Dictionary<string, object?> Args);
 
 internal sealed record GeminiFunctionResponseContent(
   [property: JsonPropertyName("name")] string Name,
-  [property: JsonPropertyName("id"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Id,
   [property: JsonPropertyName("response")] Dictionary<string, object?> Response);
 
 internal sealed record GeminiGenerationConfig(
