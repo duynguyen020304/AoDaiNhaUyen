@@ -10,7 +10,7 @@ namespace AoDaiNhaUyen.Mcp.Tools;
 [McpServerToolType]
 public static class AdminProductTools
 {
-  [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Liệt kê danh sách sản phẩm với phân trang và lọc.")]
+  [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Search/list sản phẩm admin với phân trang và lọc. Dùng khi admin hỏi sản phẩm bằng tên hoặc muốn duyệt catalog. Kết quả có items,total,page,pageSize,totalPages,hasMore,filtersApplied,completeness. Không kết luận không có sản phẩm trừ khi total == 0; nếu items rỗng nhưng total > 0 hoặc hasMore=true thì kiểm tra page/search tiếp.")]
   public static async Task<string> ListProducts(
     [Description("Trang hiện tại, mặc định 1")] int page = 1,
     [Description("Số sản phẩm mỗi trang, mặc định 20")] int pageSize = 20,
@@ -26,9 +26,10 @@ public static class AdminProductTools
 
     page = ToolValidation.Page(page);
     pageSize = ToolValidation.PageSize(pageSize);
+    var cleanSearch = ToolValidation.Search(search);
     var (items, total) = await products.GetPagedAsync(
-      ToolValidation.Search(search), cleanStatus, page, pageSize, false, cancellationToken);
-    return ToolJson.Ok(new { items, total, page, pageSize });
+      cleanSearch, cleanStatus, page, pageSize, false, cancellationToken);
+    return ToolJson.OkPaginated(items, total, page, pageSize, new { search = cleanSearch, status = cleanStatus });
   }
 
   [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Lấy chi tiết một sản phẩm.")]

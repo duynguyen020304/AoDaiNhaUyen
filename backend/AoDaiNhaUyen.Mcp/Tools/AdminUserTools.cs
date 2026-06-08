@@ -12,7 +12,7 @@ public static class AdminUserTools
 {
   private const string RoleChangeConfirmation = "I_UNDERSTAND_ROLE_CHANGE";
 
-  [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Liệt kê danh sách người dùng với phân trang và tìm kiếm.")]
+  [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Search/list người dùng admin với phân trang. Dùng khi admin hỏi người dùng bằng tên/email/sđt hoặc muốn duyệt danh sách. Kết quả có items,total,page,pageSize,totalPages,hasMore,filtersApplied,completeness. Không kết luận không tìm thấy trừ khi total == 0.")]
   public static async Task<string> ListUsers(
     [Description("Trang hiện tại, mặc định 1")] int page = 1,
     [Description("Số người dùng mỗi trang, mặc định 20")] int pageSize = 20,
@@ -21,13 +21,16 @@ public static class AdminUserTools
     IAdminUserService? users = null)
   {
     if (users is null) return ToolJson.ServiceMissing("users");
+    var cleanSearch = ToolValidation.Search(search);
+    page = ToolValidation.Page(page);
+    pageSize = ToolValidation.PageSize(pageSize);
     var result = await users.GetUsersAsync(
-      ToolValidation.Search(search),
-      ToolValidation.Page(page),
-      ToolValidation.PageSize(pageSize),
+      cleanSearch,
+      page,
+      pageSize,
       false,
       cancellationToken);
-    return ToolJson.Ok(result);
+    return ToolJson.OkPaginated(result.Items, result.TotalCount, page, pageSize, new { search = cleanSearch });
   }
 
   [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Lấy chi tiết một người dùng.")]

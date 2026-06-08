@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using AoDaiNhaUyen.Mcp.Auth;
 using System.ComponentModel;
 using System.Text.Json;
+using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using ModelContextProtocol.Server;
 
@@ -41,7 +42,7 @@ public static class AdminDashboardTools
     return ToolJson.Ok(o);
   }
 
-  [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Lấy danh sách đơn hàng gần đây.")]
+  [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Lấy danh sách đơn hàng gần đây theo limit, không phải toàn bộ lịch sử đơn. Dùng để xem nhanh hoạt động mới nhất; nếu cần lọc/truy vết sâu hãy dùng công cụ đơn hàng chuyên biệt.")]
   public static async Task<string> GetRecentOrders(
     [Description("Số lượng đơn hàng. Mặc định: 10")] int limit = 10,
     CancellationToken cancellationToken = default,
@@ -50,10 +51,20 @@ public static class AdminDashboardTools
     if (dashboard is null) return ToolJson.ServiceMissing("DashboardService");
     limit = ToolValidation.Limit(limit);
     var o = await dashboard.GetRecentOrdersAsync(limit, cancellationToken);
-    return ToolJson.Ok(o);
+    return ToolJson.OkWithMeta(
+      o,
+      new AdminToolResultMeta(
+        Page: 1,
+        PageSize: limit,
+        Total: o.Count,
+        TotalPages: o.Count == 0 ? 0 : 1,
+        HasMore: o.Count >= limit,
+        Completeness: o.Count >= limit ? "partial_page" : "complete_page",
+        FiltersApplied: new { limit }),
+      message: "Danh sách này bị giới hạn theo limit; không đại diện toàn bộ lịch sử đơn.");
   }
 
-  [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Lấy top sản phẩm bán chạy.")]
+  [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Lấy top sản phẩm bán chạy theo doanh số với limit. Không dùng để kiểm tra sản phẩm có tồn tại trong catalog; nếu admin hỏi sản phẩm cụ thể hãy dùng list_products/search.")]
   public static async Task<string> GetTopProducts(
     [Description("Số lượng sản phẩm. Mặc định: 5")] int limit = 5,
     CancellationToken cancellationToken = default,
@@ -62,7 +73,17 @@ public static class AdminDashboardTools
     if (dashboard is null) return ToolJson.ServiceMissing("DashboardService");
     limit = ToolValidation.Limit(limit);
     var p = await dashboard.GetTopProductsAsync(limit, cancellationToken);
-    return ToolJson.Ok(p);
+    return ToolJson.OkWithMeta(
+      p,
+      new AdminToolResultMeta(
+        Page: 1,
+        PageSize: limit,
+        Total: p.Count,
+        TotalPages: p.Count == 0 ? 0 : 1,
+        HasMore: p.Count >= limit,
+        Completeness: p.Count >= limit ? "partial_page" : "complete_page",
+        FiltersApplied: new { limit }),
+      message: "Danh sách top sản phẩm bị giới hạn theo limit; không dùng để kết luận catalog.");
   }
 
   [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Lấy dữ liệu tăng trưởng người dùng.")]

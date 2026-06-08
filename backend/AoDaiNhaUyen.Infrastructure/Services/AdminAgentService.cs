@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs.Admin;
@@ -23,6 +24,11 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IAdminPromoService _promos;
   private readonly IAutoModeStore _autoMode;
   private readonly ILogger<AdminAgentService> _logger;
+
+  private static readonly JsonSerializerOptions ToolResultJsonOptions = new(JsonSerializerDefaults.Web)
+  {
+    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+  };
 
   private readonly IPendingActionStore _pendingStore;
   private readonly IConversationStore _conversationStore;
@@ -82,7 +88,7 @@ public sealed class AdminAgentService : IAdminAgentService
       P(("limit", O("integer", "Số lượng sản phẩm. Mặc định: 5")))),
 
     // Products
-    T("list_products", "Liệt kê sản phẩm có phân trang. Luôn dùng search khi admin hỏi tên/nhóm sản phẩm cụ thể. Nếu total > số mục trả về, chưa được kết luận không có dữ liệu; hãy search hoặc xem page tiếp.",
+    T("list_products", "Search/list sản phẩm admin với phân trang và lọc. DÙNG KHI admin hỏi sản phẩm bằng tên/nhóm hoặc duyệt catalog. KẾT QUẢ có total,page,pageSize,totalPages,hasMore,filtersApplied,completeness. KHÔNG kết luận không có sản phẩm trừ khi total == 0. Nếu items rỗng nhưng total > 0 hoặc hasMore=true, kiểm tra page/search tiếp.",
       P(
         ("page", O("integer", "Trang hiện tại, 1-based, mặc định 1. Dùng >1 khi còn tiếp = có")),
         ("pageSize", O("integer", "Số sản phẩm mỗi trang, mặc định 20; response có thể chỉ hiển thị tối đa 10 mục")),
@@ -667,6 +673,14 @@ public sealed class AdminAgentService : IAdminAgentService
       using var doc = JsonDocument.Parse(argsJson);
       var args = doc.RootElement;
 
+      var lookupRequired = EnforceLookupBeforeWrite(toolName, args);
+      if (lookupRequired is not null)
+        return new ToolResult(
+          SerializeToolError(lookupRequired, "lookup_required", riskLevel.ToString()),
+          false,
+          lookupRequired,
+          riskLevel.ToString());
+
       var requiresConfirmation = await _safety.RequiresConfirmationAsync(toolName, ct);
       if (!skipConfirmation && requiresConfirmation && !_autoMode.IsAutoApproved(adminUserId, riskLevel.ToString()))
       {
@@ -748,7 +762,8 @@ public sealed class AdminAgentService : IAdminAgentService
         _ => "❌ Không tìm thấy công cụ này."
       };
 
-      return new ToolResult(result, false, result, riskLevel.ToString());
+      var wrappedResult = MaybeWrapToolResult(result, riskLevel.ToString(), requiresConfirmation);
+      return new ToolResult(wrappedResult, false, wrappedResult, riskLevel.ToString());
     }
     catch (Exception ex)
     {
@@ -798,11 +813,138 @@ public sealed class AdminAgentService : IAdminAgentService
     return value.ToLowerInvariant();
   }
 
+  private static string? EnforceLookupBeforeWrite(string toolName, JsonElement args)
+  {
+    var requiresExplicitId = toolName is
+      "update_product" or "delete_product" or "toggle_product_status" or
+      "update_user_status" or "update_user_role" or
+      "delete_category" or "update_category";
+
+    if (!requiresExplicitId) return null;
+
+    var idName = toolName.Contains("user", StringComparison.OrdinalIgnoreCase)
+      ? "id"
+      : toolName.Contains("category", StringComparison.OrdinalIgnoreCase)
+        ? "id"
+        : "id";
+
+    var hasId = args.TryGetProperty(idName, out var idElement)
+      && idElement.ValueKind == JsonValueKind.String
+      && Guid.TryParse(idElement.GetString(), out _);
+
+    return hasId
+      ? null
+      : "lookup_required: Cần GUID hợp lệ trước khi thực hiện hành động ghi. Hãy dùng tool list/search/get phù hợp để xác định đúng ID; không tự đoán từ tên.";
+  }
+
   private static string BuildConfirmationDescription(string toolName, JsonElement args, RiskLevel riskLevel)
   {
     var argsPreview = args.GetRawText();
     if (argsPreview.Length > 600) argsPreview = argsPreview[..600] + "...";
     return $"Cần xác nhận hành động {riskLevel}: {toolName}. Tham số: {argsPreview}";
+  }
+
+  private static string SerializeToolResult<T>(
+    T data,
+    string riskLevel = "read",
+    bool requiresConfirmation = false,
+    AdminToolResultMeta? meta = null,
+    string? code = "ok",
+    string? message = null)
+  {
+    var warning = riskLevel.Equals("High", StringComparison.OrdinalIgnoreCase)
+      || riskLevel.Equals("Critical", StringComparison.OrdinalIgnoreCase)
+        ? "Hành động này có rủi ro cao. Cần xác nhận từ admin."
+        : null;
+
+    return JsonSerializer.Serialize(new AdminToolResult<T>(
+      true,
+      code,
+      message,
+      data,
+      meta,
+      new AdminToolSafety(riskLevel.ToLowerInvariant(), requiresConfirmation, warning)), ToolResultJsonOptions);
+  }
+
+  private static string SerializeToolError(
+    string message,
+    string code = "error",
+    string riskLevel = "read") =>
+    JsonSerializer.Serialize(new AdminToolResult<object>(
+      false,
+      code,
+      message,
+      null,
+      null,
+      new AdminToolSafety(riskLevel.ToLowerInvariant(), false, null)), ToolResultJsonOptions);
+
+  private static string MaybeWrapToolResult(string result, string riskLevel, bool requiresConfirmation = false)
+  {
+    if (IsAdminToolResultJson(result)) return result;
+
+    if (TryParseJsonElement(result) is { } parsed)
+      return SerializeToolResult(parsed, riskLevel, requiresConfirmation);
+
+    return SerializeToolResult(new { message = result }, riskLevel, requiresConfirmation);
+  }
+
+  private static bool IsAdminToolResultJson(string result)
+  {
+    if (string.IsNullOrWhiteSpace(result)) return false;
+
+    try
+    {
+      using var doc = JsonDocument.Parse(result);
+      var root = doc.RootElement;
+      return root.ValueKind == JsonValueKind.Object
+        && root.TryGetProperty("success", out _)
+        && root.TryGetProperty("data", out _);
+    }
+    catch (JsonException)
+    {
+      return false;
+    }
+  }
+
+  private static JsonElement? TryParseJsonElement(string result)
+  {
+    if (string.IsNullOrWhiteSpace(result)) return null;
+
+    try
+    {
+      using var doc = JsonDocument.Parse(result);
+      return doc.RootElement.Clone();
+    }
+    catch (JsonException)
+    {
+      return null;
+    }
+  }
+
+  private static string SerializePaginatedToolResult<T>(
+    IReadOnlyCollection<T> items,
+    int total,
+    int page,
+    int pageSize,
+    object? filtersApplied = null,
+    string riskLevel = "read",
+    string? successMessage = null)
+  {
+    var totalPages = total == 0 ? 0 : (int)Math.Ceiling(total / (double)pageSize);
+    var hasMore = page < totalPages;
+    var completeness = total == 0 ? "empty_result" : hasMore ? "partial_page" : "complete_page";
+    var code = items.Count == 0 && total > 0 ? "empty_page_but_results_exist" : "ok";
+    var message = code == "empty_page_but_results_exist"
+      ? "Trang này không có dữ liệu nhưng vẫn có kết quả ở trang khác."
+      : successMessage;
+
+    return SerializeToolResult(
+      new { items, total, page, pageSize },
+      riskLevel,
+      false,
+      new AdminToolResultMeta(page, pageSize, total, totalPages, hasMore, completeness, filtersApplied),
+      code,
+      message);
   }
 
   private static string BuildToolResponseJson(string content) =>
@@ -845,17 +987,15 @@ public sealed class AdminAgentService : IAdminAgentService
 
   private async Task<string> ListProducts(int page, int pageSize, string? search, string? status, CancellationToken ct)
   {
-    var (items, total) = await _products.GetPagedAsync(search, status, page, pageSize, false, ct);
-    const int displayLimit = 10;
+    var cleanSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
+    var cleanStatus = string.IsNullOrWhiteSpace(status) ? null : status.Trim().ToLowerInvariant();
+    var (items, total) = await _products.GetPagedAsync(cleanSearch, cleanStatus, page, pageSize, false, ct);
+    var displayLimit = 10;
     var shown = Math.Min(items.Count, displayLimit);
-    var hasMorePages = page * pageSize < total;
-    var hasHiddenItemsOnPage = items.Count > displayLimit;
-    var hasMore = hasMorePages || hasHiddenItemsOnPage;
-    var filterSummary = $"search='{search ?? ""}', status='{status ?? ""}'";
-
-    return $"📦 Tìm thấy {total} sản phẩm ({filterSummary}, trang {page}, hiển thị {shown}/{items.Count} mục trang này, còn tiếp: {(hasMore ? "có" : "không")}).\n" +
-           (hasMore ? "Gợi ý: dùng search cụ thể hoặc page tiếp theo trước khi kết luận thiếu dữ liệu.\n" : "") +
-           string.Join("\n", items.Take(displayLimit).Select(p => $"- {p.Name} ({p.Status})"));
+    var hasMore = page * pageSize < total || items.Count > displayLimit;
+    var message = $"Tìm thấy {total} sản phẩm (hiển thị {shown}/{items.Count}, còn tiếp: {(hasMore ? "có" : "không")})." +
+                  (hasMore ? " Gợi ý: dùng search cụ thể hoặc page tiếp theo trước khi kết luận thiếu dữ liệu." : string.Empty);
+    return SerializePaginatedToolResult(items, total, page, pageSize, new { search = cleanSearch, status = cleanStatus }, successMessage: message);
   }
 
   private async Task<string> GetProduct(Guid id, CancellationToken ct)
@@ -967,16 +1107,9 @@ public sealed class AdminAgentService : IAdminAgentService
 
   private async Task<string> ListUsers(int page, int pageSize, string? search, CancellationToken ct)
   {
-    var r = await _users.GetUsersAsync(search, page, pageSize, false, ct);
-    const int displayLimit = 10;
-    var shown = Math.Min(r.Items.Count, displayLimit);
-    var hasMorePages = page * pageSize < r.TotalCount;
-    var hasHiddenItemsOnPage = r.Items.Count > displayLimit;
-    var hasMore = hasMorePages || hasHiddenItemsOnPage;
-
-    return $"👥 Tìm thấy {r.TotalCount} người dùng (search='{search ?? ""}', trang {page}, hiển thị {shown}/{r.Items.Count} mục trang này, còn tiếp: {(hasMore ? "có" : "không")}).\n" +
-           (hasMore ? "Gợi ý: dùng search tên/email/sđt hoặc page tiếp theo trước khi kết luận thiếu dữ liệu.\n" : "") +
-           string.Join("\n", r.Items.Take(displayLimit).Select(u => $"- {u.FullName ?? u.Email} ({u.Status})"));
+    var cleanSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
+    var r = await _users.GetUsersAsync(cleanSearch, page, pageSize, false, ct);
+    return SerializePaginatedToolResult(r.Items, r.TotalCount, page, pageSize, new { search = cleanSearch });
   }
 
   private async Task<string> GetUser(Guid id, CancellationToken ct)

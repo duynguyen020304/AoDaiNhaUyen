@@ -10,7 +10,7 @@ namespace AoDaiNhaUyen.Mcp.Tools;
 [McpServerToolType]
 public static class AdminCategoryTools
 {
-  [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Liệt kê tất cả danh mục.")]
+  [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Liệt kê tất cả danh mục admin. Dùng để tìm categoryId trước khi tạo/cập nhật sản phẩm hoặc khi admin hỏi cấu trúc catalog. Không dùng để kết luận sản phẩm trong danh mục rỗng; để kiểm tra sản phẩm hãy dùng list_products/search.")]
   public static async Task<string> ListCategories(
     CancellationToken cancellationToken = default,
     IAdminCategoryService? categories = null)

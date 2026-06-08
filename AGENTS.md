@@ -32,7 +32,7 @@ Premium Vietnamese áo dài e-commerce platform. Full-stack app with ASP.NET Cor
 - Never return raw anonymous objects from controllers (no `Ok(new { data })`)
 
 ### Testing Requirements
-- Frontend: `npm run lint` + `npm run build` + visual validation via Playwright MCP for UI changes
+- Frontend/admin: `bun run lint` + `bun run build` + visual validation via Playwright MCP for UI changes
 - Backend: `dotnet test` from `backend/`
 - Persisted data/backend changes: validate with `psql` against PostgreSQL database
 
@@ -62,7 +62,7 @@ Premium Vietnamese áo dài e-commerce platform. Full-stack app with ASP.NET Cor
 
 ### External
 - **Backend**: ASP.NET Core 10, EF Core 10, JWT Bearer, MailKit, DotNetEnv
-- **Frontend**: React 19, react-router-dom 7, framer-motion, Vite 8, TypeScript 6
+- **Frontend**: React 19, react-router-dom 7, TanStack Query, framer-motion, Vite 8, TypeScript 6
 - **Database**: PostgreSQL
 - **CI/CD**: GitHub Actions with SSH/Cloudflare Tunnel deployment
 
