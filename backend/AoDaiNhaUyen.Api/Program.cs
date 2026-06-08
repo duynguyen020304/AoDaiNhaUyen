@@ -153,6 +153,7 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/upload"
 });
 
+app.UseMiddleware<SensitiveResponseCacheMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.Use(async (context, next) =>

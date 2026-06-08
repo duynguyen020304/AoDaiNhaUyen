@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { AdminUserListItem, RoleDto, CreateUserRequest, UpdateUserRequest } from '@/types/admin'
 import * as adminApi from '@/api/admin'
+import { invalidateAdminDashboardQueries } from '@/queries/invalidateAdminQueries'
 
 interface UserState {
   users: AdminUserListItem[]
@@ -74,6 +75,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     try {
       await adminApi.createUser(data)
       await get().fetchUsers()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể tạo người dùng.'
       set({ error: message })
@@ -86,6 +88,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     try {
       await adminApi.updateUser(id, data)
       await get().fetchUsers()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể cập nhật người dùng.'
       set({ error: message })
@@ -97,6 +100,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     try {
       await adminApi.updateUserRole(id, { roleId })
       await get().fetchUsers()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể cập nhật vai trò.'
       set({ error: message })
@@ -108,6 +112,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     try {
       await adminApi.updateUserStatus(id, { status })
       await get().fetchUsers()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể cập nhật trạng thái.'
       set({ error: message })
@@ -120,6 +125,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     try {
       await adminApi.deleteUser(id)
       await get().fetchUsers()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể xóa người dùng.'
       set({ error: message })
@@ -132,6 +138,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     try {
       await adminApi.restoreUser(id)
       await get().fetchUsers()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể khôi phục người dùng.'
       set({ error: message })

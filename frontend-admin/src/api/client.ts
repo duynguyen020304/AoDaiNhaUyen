@@ -1,6 +1,25 @@
-import type { ApiEnvelope, PaginatedApiEnvelope } from '@/types/api'
+import type { ApiEnvelope, PaginatedApiEnvelope, ApiError } from '@/types/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5043'
+
+export class HttpError extends Error {
+  readonly status: number
+  readonly errors: ApiError[] | null
+  readonly requestInfo?: { path: string; method: string }
+
+  constructor(
+    message: string,
+    status: number,
+    errors: ApiError[] | null = null,
+    requestInfo?: { path: string; method: string },
+  ) {
+    super(message)
+    this.name = 'HttpError'
+    this.status = status
+    this.errors = errors
+    this.requestInfo = requestInfo
+  }
+}
 
 function shouldSetJsonContentType(body: BodyInit | null | undefined): boolean {
   if (!body) return false
@@ -42,7 +61,10 @@ async function fetchWithCookies(path: string, init: RequestInit | undefined, hea
       headers,
     })
   } catch {
-    throw new Error('Không thể kết nối đến máy chủ.')
+    throw new HttpError('Không thể kết nối đến máy chủ.', 0, null, {
+      path,
+      method: init?.method || 'GET',
+    })
   }
 }
 
@@ -71,12 +93,18 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     payload = await response.json() as ApiEnvelope<T>
   } catch {
-    throw new Error('Không thể đọc phản hồi từ máy chủ.')
+    throw new HttpError('Không thể đọc phản hồi từ máy chủ.', response.status, null, {
+      path,
+      method: init?.method || 'GET',
+    })
   }
 
   if (!response.ok || !payload.success) {
     const message = payload.errors?.[0]?.message || payload.message || 'Đã xảy ra lỗi.'
-    throw new Error(message)
+    throw new HttpError(message, response.status, payload.errors, {
+      path,
+      method: init?.method || 'GET',
+    })
   }
 
   return payload.data
@@ -94,12 +122,18 @@ export async function requestPaginated<T>(path: string, init?: RequestInit): Pro
   try {
     payload = await response.json() as PaginatedApiEnvelope<T>
   } catch {
-    throw new Error('Không thể đọc phản hồi từ máy chủ.')
+    throw new HttpError('Không thể đọc phản hồi từ máy chủ.', response.status, null, {
+      path,
+      method: init?.method || 'GET',
+    })
   }
 
   if (!response.ok || !payload.success) {
     const message = payload.errors?.[0]?.message || payload.message || 'Đã xảy ra lỗi.'
-    throw new Error(message)
+    throw new HttpError(message, response.status, payload.errors, {
+      path,
+      method: init?.method || 'GET',
+    })
   }
 
   return payload

@@ -1,5 +1,6 @@
 using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs.Admin;
+using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,9 @@ namespace AoDaiNhaUyen.Api.Controllers.Admin;
 [ApiController]
 [Route("api/admin/categories")]
 [Authorize(Policy = "RequireAdminRole")]
-public sealed class AdminCategoriesController(IAdminCategoryService adminCategoryService) : ControllerBase
+public sealed class AdminCategoriesController(
+  IAdminCategoryService adminCategoryService,
+  ICacheInvalidationService cacheInvalidation) : ControllerBase
 {
     /// <summary>Get all categories (flat list).</summary>
     [HttpGet]
@@ -48,6 +51,7 @@ public sealed class AdminCategoriesController(IAdminCategoryService adminCategor
         CancellationToken cancellationToken = default)
     {
         var category = await adminCategoryService.CreateAsync(request, cancellationToken);
+        await cacheInvalidation.InvalidateCategoryRelatedCacheAsync(CancellationToken.None);
         return CreatedAtAction(nameof(GetById), new { id = category.Id },
             ApiResponseFactory.Success(category, "Tạo danh mục thành công."));
     }
@@ -69,6 +73,7 @@ public sealed class AdminCategoriesController(IAdminCategoryService adminCategor
                 "Danh mục không tồn tại."));
         }
 
+        await cacheInvalidation.InvalidateCategoryRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success(category, "Cập nhật danh mục thành công."));
     }
 
@@ -88,6 +93,7 @@ public sealed class AdminCategoriesController(IAdminCategoryService adminCategor
                 "Danh mục không tồn tại hoặc đã bị xóa."));
         }
 
+        await cacheInvalidation.InvalidateCategoryRelatedCacheAsync(CancellationToken.None);
         return NoContent();
     }
 
@@ -107,6 +113,7 @@ public sealed class AdminCategoriesController(IAdminCategoryService adminCategor
                 "Danh mục không tồn tại hoặc chưa bị xóa."));
         }
 
+        await cacheInvalidation.InvalidateCategoryRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success<object?>(null, "Khôi phục danh mục thành công."));
     }
 }

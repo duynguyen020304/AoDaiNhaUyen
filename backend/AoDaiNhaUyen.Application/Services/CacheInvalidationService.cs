@@ -19,7 +19,8 @@ public sealed class CacheInvalidationService(
     logger.LogDebug("Invalidating order-related caches");
     await Task.WhenAll(
       cache.RemoveByTagAsync(CacheTags.Dashboard, cancellationToken),
-      cache.RemoveByTagAsync(CacheTags.Orders, cancellationToken));
+      cache.RemoveByTagAsync(CacheTags.Orders, cancellationToken),
+      cache.RemoveByTagAsync(CacheTags.Inventory, cancellationToken));
   }
 
   public async Task InvalidateProductRelatedCacheAsync(CancellationToken cancellationToken = default)
@@ -27,7 +28,28 @@ public sealed class CacheInvalidationService(
     logger.LogDebug("Invalidating product-related caches");
     await Task.WhenAll(
       cache.RemoveByTagAsync(CacheTags.Dashboard, cancellationToken),
+      cache.RemoveByTagAsync(CacheTags.Products, cancellationToken),
+      cache.RemoveByTagAsync(CacheTags.Categories, cancellationToken),
+      cache.RemoveByTagAsync(CacheTags.Inventory, cancellationToken));
+  }
+
+  public async Task InvalidateCategoryRelatedCacheAsync(CancellationToken cancellationToken = default)
+  {
+    logger.LogDebug("Invalidating category-related caches");
+    await Task.WhenAll(
+      cache.RemoveByTagAsync(CacheTags.Dashboard, cancellationToken),
+      cache.RemoveByTagAsync(CacheTags.Categories, cancellationToken),
       cache.RemoveByTagAsync(CacheTags.Products, cancellationToken));
+  }
+
+  public async Task InvalidateInventoryRelatedCacheAsync(CancellationToken cancellationToken = default)
+  {
+    logger.LogDebug("Invalidating inventory-related caches");
+    await Task.WhenAll(
+      cache.RemoveByTagAsync(CacheTags.Dashboard, cancellationToken),
+      cache.RemoveByTagAsync(CacheTags.Inventory, cancellationToken),
+      cache.RemoveByTagAsync(CacheTags.Products, cancellationToken),
+      cache.RemoveByTagAsync(CacheTags.Orders, cancellationToken));
   }
 
   public async Task InvalidateUserRelatedCacheAsync(CancellationToken cancellationToken = default)
@@ -45,6 +67,8 @@ public sealed class CacheInvalidationService(
       cache.RemoveByTagAsync(CacheTags.Dashboard, cancellationToken),
       cache.RemoveByTagAsync(CacheTags.Orders, cancellationToken),
       cache.RemoveByTagAsync(CacheTags.Products, cancellationToken),
+      cache.RemoveByTagAsync(CacheTags.Categories, cancellationToken),
+      cache.RemoveByTagAsync(CacheTags.Inventory, cancellationToken),
       cache.RemoveByTagAsync(CacheTags.Users, cancellationToken));
   }
 }

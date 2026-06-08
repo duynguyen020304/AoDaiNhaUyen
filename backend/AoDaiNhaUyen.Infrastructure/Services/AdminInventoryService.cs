@@ -82,7 +82,7 @@ public sealed class AdminInventoryService(
     => await cache.GetOrSetAsync(
       cacheKeys.BuildAdminKey("dashboard", "store-health"),
       GetStoreHealthScoreCoreAsync,
-      tags: [CacheTags.Dashboard, CacheTags.Products, CacheTags.Orders, CacheTags.Users],
+      tags: [CacheTags.Dashboard, CacheTags.Inventory, CacheTags.Products, CacheTags.Orders, CacheTags.Users],
       duration: GetCacheDuration("dashboard:store-health", 120),
       token: ct) ?? throw new InvalidOperationException("Không thể tải điểm sức khỏe cửa hàng.");
 

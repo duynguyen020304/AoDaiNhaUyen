@@ -182,6 +182,7 @@ public sealed class AdminProductsController(
         CancellationToken cancellationToken = default)
     {
         var result = await imageVisibilityService.MakePublicAsync(imageId, productId, cancellationToken);
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success(result, "Chuyển ảnh sang công khai thành công."));
     }
 
@@ -199,6 +200,7 @@ public sealed class AdminProductsController(
         }
 
         var result = await imageVisibilityService.MakePrivateAsync(imageId, productId, cancellationToken);
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success(result, "Chuyển ảnh sang riêng tư thành công."));
     }    /// <summary>Upload a new image for a product.</summary>
     [HttpPost("{productId:guid}/images")]
@@ -221,6 +223,7 @@ public sealed class AdminProductsController(
             return NotFound(ApiResponseFactory.Failure("Không tìm thấy sản phẩm.", "not_found", "Sản phẩm không tồn tại hoặc đã bị xóa."));
         }
 
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success(result, "Tải ảnh lên thành công."));
     }
 
@@ -237,6 +240,7 @@ public sealed class AdminProductsController(
             return NotFound(ApiResponseFactory.Failure("Không tìm thấy ảnh hoặc sản phẩm.", "not_found", "Ảnh hoặc sản phẩm không tồn tại."));
         }
 
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success<object?>(null, "Xóa ảnh thành công."));
     }
 
@@ -253,6 +257,7 @@ public sealed class AdminProductsController(
             return NotFound(ApiResponseFactory.Failure("Không tìm thấy ảnh hoặc sản phẩm.", "not_found", "Ảnh hoặc sản phẩm không tồn tại."));
         }
 
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success<object?>(null, "Cập nhật ảnh chính thành công."));
     }
 }

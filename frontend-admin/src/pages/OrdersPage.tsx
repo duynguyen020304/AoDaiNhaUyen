@@ -3,6 +3,7 @@ import { RefreshCw, Truck, CheckCircle2, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { updateOrderStatus, createShipment } from '@/api/admin'
 import { getRecentOrders } from '@/api/dashboard'
+import { invalidateAdminDashboardQueries } from '@/queries/invalidateAdminQueries'
 import type { RecentOrder } from '@/types/dashboard'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -70,6 +71,7 @@ export function OrdersPage() {
     try {
       setProcessingId(orderId)
       await updateOrderStatus(orderId, nextStatus)
+      invalidateAdminDashboardQueries()
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus } : o))
       )
@@ -85,6 +87,7 @@ export function OrdersPage() {
     try {
       setProcessingId(showShipModal.id)
       await createShipment(showShipModal.id, carrier || undefined, trackingNumber || undefined)
+      invalidateAdminDashboardQueries()
       setOrders((prev) =>
         prev.map((o) => (o.id === showShipModal.id ? { ...o, status: 'shipping' } : o))
       )

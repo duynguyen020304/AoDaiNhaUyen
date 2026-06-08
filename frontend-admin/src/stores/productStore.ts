@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { AdminProductListItem, AdminProductDetail, CreateProductRequest, UpdateProductRequest } from '@/types/admin'
 import * as adminApi from '@/api/admin'
+import { invalidateAdminDashboardQueries } from '@/queries/invalidateAdminQueries'
 
 interface ProductState {
   products: AdminProductListItem[]
@@ -80,6 +81,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       await adminApi.createProduct(data)
       await get().fetchProducts()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể tạo sản phẩm.'
       set({ error: message })
@@ -92,6 +94,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       await adminApi.updateProduct(id, data)
       await get().fetchProducts()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể cập nhật sản phẩm.'
       set({ error: message })
@@ -104,6 +107,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       const product = await adminApi.updateVariantStock(productId, variantId, { stockQty })
       await get().fetchProducts()
+      invalidateAdminDashboardQueries()
       return product
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể cập nhật tồn kho.'
@@ -117,6 +121,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       await adminApi.deleteProduct(id)
       await get().fetchProducts()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể xóa sản phẩm.'
       set({ error: message })
@@ -129,6 +134,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       await adminApi.restoreProduct(id)
       await get().fetchProducts()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể khôi phục sản phẩm.'
       set({ error: message })
@@ -141,6 +147,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       await adminApi.toggleProductStatus(id, status)
       await get().fetchProducts()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể cập nhật trạng thái.'
       set({ error: message })
@@ -154,6 +161,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
       await adminApi.uploadProductImage(productId, file)
       // re-fetch the product to update images
       await get().getProduct(productId)
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể tải ảnh lên.'
       set({ error: message })
@@ -165,6 +173,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set({ error: null })
     try {
       await adminApi.deleteProductImage(productId, imageId)
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể xóa ảnh.'
       set({ error: message })
@@ -176,6 +185,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set({ error: null })
     try {
       await adminApi.setPrimaryProductImage(productId, imageId)
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể đặt ảnh chính.'
       set({ error: message })
@@ -188,8 +198,10 @@ export const useProductStore = create<ProductState>((set, get) => ({
     try {
       if (isPublic) {
         await adminApi.makeProductImagePublic(productId, imageId)
+        invalidateAdminDashboardQueries()
       } else {
         await adminApi.makeProductImagePrivate(productId, imageId)
+        invalidateAdminDashboardQueries()
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể đổi trạng thái ảnh.'

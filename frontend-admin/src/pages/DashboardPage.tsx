@@ -1,7 +1,9 @@
-import { useEffect, useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
-import { useDashboardStore } from '@/stores/dashboardStore'
+import { useQueryClient } from '@tanstack/react-query'
+import { useDashboardQueries } from '@/queries/dashboardQueries'
+import { queryKeys } from '@/queries/queryKeys'
 import { StatsCardGrid } from '@/components/dashboard/StatsCardGrid'
 import { RevenueChart } from '@/components/dashboard/RevenueChart'
 import { OrdersByStatusChart } from '@/components/dashboard/OrdersByStatusChart'
@@ -21,37 +23,23 @@ const PERIOD_OPTIONS: { value: Period; label: string }[] = [
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const {
-    summary,
-    revenue,
-    ordersByStatus,
-    recentOrders,
-    topProducts,
-    userGrowth,
-    period,
-    loading,
-    error,
-    fetchAll,
-    setPeriod,
-  } = useDashboardStore()
+  const queryClient = useQueryClient()
+  const [period, setPeriod] = useState<Period>(30)
+  const dashboard = useDashboardQueries(period)
+  const loading = dashboard.isPending
+  const refreshing = dashboard.isFetching
+  const error = dashboard.error instanceof Error ? dashboard.error.message : null
 
   const revenueRef = useRef<HTMLDivElement>(null)
   const ordersRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    fetchAll()
-  }, [fetchAll])
-
   const handleRefresh = useCallback(() => {
-    fetchAll(true)
-  }, [fetchAll])
+    void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.root })
+  }, [queryClient])
 
-  const handlePeriodChange = useCallback(
-    (p: Period) => {
-      setPeriod(p)
-    },
-    [setPeriod],
-  )
+  const handlePeriodChange = useCallback((p: Period) => {
+    setPeriod(p)
+  }, [])
 
   if (error) {
     return (
@@ -91,15 +79,15 @@ export function DashboardPage() {
               </button>
             ))}
           </div>
-          <Button variant="outline" size="icon" onClick={handleRefresh} disabled={loading}>
-            <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="icon" onClick={handleRefresh} disabled={refreshing}>
+            <RefreshCw className={`size-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </div>
 
       {/* Stats cards */}
       <StatsCardGrid
-        summary={summary}
+        summary={dashboard.summary.data ?? null}
         loading={loading}
         onRevenueClick={() => revenueRef.current?.scrollIntoView({ behavior: 'smooth' })}
         onOrdersClick={() => ordersRef.current?.scrollIntoView({ behavior: 'smooth' })}
@@ -113,21 +101,21 @@ export function DashboardPage() {
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div ref={revenueRef}>
-          <RevenueChart data={revenue} loading={loading} />
+          <RevenueChart data={dashboard.revenue.data?.points ?? []} loading={loading} />
         </div>
-        <OrdersByStatusChart data={ordersByStatus} loading={loading} />
+        <OrdersByStatusChart data={dashboard.ordersByStatus.data ?? null} loading={loading} />
       </div>
 
       {/* Tables row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div ref={ordersRef}>
-          <RecentOrdersTable orders={recentOrders} loading={loading} />
+          <RecentOrdersTable orders={dashboard.recentOrders.data ?? []} loading={loading} />
         </div>
-        <TopProductsList products={topProducts} loading={loading} />
+        <TopProductsList products={dashboard.topProducts.data ?? []} loading={loading} />
       </div>
 
       {/* User growth */}
-      <UserGrowthChart data={userGrowth} loading={loading} />
+      <UserGrowthChart data={dashboard.userGrowth.data?.points ?? []} loading={loading} />
     </div>
   )
 }

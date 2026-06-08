@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { CategoryListItem, CreateCategoryRequest, UpdateCategoryRequest } from '@/types/admin'
 import * as adminApi from '@/api/admin'
+import { invalidateAdminDashboardQueries } from '@/queries/invalidateAdminQueries'
 
 interface CategoryState {
   categories: CategoryListItem[]
@@ -40,6 +41,7 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     try {
       await adminApi.createCategory(data)
       await get().fetchCategories()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể tạo danh mục.'
       set({ error: message })
@@ -52,6 +54,7 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     try {
       await adminApi.updateCategory(id, data)
       await get().fetchCategories()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể cập nhật danh mục.'
       set({ error: message })
@@ -64,6 +67,7 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     try {
       await adminApi.deleteCategory(id)
       await get().fetchCategories()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể xóa danh mục.'
       set({ error: message })
@@ -76,6 +80,7 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
     try {
       await adminApi.restoreCategory(id)
       await get().fetchCategories()
+      invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể khôi phục danh mục.'
       set({ error: message })

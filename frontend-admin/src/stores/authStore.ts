@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { AuthUser, AuthStatus } from '@/types/auth'
 import * as authApi from '@/api/auth'
+import { clearAdminQueryCache } from '@/lib/queryClient'
 
 interface AuthState {
   status: AuthStatus
@@ -9,6 +10,7 @@ interface AuthState {
   bootstrap: () => Promise<void>
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  markAnonymous: () => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -25,6 +27,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         const user = await authApi.refreshSession()
         set({ status: 'authenticated', user, error: null })
       } catch {
+        clearAdminQueryCache()
         set({ status: 'anonymous', user: null, error: null })
       }
     }
@@ -46,7 +49,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await authApi.logout()
     } finally {
+      clearAdminQueryCache()
       set({ status: 'anonymous', user: null, error: null })
     }
+  },
+
+  markAnonymous: () => {
+    set({ status: 'anonymous', user: null, error: null })
   },
 }))
