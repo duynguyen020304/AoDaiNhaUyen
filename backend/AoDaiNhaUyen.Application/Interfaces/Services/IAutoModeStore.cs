@@ -4,7 +4,8 @@ namespace AoDaiNhaUyen.Application.Interfaces.Services;
 public interface IAutoModeStore
 {
   bool IsAutoMode { get; }
-  void Enable();
-  void Disable();
-  bool IsAutoApproved(string riskLevel);
+  bool IsAutoModeEnabled(Guid adminUserId);
+  void Enable(Guid adminUserId);
+  void Disable(Guid adminUserId);
+  bool IsAutoApproved(Guid adminUserId, string riskLevel);
 }

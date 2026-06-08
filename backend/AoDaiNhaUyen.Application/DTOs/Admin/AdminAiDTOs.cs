@@ -14,4 +14,5 @@ public sealed record AdminPendingAction(
   DateTime RequestedAt,
   string? ConversationId = null,
   string? ToolArgsJson = null,
-  string? AssistantText = null);
+  string? AssistantText = null,
+  Guid? AdminUserId = null);

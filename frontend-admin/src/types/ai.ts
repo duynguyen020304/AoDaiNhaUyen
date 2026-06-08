@@ -51,6 +51,7 @@ export interface AiConfirmRequest {
 }
 export interface SavedConversation {
   id: string
+  conversationId?: string | null
   title: string
   messages: AiMessage[]
   createdAt: string

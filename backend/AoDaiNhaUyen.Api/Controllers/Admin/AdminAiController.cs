@@ -11,7 +11,9 @@ namespace AoDaiNhaUyen.Api.Controllers.Admin;
 [ApiController]
 [Route("api/admin/ai")]
 [Authorize(Policy = "RequireAdminRole")]
-public sealed class AdminAiController(IAdminAgentService agentService) : ControllerBase
+public sealed class AdminAiController(
+  IAdminAgentService agentService,
+  ILogger<AdminAiController> logger) : ControllerBase
 {
   /// <summary>Stream an AI chat conversation with tool-calling via SSE.</summary>
   [HttpPost("chat")]
@@ -31,6 +33,15 @@ public sealed class AdminAiController(IAdminAgentService agentService) : Control
     Response.Headers.Append("Connection", "keep-alive");
     Response.Headers.Append("X-Accel-Buffering", "no");
 
+    var validationError = ValidateChatRequest(request);
+    if (validationError is not null)
+    {
+      var errorChunk = new { type = "error", content = validationError };
+      await Response.WriteAsync($"data: {JsonSerializer.Serialize(errorChunk)}\n\n", cancellationToken);
+      await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
+      return;
+    }
+
     try
     {
       await foreach (var chunk in agentService.StreamChatAsync(request, adminUserId.Value, cancellationToken))
@@ -46,7 +57,9 @@ public sealed class AdminAiController(IAdminAgentService agentService) : Control
     }
     catch (Exception ex)
     {
-      var errorChunk = new { type = "error", content = $"Lỗi hệ thống: {ex.Message}" };
+      var traceId = HttpContext.TraceIdentifier;
+      logger.LogError(ex, "[AdminAI] StreamChat failed. TraceId={TraceId}", traceId);
+      var errorChunk = new { type = "error", content = $"Lỗi hệ thống. Mã tra cứu: {traceId}" };
       await Response.WriteAsync($"data: {JsonSerializer.Serialize(errorChunk)}\n\n", cancellationToken);
     }
 
@@ -83,22 +96,31 @@ public sealed class AdminAiController(IAdminAgentService agentService) : Control
   public ActionResult<ApiResponse<object>> ToggleAutoMode(
     [FromBody] ToggleAutoModeRequest request)
   {
+    var adminUserId = GetAdminUserId();
+    if (adminUserId is null)
+      return Unauthorized(ApiResponseFactory.Failure("Không xác định được quản trị viên.", "unauthorized", "Vui lòng đăng nhập lại."));
+
     var store = HttpContext.RequestServices.GetRequiredService<IAutoModeStore>();
-    if (request.Enabled) store.Enable();
-    else store.Disable();
+    if (request.Enabled) store.Enable(adminUserId.Value);
+    else store.Disable(adminUserId.Value);
 
     return Ok(ApiResponseFactory.Success<object?>(null,
-      request.Enabled ? "Đã bật chế độ tự động." : "Đã tắt chế độ tự động."));
+      request.Enabled ? "Đã bật chế độ tự động trong 30 phút." : "Đã tắt chế độ tự động."));
   }
 
   /// <summary>Get current auto mode status.</summary>
   [HttpGet("auto-mode/status")]
   public ActionResult<ApiResponse<object>> GetAutoModeStatus()
   {
+    var adminUserId = GetAdminUserId();
+    if (adminUserId is null)
+      return Unauthorized(ApiResponseFactory.Failure("Không xác định được quản trị viên.", "unauthorized", "Vui lòng đăng nhập lại."));
+
     var store = HttpContext.RequestServices.GetRequiredService<IAutoModeStore>();
+    var isAutoMode = store.IsAutoModeEnabled(adminUserId.Value);
     return Ok(ApiResponseFactory.Success<object>(
-      new { isAutoMode = store.IsAutoMode },
-      store.IsAutoMode ? "Chế độ tự động đang bật." : "Chế độ tự động đang tắt."));
+      new { isAutoMode },
+      isAutoMode ? "Chế độ tự động đang bật." : "Chế độ tự động đang tắt."));
   }
 
   /// <summary>Get store health score.</summary>
@@ -109,6 +131,30 @@ public sealed class AdminAiController(IAdminAgentService agentService) : Control
     var inventoryService = HttpContext.RequestServices.GetRequiredService<IAdminInventoryService>();
     var health = await inventoryService.GetStoreHealthScoreAsync(cancellationToken);
     return Ok(ApiResponseFactory.Success<object>(health, "Lấy điểm sức khỏe cửa hàng thành công."));
+  }
+
+  private static string? ValidateChatRequest(AdminAiChatRequest request)
+  {
+    const int maxMessageLength = 4000;
+    const int maxConversationIdLength = 64;
+
+    var hasMessage = !string.IsNullOrWhiteSpace(request.Message);
+    var hasConversationId = !string.IsNullOrWhiteSpace(request.ConversationId);
+
+    if (!hasMessage && !hasConversationId)
+      return "Tin nhắn không được để trống.";
+
+    if (request.Message.Length > maxMessageLength)
+      return $"Tin nhắn quá dài. Tối đa {maxMessageLength} ký tự.";
+
+    if (hasConversationId)
+    {
+      var conversationId = request.ConversationId!.Trim();
+      if (conversationId.Length > maxConversationIdLength || conversationId.Any(ch => !char.IsAsciiHexDigit(ch)))
+        return "Mã cuộc trò chuyện không hợp lệ.";
+    }
+
+    return null;
   }
 
   private Guid? GetAdminUserId()

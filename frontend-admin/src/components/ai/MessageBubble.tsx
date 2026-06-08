@@ -65,6 +65,16 @@ function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
   )
 }
 
+function safeHref(href?: string) {
+  if (!href) return undefined
+  try {
+    const url = new URL(href, window.location.origin)
+    return ['http:', 'https:', 'mailto:'].includes(url.protocol) ? href : undefined
+  } catch {
+    return undefined
+  }
+}
+
 const markdownComponents = {
   h1: ({ children }: { children?: React.ReactNode }) => (
     <h1 className="text-lg font-bold text-gray-900 mt-4 mb-2 first:mt-0 tracking-tight">{children}</h1>
@@ -117,9 +127,11 @@ const markdownComponents = {
       <code className="bg-gray-100 text-wine px-1.5 py-0.5 rounded-md text-xs font-mono border border-gray-200/60 font-semibold">{children}</code>
     )
   },
-  a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-wine font-medium underline underline-offset-2 hover:text-wine/80">{children}</a>
-  ),
+  a: ({ href, children }: { href?: string; children?: React.ReactNode }) => {
+    const safe = safeHref(href)
+    if (!safe) return <span className="text-gray-700">{children}</span>
+    return <a href={safe} target="_blank" rel="noopener noreferrer nofollow" className="text-wine font-medium underline underline-offset-2 hover:text-wine/80">{children}</a>
+  },
   blockquote: ({ children }: { children?: React.ReactNode }) => (
     <blockquote className="border-l-4 border-wine/40 pl-4 italic text-gray-500 my-3 bg-gray-50 py-1 pr-2 rounded-r-lg">{children}</blockquote>
   ),

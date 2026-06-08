@@ -6,11 +6,40 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 
 public sealed class PendingActionStore : IPendingActionStore
 {
+  private const int MaxPendingActions = 500;
+  private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(15);
   private readonly ConcurrentDictionary<string, AdminPendingAction> _pending = new();
 
-  public void Add(string actionId, AdminPendingAction pending) =>
+  public void Add(string actionId, AdminPendingAction pending)
+  {
+    PruneExpired();
     _pending[actionId] = pending;
+    EnforceMaxPendingActions();
+  }
 
-  public AdminPendingAction? Remove(string actionId) =>
-    _pending.TryRemove(actionId, out var p) ? p : null;
+  public AdminPendingAction? Remove(string actionId)
+  {
+    PruneExpired();
+    return _pending.TryRemove(actionId, out var p) ? p : null;
+  }
+
+  private void PruneExpired()
+  {
+    var cutoff = DateTime.UtcNow.Subtract(Ttl);
+    foreach (var pair in _pending.Where(pair => pair.Value.RequestedAt < cutoff).ToList())
+      _pending.TryRemove(pair.Key, out _);
+  }
+
+  private void EnforceMaxPendingActions()
+  {
+    if (_pending.Count <= MaxPendingActions) return;
+    foreach (var key in _pending
+      .OrderBy(pair => pair.Value.RequestedAt)
+      .Take(_pending.Count - MaxPendingActions)
+      .Select(pair => pair.Key)
+      .ToList())
+    {
+      _pending.TryRemove(key, out _);
+    }
+  }
 }

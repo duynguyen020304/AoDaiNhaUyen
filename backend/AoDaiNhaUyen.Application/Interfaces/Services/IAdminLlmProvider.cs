@@ -4,9 +4,14 @@ using AoDaiNhaUyen.Application.DTOs.Admin;
 
 namespace AoDaiNhaUyen.Application.Interfaces.Services;
 
-public enum AdminLlmRole { System, User, Assistant }
+public enum AdminLlmRole { System, User, Assistant, ToolCall, ToolResponse }
 
-public sealed record AdminLlmMessage(AdminLlmRole Role, string Content);
+public sealed record AdminLlmMessage(
+  AdminLlmRole Role,
+  string Content,
+  string? ToolName = null,
+  string? ToolCallId = null,
+  string? ToolResponseJson = null);
 
 public sealed record LlmChunk(
   [property: JsonPropertyName("type")] string Type,

@@ -5,6 +5,10 @@ import { request } from '@/api/client'
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5043'
 const STORAGE_KEY = 'admin-ai-conversations'
 
+function logAiWarn(message: string, context?: unknown) {
+  console.warn(`[AdminAI] ${message}`, context ?? '')
+}
+
 function genId() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
@@ -15,7 +19,8 @@ function loadConversations(): SavedConversation[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : []
-  } catch {
+  } catch (err) {
+    logAiWarn('Không đọc được lịch sử AI cục bộ', err)
     return []
   }
 }
@@ -23,7 +28,9 @@ function loadConversations(): SavedConversation[] {
 function persistConversations(convos: SavedConversation[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(convos))
-  } catch { /* quota exceeded — silent */ }
+  } catch (err) {
+    logAiWarn('Không lưu được lịch sử AI cục bộ', err)
+  }
 }
 
 function makeTitle(messages: AiMessage[]): string {
@@ -39,6 +46,7 @@ interface AdminAiState {
   isOpen: boolean
   messages: AiMessage[]
   isLoading: boolean
+  lastError: string | null
   conversationId: string | null
   pendingActions: AiPendingAction[]
   suggestions: AiSuggestion[]
@@ -67,6 +75,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
   isOpen: false,
   messages: [],
   isLoading: false,
+  lastError: null,
   conversationId: null,
   pendingActions: [],
   suggestions: [],
@@ -79,6 +88,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
 
   sendMessage: async (req: AiChatRequest) => {
     const state = get()
+    if (state.isLoading) return
     if (!req.message.trim()) return
 
     const userMsg: AiMessage = {
@@ -96,10 +106,11 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       createdAt: new Date().toISOString(),
     }
 
-    set({
+    set((s) => ({
       isLoading: true,
-      messages: [...state.messages, userMsg, assistantMsg],
-    })
+      lastError: null,
+      messages: [...s.messages, userMsg, assistantMsg],
+    }))
 
     try {
       const response = await fetch(`${API}/api/admin/ai/chat`, {
@@ -185,8 +196,8 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                 ),
               }))
             }
-          } catch {
-            // skip malformed SSE
+          } catch (err) {
+            logAiWarn('Bỏ qua SSE chunk lỗi', { length: data.length, err })
           }
         }
       }
@@ -194,6 +205,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       // Mark final
       set((s) => ({
         isLoading: false,
+        lastError: null,
         messages: s.messages.map((m) =>
           m.id === assistantMsg.id
             ? { ...m, content: fullText || m.content, toolCalls: toolCalls }
@@ -205,6 +217,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
       set((s) => ({
         isLoading: false,
+        lastError: errorMsg,
         messages: s.messages.map((m) =>
           m.id === assistantMsg.id
             ? { ...m, content: `❌ Lỗi: ${errorMsg}` }
@@ -231,7 +244,9 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       }))
       get().saveCurrentConversation()
       return true
-    } catch {
+    } catch (err) {
+      logAiWarn('Xác nhận AI action thất bại', { actionId, approved, err })
+      set({ lastError: 'Không thể xác nhận hành động AI.' })
       return false
     }
   },
@@ -241,7 +256,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
    *  is already in the conversation history. */
   continueAfterConfirm: async (conversationId: string) => {
     const state = get()
-    set({ isLoading: true })
+    set({ isLoading: true, lastError: null })
 
     const assistantMsg: AiMessage = {
       id: genId(),
@@ -329,7 +344,9 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                 ),
               }))
             }
-          } catch { /* skip malformed SSE */ }
+          } catch (err) {
+            logAiWarn('Bỏ qua SSE chunk lỗi khi tiếp tục', { length: data.length, err })
+          }
         }
       }
 
@@ -344,8 +361,10 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       get().saveCurrentConversation()
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+      logAiWarn('Tiếp tục AI sau xác nhận thất bại', err)
       set((s) => ({
         isLoading: false,
+        lastError: errorMsg,
         messages: s.messages.map((m) =>
           m.id === assistantMsg.id
             ? { ...m, content: `❌ Lỗi: ${errorMsg}` }
@@ -359,8 +378,9 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
     try {
       const data = await request<AiSuggestion[]>('/api/admin/ai/suggestions')
       set({ suggestions: data || [] })
-    } catch {
-      // silent fail — suggestions are non-critical
+    } catch (err) {
+      logAiWarn('Không tải được gợi ý AI', err)
+      set({ lastError: 'Không tải được gợi ý AI.' })
     }
   },
 
@@ -371,7 +391,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
   // --- Chat history actions ---
 
   saveCurrentConversation: () => {
-    const { messages, activeConversationId, conversations } = get()
+    const { messages, activeConversationId, conversations, conversationId } = get()
     if (messages.length === 0) return
 
     const now = new Date().toISOString()
@@ -380,8 +400,14 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
     const existing = conversations.find((c) => c.id === id)
     const updated: SavedConversation = {
       id,
+      conversationId,
       title: existing?.title || makeTitle(messages),
-      messages,
+      messages: messages.map((m) => ({
+        ...m,
+        content: m.role === 'user' ? m.content : '',
+        toolCalls: undefined,
+        pendingAction: undefined,
+      })),
       createdAt: existing?.createdAt || now,
       updatedAt: now,
     }
@@ -401,8 +427,10 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
     set({
       messages: convo.messages,
       activeConversationId: id,
-      conversationId: null,
-      pendingActions: [],
+      conversationId: convo.conversationId ?? null,
+      pendingActions: convo.messages.flatMap((m) =>
+        m.pendingAction?.status === 'pending' ? [m.pendingAction] : []
+      ),
     })
   },
 

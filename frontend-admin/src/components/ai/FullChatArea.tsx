@@ -23,9 +23,9 @@ export function FullChatArea() {
     await sendMessage({ message: msg })
   }
 
-  function handleSuggestionClick(message: string) {
-    setInput(message)
-    sendMessage({ message })
+  async function handleSuggestionClick(message: string) {
+    setInput('')
+    await sendMessage({ message })
   }
 
   const hasMessages = messages.length > 0

@@ -1,3 +1,4 @@
+using Xunit;
 using AoDaiNhaUyen.Mcp.Auth;
 
 namespace AoDaiNhaUyen.Tests.Mcp;

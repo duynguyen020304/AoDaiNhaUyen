@@ -12,6 +12,7 @@ public interface ISafetyGate
   RiskLevel Classify(string toolName);
   Task<RiskLevel> ClassifyAsync(string toolName, CancellationToken ct = default);
   bool RequiresConfirmation(RiskLevel level);
+  Task<bool> RequiresConfirmationAsync(string toolName, CancellationToken ct = default);
   bool IsAutoApproved(RiskLevel level);
   string GetConfirmationPrompt(string toolName, string description);
   Task InvalidateCacheAsync(CancellationToken ct = default);
@@ -72,6 +73,9 @@ public sealed class SafetyGate : ISafetyGate
     ["generate_daily_report"] = (RiskLevel.Read, false),
     ["toggle_autonomy"] = (RiskLevel.High, true),
     ["get_autonomy_status"] = (RiskLevel.Read, false),
+    ["generate_product_description"] = (RiskLevel.Read, false),
+    ["generate_weekly_report"] = (RiskLevel.Read, false),
+    ["check_inventory_alerts"] = (RiskLevel.Read, false),
   };
 
   public SafetyGate(ILogger<SafetyGate> logger, AppDbContext? dbContext = null)
@@ -118,6 +122,25 @@ public sealed class SafetyGate : ISafetyGate
   }
 
   public bool RequiresConfirmation(RiskLevel level) => level >= RiskLevel.Medium;
+
+  public async Task<bool> RequiresConfirmationAsync(string toolName, CancellationToken ct = default)
+  {
+    if (TryGetFromCache(toolName, out var cached))
+      return cached.RequiresConfirmation;
+
+    if (_dbContext is not null)
+    {
+      await LoadCacheFromDbAsync(ct);
+      if (TryGetFromCache(toolName, out cached))
+        return cached.RequiresConfirmation;
+    }
+
+    if (DefaultMap.TryGetValue(toolName, out var def))
+      return def.RequiresConfirmation;
+
+    _logger.LogWarning("[SafetyGate] Unknown tool {ToolName}, requiring confirmation", toolName);
+    return true;
+  }
 
   public bool IsAutoApproved(RiskLevel level) => level <= RiskLevel.Low;
 
