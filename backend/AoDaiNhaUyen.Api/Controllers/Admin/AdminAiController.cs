@@ -13,6 +13,7 @@ namespace AoDaiNhaUyen.Api.Controllers.Admin;
 [Authorize(Policy = "RequireAdminRole")]
 public sealed class AdminAiController(
   IAdminAgentService agentService,
+  IAdminChatPersistence chatPersistence,
   ILogger<AdminAiController> logger) : ControllerBase
 {
   /// <summary>Stream an AI chat conversation with tool-calling via SSE.</summary>
@@ -64,6 +65,67 @@ public sealed class AdminAiController(
     }
 
     await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
+  }
+
+  /// <summary>List admin AI chat conversations.</summary>
+  [HttpGet("conversations")]
+  public async Task<ActionResult<ApiResponse<IReadOnlyList<AdminConversationSummaryDto>>>> ListConversations(
+    CancellationToken cancellationToken)
+  {
+    var adminUserId = GetAdminUserId();
+    if (adminUserId is null)
+      return Unauthorized(ApiResponseFactory.Failure("Không xác thực.", "unauthorized", "Vui lòng đăng nhập lại."));
+
+    var threads = await chatPersistence.ListThreadsAsync(adminUserId.Value, cancellationToken);
+    var dtos = threads.Select(t =>
+    {
+      var messages = t.Messages.OrderBy(m => m.CreatedAt).ToList();
+      var firstUserMessage = messages.FirstOrDefault(m => m.Role == "user")?.Content;
+      var title = Truncate(firstUserMessage, 40) ?? "Cuộc trò chuyện mới";
+      var lastPreview = Truncate(messages.LastOrDefault()?.Content, 80);
+
+      return new AdminConversationSummaryDto(t.Id, title, messages.Count, lastPreview, t.UpdatedAt);
+    }).ToList();
+
+    return Ok(ApiResponseFactory.Success<IReadOnlyList<AdminConversationSummaryDto>>(dtos, "Lấy danh sách cuộc trò chuyện thành công."));
+  }
+
+  /// <summary>Get full admin AI conversation with messages.</summary>
+  [HttpGet("conversations/{threadId:guid}")]
+  public async Task<ActionResult<ApiResponse<AdminConversationDetailDto>>> GetConversation(
+    Guid threadId, CancellationToken cancellationToken)
+  {
+    var adminUserId = GetAdminUserId();
+    if (adminUserId is null)
+      return Unauthorized(ApiResponseFactory.Failure("Không xác thực.", "unauthorized", "Vui lòng đăng nhập lại."));
+
+    var thread = await chatPersistence.GetThreadAsync(threadId, adminUserId.Value, cancellationToken);
+    if (thread is null)
+      return NotFound(ApiResponseFactory.Failure("Không tìm thấy cuộc trò chuyện.", "not_found", "Cuộc trò chuyện không tồn tại."));
+
+    var messages = await chatPersistence.GetMessagesAsync(threadId, cancellationToken);
+    var title = Truncate(messages.FirstOrDefault(m => m.Role == "user")?.Content, 40) ?? "Cuộc trò chuyện mới";
+    var dto = new AdminConversationDetailDto(
+      thread.Id,
+      title,
+      messages.Select(m => new AdminMessageDto(m.Role, m.Content, m.ToolCallsJsonb, m.StructuredPayloadJsonb, m.CreatedAt)).ToList(),
+      thread.CreatedAt,
+      thread.UpdatedAt);
+
+    return Ok(ApiResponseFactory.Success(dto, "Lấy cuộc trò chuyện thành công."));
+  }
+
+  /// <summary>Delete an admin AI conversation.</summary>
+  [HttpDelete("conversations/{threadId:guid}")]
+  public async Task<ActionResult<ApiResponse<object>>> DeleteConversation(
+    Guid threadId, CancellationToken cancellationToken)
+  {
+    var adminUserId = GetAdminUserId();
+    if (adminUserId is null)
+      return Unauthorized(ApiResponseFactory.Failure("Không xác thực.", "unauthorized", "Vui lòng đăng nhập lại."));
+
+    await chatPersistence.DeleteThreadAsync(threadId, adminUserId.Value, cancellationToken);
+    return Ok(ApiResponseFactory.Success<object?>(null, "Đã xóa cuộc trò chuyện."));
   }
 
   /// <summary>Confirm or reject a pending AI action.</summary>
@@ -150,12 +212,15 @@ public sealed class AdminAiController(
     if (hasConversationId)
     {
       var conversationId = request.ConversationId!.Trim();
-      if (conversationId.Length > maxConversationIdLength || conversationId.Any(ch => !char.IsAsciiHexDigit(ch)))
+      if (conversationId.Length > maxConversationIdLength)
         return "Mã cuộc trò chuyện không hợp lệ.";
     }
 
     return null;
   }
+
+  private static string? Truncate(string? text, int max) =>
+    string.IsNullOrEmpty(text) || text.Length <= max ? text : text[..max] + "…";
 
   private Guid? GetAdminUserId()
   {

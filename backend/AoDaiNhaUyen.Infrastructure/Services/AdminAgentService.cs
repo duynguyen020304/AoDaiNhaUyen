@@ -3,6 +3,7 @@ using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Common;
+using AoDaiNhaUyen.Domain.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
@@ -25,6 +26,7 @@ public sealed class AdminAgentService : IAdminAgentService
 
   private readonly IPendingActionStore _pendingStore;
   private readonly IConversationStore _conversationStore;
+  private readonly IAdminChatPersistence _chatPersistence;
 
   public AdminAgentService(
     IAdminLlmProvider llm,
@@ -41,7 +43,8 @@ public sealed class AdminAgentService : IAdminAgentService
     IAutoModeStore autoMode,
     ILogger<AdminAgentService> logger,
     IPendingActionStore pendingStore,
-    IConversationStore conversationStore)
+    IConversationStore conversationStore,
+    IAdminChatPersistence chatPersistence)
   {
     _llm = llm;
     _safety = safety;
@@ -58,6 +61,7 @@ public sealed class AdminAgentService : IAdminAgentService
     _logger = logger;
     _pendingStore = pendingStore;
     _conversationStore = conversationStore;
+    _chatPersistence = chatPersistence;
   }
 
   private static readonly IReadOnlyList<ToolDefinition> Tools =
@@ -240,7 +244,8 @@ public sealed class AdminAgentService : IAdminAgentService
     Guid adminUserId,
     [EnumeratorCancellation] CancellationToken ct)
   {
-    var conversationId = request.ConversationId ?? Guid.NewGuid().ToString("N");
+    var thread = await ResolveThreadAsync(request.ConversationId, adminUserId, ct);
+    var conversationId = thread.Id.ToString();
     var conversation = _conversationStore.GetOrAdd(conversationId, () => (new List<AdminLlmMessage>(), adminUserId));
     if (conversation.AdminUserId != adminUserId)
     {
@@ -249,15 +254,24 @@ public sealed class AdminAgentService : IAdminAgentService
       yield return new LlmChunk("error", "Không có quyền truy cập cuộc trò chuyện này.");
       yield break;
     }
+
     _conversationStore.Touch(conversationId);
-    _conversationStore.TrimHistory(conversationId, 30);
     var history = conversation.History;
+    if (history.Count == 0)
+    {
+      var dbMessages = await _chatPersistence.GetMessagesAsync(thread.Id, ct);
+      history.AddRange(dbMessages.Select(MapToLlmMessage));
+    }
+    _conversationStore.TrimHistory(conversationId, 30);
 
     // Tell frontend the conversation ID so it can continue after confirmations
     yield return new LlmChunk("conversation", conversationId);
 
     if (!string.IsNullOrWhiteSpace(request.Message))
+    {
       history.Add(new AdminLlmMessage(AdminLlmRole.User, request.Message));
+      await _chatPersistence.AddMessageAsync(thread.Id, "user", request.Message, null, null, ct);
+    }
 
     var maxIterations = 5;
     for (var iteration = 0; iteration < maxIterations; iteration++)
@@ -281,7 +295,10 @@ public sealed class AdminAgentService : IAdminAgentService
           {
             // Save assistant text in history so LLM context continues correctly after confirm
             if (!string.IsNullOrWhiteSpace(assistantText))
+            {
               history.Add(new AdminLlmMessage(AdminLlmRole.Assistant, assistantText));
+              await _chatPersistence.AddMessageAsync(thread.Id, "assistant", assistantText, null, null, ct);
+            }
 
             var actionId = Guid.NewGuid().ToString("N");
             _pendingStore.Add(actionId, new AdminPendingAction(
@@ -292,7 +309,8 @@ public sealed class AdminAgentService : IAdminAgentService
               conversationId,
               chunk.Content,
               assistantText,
-              adminUserId));
+              adminUserId,
+              chunk.ThoughtSignature));
 
             yield return new LlmChunk("confirmation", toolResult.Description, chunk.ToolName, actionId);
             yield return new LlmChunk("done", "", null, null);
@@ -300,18 +318,105 @@ public sealed class AdminAgentService : IAdminAgentService
           }
 
           // Replay native Gemini tool call + function response in history.
-          history.Add(new AdminLlmMessage(AdminLlmRole.ToolCall, chunk.Content, chunk.ToolName, chunk.ToolCallId));
-          history.Add(new AdminLlmMessage(
+          var toolCall = new AdminLlmMessage(AdminLlmRole.ToolCall, chunk.Content, chunk.ToolName, chunk.ToolCallId, ThoughtSignature: chunk.ThoughtSignature);
+          var toolResponseJson = BuildToolResponseJson(toolResult.Content);
+          var toolResponse = new AdminLlmMessage(
             AdminLlmRole.ToolResponse,
             toolResult.Content,
             chunk.ToolName,
             chunk.ToolCallId,
-            BuildToolResponseJson(toolResult.Content)));
+            toolResponseJson);
+          history.Add(toolCall);
+          history.Add(toolResponse);
+          await PersistLlmMessageAsync(thread.Id, toolCall, ct);
+          await PersistLlmMessageAsync(thread.Id, toolResponse, ct);
           assistantText = ""; // reset for next iteration
         }
       }
 
+      if (!string.IsNullOrWhiteSpace(assistantText))
+      {
+        history.Add(new AdminLlmMessage(AdminLlmRole.Assistant, assistantText));
+        await _chatPersistence.AddMessageAsync(thread.Id, "assistant", assistantText, null, null, ct);
+      }
+
       if (!hadToolCall) break;
+    }
+  }
+
+  private async Task<ChatThread> ResolveThreadAsync(string? conversationId, Guid adminUserId, CancellationToken ct)
+  {
+    if (Guid.TryParse(conversationId, out var threadId))
+    {
+      var existing = await _chatPersistence.GetThreadAsync(threadId, adminUserId, ct);
+      if (existing is not null) return existing;
+    }
+
+    return await _chatPersistence.CreateThreadAsync(adminUserId, null, ct);
+  }
+
+  private async Task PersistLlmMessageAsync(Guid threadId, AdminLlmMessage message, CancellationToken ct)
+  {
+    var role = message.Role switch
+    {
+      AdminLlmRole.System => "system",
+      AdminLlmRole.User => "user",
+      AdminLlmRole.Assistant => "assistant",
+      AdminLlmRole.ToolCall => "tool_call",
+      AdminLlmRole.ToolResponse => "tool_response",
+      _ => "assistant"
+    };
+
+    var toolCallsJson = message.Role == AdminLlmRole.ToolCall
+      ? BuildToolCallJson(message.ToolName, message.ToolCallId, message.ThoughtSignature)
+      : null;
+    var structuredPayloadJson = message.Role == AdminLlmRole.ToolResponse ? message.ToolResponseJson : null;
+
+    await _chatPersistence.AddMessageAsync(threadId, role, message.Content, toolCallsJson, structuredPayloadJson, ct);
+  }
+
+  private static AdminLlmMessage MapToLlmMessage(ChatMessage message)
+  {
+    return message.Role switch
+    {
+      "user" => new AdminLlmMessage(AdminLlmRole.User, message.Content),
+      "assistant" => new AdminLlmMessage(AdminLlmRole.Assistant, message.Content),
+      "tool_call" => MapToolCallMessage(message),
+      "tool_response" => new AdminLlmMessage(AdminLlmRole.ToolResponse, message.Content, ToolResponseJson: message.StructuredPayloadJsonb),
+      _ => new AdminLlmMessage(AdminLlmRole.Assistant, message.Content)
+    };
+  }
+
+  private static AdminLlmMessage MapToolCallMessage(ChatMessage message)
+  {
+    var (toolName, toolCallId, thoughtSignature) = ReadToolCallJson(message.ToolCallsJsonb);
+    return new AdminLlmMessage(AdminLlmRole.ToolCall, message.Content, toolName, toolCallId, ThoughtSignature: thoughtSignature);
+  }
+
+  private static string BuildToolCallJson(string? toolName, string? toolCallId, string? thoughtSignature) =>
+    JsonSerializer.Serialize(new Dictionary<string, string?>
+    {
+      ["name"] = toolName,
+      ["callId"] = toolCallId,
+      ["thoughtSignature"] = thoughtSignature
+    });
+
+  private static (string? ToolName, string? ToolCallId, string? ThoughtSignature) ReadToolCallJson(string? json)
+  {
+    if (string.IsNullOrWhiteSpace(json)) return (null, null, null);
+
+    try
+    {
+      using var doc = JsonDocument.Parse(json);
+      var root = doc.RootElement;
+      var toolName = root.TryGetProperty("name", out var name) ? name.GetString() : null;
+      var toolCallId = root.TryGetProperty("callId", out var callId) ? callId.GetString() : null;
+      var thoughtSignature = root.TryGetProperty("thoughtSignature", out var signature) ? signature.GetString() : null;
+      return (toolName, toolCallId, thoughtSignature);
+    }
+    catch (JsonException)
+    {
+      return (null, null, null);
     }
   }
 
@@ -349,18 +454,27 @@ public sealed class AdminAgentService : IAdminAgentService
         // Execute the tool and add result to history
         var toolResult = await ExecuteToolAsync(
           pending.ToolName, pending.ToolArgsJson ?? "{}", adminUserId, ct, skipConfirmation: true);
-        conv.History.Add(new AdminLlmMessage(AdminLlmRole.ToolCall, pending.ToolArgsJson ?? "{}", pending.ToolName, pending.ActionId));
-        conv.History.Add(new AdminLlmMessage(
+        var toolCall = new AdminLlmMessage(AdminLlmRole.ToolCall, pending.ToolArgsJson ?? "{}", pending.ToolName, pending.ActionId, ThoughtSignature: pending.ThoughtSignature);
+        var toolResponse = new AdminLlmMessage(
           AdminLlmRole.ToolResponse,
           toolResult.Content,
           pending.ToolName,
           pending.ActionId,
-          BuildToolResponseJson(toolResult.Content)));
+          BuildToolResponseJson(toolResult.Content));
+        conv.History.Add(toolCall);
+        conv.History.Add(toolResponse);
+        if (Guid.TryParse(pending.ConversationId, out var threadId))
+        {
+          await PersistLlmMessageAsync(threadId, toolCall, ct);
+          await PersistLlmMessageAsync(threadId, toolResponse, ct);
+        }
       }
       else
       {
-        conv.History.Add(new AdminLlmMessage(AdminLlmRole.User,
-          $"[Người dùng đã từ chối thực hiện hành động '{pending.ToolName}']"));
+        var rejection = $"[Người dùng đã từ chối thực hiện hành động '{pending.ToolName}']";
+        conv.History.Add(new AdminLlmMessage(AdminLlmRole.User, rejection));
+        if (Guid.TryParse(pending.ConversationId, out var threadId))
+          await _chatPersistence.AddMessageAsync(threadId, "user", rejection, null, null, ct);
       }
     }
 

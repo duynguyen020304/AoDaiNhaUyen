@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Domain.Common;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -384,7 +385,7 @@ public sealed class StylistChatService(
 
     var guestHash = HashGuestKey(guestKey);
     var guestThreads = await dbContext.ChatThreads
-      .Where(thread => thread.GuestKeyHash == guestHash && thread.UserId == null)
+      .Where(thread => thread.GuestKeyHash == guestHash && thread.UserId == null && thread.Source == ChatSources.Web)
       .ToListAsync(cancellationToken);
 
     if (guestThreads.Count == 0)
@@ -405,8 +406,10 @@ public sealed class StylistChatService(
 
   private IQueryable<ChatThread> BuildOwnedThreadQuery(Guid? userId, string? guestHash)
   {
-    return dbContext.ChatThreads.AsQueryable().Where(thread =>
-      userId.HasValue ? thread.UserId == userId.Value : thread.GuestKeyHash == guestHash);
+    return dbContext.ChatThreads.AsQueryable()
+      .Where(thread => thread.Source == ChatSources.Web)
+      .Where(thread =>
+        userId.HasValue ? thread.UserId == userId.Value : thread.GuestKeyHash == guestHash);
   }
 
   private async Task<ChatThread> LoadOwnedThreadAsync(

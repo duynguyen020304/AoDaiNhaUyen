@@ -15,4 +15,11 @@ public sealed record AdminPendingAction(
   string? ConversationId = null,
   string? ToolArgsJson = null,
   string? AssistantText = null,
-  Guid? AdminUserId = null);
+  Guid? AdminUserId = null,
+  string? ThoughtSignature = null);
+
+public sealed record AdminConversationSummaryDto(Guid Id, string? Title, int MessageCount, string? LastMessagePreview, DateTime UpdatedAt);
+
+public sealed record AdminConversationDetailDto(Guid Id, string? Title, List<AdminMessageDto> Messages, DateTime CreatedAt, DateTime UpdatedAt);
+
+public sealed record AdminMessageDto(string Role, string Content, string? ToolCallsJson, string? StructuredPayloadJson, DateTime CreatedAt);

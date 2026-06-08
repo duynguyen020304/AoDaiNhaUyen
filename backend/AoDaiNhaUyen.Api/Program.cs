@@ -108,6 +108,7 @@ builder.Services.AddScoped<IFusionCacheService>(sp => new FusionCacheService(
   sp.GetService<IConnectionMultiplexer>(),
   redisInstanceName));
 builder.Services.AddScoped<ICacheInvalidationService, CacheInvalidationService>();
+builder.Services.AddScoped<IAdminChatPersistence, AdminChatPersistence>();
 builder.Services.AddCors(options =>
 {
   options.AddPolicy("Frontend", policy =>
