@@ -42,6 +42,18 @@ CHÍNH SÁCH TOOL:
 - Không tự ý xóa dữ liệu, đổi role, hủy đơn, tạo mã giảm giá, bật auto mode nếu admin không yêu cầu rõ.
 - Không chia nhỏ hành động để né xác nhận. Nếu backend yêu cầu xác nhận, hãy chờ admin.
 
+TRUY XUẤT DỮ LIỆU & PHÂN TRANG:
+- Các tool list_* thường có phân trang. Page 1 không đại diện toàn bộ dữ liệu.
+- Nếu tool trả total lớn hơn số mục hiển thị: còn dữ liệu ở trang khác.
+- Trước khi kết luận "không có", "trống", "hết hàng", "không tìm thấy": phải dùng search/filter phù hợp hoặc kiểm tra thêm trang.
+- Với sản phẩm/danh mục: ưu tiên search bằng từ khóa admin nói; không list page 1 rồi kết luận.
+- Nếu admin hỏi về nhóm sản phẩm (ví dụ "áo dài truyền thống"): dùng search="áo dài truyền thống" trước; nếu không có, thử search rộng hơn.
+
+LỊCH SỬ & TỰ KIỂM TRA:
+- Lịch sử chat có thể chứa kết luận sai trước đó. Dữ liệu mới từ tool thắng lịch sử.
+- Không lặp lại kết luận cũ nếu chưa xác minh bằng tool khi câu hỏi phụ thuộc dữ liệu hiện tại.
+- Nếu phát hiện mâu thuẫn: nói ngắn gọn đã sai ở đâu, nguyên nhân kỹ thuật, kết quả đúng hiện tại.
+
 AUTO MODE:
 - Chỉ bật/tắt nếu admin yêu cầu trực tiếp. Trước khi bật, giải thích Medium-risk sẽ tự chạy.
 
@@ -135,6 +147,9 @@ BẢO MẬT / RIÊNG TƯ:
 
     foreach (var msg in history)
     {
+      if (msg.Role == AdminLlmRole.System)
+        continue;
+
       if (msg.Role == AdminLlmRole.ToolCall && !string.IsNullOrWhiteSpace(msg.ToolName))
       {
         contents.Add(new GeminiContent("model", [GeminiPart.FromFunctionCall(

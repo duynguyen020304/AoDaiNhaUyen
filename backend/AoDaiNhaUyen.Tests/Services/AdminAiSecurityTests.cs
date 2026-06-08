@@ -117,6 +117,31 @@ public sealed class AdminAiSecurityTests
   }
 
   [Fact]
+  public async Task ListProducts_ToolResponse_IncludesPaginationMetadata()
+  {
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", "{\"page\":1,\"pageSize\":20}", "list_products", "call-1"),
+      new LlmChunk("text", "done"));
+    var products = new FakeProductService
+    {
+      TotalCount = 48,
+      Items = Enumerable.Range(1, 20)
+        .Select(i => ProductItem($"Áo dài {i}"))
+        .ToList()
+    };
+    var service = CreateService(llm, products: products);
+
+    await service.StreamChatAsync(new AdminAiChatRequest("Liệt kê sản phẩm", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    var replayHistory = Assert.Single(llm.HistorySnapshots, h => h.Any(m => m.Role == AdminLlmRole.ToolResponse));
+    var response = Assert.Single(replayHistory, m => m.Role == AdminLlmRole.ToolResponse);
+    Assert.Contains("Tìm thấy 48 sản phẩm", response.Content);
+    Assert.Contains("hiển thị 10/20", response.Content);
+    Assert.Contains("còn tiếp: có", response.Content);
+    Assert.Contains("Gợi ý: dùng search cụ thể", response.Content);
+  }
+
+  [Fact]
   public async Task ToolResult_IsReplayed_AsNativeToolCallAndFunctionResponse()
   {
     var llm = new ScriptedLlmProvider(
@@ -131,7 +156,9 @@ public sealed class AdminAiSecurityTests
     var response = Assert.Single(replayHistory, m => m.Role == AdminLlmRole.ToolResponse);
     Assert.Equal("get_dashboard_summary", response.ToolName);
     Assert.Equal("call-dashboard", response.ToolCallId);
-    Assert.Contains("untrusted_tool_data", response.ToolResponseJson);
+    Assert.Contains("result", response.ToolResponseJson);
+    Assert.DoesNotContain("untrusted_tool_data", response.ToolResponseJson);
+    Assert.DoesNotContain("instruction", response.ToolResponseJson);
   }
 
   [Fact]
@@ -350,9 +377,11 @@ public sealed class AdminAiSecurityTests
     public int DeleteCalls { get; private set; }
     public int GetByIdCalls { get; private set; }
     public int? LastPageSize { get; private set; }
+    public IReadOnlyList<AdminProductListItemResponse> Items { get; init; } = [];
+    public int TotalCount { get; init; }
 
     public Task<(IReadOnlyList<AdminProductListItemResponse> Items, int TotalCount)> GetPagedAsync(string? search, string? status, int page, int pageSize, bool includeDeleted = false, CancellationToken cancellationToken = default)
-    { LastPageSize = pageSize; return Task.FromResult(((IReadOnlyList<AdminProductListItemResponse>)[], 0)); }
+    { LastPageSize = pageSize; return Task.FromResult((Items, TotalCount)); }
     public Task<AdminProductDetailResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) { GetByIdCalls++; return Task.FromResult<AdminProductDetailResponse?>(Product(id)); }
     public Task<AdminProductDetailResponse> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Product(ProductId));
     public Task<AdminProductDetailResponse?> UpdateAsync(Guid id, UpdateProductRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(id));
@@ -365,6 +394,19 @@ public sealed class AdminAiSecurityTests
     public Task<bool> SetPrimaryImageAsync(Guid productId, Guid imageId, CancellationToken cancellationToken = default) => Task.FromResult(true);
     private static AdminProductDetailResponse Product(Guid id) => new(id, "Áo dài", "ao-dai", "ao_dai", Guid.NewGuid(), "Danh mục", null, null, null, null, null, null, "active", false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, [], []);
   }
+
+  private static AdminProductListItemResponse ProductItem(string name) => new(
+    Guid.NewGuid(),
+    name,
+    name.ToLowerInvariant().Replace(' ', '-'),
+    "ao_dai",
+    "Áo dài",
+    "active",
+    false,
+    1,
+    10,
+    false,
+    DateTimeOffset.UtcNow);
 
   private sealed class FakeCategoryService : IAdminCategoryService
   {

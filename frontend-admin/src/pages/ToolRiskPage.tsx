@@ -28,14 +28,17 @@ export function ToolRiskPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
   const [autoMode, setAutoMode] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const loadConfigs = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
-      const res = await request<{ data: ToolRiskConfig[] }>('/api/admin/tools-risk')
-      setConfigs(res.data)
-    } catch {
-      // silent
+      const res = await request<ToolRiskConfig[]>('/api/admin/tools-risk')
+      setConfigs(res)
+    } catch (err) {
+      setConfigs([])
+      setError(err instanceof Error ? err.message : 'Không thể tải cấu hình rủi ro công cụ AI.')
     } finally {
       setLoading(false)
     }
@@ -43,10 +46,10 @@ export function ToolRiskPage() {
 
   const loadAutoMode = useCallback(async () => {
     try {
-      const res = await request<{ data: { isAutoMode: boolean } }>('/api/admin/ai/auto-mode/status')
-      setAutoMode(res.data.isAutoMode)
-    } catch {
-      // silent
+      const res = await request<{ isAutoMode: boolean }>('/api/admin/ai/auto-mode/status')
+      setAutoMode(res.isAutoMode)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể tải trạng thái tự động.')
     }
   }, [])
 
@@ -59,19 +62,21 @@ export function ToolRiskPage() {
   }, [loadAutoMode, loadConfigs])
 
   async function toggleAutoMode() {
+    setError(null)
     try {
       await request('/api/admin/ai/auto-mode/toggle', {
         method: 'POST',
         body: JSON.stringify({ enabled: !autoMode }),
       })
       setAutoMode(!autoMode)
-    } catch {
-      // silent
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể cập nhật chế độ tự động.')
     }
   }
 
   async function updateConfig(config: ToolRiskConfig, riskLevel: string, requiresConfirmation: boolean) {
     setSaving(config.id)
+    setError(null)
     try {
       await request(`/api/admin/tools-risk/${config.id}`, {
         method: 'PUT',
@@ -84,8 +89,8 @@ export function ToolRiskPage() {
             : c
         )
       )
-    } catch {
-      // silent
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể cập nhật cấu hình rủi ro.')
     } finally {
       setSaving(null)
     }
@@ -117,6 +122,12 @@ export function ToolRiskPage() {
             Quản lý mức độ rủi ro và quyền tự động cho từng công cụ AI
           </p>
         </div>
+
+        {error && (
+          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
