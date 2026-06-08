@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { MessageSquare, Plus, Trash2, Calendar, X } from 'lucide-react'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 
@@ -26,6 +27,11 @@ export function ChatHistorySidebar({ className = '', onSelect }: ChatHistorySide
   const loadConversation = useAdminAiStore((s) => s.loadConversation)
   const deleteConversation = useAdminAiStore((s) => s.deleteConversation)
   const newConversation = useAdminAiStore((s) => s.newConversation)
+  const fetchConversations = useAdminAiStore((s) => s.fetchConversations)
+
+  useEffect(() => {
+    void fetchConversations()
+  }, [fetchConversations])
 
   return (
     <div className={`flex flex-col h-full bg-white border-r border-gray-200/80 shadow-sm ${className}`}>

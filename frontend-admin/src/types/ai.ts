@@ -49,6 +49,31 @@ export interface AiConfirmRequest {
   actionId: string
   approved: boolean
 }
+
+export interface AdminConversationSummary {
+  id: string
+  title: string | null
+  messageCount: number
+  lastMessagePreview: string | null
+  updatedAt: string
+}
+
+export interface AdminConversationDetail {
+  id: string
+  title: string | null
+  messages: AdminConversationMessage[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdminConversationMessage {
+  role: string
+  content: string
+  toolCallsJson: string | null
+  structuredPayloadJson: string | null
+  createdAt: string
+}
+
 export interface SavedConversation {
   id: string
   conversationId?: string | null

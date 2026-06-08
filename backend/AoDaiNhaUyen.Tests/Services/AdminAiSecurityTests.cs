@@ -8,6 +8,7 @@ using AoDaiNhaUyen.Application.DTOs.Order;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Common;
 using AoDaiNhaUyen.Infrastructure.Services;
+using AoDaiNhaUyen.Domain.Entities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -147,6 +148,48 @@ public sealed class AdminAiSecurityTests
     var call = Assert.Single(replayHistory, m => m.Role == AdminLlmRole.ToolCall);
     Assert.Equal("sig-123", call.ThoughtSignature);
   }
+  [Fact]
+  public async Task AdminAiPersistence_ListsOnlyAdminAiThreads_ForOwner()
+  {
+    var persistence = new FakeAdminChatPersistence();
+    var ownAdminThread = await persistence.CreateThreadAsync(AdminA, null, CancellationToken.None);
+    var otherAdminThread = await persistence.CreateThreadAsync(AdminB, null, CancellationToken.None);
+    persistence.Seed(new ChatThread { Id = Guid.NewGuid(), UserId = AdminA, Source = ChatSources.Web, Status = "active" });
+
+    var threads = await persistence.ListThreadsAsync(AdminA, CancellationToken.None);
+
+    Assert.Single(threads);
+    Assert.Equal(ownAdminThread.Id, threads[0].Id);
+    Assert.DoesNotContain(threads, t => t.Id == otherAdminThread.Id);
+    Assert.All(threads, t => Assert.Equal(ChatSources.AdminAi, t.Source));
+  }
+
+  [Fact]
+  public async Task AdminAiPersistence_BlocksCrossAdminReadAndDelete()
+  {
+    var persistence = new FakeAdminChatPersistence();
+    var thread = await persistence.CreateThreadAsync(AdminA, null, CancellationToken.None);
+
+    var crossRead = await persistence.GetThreadAsync(thread.Id, AdminB, CancellationToken.None);
+    await persistence.DeleteThreadAsync(thread.Id, AdminB, CancellationToken.None);
+    var ownerReadAfterDeleteAttempt = await persistence.GetThreadAsync(thread.Id, AdminA, CancellationToken.None);
+
+    Assert.Null(crossRead);
+    Assert.NotNull(ownerReadAfterDeleteAttempt);
+    Assert.False(ownerReadAfterDeleteAttempt!.IsDeleted);
+  }
+
+  [Fact]
+  public async Task AdminAiPersistence_CannotDeleteCustomerWebThread()
+  {
+    var persistence = new FakeAdminChatPersistence();
+    var webThread = new ChatThread { Id = Guid.NewGuid(), UserId = AdminA, Source = ChatSources.Web, Status = "active" };
+    persistence.Seed(webThread);
+
+    await persistence.DeleteThreadAsync(webThread.Id, AdminA, CancellationToken.None);
+
+    Assert.False(webThread.IsDeleted);
+  }
 
   private static AdminAgentService CreateService(
     IAdminLlmProvider llm,
@@ -168,7 +211,68 @@ public sealed class AdminAiSecurityTests
       autoMode ?? new AutoModeStore(),
       NullLogger<AdminAgentService>.Instance,
       new PendingActionStore(),
-      new ConversationStore());
+      new ConversationStore(),
+      new FakeAdminChatPersistence());
+  }
+
+  private sealed class FakeAdminChatPersistence : IAdminChatPersistence
+  {
+    private readonly List<ChatThread> _threads = [];
+    private readonly List<ChatMessage> _messages = [];
+
+    public void Seed(ChatThread thread) => _threads.Add(thread);
+
+    public Task<ChatThread> CreateThreadAsync(Guid adminUserId, string? title, CancellationToken ct)
+    {
+      var thread = new ChatThread
+      {
+        Id = Guid.NewGuid(),
+        UserId = adminUserId,
+        Source = ChatSources.AdminAi,
+        Status = "active",
+        GuestKeyHash = null
+      };
+      _threads.Add(thread);
+      return Task.FromResult(thread);
+    }
+
+    public Task<ChatThread?> GetThreadAsync(Guid threadId, Guid adminUserId, CancellationToken ct) =>
+      Task.FromResult(_threads.FirstOrDefault(t =>
+        t.Id == threadId && t.UserId == adminUserId && t.Source == ChatSources.AdminAi && !t.IsDeleted));
+
+    public Task<List<ChatThread>> ListThreadsAsync(Guid adminUserId, CancellationToken ct) =>
+      Task.FromResult(_threads
+        .Where(t => t.UserId == adminUserId && t.Source == ChatSources.AdminAi && !t.IsDeleted)
+        .OrderByDescending(t => t.UpdatedAt)
+        .ToList());
+
+    public Task<ChatMessage> AddMessageAsync(Guid threadId, string role, string content,
+      string? toolCallsJson, string? structuredPayloadJson, CancellationToken ct)
+    {
+      var message = new ChatMessage
+      {
+        Id = Guid.NewGuid(),
+        ThreadId = threadId,
+        Role = role,
+        Content = content,
+        ToolCallsJsonb = toolCallsJson,
+        StructuredPayloadJsonb = structuredPayloadJson,
+        CreatedAt = DateTime.UtcNow
+      };
+      _messages.Add(message);
+      return Task.FromResult(message);
+    }
+
+    public Task<List<ChatMessage>> GetMessagesAsync(Guid threadId, CancellationToken ct) =>
+      Task.FromResult(_messages.Where(m => m.ThreadId == threadId).OrderBy(m => m.CreatedAt).ToList());
+
+    public async Task DeleteThreadAsync(Guid threadId, Guid adminUserId, CancellationToken ct)
+    {
+      var thread = await GetThreadAsync(threadId, adminUserId, ct);
+      if (thread is null) return;
+      thread.IsDeleted = true;
+      thread.DeletedAt = DateTime.UtcNow;
+    }
   }
 
   private sealed class ScriptedLlmProvider(params LlmChunk[] chunks) : IAdminLlmProvider

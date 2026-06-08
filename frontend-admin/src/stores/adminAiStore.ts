@@ -1,5 +1,14 @@
 import { create } from 'zustand'
-import type { AiMessage, AiSuggestion, AiPendingAction, AiChatRequest, SavedConversation } from '@/types/ai'
+import type {
+  AiMessage,
+  AiSuggestion,
+  AiPendingAction,
+  AiChatRequest,
+  SavedConversation,
+  AdminConversationSummary,
+  AdminConversationDetail,
+  AdminConversationMessage,
+} from '@/types/ai'
 import { request } from '@/api/client'
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5043'
@@ -40,6 +49,53 @@ function makeTitle(messages: AiMessage[]): string {
   return text.length > 40 ? text.slice(0, 40) + '…' : text
 }
 
+function parseToolCalls(message: AdminConversationMessage): AiMessage['toolCalls'] {
+  if (!message.toolCallsJson) return undefined
+  try {
+    const parsed = JSON.parse(message.toolCallsJson) as { name?: string; callId?: string }
+    return [{
+      toolName: parsed.name || parsed.callId || 'unknown',
+      input: message.content,
+    }]
+  } catch (err) {
+    logAiWarn('Không đọc được metadata tool call', err)
+    return undefined
+  }
+}
+
+function mapServerMessage(message: AdminConversationMessage): AiMessage | null {
+  if (message.role === 'tool_response') return null
+  return {
+    id: genId(),
+    role: message.role === 'user' ? 'user' : 'assistant',
+    content: message.role === 'tool_call' ? '' : message.content,
+    toolCalls: message.role === 'tool_call' ? parseToolCalls(message) : undefined,
+    createdAt: message.createdAt,
+  }
+}
+
+function mapServerConversation(summary: AdminConversationSummary): SavedConversation {
+  return {
+    id: summary.id,
+    conversationId: summary.id,
+    title: summary.title || 'Cuộc trò chuyện mới',
+    messages: [],
+    createdAt: summary.updatedAt,
+    updatedAt: summary.updatedAt,
+  }
+}
+
+function mapConversationDetail(detail: AdminConversationDetail): SavedConversation {
+  return {
+    id: detail.id,
+    conversationId: detail.id,
+    title: detail.title || 'Cuộc trò chuyện mới',
+    messages: detail.messages.map(mapServerMessage).filter((m): m is AiMessage => Boolean(m)),
+    createdAt: detail.createdAt,
+    updatedAt: detail.updatedAt,
+  }
+}
+
 // --- State interface ---
 
 interface AdminAiState {
@@ -65,9 +121,10 @@ interface AdminAiState {
   clearConversation: () => void
 
   // Chat history actions
+  fetchConversations: () => Promise<void>
   saveCurrentConversation: () => void
-  loadConversation: (id: string) => void
-  deleteConversation: (id: string) => void
+  loadConversation: (id: string) => Promise<void>
+  deleteConversation: (id: string) => Promise<void>
   newConversation: () => void
 }
 
@@ -187,7 +244,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                 ),
               }))
             } else if (chunk.type === 'conversation') {
-              set({ conversationId: chunk.content })
+              set({ conversationId: chunk.content, activeConversationId: chunk.content })
             } else if (chunk.type === 'error') {
               fullText += `\n❌ ${chunk.content}`
               set((s) => ({
@@ -213,17 +270,10 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
         ),
       }))
       get().saveCurrentConversation()
+      await get().fetchConversations()
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
-      set((s) => ({
-        isLoading: false,
-        lastError: errorMsg,
-        messages: s.messages.map((m) =>
-          m.id === assistantMsg.id
-            ? { ...m, content: `❌ Lỗi: ${errorMsg}` }
-            : m,
-        ),
-      }))
+      set({ isLoading: false, lastError: errorMsg })
     }
   },
 
@@ -335,7 +385,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                 ),
               }))
             } else if (chunk.type === 'conversation') {
-              set({ conversationId: chunk.content })
+              set({ conversationId: chunk.content, activeConversationId: chunk.content })
             } else if (chunk.type === 'error') {
               fullText += `\n❌ ${chunk.content}`
               set((s) => ({
@@ -359,18 +409,11 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
         ),
       }))
       get().saveCurrentConversation()
+      await get().fetchConversations()
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
       logAiWarn('Tiếp tục AI sau xác nhận thất bại', err)
-      set((s) => ({
-        isLoading: false,
-        lastError: errorMsg,
-        messages: s.messages.map((m) =>
-          m.id === assistantMsg.id
-            ? { ...m, content: `❌ Lỗi: ${errorMsg}` }
-            : m,
-        ),
-      }))
+      set({ isLoading: false, lastError: errorMsg })
     }
   },
 
@@ -390,22 +433,35 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
 
   // --- Chat history actions ---
 
+  fetchConversations: async () => {
+    try {
+      const summaries = await request<AdminConversationSummary[]>('/api/admin/ai/conversations')
+      const next = summaries.map(mapServerConversation)
+      persistConversations(next)
+      set({ conversations: next })
+    } catch (err) {
+      logAiWarn('Không tải được lịch sử AI từ máy chủ, dùng cache cục bộ', err)
+      const fallback = loadConversations()
+      set({ conversations: fallback, lastError: 'Không tải được lịch sử AI từ máy chủ.' })
+    }
+  },
+
   saveCurrentConversation: () => {
     const { messages, activeConversationId, conversations, conversationId } = get()
     if (messages.length === 0) return
 
     const now = new Date().toISOString()
-    const id = activeConversationId || genId()
+    const id = conversationId || activeConversationId || genId()
 
     const existing = conversations.find((c) => c.id === id)
     const updated: SavedConversation = {
       id,
-      conversationId,
+      conversationId: conversationId || id,
       title: existing?.title || makeTitle(messages),
       messages: messages.map((m) => ({
         ...m,
         content: m.content,
-        toolCalls: undefined,
+        toolCalls: m.toolCalls?.map((tc) => ({ toolName: tc.toolName, input: tc.input })),
         pendingAction: undefined,
       })),
       createdAt: existing?.createdAt || now,
@@ -420,21 +476,46 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
     set({ conversations: next, activeConversationId: id })
   },
 
-  loadConversation: (id: string) => {
-    const { conversations } = get()
-    const convo = conversations.find((c) => c.id === id)
-    if (!convo) return
-    set({
-      messages: convo.messages,
-      activeConversationId: id,
-      conversationId: convo.conversationId ?? null,
-      pendingActions: convo.messages.flatMap((m) =>
-        m.pendingAction?.status === 'pending' ? [m.pendingAction] : []
-      ),
-    })
+  loadConversation: async (id: string) => {
+    try {
+      const detail = await request<AdminConversationDetail>(`/api/admin/ai/conversations/${id}`)
+      const convo = mapConversationDetail(detail)
+      const cached = get().conversations.filter((c) => c.id !== id)
+      const next = [convo, ...cached]
+      persistConversations(next)
+      set({
+        conversations: next,
+        messages: convo.messages,
+        activeConversationId: convo.id,
+        conversationId: convo.conversationId ?? convo.id,
+        pendingActions: [],
+        lastError: null,
+      })
+    } catch (err) {
+      logAiWarn('Không tải được cuộc trò chuyện AI từ máy chủ, dùng cache cục bộ', err)
+      const convo = get().conversations.find((c) => c.id === id)
+      if (!convo) {
+        set({ lastError: 'Không tải được cuộc trò chuyện AI.' })
+        return
+      }
+      set({
+        messages: convo.messages,
+        activeConversationId: id,
+        conversationId: convo.conversationId ?? id,
+        pendingActions: [],
+        lastError: 'Đang hiển thị bản cache cục bộ.',
+      })
+    }
   },
 
-  deleteConversation: (id: string) => {
+  deleteConversation: async (id: string) => {
+    try {
+      await request(`/api/admin/ai/conversations/${id}`, { method: 'DELETE' })
+    } catch (err) {
+      logAiWarn('Không xóa được cuộc trò chuyện AI trên máy chủ, chỉ xóa cache cục bộ', err)
+      set({ lastError: 'Không xóa được cuộc trò chuyện trên máy chủ.' })
+    }
+
     const { conversations, activeConversationId } = get()
     const next = conversations.filter((c) => c.id !== id)
     persistConversations(next)
