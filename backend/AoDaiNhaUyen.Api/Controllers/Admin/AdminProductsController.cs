@@ -86,6 +86,27 @@ public sealed class AdminProductsController(
         return Ok(ApiResponseFactory.Success(product, "Cập nhật sản phẩm thành công."));
     }
 
+    /// <summary>Update stock quantity for a product variant.</summary>
+    [HttpPatch("{productId:guid}/variants/{variantId:guid}/stock")]
+    public async Task<ActionResult<ApiResponse<AdminProductDetailResponse>>> UpdateVariantStock(
+        Guid productId,
+        Guid variantId,
+        UpdateVariantStockRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var product = await adminProductService.UpdateVariantStockAsync(productId, variantId, request.StockQty, cancellationToken);
+
+        if (product is null)
+        {
+            return NotFound(ApiResponseFactory.Failure(
+                "Không tìm thấy biến thể sản phẩm.",
+                "not_found",
+                "Sản phẩm hoặc biến thể không tồn tại."));
+        }
+
+        return Ok(ApiResponseFactory.Success(product, "Cập nhật tồn kho thành công."));
+    }
+
     /// <summary>Toggle product status.</summary>
     [HttpPatch("{id:guid}/status")]
     public async Task<ActionResult<ApiResponse<object>>> ToggleStatus(

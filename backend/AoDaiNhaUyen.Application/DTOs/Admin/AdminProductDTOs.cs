@@ -12,6 +12,7 @@ public sealed record AdminProductListItemResponse(
     string Status,
     bool IsFeatured,
     int VariantCount,
+    int TotalStock,
     bool IsDeleted,
     DateTimeOffset CreatedAt);
 
@@ -130,6 +131,13 @@ public sealed record UpdateProductRequest
     public required string Status { get; init; }
 
     public bool IsFeatured { get; init; }
+}
+
+/// <summary>Payload for updating product variant stock.</summary>
+public sealed record UpdateVariantStockRequest
+{
+    [Range(0, int.MaxValue)]
+    public required int StockQty { get; init; }
 }
 
 /// <summary>Payload for toggling product status.</summary>

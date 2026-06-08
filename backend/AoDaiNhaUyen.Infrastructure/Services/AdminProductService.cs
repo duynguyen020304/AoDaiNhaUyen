@@ -56,6 +56,7 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
                 p.Status,
                 p.IsFeatured,
                 p.Variants.Count,
+                p.Variants.Sum(v => v.StockQty),
                 p.IsDeleted,
                 new DateTimeOffset(p.CreatedAt, TimeSpan.Zero)))
             .ToListAsync(cancellationToken);
@@ -135,6 +136,24 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
 
         logger.LogInformation("Admin updated product {ProductId}", product.Id);
         return (await GetByIdAsync(product.Id, cancellationToken))!;
+    }
+
+    public async Task<AdminProductDetailResponse?> UpdateVariantStockAsync(Guid productId, Guid variantId, int stockQty, CancellationToken cancellationToken = default)
+    {
+        var variant = await dbContext.ProductVariants
+            .Include(v => v.Product)
+            .FirstOrDefaultAsync(v => v.Id == variantId && v.ProductId == productId, cancellationToken);
+
+        if (variant is null) return null;
+
+        variant.StockQty = stockQty;
+        variant.UpdatedAt = DateTime.UtcNow;
+        variant.Product.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Admin updated stock for product {ProductId}, variant {VariantId} to {StockQty}", productId, variantId, stockQty);
+        return await GetByIdAsync(productId, cancellationToken);
     }
 
     public async Task<bool> ToggleStatusAsync(Guid id, string newStatus, CancellationToken cancellationToken = default)

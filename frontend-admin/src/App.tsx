@@ -48,6 +48,7 @@ export function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="products" element={<ProductListPage />} />
             <Route path="products/new" element={<ProductFormPage />} />
+            <Route path="products/:id" element={<ProductFormPage />} />
             <Route path="products/:id/edit" element={<ProductFormPage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="users" element={<UsersPage />} />

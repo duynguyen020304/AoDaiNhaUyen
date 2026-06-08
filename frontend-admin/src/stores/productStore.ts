@@ -17,6 +17,7 @@ interface ProductState {
   getProduct: (id: string) => Promise<AdminProductDetail>
   createProduct: (data: CreateProductRequest) => Promise<void>
   updateProduct: (id: string, data: UpdateProductRequest) => Promise<void>
+  updateVariantStock: (productId: string, variantId: string, stockQty: number) => Promise<AdminProductDetail>
   deleteProduct: (id: string) => Promise<void>
   restoreProduct: (id: string) => Promise<void>
   toggleProductStatus: (id: string, status: string) => Promise<void>
@@ -93,6 +94,19 @@ export const useProductStore = create<ProductState>((set, get) => ({
       await get().fetchProducts()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể cập nhật sản phẩm.'
+      set({ error: message })
+      throw err
+    }
+  },
+
+  updateVariantStock: async (productId: string, variantId: string, stockQty: number) => {
+    set({ error: null })
+    try {
+      const product = await adminApi.updateVariantStock(productId, variantId, { stockQty })
+      await get().fetchProducts()
+      return product
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể cập nhật tồn kho.'
       set({ error: message })
       throw err
     }

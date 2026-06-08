@@ -164,6 +164,7 @@ export function ProductListPage() {
                 <TableHead>Loại</TableHead>
                 <TableHead>Danh mục</TableHead>
                 <TableHead>Biến thể</TableHead>
+                <TableHead>Tồn kho</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Nổi bật</TableHead>
                 <TableHead className="w-[100px] text-right">Thao tác</TableHead>
@@ -182,6 +183,11 @@ export function ProductListPage() {
                   <TableCell>{typeBadge(p.productType)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{p.categoryName || '—'}</TableCell>
                   <TableCell className="font-mono tabular-nums">{p.variantCount}</TableCell>
+                  <TableCell className="font-mono tabular-nums">
+                    <span className={p.totalStock <= 0 ? 'text-destructive font-semibold' : p.totalStock <= 5 ? 'text-orange-600 font-semibold' : ''}>
+                      {p.totalStock}
+                    </span>
+                  </TableCell>
                   <TableCell>{p.isDeleted ? <span className="text-xs text-muted-foreground">—</span> : statusBadge(p.status)}</TableCell>
                   <TableCell>{p.isFeatured ? <Badge variant="success">Nổi bật</Badge> : '—'}</TableCell>
                   <TableCell className="text-right">

@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Loader2, Globe, FileX, Upload, Trash2, Star, EyeOff } from 'lucide-react'
+import { ArrowLeft, Loader2, Globe, FileX, Upload, Trash2, Star, EyeOff, PackageCheck } from 'lucide-react'
 import { useProductStore } from '@/stores/productStore'
-import type { AdminImageResponse } from '@/types/admin'
+import type { AdminImageResponse, AdminVariantResponse } from '@/types/admin'
 import { useCategoryStore } from '@/stores/categoryStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -44,6 +44,9 @@ export function ProductFormPage() {
   const [care, setCare] = useState('')
   const [status, setStatus] = useState('draft')
   const [featured, setFeatured] = useState(false)
+  const [variants, setVariants] = useState<AdminVariantResponse[]>([])
+  const [stockInputs, setStockInputs] = useState<Record<string, string>>({})
+  const [savingStockId, setSavingStockId] = useState<string | null>(null)
   const [images, setImages] = useState<AdminImageResponse[]>([])
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -70,6 +73,8 @@ export function ProductFormPage() {
         setCare(product.careInstruction ?? '')
         setStatus(product.status)
         setFeatured(product.isFeatured)
+        setVariants(product.variants)
+        setStockInputs(Object.fromEntries(product.variants.map((variant) => [variant.id, String(variant.stockQty)])))
         setImages(product.images)
         setIsLoading(false)
       })
@@ -89,6 +94,33 @@ export function ProductFormPage() {
       setStatus(newStatus)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không thể cập nhật trạng thái.')
+    }
+  }
+
+  const handleStockInputChange = (variantId: string, value: string) => {
+    if (!/^\d*$/.test(value)) return
+    setStockInputs((prev) => ({ ...prev, [variantId]: value }))
+  }
+
+  const handleSaveStock = async (variant: AdminVariantResponse) => {
+    if (!id) return
+    const raw = stockInputs[variant.id] ?? ''
+    const nextStock = Number(raw)
+    if (!raw || !Number.isInteger(nextStock) || nextStock < 0) {
+      setError('Tồn kho phải là số nguyên không âm.')
+      return
+    }
+
+    setSavingStockId(variant.id)
+    setError(null)
+    try {
+      const product = await useProductStore.getState().updateVariantStock(id, variant.id, nextStock)
+      setVariants(product.variants)
+      setStockInputs(Object.fromEntries(product.variants.map((item) => [item.id, String(item.stockQty)])))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể cập nhật tồn kho.')
+    } finally {
+      setSavingStockId(null)
     }
   }
 
@@ -324,12 +356,64 @@ export function ProductFormPage() {
         {/* Right: Variants + Images placeholder */}
         <div className="space-y-6">
           <Card>
-            <CardHeader><CardTitle className="text-lg">Biến thể</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <PackageCheck className="size-5 text-burgundy" />
+                Biến thể và tồn kho
+              </CardTitle>
+            </CardHeader>
             <CardContent>
-              {id ? (
-                <p className="text-sm text-muted-foreground">Biến thể hiển thị khi xem chi tiết sản phẩm. Quản lý biến thể sẽ có ở bản cập nhật sau.</p>
+              {!id ? (
+                <p className="text-sm text-muted-foreground">Lưu sản phẩm trước rồi quay lại để cập nhật tồn kho.</p>
+              ) : variants.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sản phẩm chưa có biến thể.</p>
               ) : (
-                <p className="text-sm text-muted-foreground">Lưu sản phẩm trước rồi quay lại để thêm biến thể.</p>
+                <div className="space-y-3">
+                  {variants.map((variant) => {
+                    const stockValue = stockInputs[variant.id] ?? String(variant.stockQty)
+                    const currentStock = Number(stockValue)
+                    const isDirty = stockValue !== String(variant.stockQty)
+                    const isInvalid = !stockValue || !Number.isInteger(currentStock) || currentStock < 0
+                    return (
+                      <div key={variant.id} className="space-y-2 border-b border-border/70 pb-4 last:border-b-0 last:pb-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm text-ink truncate">{variant.variantName || variant.sku}</p>
+                            <p className="text-xs text-muted-foreground font-mono truncate">{variant.sku}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {[variant.size, variant.color].filter(Boolean).join(' / ') || 'Mặc định'}
+                            </p>
+                          </div>
+                          <span className={`rounded-full px-2 py-1 text-xs font-medium shrink-0 ${variant.stockQty <= 0 ? 'bg-destructive/10 text-destructive' : variant.stockQty <= 5 ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                            {variant.stockQty <= 0 ? 'Hết hàng' : variant.stockQty <= 5 ? 'Sắp hết' : 'Còn hàng'}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-[1fr_auto] items-end gap-2">
+                          <div className="space-y-2">
+                            <Label htmlFor={`stock-${variant.id}`}>Tồn kho</Label>
+                            <Input
+                              id={`stock-${variant.id}`}
+                              type="number"
+                              min={0}
+                              step={1}
+                              inputMode="numeric"
+                              value={stockValue}
+                              onChange={(e) => handleStockInputChange(variant.id, e.target.value)}
+                              aria-invalid={isInvalid}
+                            />
+                          </div>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleSaveStock(variant)}
+                            disabled={!isDirty || isInvalid || savingStockId === variant.id}
+                          >
+                            {savingStockId === variant.id ? <Loader2 className="size-4 animate-spin" /> : 'Lưu'}
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </CardContent>
           </Card>

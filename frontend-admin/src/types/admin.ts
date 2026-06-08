@@ -50,6 +50,7 @@ export interface AdminProductListItem {
   status: string
   isFeatured: boolean
   variantCount: number
+  totalStock: number
   isDeleted: boolean
   createdAt: string
 }
@@ -125,6 +126,10 @@ export interface UpdateProductRequest {
   careInstruction?: string
   status: string
   isFeatured: boolean
+}
+
+export interface UpdateVariantStockRequest {
+  stockQty: number
 }
 
 // ── Categories ──
