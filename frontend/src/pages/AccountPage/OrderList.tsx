@@ -69,7 +69,6 @@ export default function OrderList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     getOrders()
