@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import type { UserOrder } from '../../types/order';
-import { getOrders, cancelOrder } from '../../api/user';
+import { useState } from 'react';
+import { useOrdersQuery } from '../../hooks/user/useUserQueries';
+import { useCancelOrderMutation } from '../../hooks/user/useUserMutations';
 import { resolveAssetUrl } from '../../api/client';
 import { useToast } from '../../components/Toast/useToast';
 import styles from './OrderList.module.css';
@@ -65,17 +65,12 @@ function StatusStepper({ status }: { status: string }) {
 
 export default function OrderList() {
   const { showToast } = useToast();
-  const [orders, setOrders] = useState<UserOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const ordersQuery = useOrdersQuery();
+  const cancelOrderMutation = useCancelOrderMutation();
+  const orders = ordersQuery.data ?? [];
+  const loading = ordersQuery.isPending;
+  const error = ordersQuery.error instanceof Error ? ordersQuery.error.message : null;
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    getOrders()
-      .then(setOrders)
-      .catch((value: Error) => setError(value.message))
-      .finally(() => setLoading(false));
-  }, []);
 
   function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString('vi-VN');
@@ -89,10 +84,7 @@ export default function OrderList() {
     if (!confirm('Bạn có chắc muốn hủy đơn hàng này?')) return;
     try {
       setCancellingId(orderId);
-      await cancelOrder(orderId);
-      setOrders((prev) =>
-        prev.map((o) => o.id === orderId ? { ...o, orderStatus: 'cancelled' } : o)
-      );
+      await cancelOrderMutation.mutateAsync(orderId);
       showToast('Hủy đơn hàng thành công.');
     } catch (value) {
       showToast(value instanceof Error ? value.message : 'Không thể hủy đơn hàng.', 'error');

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import type { UserProfile, UpdateProfilePayload } from '../../types/user';
-import { getUserProfile, updateProfile } from '../../api/user';
+import { useState } from 'react';
+import type { UpdateProfilePayload } from '../../types/user';
+import { useUserProfileQuery } from '../../hooks/user/useUserQueries';
+import { useUpdateProfileMutation } from '../../hooks/user/useUserMutations';
 import styles from './AccountEditForm.module.css';
 
 interface AccountEditFormProps {
@@ -8,29 +9,35 @@ interface AccountEditFormProps {
 }
 
 export default function AccountEditForm({ onSaved }: AccountEditFormProps) {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [form, setForm] = useState<UpdateProfilePayload>({
-    fullName: '',
-    phone: '',
-    dateOfBirth: '',
-    gender: '',
-  });
+  const profileQuery = useUserProfileQuery();
+  const profile = profileQuery.data ?? null;
+  const loadError = profileQuery.error instanceof Error ? profileQuery.error.message : null;
+
+  if (profileQuery.isPending) return null;
+  if (loadError) return <div className={styles.container}>{loadError}</div>;
+  if (!profile) return null;
+
+  return <AccountEditFields key={profile.id} initialForm={{
+    fullName: profile.fullName,
+    phone: profile.phone ?? '',
+    dateOfBirth: profile.dateOfBirth ?? '',
+    gender: profile.gender ?? '',
+  }} email={profile.email ?? ''} onSaved={onSaved} />;
+}
+
+function AccountEditFields({
+  initialForm,
+  email,
+  onSaved,
+}: {
+  initialForm: UpdateProfilePayload;
+  email: string;
+  onSaved: () => void;
+}) {
+  const updateProfileMutation = useUpdateProfileMutation();
+  const [form, setForm] = useState<UpdateProfilePayload>(initialForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getUserProfile()
-      .then((p) => {
-        setProfile(p);
-        setForm({
-          fullName: p.fullName,
-          phone: p.phone ?? '',
-          dateOfBirth: p.dateOfBirth ?? '',
-          gender: p.gender ?? '',
-        });
-      })
-      .catch((value: Error) => setError(value.message));
-  }, []);
 
   function handleChange(field: keyof UpdateProfilePayload, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -41,7 +48,7 @@ export default function AccountEditForm({ onSaved }: AccountEditFormProps) {
     setSaving(true);
     setError(null);
     try {
-      await updateProfile(form);
+      await updateProfileMutation.mutateAsync(form);
       onSaved();
     } catch (value) {
       setError(value instanceof Error ? value.message : 'Không thể cập nhật tài khoản.');
@@ -49,8 +56,6 @@ export default function AccountEditForm({ onSaved }: AccountEditFormProps) {
       setSaving(false);
     }
   }
-
-  if (!profile && !error) return null;
 
   return (
     <div className={styles.container}>
@@ -93,7 +98,7 @@ export default function AccountEditForm({ onSaved }: AccountEditFormProps) {
           <input
             className={styles.fieldInput}
             type="email"
-            value={profile?.email ?? ''}
+            value={email}
             readOnly
           />
         </label>

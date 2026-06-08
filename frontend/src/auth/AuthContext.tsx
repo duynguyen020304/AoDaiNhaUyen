@@ -1,12 +1,14 @@
 import {
   createContext,
   startTransition,
-  useEffect,
-  useMemo,
   useState,
   type ReactNode,
 } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import * as authApi from '../api/auth';
+import { useCurrentUserQuery } from '../hooks/auth/useAuthQueries';
+import { queryKeys } from '../lib/queryKeys';
+import { clearPersistedQueryCache } from '../lib/queryPersist';
 import type { AuthStatus, AuthUser } from '../types/auth';
 
 interface AuthContextValue {
@@ -24,58 +26,43 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<AuthStatus>('loading');
+  const queryClient = useQueryClient();
+  const currentUserQuery = useCurrentUserQuery();
   const [user, setUser] = useState<AuthUser | null>(null);
-
-  async function bootstrapSession() {
-    try {
-      const currentUser = await authApi.getCurrentUser();
-      startTransition(() => {
-        setUser(currentUser);
-        setStatus('authenticated');
-      });
-      return;
-    } catch {
-      try {
-        const refreshedUser = await authApi.refreshSession();
-        startTransition(() => {
-          setUser(refreshedUser);
-          setStatus('authenticated');
-        });
-        return;
-      } catch {
-        startTransition(() => {
-          setUser(null);
-          setStatus('anonymous');
-        });
-      }
-    }
-  }
+  const effectiveUser = user ?? currentUserQuery.data ?? null;
+  const effectiveStatus: AuthStatus = currentUserQuery.isPending && !user
+    ? 'loading'
+    : effectiveUser
+      ? 'authenticated'
+      : 'anonymous';
 
   async function login(email: string, password: string) {
     const authenticatedUser = await authApi.login(email, password);
+    queryClient.setQueryData(queryKeys.auth.me, authenticatedUser);
     startTransition(() => {
       setUser(authenticatedUser);
-      setStatus('authenticated');
     });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
     return authenticatedUser;
   }
 
   async function completeGoogleLogin(code: string) {
     const authenticatedUser = await authApi.googleLogin(code);
+    queryClient.setQueryData(queryKeys.auth.me, authenticatedUser);
     startTransition(() => {
       setUser(authenticatedUser);
-      setStatus('authenticated');
     });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
     return authenticatedUser;
   }
 
   async function completeZaloLogin(code: string, codeVerifier: string) {
     const authenticatedUser = await authApi.zaloLogin(code, codeVerifier);
+    queryClient.setQueryData(queryKeys.auth.me, authenticatedUser);
     startTransition(() => {
       setUser(authenticatedUser);
-      setStatus('authenticated');
     });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
     return authenticatedUser;
   }
 
@@ -83,23 +70,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authApi.logout();
     } finally {
+      queryClient.clear();
+      await clearPersistedQueryCache();
       startTransition(() => {
         setUser(null);
-        setStatus('anonymous');
       });
     }
   }
 
-  useEffect(() => {
-    void bootstrapSession();
-  }, []);
-
   async function refreshSession() {
     const refreshedUser = await authApi.refreshSession();
+    queryClient.setQueryData(queryKeys.auth.me, refreshedUser);
     startTransition(() => {
       setUser(refreshedUser);
-      setStatus('authenticated');
     });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
     return refreshedUser;
   }
 
@@ -116,9 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }
 
-  const value = useMemo<AuthContextValue>(() => ({
-    status,
-    user,
+  const value: AuthContextValue = {
+    status: effectiveStatus,
+    user: effectiveUser,
     login,
     completeGoogleLogin,
     completeZaloLogin,
@@ -126,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshSession,
     startGoogleLogin,
     startZaloLogin,
-  }), [status, user]);
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

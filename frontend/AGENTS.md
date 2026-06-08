@@ -4,7 +4,7 @@
 # frontend
 
 ## Purpose
-React 19 + TypeScript + Vite SPA for Ao Dai Nha Uyen e-commerce platform. Uses framer-motion animations, react-router-dom v7 routing, CSS Modules with PostCSS styling. No Tailwind -- raw CSS via PostCSS (nested, autoprefixer, cssnano).
+React 19 + TypeScript + Vite SPA for Ao Dai Nha Uyen customer e-commerce. Uses react-router-dom v7 routing, TanStack Query for server state, framer-motion animations, CSS Modules with PostCSS styling. No Tailwind -- raw CSS via PostCSS (nested, autoprefixer, cssnano).
 
 ## Key Files
 | File | Description |
@@ -45,6 +45,7 @@ React 19 + TypeScript + Vite SPA for Ao Dai Nha Uyen e-commerce platform. Uses f
 - Pages in `pages/<Name>/<Name>.tsx`
 - API modules in `api/` with shared `client.ts` (fetch-based, not axios)
 - Types in `types/` per domain
+- TanStack Query helpers in `src/lib/queryClient.ts`, `queryKeys.ts`, `queryPersist.ts`
 - framer-motion for all animations (reusable variants in `utils/motion.ts`)
 
 ## Dependencies

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { getMyImages, getImagePresignedUrl, type UserImage, type UserImageListData } from '../../api/media';
+import { useState } from 'react';
+import { getImagePresignedUrl, type UserImage } from '../../api/media';
+import { useMyImagesQuery } from '../../hooks/media/useMediaQueries';
 import { resolveAssetUrl } from '../../api/client';
 import styles from './ImageHistory.module.css';
 
@@ -10,29 +11,22 @@ const SOURCE_FILTERS = [
 ] as const;
 
 export default function ImageHistory() {
-  const [data, setData] = useState<UserImageListData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [sourceFilter, setSourceFilter] = useState('');
   const [page, setPage] = useState(1);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
 
-  useEffect(() => {
-    getMyImages(page, 12, sourceFilter || undefined)
-      .then(setData)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Không thể tải danh sách ảnh.'))
-      .finally(() => setLoading(false));
-  }, [page, sourceFilter]);
+  const imagesQuery = useMyImagesQuery(page, 12, sourceFilter || undefined);
+  const data = imagesQuery.data ?? null;
+  const loading = imagesQuery.isPending;
+  const error = imagesQuery.error instanceof Error ? imagesQuery.error.message : null;
 
   function handleFilterChange(value: string) {
-    setLoading(true);
     setSourceFilter(value);
     setPage(1);
   }
 
   function handlePageChange(newPage: number) {
-    setLoading(true);
     setPage(newPage);
   }
 

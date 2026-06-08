@@ -5,7 +5,7 @@ export function getHeaderCategories(): Promise<HeaderCategory[]> {
   return request<HeaderCategory[]>('/api/v1/categories/header');
 }
 
-interface GetProductsParams {
+export interface GetProductsParams {
   categorySlug?: string;
   productType?: string;
   featured?: boolean;

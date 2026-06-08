@@ -1,7 +1,8 @@
 import { request } from './client';
+import { queryClient } from '../lib/queryClient';
+import { queryKeys } from '../lib/queryKeys';
 import type { AddCartItemPayload, Cart, UpdateCartItemPayload } from '../types/cart';
-
-export const CART_UPDATED_EVENT = 'aodai:cart-updated';
+import { emptyCartFrom, normalizeCartAssets } from '../utils/cartMapping';
 
 export function getCart(): Promise<Cart> {
   return request<Cart>('/api/users/me/cart');
@@ -12,7 +13,7 @@ export async function addCartItem(payload: AddCartItemPayload): Promise<Cart> {
     method: 'POST',
     body: JSON.stringify(payload),
   });
-  dispatchCartUpdated(cart);
+  updateCartCache(cart);
   return cart;
 }
 
@@ -21,7 +22,7 @@ export async function updateCartItem(itemId: string, payload: UpdateCartItemPayl
     method: 'PUT',
     body: JSON.stringify(payload),
   });
-  dispatchCartUpdated(cart);
+  updateCartCache(cart);
   return cart;
 }
 
@@ -29,7 +30,7 @@ export async function removeCartItem(itemId: string): Promise<Cart> {
   const cart = await request<Cart>(`/api/users/me/cart/items/${itemId}`, {
     method: 'DELETE',
   });
-  dispatchCartUpdated(cart);
+  updateCartCache(cart);
   return cart;
 }
 
@@ -37,10 +38,12 @@ export async function clearCart(): Promise<boolean> {
   const result = await request<boolean>('/api/users/me/cart', {
     method: 'DELETE',
   });
-  dispatchCartUpdated({ totalItemCount: 0 });
+  queryClient.setQueryData<Cart | undefined>(queryKeys.cart.current, emptyCartFrom);
+  void queryClient.invalidateQueries({ queryKey: queryKeys.cart.current });
   return result;
 }
 
-function dispatchCartUpdated(cart: Pick<Cart, 'totalItemCount'>): void {
-  window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT, { detail: cart.totalItemCount }));
+function updateCartCache(cart: Cart): void {
+  queryClient.setQueryData(queryKeys.cart.current, normalizeCartAssets(cart));
+  void queryClient.invalidateQueries({ queryKey: queryKeys.cart.current });
 }

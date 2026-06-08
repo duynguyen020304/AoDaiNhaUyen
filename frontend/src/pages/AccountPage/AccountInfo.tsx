@@ -1,6 +1,4 @@
-import { useEffect, useState } from 'react';
-import type { UserProfile } from '../../types/user';
-import { getUserProfile } from '../../api/user';
+import { useUserProfileQuery } from '../../hooks/user/useUserQueries';
 import styles from './AccountInfo.module.css';
 
 interface AccountInfoProps {
@@ -8,18 +6,11 @@ interface AccountInfoProps {
 }
 
 export default function AccountInfo({ onEdit }: AccountInfoProps) {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const profileQuery = useUserProfileQuery();
+  const profile = profileQuery.data ?? null;
+  const error = profileQuery.error instanceof Error ? profileQuery.error.message : null;
 
-  useEffect(() => {
-    getUserProfile()
-      .then(setProfile)
-      .catch((value: Error) => setError(value.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) return <div className={styles.container}>Đang tải thông tin tài khoản...</div>;
+  if (profileQuery.isPending) return <div className={styles.container}>Đang tải thông tin tài khoản...</div>;
   if (error) return <div className={styles.container}>{error}</div>;
   if (!profile) return <div className={styles.container}>Không tìm thấy thông tin tài khoản.</div>;
 

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import type { UserAddress } from '../../types/address';
+import { useState } from 'react';
 import type { CreateAddressPayload } from '../../types/address';
-import { getAddresses, createAddress, deleteAddress } from '../../api/user';
+import { useAddressesQuery } from '../../hooks/user/useUserQueries';
+import { useCreateAddressMutation, useDeleteAddressMutation } from '../../hooks/user/useUserMutations';
 import styles from './AddressList.module.css';
 
 const EMPTY_FORM: CreateAddressPayload = {
@@ -14,18 +14,15 @@ const EMPTY_FORM: CreateAddressPayload = {
 };
 
 export default function AddressList() {
-  const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const addressesQuery = useAddressesQuery();
+  const createAddressMutation = useCreateAddressMutation();
+  const deleteAddressMutation = useDeleteAddressMutation();
+  const addresses = addressesQuery.data ?? [];
   const [isAdding, setIsAdding] = useState(false);
   const [form, setForm] = useState<CreateAddressPayload>(EMPTY_FORM);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getAddresses()
-      .then(setAddresses)
-      .catch((value: Error) => setError(value.message))
-      .finally(() => setLoading(false));
-  }, []);
+  const loadError = addressesQuery.error instanceof Error ? addressesQuery.error.message : null;
+  const loading = addressesQuery.isPending;
 
   function handleChange(field: keyof CreateAddressPayload, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -34,8 +31,7 @@ export default function AddressList() {
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const newAddr = await createAddress(form);
-      setAddresses((prev) => [...prev, newAddr]);
+      await createAddressMutation.mutateAsync(form);
       setForm(EMPTY_FORM);
       setIsAdding(false);
       setError(null);
@@ -46,8 +42,7 @@ export default function AddressList() {
 
   async function handleDelete(id: string) {
     try {
-      await deleteAddress(id);
-      setAddresses((prev) => prev.filter((a) => a.id !== id));
+      await deleteAddressMutation.mutateAsync(id);
     } catch (value) {
       setError(value instanceof Error ? value.message : 'Không thể xóa địa chỉ.');
     }
@@ -57,6 +52,7 @@ export default function AddressList() {
     <div className={styles.container}>
       <h1 className={styles.title}>THÔNG TIN ĐỊA CHỈ</h1>
       {loading ? <p>Đang tải địa chỉ...</p> : null}
+      {loadError ? <p>{loadError}</p> : null}
       {error ? <p>{error}</p> : null}
 
       <div className={styles.header}>

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import styles from './CartPage.module.css';
@@ -6,25 +7,27 @@ import CartItem from './CartItem';
 import CustomerNotes from './CustomerNotes';
 import CartSummary from './CartSummary';
 import { fadeUp, sectionReveal } from '../../utils/motion';
-import { getCart, removeCartItem, updateCartItem } from '../../api/cart';
 import { checkout } from '../../api/checkout';
-import { resolveAssetUrl } from '../../api/client';
-import { getAddresses } from '../../api/user';
 import type { Cart } from '../../types/cart';
-import type { UserAddress } from '../../types/address';
+import { useCartQuery } from '../../hooks/cart/useCartQueries';
+import { useRemoveCartItemMutation, useUpdateCartItemMutation } from '../../hooks/cart/useCartMutations';
+import { useAddressesQuery } from '../../hooks/user/useUserQueries';
+import { queryKeys } from '../../lib/queryKeys';
 import { useToast } from '../../components/Toast/useToast';
 import { useAuth } from '../../auth/useAuth';
 
 export default function CartPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { status } = useAuth();
   const { showToast } = useToast();
-  const [cart, setCart] = useState<Cart | null>(null);
-  const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const enabled = status === 'authenticated';
+  const cartQuery = useCartQuery(enabled);
+  const addressesQuery = useAddressesQuery(enabled);
+  const updateCartItemMutation = useUpdateCartItemMutation();
+  const removeCartItemMutation = useRemoveCartItemMutation();
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [note, setNote] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [checkingOut, setCheckingOut] = useState(false);
   const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
   const [appliedPromoCode, setAppliedPromoCode] = useState<string | null>(null);
@@ -32,33 +35,13 @@ export default function CartPage() {
   const [discountLabel, setDiscountLabel] = useState<string | null>(null);
   const [promoFreeShipping, setPromoFreeShipping] = useState(false);
 
-  useEffect(() => {
-    if (status === 'anonymous') {
-      return;
-    }
-
-    if (status !== 'authenticated') {
-      return;
-    }
-
-    Promise.all([getCart(), getAddresses()])
-      .then(([cartValue, addressValues]) => {
-        setCart({
-          ...cartValue,
-          items: cartValue.items.map((item) => ({
-            ...item,
-            imageUrl: resolveAssetUrl(item.imageUrl),
-          })),
-        });
-        setAddresses(addressValues);
-        const defaultAddress = addressValues.find((value) => value.isDefault) ?? addressValues[0];
-        setSelectedAddressId(defaultAddress?.id ?? null);
-      })
-      .catch((value: Error) => setError(value.message))
-      .finally(() => setLoading(false));
-  }, [status]);
-
-  const isLoadingCart = status === 'loading' || (status === 'authenticated' && loading);
+  const cart = cartQuery.data ?? null;
+  const addresses = addressesQuery.data ?? [];
+  const defaultAddress = addresses.find((value) => value.isDefault) ?? addresses[0];
+  const effectiveSelectedAddressId = selectedAddressId ?? defaultAddress?.id ?? null;
+  const firstError = cartQuery.error ?? addressesQuery.error;
+  const error = firstError instanceof Error ? firstError.message : null;
+  const isLoadingCart = status === 'loading' || (status === 'authenticated' && (cartQuery.isPending || addressesQuery.isPending));
   const shippingFee = useMemo(() => (cart && cart.items.length > 0 ? 25000 : 0), [cart]);
 
   function handlePromoApplied(code: string, amount: number, label: string, freeShipping: boolean) {
@@ -78,14 +61,7 @@ export default function CartPage() {
   async function handleUpdateQuantity(itemId: string, quantity: number) {
     try {
       setUpdatingItemId(itemId);
-      const nextCart = await updateCartItem(itemId, { quantity });
-      setCart({
-        ...nextCart,
-        items: nextCart.items.map((item) => ({
-          ...item,
-          imageUrl: resolveAssetUrl(item.imageUrl),
-        })),
-      });
+      await updateCartItemMutation.mutateAsync({ itemId, payload: { quantity } });
     } catch (value) {
       showToast(value instanceof Error ? value.message : 'Không thể cập nhật giỏ hàng.', 'error');
     } finally {
@@ -96,14 +72,7 @@ export default function CartPage() {
   async function handleRemoveItem(itemId: string) {
     try {
       setUpdatingItemId(itemId);
-      const nextCart = await removeCartItem(itemId);
-      setCart({
-        ...nextCart,
-        items: nextCart.items.map((item) => ({
-          ...item,
-          imageUrl: resolveAssetUrl(item.imageUrl),
-        })),
-      });
+      await removeCartItemMutation.mutateAsync(itemId);
     } catch (value) {
       showToast(value instanceof Error ? value.message : 'Không thể xóa sản phẩm.', 'error');
     } finally {
@@ -112,7 +81,7 @@ export default function CartPage() {
   }
 
   async function handleCheckout() {
-    if (!selectedAddressId) {
+    if (!effectiveSelectedAddressId) {
       showToast('Vui lòng chọn địa chỉ giao hàng.', 'error');
       return;
     }
@@ -120,12 +89,13 @@ export default function CartPage() {
     try {
       setCheckingOut(true);
       const result = await checkout({
-        addressId: selectedAddressId,
+        addressId: effectiveSelectedAddressId,
         note: note.trim() || undefined,
         paymentMethod: 'cash',
         promoCode: appliedPromoCode ?? undefined,
       });
-      setCart((current) => current ? { ...current, items: [], subtotal: 0, totalItemCount: 0 } : current);
+      queryClient.setQueryData<Cart | null>(queryKeys.cart.current, (current) => current ? { ...current, items: [], subtotal: 0, totalItemCount: 0 } : current);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.orders.list });
       showToast(`Thanh toán thành công. Mã đơn hàng: ${result.orderCode}`);
       navigate('/account/orders');
     } catch (value) {
@@ -183,7 +153,7 @@ export default function CartPage() {
             shippingFee={shippingFee}
             totalItemCount={cart?.totalItemCount ?? 0}
             addresses={addresses}
-            selectedAddressId={selectedAddressId}
+            selectedAddressId={effectiveSelectedAddressId}
             onSelectAddress={setSelectedAddressId}
             onCheckout={handleCheckout}
             checkingOut={checkingOut}

@@ -1,55 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import styles from './ProductDetailPage.module.css';
-import { getProductBySlug } from '../../api/catalog';
+import { useProductDetailQuery } from '../../hooks/catalog/useCatalogQueries';
 import { fadeUp } from '../../utils/motion';
 import ImageGallery from '../../components/ImageGallery/ImageGallery';
 import ProductInfo from '../../components/ProductInfo/ProductInfo';
 import UserFeedbackSection from '../../components/UserFeedbackSection/UserFeedbackSection';
-import type { ProductDetail } from '../../types/catalog';
 
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const [product, setProduct] = useState<ProductDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const productQuery = useProductDetailQuery(slug);
+  const product = productQuery.data ?? null;
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, []);
+  }, [slug]);
 
   const missingSlug = !slug;
-
-  useEffect(() => {
-    if (missingSlug) {
-      return;
-    }
-
-    let cancelled = false;
-
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await getProductBySlug(slug);
-        if (!cancelled) {
-          setProduct(data);
-          setLoading(false);
-        }
-      } catch {
-        if (!cancelled) {
-          setError('Không tìm thấy sản phẩm.');
-          setLoading(false);
-        }
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [slug, missingSlug]);
-
-  const displayError = missingSlug ? 'Không tìm thấy sản phẩm.' : error;
-  const displayLoading = missingSlug ? false : loading;
+  const displayError = missingSlug || productQuery.isError ? 'Không tìm thấy sản phẩm.' : null;
+  const displayLoading = !missingSlug && productQuery.isPending;
 
   /* ── Loading state ── */
   if (displayLoading) {

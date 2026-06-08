@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../api/client';
+import { queryClient } from '../lib/queryClient';
 
 type CacheVersionResponse = {
   success: boolean;
@@ -98,6 +99,7 @@ export async function checkCacheVersion(): Promise<void> {
       type: 'INVALIDATE_CACHE',
       version,
     });
+    void queryClient.invalidateQueries();
   }
 
   localStorage.setItem(CACHE_VERSION_KEY, version);

@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import styles from './Header.module.css';
 import { fadeUp, staggerContainer } from '../../utils/motion';
-import { getHeaderCategories } from '../../api/catalog';
-import { CART_UPDATED_EVENT, getCart } from '../../api/cart';
 import type { HeaderCategory } from '../../types/catalog';
 import { useAuth } from '../../auth/useAuth';
+import { useCartQuery } from '../../hooks/cart/useCartQueries';
+import { useHeaderCategoriesQuery } from '../../hooks/catalog/useCatalogQueries';
 
 interface NavLinkConfig {
   label: string;
@@ -59,63 +59,13 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { status, user, logout } = useAuth();
-  const [categories, setCategories] = useState<HeaderCategory[]>(NAV_FALLBACK_CATEGORIES);
-  const [cartItemCount, setCartItemCount] = useState(0);
+  const categoriesQuery = useHeaderCategoriesQuery();
+  const cartQuery = useCartQuery(status === 'authenticated');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
-  useEffect(() => {
-    let ignore = false;
-
-    getHeaderCategories()
-      .then((data) => {
-        if (!ignore && data.length > 0) {
-          setCategories(data);
-        }
-      })
-      .catch(() => {
-        if (!ignore) {
-          setCategories(NAV_FALLBACK_CATEGORIES);
-        }
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (status !== 'authenticated') {
-      return;
-    }
-
-    let ignore = false;
-
-    function handleCartUpdated(event: Event) {
-      const nextCount = (event as CustomEvent<number>).detail;
-      if (typeof nextCount === 'number') {
-        setCartItemCount(nextCount);
-      }
-    }
-
-    window.addEventListener(CART_UPDATED_EVENT, handleCartUpdated);
-
-    getCart()
-      .then((cart) => {
-        if (!ignore) {
-          setCartItemCount(cart.totalItemCount);
-        }
-      })
-      .catch(() => {
-        if (!ignore) {
-          setCartItemCount(0);
-        }
-      });
-
-    return () => {
-      ignore = true;
-      window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdated);
-    };
-  }, [status]);
+  const categories = categoriesQuery.data && categoriesQuery.data.length > 0
+    ? categoriesQuery.data
+    : NAV_FALLBACK_CATEGORIES;
+  const cartItemCount = status === 'authenticated' ? cartQuery.data?.totalItemCount ?? 0 : 0;
 
   const categoriesBySlug = useMemo(() => {
     return new Map(categories.map((category) => [category.slug, category]));
