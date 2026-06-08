@@ -1,7 +1,8 @@
 using System.ComponentModel;
-using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Mcp.Auth;
+using Microsoft.AspNetCore.Authorization;
 using ModelContextProtocol.Server;
 
 namespace AoDaiNhaUyen.Mcp.Tools;
@@ -9,80 +10,74 @@ namespace AoDaiNhaUyen.Mcp.Tools;
 [McpServerToolType]
 public static class AdminCategoryTools
 {
-  [McpServerTool, Description("Liệt kê tất cả danh mục.")]
+  [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Liệt kê tất cả danh mục.")]
   public static async Task<string> ListCategories(
+    CancellationToken cancellationToken = default,
     IAdminCategoryService? categories = null)
   {
-    if (categories is null) return Err("categories");
-    var cats = await categories.GetAllAsync(false, CancellationToken.None);
-    return JsonSerializer.Serialize(cats);
+    if (categories is null) return ToolJson.ServiceMissing("categories");
+    var cats = await categories.GetAllAsync(false, cancellationToken);
+    return ToolJson.Ok(cats);
   }
 
-  [McpServerTool, Description("Lấy chi tiết một danh mục.")]
+  [McpServerTool, Authorize(Policy = McpPolicies.Read), Description("Lấy chi tiết một danh mục.")]
   public static async Task<string> GetCategory(
     [Description("ID danh mục (GUID)")] string id,
+    CancellationToken cancellationToken = default,
     IAdminCategoryService? categories = null)
   {
-    if (categories is null) return Err("categories");
-    if (!Guid.TryParse(id, out var gid)) return "{\"error\": \"ID không hợp lệ.\"}";
-    var c = await categories.GetByIdAsync(gid, CancellationToken.None);
-    return c is null ? "{\"error\": \"Không tìm thấy danh mục.\"}" : JsonSerializer.Serialize(c);
+    if (categories is null) return ToolJson.ServiceMissing("categories");
+    if (!Guid.TryParse(id, out var gid)) return ToolJson.Error("ID không hợp lệ.", "invalid_id");
+    var c = await categories.GetByIdAsync(gid, cancellationToken);
+    return c is null ? ToolJson.Error("Không tìm thấy danh mục.", "not_found") : ToolJson.Ok(c);
   }
 
-  [McpServerTool, Description("Tạo danh mục mới.")]
+  [McpServerTool, Authorize(Policy = McpPolicies.Write), Description("Tạo danh mục mới.")]
   public static async Task<string> CreateCategory(
     [Description("Tên danh mục")] string name,
     [Description("Mô tả danh mục (tùy chọn)")] string? description = null,
+    CancellationToken cancellationToken = default,
     IAdminCategoryService? categories = null)
   {
-    if (categories is null) return Err("categories");
-    var slug = Slugify(name) + "-" + Random.Shared.Next(1000, 9999);
+    if (categories is null) return ToolJson.ServiceMissing("categories");
+    if (!ToolValidation.TryRequiredName(name, out var cleanName, out var error))
+      return ToolJson.Error(error!, "invalid_name");
+
     var dto = new CreateCategoryRequest
     {
-      Name = name,
-      Slug = slug,
-      Description = description
+      Name = cleanName,
+      Slug = ToolValidation.Slugify(cleanName) + "-" + Random.Shared.Next(1000, 9999),
+      Description = ToolValidation.Description(description)
     };
-    var result = await categories.CreateAsync(dto, CancellationToken.None);
-    return JsonSerializer.Serialize(result);
+    var result = await categories.CreateAsync(dto, cancellationToken);
+    return ToolJson.Ok(result);
   }
 
-  [McpServerTool, Description("Cập nhật danh mục hiện có.")]
+  [McpServerTool, Authorize(Policy = McpPolicies.Write), Description("Cập nhật danh mục hiện có.")]
   public static async Task<string> UpdateCategory(
     [Description("ID danh mục (GUID)")] string id,
     [Description("Tên mới (tùy chọn)")] string? name = null,
     [Description("Mô tả mới (tùy chọn)")] string? description = null,
+    CancellationToken cancellationToken = default,
     IAdminCategoryService? categories = null)
   {
-    if (categories is null) return Err("categories");
-    if (!Guid.TryParse(id, out var gid)) return "{\"error\": \"ID không hợp lệ.\"}";
+    if (categories is null) return ToolJson.ServiceMissing("categories");
+    if (!Guid.TryParse(id, out var gid)) return ToolJson.Error("ID không hợp lệ.", "invalid_id");
 
-    var existing = await categories.GetByIdAsync(gid, CancellationToken.None);
-    if (existing is null) return "{\"error\": \"Không tìm thấy danh mục.\"}";
+    var existing = await categories.GetByIdAsync(gid, cancellationToken);
+    if (existing is null) return ToolJson.Error("Không tìm thấy danh mục.", "not_found");
+
+    var cleanName = name is null ? existing.Name : name.Trim();
+    if (name is not null && !ToolValidation.TryRequiredName(cleanName, out cleanName, out var error))
+      return ToolJson.Error(error!, "invalid_name");
 
     var dto = new UpdateCategoryRequest
     {
-      Name = name ?? existing.Name,
-      Slug = name is not null ? Slugify(name) + "-" + Random.Shared.Next(1000, 9999) : existing.Slug,
-      Description = description ?? existing.Description
+      Name = cleanName,
+      Slug = name is not null ? ToolValidation.Slugify(cleanName) + "-" + Random.Shared.Next(1000, 9999) : existing.Slug,
+      Description = ToolValidation.Description(description) ?? existing.Description
     };
-    var result = await categories.UpdateAsync(gid, dto, CancellationToken.None);
-    return result is null ? "{\"error\": \"Không tìm thấy danh mục.\"}" : JsonSerializer.Serialize(result);
-  }
-
-  private static string Err(string svc) => $"{{\"error\": \"{svc} service chưa được inject.\"}}";
-
-  private static string Slugify(string text)
-  {
-    if (string.IsNullOrWhiteSpace(text)) return "untitled";
-    var slug = System.Text.RegularExpressions.Regex.Replace(
-      text.Normalize(System.Text.NormalizationForm.FormD)
-        .Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
-        .Aggregate("", (s, c) => s + c),
-      @"[^a-z0-9\s-]", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-    slug = System.Text.RegularExpressions.Regex.Replace(slug, @"\s+", "-");
-    slug = System.Text.RegularExpressions.Regex.Replace(slug, @"-+", "-");
-    slug = slug.Trim('-').ToLowerInvariant();
-    return slug.Length > 200 ? slug[..200] : slug.Length > 0 ? slug : "untitled";
+    var result = await categories.UpdateAsync(gid, dto, cancellationToken);
+    return result is null ? ToolJson.Error("Không tìm thấy danh mục.", "not_found") : ToolJson.Ok(result);
   }
 }
