@@ -15,6 +15,7 @@ import { RolesPage } from '@/pages/RolesPage'
 import { MediaPage } from '@/pages/MediaPage'
 import { AiChatPage } from '@/pages/AiChatPage'
 import { OrdersPage } from '@/pages/OrdersPage'
+import { ToolRiskPage } from '@/pages/ToolRiskPage'
 
 export function App() {
   const status = useAuthStore((s) => s.status)
@@ -54,6 +55,7 @@ export function App() {
             <Route path="media" element={<MediaPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="ai-chat" element={<AiChatPage />} />
+            <Route path="tools-risk" element={<ToolRiskPage />} />
           </Route>
         </Route>
 

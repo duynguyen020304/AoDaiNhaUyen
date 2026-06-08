@@ -15,6 +15,11 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IAdminUserService _users;
   private readonly IAdminRoleService _roles;
   private readonly IAdminDashboardService _dashboard;
+  private readonly IAdminOrderService _orders;
+  private readonly IAdminInventoryService _inventory;
+  private readonly IAdminReviewService _reviews;
+  private readonly IAdminPromoService _promos;
+  private readonly IAutoModeStore _autoMode;
   private readonly ILogger<AdminAgentService> _logger;
 
   private readonly IPendingActionStore _pendingStore;
@@ -28,6 +33,11 @@ public sealed class AdminAgentService : IAdminAgentService
     IAdminUserService users,
     IAdminRoleService roles,
     IAdminDashboardService dashboard,
+    IAdminOrderService orders,
+    IAdminInventoryService inventory,
+    IAdminReviewService reviews,
+    IAdminPromoService promos,
+    IAutoModeStore autoMode,
     ILogger<AdminAgentService> logger,
     IPendingActionStore pendingStore,
     IConversationStore conversationStore)
@@ -39,6 +49,11 @@ public sealed class AdminAgentService : IAdminAgentService
     _users = users;
     _roles = roles;
     _dashboard = dashboard;
+    _orders = orders;
+    _inventory = inventory;
+    _reviews = reviews;
+    _promos = promos;
+    _autoMode = autoMode;
     _logger = logger;
     _pendingStore = pendingStore;
     _conversationStore = conversationStore;
@@ -129,6 +144,82 @@ public sealed class AdminAgentService : IAdminAgentService
       P(
         ("id", O("string", "ID người dùng (GUID)")),
         ("role", O("string", "Vai trò mới: admin hoặc customer")))),
+
+    // Orders
+    T("list_orders", "Liệt kê đơn hàng theo trạng thái.",
+      P(
+        ("status", O("string", "Lọc theo trạng thái: pending, confirmed, processing, shipping, completed, cancelled. Mặc định: tất cả")),
+        ("limit", O("integer", "Số lượng đơn hàng. Mặc định: 10")))),
+
+    T("get_order", "Xem chi tiết một đơn hàng.",
+      P(("orderId", O("string", "ID đơn hàng (GUID)")))),
+
+    T("confirm_order", "Xác nhận đơn hàng (pending → confirmed).",
+      P(("orderId", O("string", "ID đơn hàng (GUID)")))),
+
+    T("start_processing_order", "Bắt đầu xử lý đơn hàng (confirmed → processing).",
+      P(("orderId", O("string", "ID đơn hàng (GUID)")))),
+
+    T("ship_order", "Tạo shipment và chuyển đơn sang trạng thái shipping.",
+      P(
+        ("orderId", O("string", "ID đơn hàng (GUID)")),
+        ("carrier", O("string", "Tên đơn vị vận chuyển (tùy chọn)")),
+        ("trackingNumber", O("string", "Mã vận đơn (tùy chọn)")))),
+
+    T("cancel_order", "Hủy đơn hàng và hoàn stock.",
+      P(("orderId", O("string", "ID đơn hàng (GUID)")))),
+
+    // Inventory & Store Health
+    T("get_inventory_summary", "Kiểm tra tồn kho tổng quan và cảnh báo sản phẩm sắp hết.",
+      P(("threshold", O("integer", "Ngưỡng tồn kho thấp. Mặc định: 10")))),
+
+    T("get_store_health_score", "Điểm sức khỏe cửa hàng (0-100) dựa trên nhiều chỉ số.",
+      P()),
+
+    // Reviews & Comments
+    T("list_recent_reviews", "Xem đánh giá gần đây từ khách hàng.",
+      P(("limit", O("integer", "Số lượng đánh giá. Mặc định: 10")))),
+
+    T("list_recent_comments", "Xem bình luận gần đây từ khách hàng.",
+      P(("limit", O("integer", "Số lượng bình luận. Mặc định: 10")))),
+
+    T("reply_to_review", "Phản hồi đánh giá (review) của khách hàng. Dùng cho review có rating.",
+      P(
+        ("commentId", O("string", "ID đánh giá gốc (GUID)")),
+        ("productId", O("string", "ID sản phẩm (GUID)")),
+        ("content", O("string", "Nội dung phản hồi")))),
+
+    T("reply_to_comment", "Phản hồi một bình luận/đánh giá của khách hàng.",
+      P(
+        ("commentId", O("string", "ID bình luận gốc (GUID)")),
+        ("productId", O("string", "ID sản phẩm (GUID)")),
+        ("content", O("string", "Nội dung phản hồi")))),
+
+    // Promotions
+    T("create_purchase_note", "Tạo ghi chú nhập hàng (draft) cho sản phẩm.",
+      P(
+        ("productName", O("string", "Tên sản phẩm cần nhập")),
+        ("quantity", O("integer", "Số lượng cần nhập")),
+        ("note", O("string", "Ghi chú thêm (tùy chọn)")))),
+
+    T("generate_daily_report", "Tạo báo cáo doanh thu và đơn hàng hôm nay.", P()),
+
+    T("list_promo_codes", "Liệt kê tất cả mã khuyến mãi.", P()),
+
+    // Autonomy Mode
+    T("toggle_autonomy", "Bật/tắt chế độ tự động cho AI. Khi bật, các hành động Medium risk được tự động thực hiện.",
+      P(("enabled", O("boolean", "true để bật, false để tắt")))),
+
+    T("get_autonomy_status", "Kiểm tra trạng thái chế độ tự động hiện tại.", P()),
+
+    T("create_promo_code", "Tạo mã khuyến mãi mới.",
+      P(
+        ("code", O("string", "Mã giảm giá (viết hoa, không dấu)")),
+        ("discountType", O("string", "Loại: percentage hoặc fixed")),
+        ("discountValue", O("number", "Giá trị giảm (% hoặc VND)")),
+        ("minOrderAmount", O("number", "Đơn hàng tối thiểu. Mặc định: 0")),
+        ("maxUses", O("integer", "Số lần sử dụng tối đa. Mặc định: 0 (không giới hạn)")),
+        ("endDate", O("string", "Ngày hết hạn (ISO). Mặc định: 30 ngày nữa")))),
 
     // Phase 3: Intelligence
     T("generate_product_description", "Tạo mô tả sản phẩm bằng AI (tiếng Việt). Dùng khi tạo hoặc cải thiện mô tả sản phẩm.",
@@ -242,59 +333,84 @@ public sealed class AdminAgentService : IAdminAgentService
 
   public async Task<IReadOnlyList<AdminAiSuggestionResponse>> GetSuggestionsAsync(CancellationToken ct)
   {
-    var suggestions = new List<AdminAiSuggestionResponse>
-    {
-      new("s1", "📊 Xem báo cáo doanh thu", "Xem tổng quan doanh thu 7 ngày gần nhất", "/admin/dashboard"),
-      new("s2", "📦 Kiểm tra tồn kho", "Xem danh sách sản phẩm và trạng thái", "/admin/products"),
-      new("s3", "👥 Quản lý người dùng", "Xem và quản lý tài khoản người dùng", "/admin/users"),
-      new("s4", "📝 Tạo sản phẩm mới", "Thêm sản phẩm mới vào danh mục", "/admin/products/new"),
-    };
+    var suggestions = new List<AdminAiSuggestionResponse>();
 
     try
     {
-      // Add data-driven suggestions if dashboard is available
-      var summary = await _dashboard.GetSummaryAsync(ct);
-      var top = await _dashboard.GetTopProductsAsync(3, ct);
+      // Pending orders
+      var pendingOrders = await _orders.GetOrdersAsync("pending", 5, ct);
+      if (pendingOrders.Count > 0)
+      {
+        suggestions.Add(new("s1",
+          "🔔 Đơn hàng chờ xác nhận",
+          $"Có {pendingOrders.Count} đơn hàng mới cần xác nhận. Tổng: {pendingOrders.Sum(o => o.TotalAmount):N0}đ",
+          "/admin/orders"));
+      }
 
-      if (summary.TotalOrders > 0)
+      // Low inventory
+      var inv = await _inventory.GetInventorySummaryAsync(10, ct);
+      if (inv.OutOfStockCount > 0)
+      {
+        suggestions.Add(new("s2",
+          "🔴 Sản phẩm hết hàng",
+          $"{inv.OutOfStockCount} sản phẩm đã hết hàng. Cần nhập thêm ngay.",
+          "/admin/products"));
+      }
+      else if (inv.LowStockCount > 0)
+      {
+        suggestions.Add(new("s3",
+          "⚠️ Tồn kho thấp",
+          $"{inv.LowStockCount} sản phẩm sắp hết (dưới 10 cái).",
+          "/admin/products"));
+      }
+
+      // Store health
+      var health = await _inventory.GetStoreHealthScoreAsync(ct);
+      if (health.Overall < 70)
+      {
+        suggestions.Add(new("s4",
+          $"🟠 Sức khỏe cửa hàng: {health.Overall}/100",
+          health.Summary,
+          "/admin/dashboard"));
+      }
+
+      // Recent reviews needing response
+      var reviews = await _reviews.GetRecentReviewsAsync(5, ct);
+      var lowReviews = reviews.Where(r => r.Rating <= 2).ToList();
+      if (lowReviews.Count > 0)
       {
         suggestions.Add(new("s5",
-          "📊 Phân tích doanh thu",
-          $"Có {summary.TotalOrders} đơn hàng trong kỳ. Hỏi AI để phân tích chi tiết.",
-          null));
+          "⭐ Đánh giá tiêu cực",
+          $"Có {lowReviews.Count} đánh giá 1-2 sao cần phản hồi.",
+          "/admin/products"));
       }
 
-      if (top.Count > 0)
+      // Revenue trend
+      var summary = await _dashboard.GetSummaryAsync(ct);
+      if (summary.TotalOrders > 0)
       {
-        var bestSeller = top[0];
         suggestions.Add(new("s6",
-          "⭐ Sản phẩm bán chạy",
-          $"{bestSeller.ProductName}: {bestSeller.SoldCount} đã bán",
-          $"/admin/products"));
+          $"📊 Doanh thu: {summary.TotalRevenue:N0}đ",
+          $"{summary.TotalOrders} đơn hàng. {(summary.RevenueGrowth >= 0 ? "Tăng" : "Giảm")} {Math.Abs(summary.RevenueGrowth):P0} so với kỳ trước.",
+          "/admin/dashboard"));
       }
 
-      // Check for low inventory
-      var (items, _) = await _products.GetPagedAsync(null, "active", 1, 50, false, ct);
-      var lowStockCount = 0;
-      foreach (var p in items)
-      {
-        var detail = await _products.GetByIdAsync(p.Id, ct);
-        if (detail?.Variants?.Sum(v => v.StockQty) <= 10)
-          lowStockCount++;
-        if (lowStockCount >= 3) break;
-      }
-
-      if (lowStockCount > 0)
+      // Auto mode hint
+      if (!_autoMode.IsAutoMode)
       {
         suggestions.Add(new("s7",
-          "📦 Sản phẩm sắp hết",
-          $"{lowStockCount}+ sản phẩm có tồn kho thấp. Kiểm tra ngay.",
-          "/admin/products"));
+          "🤖 Bật chế độ tự động",
+          "Cho phép AI tự xử lý hành động Medium risk. Hỏi AI: \"Bật chế độ tự động\"",
+          "/admin/ai-chat"));
       }
     }
     catch
     {
-      // Graceful degradation — return static suggestions on failure
+      // Graceful degradation
+      suggestions.Add(new("s_fallback",
+        "📊 Xem dashboard",
+        "Xem tổng quan cửa hàng",
+        "/admin/dashboard"));
     }
 
     return suggestions;
@@ -309,7 +425,7 @@ public sealed class AdminAgentService : IAdminAgentService
     CancellationToken ct,
     bool skipConfirmation = false)
   {
-    var riskLevel = _safety.Classify(toolName);
+    var riskLevel = await _safety.ClassifyAsync(toolName, ct);
     _logger.LogInformation("[AdminAgent] Executing tool {ToolName} (risk={RiskLevel}) by {AdminId}",
       toolName, riskLevel, adminUserId);
 
@@ -354,6 +470,36 @@ public sealed class AdminAgentService : IAdminAgentService
         "update_user_role" => await UpdateUserRole(
           Guid.Parse(GetStrArg(args, "id")!), GetStrArg(args, "role") ?? "customer", ct),
 
+        // Orders
+        "list_orders" => await ListOrders(GetStrArg(args, "status"), GetIntArg(args, "limit", 10), ct),
+        "get_order" => await GetOrder(Guid.Parse(GetStrArg(args, "orderId")!), ct),
+        "confirm_order" => await UpdateOrderStatus(Guid.Parse(GetStrArg(args, "orderId")!), "confirmed", ct),
+        "start_processing_order" => await UpdateOrderStatus(Guid.Parse(GetStrArg(args, "orderId")!), "processing", ct),
+        "ship_order" => await ShipOrder(args, ct),
+        "cancel_order" => await CancelOrder(Guid.Parse(GetStrArg(args, "orderId")!), ct),
+
+        // Inventory & Store Health
+        "get_inventory_summary" => await GetInventorySummary(GetIntArg(args, "threshold", 10), ct),
+        "get_store_health_score" => await GetStoreHealthScore(ct),
+
+        // Reviews & Comments
+        "list_recent_reviews" => await ListRecentReviews(GetIntArg(args, "limit", 10), ct),
+        "list_recent_comments" => await ListRecentComments(GetIntArg(args, "limit", 10), ct),
+        "reply_to_review" => await ReplyToComment(adminUserId, args, ct),
+        "reply_to_comment" => await ReplyToComment(adminUserId, args, ct),
+
+        // Promotions
+        "list_promo_codes" => await ListPromoCodes(ct),
+        "create_promo_code" => await CreatePromoCode(args, ct),
+
+        // Purchase Note + Daily Report
+        "create_purchase_note" => CreatePurchaseNote(args),
+        "generate_daily_report" => await GenerateDailyReport(ct),
+
+        // Autonomy Mode
+        "toggle_autonomy" => ToggleAutonomy(args),
+        "get_autonomy_status" => GetAutonomyStatus(),
+
         // Phase 3: Intelligence
         "generate_product_description" => await GenerateProductDescription(args, ct),
         "generate_weekly_report" => await GenerateWeeklyReport(GetIntArg(args, "periodDays", 7), ct),
@@ -362,8 +508,8 @@ public sealed class AdminAgentService : IAdminAgentService
         _ => "❌ Không tìm thấy công cụ này."
       };
 
-      // Check if confirmation is needed
-      if (!skipConfirmation && _safety.RequiresConfirmation(riskLevel))
+      // Check if confirmation is needed (auto mode can bypass Medium risk)
+      if (!skipConfirmation && _safety.RequiresConfirmation(riskLevel) && !_autoMode.IsAutoApproved(riskLevel.ToString()))
       {
         return new ToolResult(result, true,
           _safety.GetConfirmationPrompt(toolName, result), riskLevel.ToString());
@@ -562,6 +708,285 @@ public sealed class AdminAgentService : IAdminAgentService
 
     var ok = await _users.UpdateUserRoleAsync(id, new UpdateUserRoleRequest { RoleId = targetRole.Id }, ct);
     return ok ? $"✅ Đã đổi vai trò người dùng thành '{role}'." : "❌ Không tìm thấy người dùng.";
+  }
+
+  // --- Order tools ---
+
+  private async Task<string> ListOrders(string? status, int limit, CancellationToken ct)
+  {
+    var orders = await _orders.GetOrdersAsync(status, limit, ct);
+    if (orders.Count == 0)
+      return status is not null
+        ? $"📦 Không có đơn hàng nào ở trạng thái '{status}'."
+        : "📦 Chưa có đơn hàng nào.";
+
+    var statusLabel = status is not null ? $" ({status})" : "";
+    return $"📦 {orders.Count} đơn hàng{statusLabel}:\n" +
+           string.Join("\n", orders.Select(o =>
+             $"- [{o.OrderCode}] {o.CustomerName ?? "Khách"} — {o.TotalAmount:N0}đ ({o.OrderStatus}) — {o.ItemCount} sản phẩm"));
+  }
+
+  private async Task<string> GetOrder(Guid orderId, CancellationToken ct)
+  {
+    var order = await _orders.GetOrderByIdAsync(orderId, ct);
+    if (order is null) return "❌ Không tìm thấy đơn hàng.";
+
+    var items = string.Join("\n", order.Items.Select(i =>
+      $"  - {i.ProductName} ({i.Size}/{i.Color}) x{i.Quantity} = {i.LineTotal:N0}đ"));
+
+    return $@"📋 Đơn hàng {order.OrderCode}
+Khách: {order.CustomerName} ({order.CustomerEmail})
+Địa chỉ: {order.AddressLine}, {order.Ward}, {order.District}, {order.Province}
+Trạng thái: {order.OrderStatus}
+Tạm tính: {order.Subtotal:N0}đ
+Giảm giá: {order.DiscountAmount:N0}đ
+Phí ship: {order.ShippingFee:N0}đ
+Tổng: {order.TotalAmount:N0}đ
+Ghi chú: {order.Note ?? "Không có"}
+Sản phẩm:
+{items}";
+  }
+
+  private async Task<string> UpdateOrderStatus(Guid orderId, string newStatus, CancellationToken ct)
+  {
+    var result = await _orders.UpdateStatusAsync(orderId, newStatus, ct);
+    return result.Success
+      ? $"✅ Đã chuyển đơn hàng sang trạng thái '{result.NewStatus}'."
+      : $"❌ {result.ErrorMessage}";
+  }
+
+  private async Task<string> ShipOrder(JsonElement args, CancellationToken ct)
+  {
+    var orderId = Guid.Parse(GetStrArg(args, "orderId")!);
+    var carrier = GetStrArg(args, "carrier");
+    var trackingNumber = GetStrArg(args, "trackingNumber");
+
+    var result = await _orders.CreateShipmentAsync(orderId, carrier, trackingNumber, ct);
+    return result.Success
+      ? $"✅ Đã tạo shipment cho đơn hàng. Trạng thái: {result.NewStatus}."
+      : $"❌ {result.ErrorMessage}";
+  }
+
+  private async Task<string> CancelOrder(Guid orderId, CancellationToken ct)
+  {
+    var result = await _orders.CancelOrderAsync(orderId, ct);
+    return result.Success
+      ? $"✅ Đã hủy đơn hàng. Stock đã được hoàn lại."
+      : $"❌ {result.ErrorMessage}";
+  }
+
+  // --- Inventory & Store Health tools ---
+
+  private async Task<string> GetInventorySummary(int threshold, CancellationToken ct)
+  {
+    var inv = await _inventory.GetInventorySummaryAsync(threshold, ct);
+    if (inv.LowStockCount == 0)
+      return $"✅ Tất cả sản phẩm đều có tồn kho trên {threshold} đơn vị.\n" +
+             $"Tổng: {inv.TotalProducts} sản phẩm, {inv.TotalVariants} biến thể.";
+
+    var items = string.Join("\n", inv.LowStockItems.Take(15).Select(i =>
+      i.StockQty <= 0
+        ? $"  🔴 {i.ProductName} ({i.Size}/{i.Color}): HẾT HÀNG"
+        : $"  ⚠️ {i.ProductName} ({i.Size}/{i.Color}): còn {i.StockQty}"));
+
+    return $"📦 TỒN KHO ({inv.TotalProducts} sản phẩm, {inv.TotalVariants} biến thể):\n" +
+           $"- Hết hàng: {inv.OutOfStockCount}\n" +
+           $"- Tồn kho thấp (<={threshold}): {inv.LowStockCount}\n\n" +
+           $"Sản phẩm cần chú ý:\n{items}";
+  }
+
+  private async Task<string> GetStoreHealthScore(CancellationToken ct)
+  {
+    var h = await _inventory.GetStoreHealthScoreAsync(ct);
+
+    var emoji = h.Overall switch
+    {
+      >= 85 => "🟢",
+      >= 70 => "🟡",
+      >= 50 => "🟠",
+      _ => "🔴"
+    };
+
+    return $@"{emoji} STORE HEALTH SCORE: {h.Overall}/100
+
+{h.Summary}
+
+Chi tiết:
+- Tỷ lệ hoàn thành đơn: {h.FulfillmentRate}%
+- Sức khỏe tồn kho: {h.StockHealth}%
+- Xu hướng doanh thu: {h.RevenueTrend}%
+- Hài lòng khách hàng: {h.CustomerSatisfaction}%";
+  }
+
+  // --- Review & Comment tools ---
+
+  private async Task<string> ListRecentReviews(int limit, CancellationToken ct)
+  {
+    var reviews = await _reviews.GetRecentReviewsAsync(limit, ct);
+    if (reviews.Count == 0)
+      return "⭐ Chưa có đánh giá nào.";
+
+    return $"⭐ {reviews.Count} đánh giá gần đây:\n" +
+           string.Join("\n", reviews.Select(r =>
+           {
+             var stars = new string('⭐', r.Rating);
+             return $"- {stars} [{r.ProductName}] {r.UserName}: {(r.Content.Length > 80 ? r.Content[..80] + "…" : r.Content)}";
+           }));
+  }
+
+  private async Task<string> ListRecentComments(int limit, CancellationToken ct)
+  {
+    var comments = await _reviews.GetRecentCommentsAsync(limit, ct);
+    if (comments.Count == 0)
+      return "💬 Chưa có bình luận nào.";
+
+    return $"💬 {comments.Count} bình luận gần đây:\n" +
+           string.Join("\n", comments.Select(c =>
+           {
+             var isReply = c.ParentCommentId.HasValue ? " (trả lời)" : "";
+             return $"- [{c.ProductName}]{isReply} {c.UserName}: {(c.Content.Length > 80 ? c.Content[..80] + "…" : c.Content)}";
+           }));
+  }
+
+  private async Task<string> ReplyToComment(Guid adminUserId, JsonElement args, CancellationToken ct)
+  {
+    var commentIdStr = GetStrArg(args, "commentId");
+    var productIdStr = GetStrArg(args, "productId");
+    var content = GetStrArg(args, "content");
+
+    if (commentIdStr is null || !Guid.TryParse(commentIdStr, out var commentId))
+      return "❌ Cần ID bình luận hợp lệ.";
+    if (productIdStr is null || !Guid.TryParse(productIdStr, out var productId))
+      return "❌ Cần ID sản phẩm hợp lệ.";
+    if (string.IsNullOrWhiteSpace(content))
+      return "❌ Nội dung phản hồi không được để trống.";
+
+    var result = await _reviews.ReplyToCommentAsync(adminUserId, commentId, productId, content, ct);
+    return result.Success
+      ? $"✅ {result.Message}"
+      : $"❌ {result.Message}";
+  }
+
+  // --- Autonomy Mode tools ---
+
+  private string ToggleAutonomy(JsonElement args)
+  {
+    var enabled = args.TryGetProperty("enabled", out var el) && el.GetBoolean();
+    if (enabled) _autoMode.Enable();
+    else _autoMode.Disable();
+
+    _logger.LogInformation("[AdminAgent] Autonomy mode {State} by admin", enabled ? "ENABLED" : "DISABLED");
+
+    return enabled
+      ? "🤖 Chế độ tự động đã BẬT. Các hành động Medium risk sẽ được tự động thực hiện. High/Critical vẫn cần xác nhận."
+      : "🔒 Chế độ tự động đã TẮT. Tất cả hành động Medium+ cần xác nhận thủ công.";
+  }
+
+  private string GetAutonomyStatus()
+  {
+    var isOn = _autoMode.IsAutoMode;
+    return isOn
+      ? "🤖 Chế độ tự động: ĐANG BẬT\n- Read/Low/Medium: tự động duyệt\n- High/Critical: cần xác nhận"
+      : "🔒 Chế độ tự động: ĐANG TẮT\n- Read/Low: tự động duyệt\n- Medium/High/Critical: cần xác nhận";
+  }
+
+  // --- Purchase Note + Daily Report tools ---
+
+  private string CreatePurchaseNote(JsonElement args)
+  {
+    var productName = GetStrArg(args, "productName") ?? "Sản phẩm";
+    var quantity = GetIntArg(args, "quantity", 0);
+    var note = GetStrArg(args, "note");
+
+    if (quantity <= 0)
+      return "❌ Số lượng nhập phải lớn hơn 0.";
+
+    var noteText = string.IsNullOrWhiteSpace(note) ? "" : $"\nGhi chú: {note}";
+    return $"📝 PHIẾU NHẬP HÀNG (Draft)\n" +
+           $"- Sản phẩm: {productName}\n" +
+           $"- Số lượng: {quantity}\n" +
+           $"- Trạng thái: Chờ xác nhận{noteText}\n\n" +
+           $"💡 Lưu ý: Đây là ghi chú nháp. Cần liên hệ nhà cung cấp để đặt hàng.";
+  }
+
+  private async Task<string> GenerateDailyReport(CancellationToken ct)
+  {
+    var summary = await _dashboard.GetSummaryAsync(ct);
+    var ordersByStatus = await _dashboard.GetOrdersByStatusAsync(ct);
+    var topProducts = await _dashboard.GetTopProductsAsync(3, ct);
+    var revenue = await _dashboard.GetRevenueAsync(1, ct);
+
+    var todayRevenue = revenue.Points.FirstOrDefault()?.Revenue ?? 0m;
+    var todayOrders = revenue.Points.FirstOrDefault()?.Orders ?? 0;
+
+    var report = $@"📊 BÁO CÁO HÔM NAY
+
+TỔNG QUAN:
+- Doanh thu hôm nay: {todayRevenue:N0} VND
+- Đơn hàng hôm nay: {todayOrders}
+- Tổng doanh thu kỳ: {summary.TotalRevenue:N0} VND
+- Tổng đơn hàng: {summary.TotalOrders}
+
+ĐƠN HÀNG THEO TRẠNG THÁI:
+- Chờ xử lý: {ordersByStatus.Pending}
+- Đã xác nhận: {ordersByStatus.Confirmed}
+- Đang xử lý: {ordersByStatus.Processing}
+- Đang giao: {ordersByStatus.Shipping}
+- Hoàn thành: {ordersByStatus.Completed}
+- Hủy: {ordersByStatus.Cancelled}";
+
+    if (topProducts.Count > 0)
+    {
+      report += "\n\nTOP SẢN PHẨM BÁN CHẠY:";
+      foreach (var p in topProducts.Take(3))
+        report += $"\n- {p.ProductName}: {p.SoldCount} đã bán, {p.Revenue:N0} VND";
+    }
+
+    return report;
+  }
+
+  // --- Promo tools ---
+
+  private async Task<string> ListPromoCodes(CancellationToken ct)
+  {
+    var promos = await _promos.GetAllAsync(ct);
+    if (promos.Count == 0)
+      return "🎫 Chưa có mã khuyến mãi nào.";
+
+    return $"🎫 {promos.Count} mã khuyến mãi:\n" +
+           string.Join("\n", promos.Select(p =>
+           {
+             var status = p.IsActive ? "✅" : "❌";
+             var discount = p.DiscountType == "percentage"
+               ? $"{p.DiscountValue}%"
+               : $"{p.DiscountValue:N0}đ";
+             return $"- {status} {p.Code}: giảm {discount} (đã dùng {p.CurrentUses}/{(p.MaxUses > 0 ? p.MaxUses.ToString() : "∞")})";
+           }));
+  }
+
+  private async Task<string> CreatePromoCode(JsonElement args, CancellationToken ct)
+  {
+    var code = GetStrArg(args, "code");
+    var discountType = GetStrArg(args, "discountType") ?? "percentage";
+    var discountValue = args.TryGetProperty("discountValue", out var dv) ? dv.GetDecimal() : 0m;
+    var minOrderAmount = args.TryGetProperty("minOrderAmount", out var mo) ? mo.GetDecimal() : 0m;
+    var maxUses = GetIntArg(args, "maxUses", 0);
+    var endDateStr = GetStrArg(args, "endDate");
+
+    if (string.IsNullOrWhiteSpace(code))
+      return "❌ Cần nhập mã giảm giá.";
+
+    DateTime? endDate = null;
+    if (endDateStr is not null && DateTime.TryParse(endDateStr, out var parsed))
+      endDate = parsed;
+
+    var request = new CreateAdminPromoRequest(
+      code, discountType, discountValue, minOrderAmount, maxUses, null, endDate);
+
+    var result = await _promos.CreateAsync(request, ct);
+    return result.Success
+      ? $"✅ {result.Message}"
+      : $"❌ {result.Message}";
   }
 
   // --- Phase 3: Intelligence tools ---

@@ -288,6 +288,7 @@ public sealed class CatalogTryOnService(
   {
     var normalizedFileUrl = fileUrl.Trim();
 
+    // Local filesystem: /upload/... request paths
     if (uploadStoragePathResolver.TryGetAbsolutePathForRequestPath(normalizedFileUrl, out var localPath))
     {
       return await ReadLocalFileBytesAsync(localPath, cancellationToken);
@@ -303,6 +304,7 @@ public sealed class CatalogTryOnService(
       return await ReadLocalFileBytesAsync(normalizedFileUrl, cancellationToken);
     }
 
+    // Absolute HTTP(S) URLs
     if (Uri.TryCreate(normalizedFileUrl, UriKind.Absolute, out var absoluteUri))
     {
       if (string.Equals(absoluteUri.Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
@@ -316,7 +318,20 @@ public sealed class CatalogTryOnService(
       return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }
 
-    throw new FileNotFoundException("AI asset phải là đường dẫn tuyệt đối hoặc /upload/... hợp lệ.", normalizedFileUrl);
+    // S3 object key (e.g. "aodainhauyen/private/tryon-curated/garments/slug.png")
+    // Only attempt S3 download when configured and the value looks like an S3 object key
+    // (starts with the expected root prefix), otherwise throw a clear error.
+    if (storageService.IsConfigured() && normalizedFileUrl.StartsWith("aodainhauyen/", StringComparison.OrdinalIgnoreCase))
+    {
+      using var s3Stream = await storageService.DownloadAsync(normalizedFileUrl, cancellationToken);
+      using var ms = new MemoryStream();
+      await s3Stream.CopyToAsync(ms, cancellationToken);
+      return ms.ToArray();
+    }
+
+    throw new FileNotFoundException(
+      "AI asset phải là đường dẫn tuyệt đối, /upload/... hợp lệ, hoặc S3 object key.",
+      normalizedFileUrl);
   }
 
   private static async Task<byte[]> ReadLocalFileBytesAsync(string filePath, CancellationToken cancellationToken)

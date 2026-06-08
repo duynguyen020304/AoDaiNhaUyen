@@ -175,7 +175,13 @@ public static class ServiceRegistration
     services.AddScoped<IStorageService, S3StorageService>();
     services.AddScoped<IAdminMediaService, AdminMediaService>();
     services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+    services.AddScoped<IAdminOrderService, AdminOrderService>();
+    services.AddScoped<IAdminInventoryService, AdminInventoryService>();
+    services.AddScoped<IAdminToolRiskService, AdminToolRiskService>();
+    services.AddScoped<IAdminReviewService, AdminReviewService>();
+    services.AddScoped<IAdminPromoService, AdminPromoService>();
     services.AddScoped<ISafetyGate, SafetyGate>();
+    services.AddSingleton<IAutoModeStore, AutoModeStore>();
     services.AddSingleton<IPendingActionStore, PendingActionStore>();
     services.AddSingleton<IConversationStore, ConversationStore>();
     services.AddScoped<IAdminAgentService, AdminAgentService>();

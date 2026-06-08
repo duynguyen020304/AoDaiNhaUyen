@@ -24,7 +24,10 @@ public sealed class VertexAiAdminProvider(
     "- Khi thực hiện thay đổi, xác nhận với admin trước khi làm.\n" +
     "- Luôn minh bạch về hành động bạn đang thực hiện.\n" +
     "- Không tự ý xóa dữ liệu hoặc thay đổi role người dùng khi chưa có xác nhận.\n" +
-    "- Nếu không chắc về điều gì, hãy hỏi lại admin.";
+    "- Nếu không chắc về điều gì, hãy hỏi lại admin.\n" +
+    "- Quản lý đơn hàng: liệt kê, xem chi tiết, xác nhận, xử lý, giao hàng, hủy đơn.\n" +
+    "- Khi có đơn hàng mới, chủ động thông báo và đề xuất xác nhận.\n" +
+    "- Khi tồn kho thấp, cảnh báo admin và đề xuất nhập hàng.";
 
   public async IAsyncEnumerable<LlmChunk> StreamChatAsync(
     List<AdminLlmMessage> history,

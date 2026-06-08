@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList } from 'lucide-react'
+import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { to: '/admin/roles', icon: Shield, label: 'Vai trò', end: false },
   { to: '/admin/media', icon: Image, label: 'Hình ảnh', end: false },
   { to: '/admin/ai-chat', icon: Bot, label: 'AI Trợ lý', end: false },
+  { to: '/admin/tools-risk', icon: Settings2, label: 'Cấu hình AI', end: false },
 ] as const
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {

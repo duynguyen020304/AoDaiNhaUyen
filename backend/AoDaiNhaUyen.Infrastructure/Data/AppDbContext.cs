@@ -43,6 +43,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<ImageValidationCacheEntry> ImageValidationCacheEntries => Set<ImageValidationCacheEntry>();
   public DbSet<UserGeneratedImage> UserGeneratedImages => Set<UserGeneratedImage>();
   public DbSet<AdminAiAction> AdminAiActions => Set<AdminAiAction>();
+  public DbSet<ToolRiskConfig> ToolRiskConfigs => Set<ToolRiskConfig>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {

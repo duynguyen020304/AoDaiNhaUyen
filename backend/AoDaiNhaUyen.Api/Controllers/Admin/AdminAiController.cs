@@ -78,9 +78,44 @@ public sealed class AdminAiController(IAdminAgentService agentService) : Control
     return Ok(ApiResponseFactory.Success(suggestions, "Lấy gợi ý AI thành công."));
   }
 
+  /// <summary>Toggle AI autonomy mode on/off.</summary>
+  [HttpPost("auto-mode/toggle")]
+  public ActionResult<ApiResponse<object>> ToggleAutoMode(
+    [FromBody] ToggleAutoModeRequest request)
+  {
+    var store = HttpContext.RequestServices.GetRequiredService<IAutoModeStore>();
+    if (request.Enabled) store.Enable();
+    else store.Disable();
+
+    return Ok(ApiResponseFactory.Success<object?>(null,
+      request.Enabled ? "Đã bật chế độ tự động." : "Đã tắt chế độ tự động."));
+  }
+
+  /// <summary>Get current auto mode status.</summary>
+  [HttpGet("auto-mode/status")]
+  public ActionResult<ApiResponse<object>> GetAutoModeStatus()
+  {
+    var store = HttpContext.RequestServices.GetRequiredService<IAutoModeStore>();
+    return Ok(ApiResponseFactory.Success<object>(
+      new { isAutoMode = store.IsAutoMode },
+      store.IsAutoMode ? "Chế độ tự động đang bật." : "Chế độ tự động đang tắt."));
+  }
+
+  /// <summary>Get store health score.</summary>
+  [HttpGet("store-health")]
+  public async Task<ActionResult<ApiResponse<object>>> GetStoreHealth(
+    CancellationToken cancellationToken)
+  {
+    var inventoryService = HttpContext.RequestServices.GetRequiredService<IAdminInventoryService>();
+    var health = await inventoryService.GetStoreHealthScoreAsync(cancellationToken);
+    return Ok(ApiResponseFactory.Success<object>(health, "Lấy điểm sức khỏe cửa hàng thành công."));
+  }
+
   private Guid? GetAdminUserId()
   {
     var sid = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     return sid is not null && Guid.TryParse(sid, out var id) ? id : null;
   }
 }
+
+public sealed record ToggleAutoModeRequest(bool Enabled);
