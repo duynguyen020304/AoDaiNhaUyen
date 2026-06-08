@@ -19,25 +19,25 @@ export default function ProductDetailPage() {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
+  const missingSlug = !slug;
+
   useEffect(() => {
-    if (!slug) {
-      setError('Không tìm thấy sản phẩm.');
-      setLoading(false);
+    if (missingSlug) {
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
     (async () => {
+      setLoading(true);
+      setError(null);
       try {
         const data = await getProductBySlug(slug);
         if (!cancelled) {
           setProduct(data);
           setLoading(false);
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
           setError('Không tìm thấy sản phẩm.');
           setLoading(false);
@@ -46,10 +46,13 @@ export default function ProductDetailPage() {
     })();
 
     return () => { cancelled = true; };
-  }, [slug]);
+  }, [slug, missingSlug]);
+
+  const displayError = missingSlug ? 'Không tìm thấy sản phẩm.' : error;
+  const displayLoading = missingSlug ? false : loading;
 
   /* ── Loading state ── */
-  if (loading) {
+  if (displayLoading) {
     return (
       <main className={styles.page}>
         <div className={styles.loadingSkeleton}>
@@ -68,7 +71,7 @@ export default function ProductDetailPage() {
   }
 
   /* ── Error state (not found) ── */
-  if (error || !product) {
+  if (displayError || !product) {
     return (
       <main className={styles.page}>
         <motion.div

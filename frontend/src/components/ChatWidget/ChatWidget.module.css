@@ -258,6 +258,28 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.productAddToCartBtn {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  padding: 5px 10px;
+  border: 1px solid rgba(118, 17, 15, 0.22);
+  border-radius: 8px;
+  background: #fff;
+  color: #76110f;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.productAddToCartBtn:hover {
+  background: rgba(118, 17, 15, 0.08);
+}
+
+.productAddToCartBtn:active {
+  background: rgba(118, 17, 15, 0.14);
+}
+
 
 /* --- Composer --- */
 .composer {

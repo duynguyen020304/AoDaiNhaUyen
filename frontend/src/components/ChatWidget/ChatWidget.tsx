@@ -13,6 +13,9 @@ import {
   type ChatThreadSummary,
 } from '../../api/chat';
 import { resolveAssetUrl } from '../../api/client';
+import { addCartItem } from '../../api/cart';
+import { useAuth } from '../../auth/useAuth';
+import { useAuthModal } from '../../auth/AuthModalContext';
 import { useToast } from '../Toast/useToast';
 import styles from './ChatWidget.module.css';
 
@@ -34,6 +37,8 @@ export default function ChatWidget() {
   const [pendingTryOnByThread, setPendingTryOnByThread] = useState<Record<string, ChatMessage>>({});
   const [usedTryOnMessageByThread, setUsedTryOnMessageByThread] = useState<Record<string, string>>({});
   const { showToast } = useToast();
+  const { status } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const streamAbortControllerRef = useRef<AbortController | null>(null);
@@ -311,6 +316,25 @@ export default function ChatWidget() {
     }
   };
 
+  const handleAddToCart = async (product: ChatRecommendationItem) => {
+    if (status !== 'authenticated') {
+      openAuthModal({ from: location.pathname + location.search });
+      return;
+    }
+
+    if (!product.primaryVariantId) {
+      showToast('Sản phẩm này hiện chưa sẵn sàng để thêm vào giỏ.', 'error');
+      return;
+    }
+
+    try {
+      await addCartItem({ variantId: product.primaryVariantId, quantity: 1 });
+      showToast('Đã thêm sản phẩm vào giỏ hàng.');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Không thể thêm vào giỏ hàng.', 'error');
+    }
+  };
+
   const handleTryOn = async () => {
     if (!activeThread || !latestTryOnPayload?.structuredPayload?.selectedGarmentProductId) {
       return;
@@ -392,7 +416,7 @@ export default function ChatWidget() {
 
               <div className={styles.messages}>
                 {renderMessages.map((message) => (
-                  <MessageCard key={message.id} message={message} onPreviewImage={setPreviewImage} />
+                  <MessageCard key={message.id} message={message} onPreviewImage={setPreviewImage} onAddToCart={handleAddToCart} />
                 ))}
                 {queuePosition !== null ? (
                   <div className={styles.queueNotice}>
@@ -402,7 +426,7 @@ export default function ChatWidget() {
                   </div>
                 ) : null}
                 {streamingMessage && (
-                  <MessageCard key="streaming" message={streamingMessage} onPreviewImage={setPreviewImage} streaming />
+                  <MessageCard key="streaming" message={streamingMessage} onPreviewImage={setPreviewImage} onAddToCart={handleAddToCart} streaming />
                 )}
                 <div ref={endRef} />
               </div>
@@ -559,7 +583,7 @@ export default function ChatWidget() {
 }
 
 function MessageCard(
-  { message, onPreviewImage, streaming }: { message: ChatMessage; onPreviewImage: (preview: { url: string; name: string }) => void; streaming?: boolean },
+  { message, onPreviewImage, onAddToCart, streaming }: { message: ChatMessage; onPreviewImage: (preview: { url: string; name: string }) => void; onAddToCart: (product: ChatRecommendationItem) => void; streaming?: boolean },
 ) {
   const isUser = message.role === 'user';
   const isTryOnLoading = message.intent === TRY_ON_LOADING_INTENT;
@@ -597,7 +621,7 @@ function MessageCard(
                 <div className={styles.productSectionTitle}>{section.title}</div>
                 <div className={styles.productGrid}>
                   {section.products.map((product) => (
-                    <ProductCard key={`${section.key}-${product.productId}`} product={product} />
+                    <ProductCard key={`${section.key}-${product.productId}`} product={product} onAddToCart={onAddToCart} />
                   ))}
                 </div>
               </div>
@@ -609,7 +633,7 @@ function MessageCard(
   );
 }
 
-function ProductCard({ product }: { product: ChatRecommendationItem }) {
+function ProductCard({ product, onAddToCart }: { product: ChatRecommendationItem; onAddToCart: (product: ChatRecommendationItem) => void }) {
   return (
     <div className={styles.productCard}>
       {product.primaryImageUrl ? (
@@ -626,6 +650,17 @@ function ProductCard({ product }: { product: ChatRecommendationItem }) {
         </div>
         <div className={styles.productRationale}>{product.rationale}</div>
       </div>
+      <button
+        type="button"
+        className={styles.productAddToCartBtn}
+        onClick={(e) => {
+          e.stopPropagation();
+          onAddToCart(product);
+        }}
+        title="Thêm vào giỏ"
+      >
+        + Giỏ
+      </button>
     </div>
   );
 }

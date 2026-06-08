@@ -159,7 +159,29 @@ export default function UserFeedbackSection({ productId, reviewSummary }: Props)
     } catch { setComErr('Không thể tải bình luận.'); }
     finally { setLoadingCom(false); }
   }, [productId]);
-  useEffect(() => { fetchComments(1); }, [fetchComments]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      setComErr(null);
+      setLoadingCom(true);
+      try {
+        const r = await getProductComments(productId, 1, PAGE);
+        if (!cancelled) {
+          setComments(r.data);
+          setHasMoreCom(r.hasNextPage);
+          setComPage(1);
+        }
+      } catch {
+        if (!cancelled) setComErr('Không thể tải bình luận.');
+      } finally {
+        if (!cancelled) setLoadingCom(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [productId]);
 
   const guard = () => { if (!isAuth) openAuthModal({ from: window.location.pathname }); return isAuth; };
 
