@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
-public sealed class AdminDashboardService(AppDbContext dbContext) : IAdminDashboardService
+public sealed class AdminDashboardService(
+  AppDbContext dbContext,
+  IImageVisibilityService imageVisibilityService) : IAdminDashboardService
 {
   public async Task<DashboardSummaryDto> GetSummaryAsync(CancellationToken ct = default)
   {
@@ -172,10 +174,24 @@ public sealed class AdminDashboardService(AppDbContext dbContext) : IAdminDashbo
       .AsNoTracking()
       .Where(img => productIds.Contains(img.ProductId) && img.SortOrder == 1 && !img.IsDeleted)
       .GroupBy(img => img.ProductId)
-      .Select(g => new { ProductId = g.Key, ImageUrl = g.First().ImageUrl })
+      .Select(g => new
+      {
+        ProductId = g.Key,
+        g.First().ImageUrl,
+        g.First().IsPublic,
+        g.First().PublicObjectKey
+      })
       .ToListAsync(ct);
 
-    var imageLookup = images.ToDictionary(x => x.ProductId, x => x.ImageUrl);
+    var imageLookup = new Dictionary<Guid, string?>();
+    foreach (var image in images)
+    {
+      imageLookup[image.ProductId] = await imageVisibilityService.ResolveUrlAsync(
+        image.ImageUrl,
+        image.IsPublic,
+        image.PublicObjectKey,
+        ct);
+    }
 
     return top.Select(x => new TopProductDto(
       x.ProductId,

@@ -40,7 +40,7 @@ export function TopProductsList({ products, loading }: TopProductsListProps) {
           {products.map((product, index) => (
             <div
               key={product.productId ?? `product-${index}`}
-              className="flex items-center gap-3 py-2.5"
+              className="flex items-center gap-4 py-3"
             >
               <span className="text-xs font-bold text-muted-foreground w-5">
                 {index + 1}
@@ -49,10 +49,10 @@ export function TopProductsList({ products, loading }: TopProductsListProps) {
                 <img
                   src={product.imageUrl}
                   alt={product.productName}
-                  className="size-10 rounded object-cover"
+                  className="size-16 rounded-lg object-cover"
                 />
               ) : (
-                <div className="size-10 rounded bg-muted flex items-center justify-center">
+                <div className="size-16 rounded-lg bg-muted flex items-center justify-center">
                   <span className="text-xs text-muted-foreground">...</span>
                 </div>
               )}

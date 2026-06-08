@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Bot, User, Sparkles, Terminal, Check, X, AlertTriangle } from 'lucide-react'
+import { ChevronDown, ChevronUp, Bot, User, Terminal, Check, X, AlertTriangle } from 'lucide-react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { AiMessage, AiToolCall } from '@/types/ai'
@@ -28,10 +28,6 @@ function toolLabel(name: string): string {
     update_user_role: '🔑 Đổi vai trò người dùng',
   }
   return labels[name] || `🔧 ${name}`
-}
-
-function truncate(text: string, len: number): string {
-  return text.length > len ? text.slice(0, len) + '...' : text
 }
 
 interface ToolCallCardProps {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Loader2, Settings2, Bot, AlertTriangle, CheckCircle2, Activity } from 'lucide-react'
 import { request } from '@/api/client'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
@@ -29,12 +29,7 @@ export function ToolRiskPage() {
   const [saving, setSaving] = useState<string | null>(null)
   const [autoMode, setAutoMode] = useState(false)
 
-  useEffect(() => {
-    loadConfigs()
-    loadAutoMode()
-  }, [])
-
-  async function loadConfigs() {
+  const loadConfigs = useCallback(async () => {
     setLoading(true)
     try {
       const res = await request<{ data: ToolRiskConfig[] }>('/api/admin/tools-risk')
@@ -44,16 +39,24 @@ export function ToolRiskPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  async function loadAutoMode() {
+  const loadAutoMode = useCallback(async () => {
     try {
       const res = await request<{ data: { isAutoMode: boolean } }>('/api/admin/ai/auto-mode/status')
       setAutoMode(res.data.isAutoMode)
     } catch {
       // silent
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadConfigs()
+      void loadAutoMode()
+    }, 0)
+    return () => window.clearTimeout(timeoutId)
+  }, [loadAutoMode, loadConfigs])
 
   async function toggleAutoMode() {
     try {

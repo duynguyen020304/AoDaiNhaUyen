@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle, Check, X } from 'lucide-react'
+import { AlertTriangle, Check } from 'lucide-react'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import type { AiPendingAction } from '@/types/ai'
 

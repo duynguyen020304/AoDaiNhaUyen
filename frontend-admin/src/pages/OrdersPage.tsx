@@ -60,7 +60,8 @@ export function OrdersPage() {
   }, [])
 
   useEffect(() => {
-    fetchOrders()
+    const timeoutId = window.setTimeout(fetchOrders, 0)
+    return () => window.clearTimeout(timeoutId)
   }, [fetchOrders])
 
   const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter)

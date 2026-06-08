@@ -1,15 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { X, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { MessageBubble } from './MessageBubble'
 import { ChatInput } from './ChatInput'
 import { EmptyChat } from './EmptyChat'
 
-interface FullChatAreaProps {
-  onClear: () => void
-}
-
-export function FullChatArea({ onClear }: FullChatAreaProps) {
+export function FullChatArea() {
   const { messages, isLoading, sendMessage } = useAdminAiStore()
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)

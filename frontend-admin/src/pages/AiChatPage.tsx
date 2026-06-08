@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react'
 import { PanelLeft } from 'lucide-react'
-import { useAdminAiStore } from '@/stores/adminAiStore'
 import { FullChatArea } from '@/components/ai/FullChatArea'
 import { ChatHistorySidebar } from '@/components/ai/ChatHistorySidebar'
 
 export function AiChatPage() {
-  const clearConversation = useAdminAiStore((s) => s.clearConversation)
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024)
 
   useEffect(() => {
@@ -59,7 +57,7 @@ export function AiChatPage() {
 
         {/* Chat area */}
         <div className="flex-1 min-w-0 h-full">
-          <FullChatArea onClear={clearConversation} />
+          <FullChatArea />
         </div>
       </div>
     </div>
