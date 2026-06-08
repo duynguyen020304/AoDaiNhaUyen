@@ -1,5 +1,6 @@
 using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs.Order;
+using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,9 @@ namespace AoDaiNhaUyen.Api.Controllers.Admin;
 [ApiController]
 [Route("api/admin/orders")]
 [Authorize(Policy = "RequireAdminRole")]
-public sealed class AdminOrdersController(IOrderService orderService) : ControllerBase
+public sealed class AdminOrdersController(
+  IOrderService orderService,
+  ICacheInvalidationService cacheInvalidation) : ControllerBase
 {
   /// <summary>
   /// Cập nhật trạng thái đơn hàng.
@@ -29,6 +32,7 @@ public sealed class AdminOrdersController(IOrderService orderService) : Controll
         result.ErrorMessage ?? "Lỗi cập nhật trạng thái đơn hàng."));
     }
 
+    await cacheInvalidation.InvalidateOrderRelatedCacheAsync(CancellationToken.None);
     return Ok(ApiResponseFactory.Success(result, "Cập nhật trạng thái thành công."));
   }
 
@@ -50,6 +54,7 @@ public sealed class AdminOrdersController(IOrderService orderService) : Controll
         result.ErrorMessage ?? "Lỗi tạo shipment."));
     }
 
+    await cacheInvalidation.InvalidateOrderRelatedCacheAsync(CancellationToken.None);
     return Ok(ApiResponseFactory.Success(result, "Tạo shipment thành công."));
   }
 
@@ -71,6 +76,7 @@ public sealed class AdminOrdersController(IOrderService orderService) : Controll
         result.ErrorMessage ?? "Lỗi cập nhật trạng thái shipment."));
     }
 
+    await cacheInvalidation.InvalidateOrderRelatedCacheAsync(CancellationToken.None);
     return Ok(ApiResponseFactory.Success(result, "Cập nhật trạng thái shipment thành công."));
   }
 }

@@ -1,6 +1,7 @@
 using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.Admin;
+using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,8 @@ namespace AoDaiNhaUyen.Api.Controllers.Admin;
 [Authorize(Policy = "RequireAdminRole")]
 public sealed class AdminProductsController(
   IAdminProductService adminProductService,
-  IImageVisibilityService imageVisibilityService) : ControllerBase
+  IImageVisibilityService imageVisibilityService,
+  ICacheInvalidationService cacheInvalidation) : ControllerBase
 {
     /// <summary>Get a paginated list of all products for admin.</summary>
     [HttpGet]
@@ -60,6 +62,8 @@ public sealed class AdminProductsController(
     {
         var product = await adminProductService.CreateAsync(request, cancellationToken);
 
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
+
         return CreatedAtAction(
             nameof(GetById),
             new { id = product.Id },
@@ -83,6 +87,7 @@ public sealed class AdminProductsController(
                 "Sản phẩm không tồn tại hoặc đã bị xóa."));
         }
 
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success(product, "Cập nhật sản phẩm thành công."));
     }
 
@@ -104,6 +109,7 @@ public sealed class AdminProductsController(
                 "Sản phẩm hoặc biến thể không tồn tại."));
         }
 
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success(product, "Cập nhật tồn kho thành công."));
     }
 
@@ -124,6 +130,7 @@ public sealed class AdminProductsController(
                 "Sản phẩm không tồn tại hoặc đã bị xóa."));
         }
 
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success<object?>(null, "Cập nhật trạng thái thành công."));
     }
 
@@ -143,6 +150,7 @@ public sealed class AdminProductsController(
                 "Sản phẩm không tồn tại hoặc đã bị xóa."));
         }
 
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
         return NoContent();
     }
 
@@ -162,6 +170,7 @@ public sealed class AdminProductsController(
                 "Sản phẩm không tồn tại hoặc chưa bị xóa."));
         }
 
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success<object?>(null, "Khôi phục sản phẩm thành công."));
     }
 

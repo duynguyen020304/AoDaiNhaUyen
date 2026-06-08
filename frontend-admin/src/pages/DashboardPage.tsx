@@ -43,7 +43,7 @@ export function DashboardPage() {
   }, [fetchAll])
 
   const handleRefresh = useCallback(() => {
-    fetchAll()
+    fetchAll(true)
   }, [fetchAll])
 
   const handlePeriodChange = useCallback(

@@ -1,13 +1,28 @@
+using AoDaiNhaUyen.Application.Constants;
+using AoDaiNhaUyen.Application.DTOs;
+using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
 public sealed class AdminInventoryService(
   AppDbContext dbContext,
-  IAdminDashboardService dashboard) : IAdminInventoryService
+  IAdminDashboardService dashboard,
+  IFusionCacheService cache,
+  ICacheKeyService cacheKeys,
+  IOptions<FusionCacheSettings> cacheSettings) : IAdminInventoryService
 {
+  private TimeSpan GetCacheDuration(string key, int fallbackSeconds)
+  {
+    var settings = cacheSettings.Value;
+    return settings.CacheDurations.TryGetValue(key, out var seconds)
+      ? TimeSpan.FromSeconds(seconds)
+      : TimeSpan.FromSeconds(fallbackSeconds);
+  }
+
   public async Task<InventorySummary> GetInventorySummaryAsync(
     int threshold = 10, CancellationToken ct = default)
   {
@@ -64,6 +79,14 @@ public sealed class AdminInventoryService(
   }
 
   public async Task<StoreHealthScore> GetStoreHealthScoreAsync(CancellationToken ct = default)
+    => await cache.GetOrSetAsync(
+      cacheKeys.BuildAdminKey("dashboard", "store-health"),
+      GetStoreHealthScoreCoreAsync,
+      tags: [CacheTags.Dashboard, CacheTags.Products, CacheTags.Orders, CacheTags.Users],
+      duration: GetCacheDuration("dashboard:store-health", 120),
+      token: ct) ?? throw new InvalidOperationException("Không thể tải điểm sức khỏe cửa hàng.");
+
+  private async Task<StoreHealthScore> GetStoreHealthScoreCoreAsync(CancellationToken ct)
   {
     var summary = await dashboard.GetSummaryAsync(ct);
     var ordersByStatus = await dashboard.GetOrdersByStatusAsync(ct);

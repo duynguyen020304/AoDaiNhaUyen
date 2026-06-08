@@ -1,5 +1,6 @@
 using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs.Admin;
+using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,9 @@ namespace AoDaiNhaUyen.Api.Controllers.Admin;
 [ApiController]
 [Route("api/admin/users")]
 [Authorize(Policy = "RequireAdminRole")]
-public sealed class AdminUsersController(IAdminUserService adminUserService) : ControllerBase
+public sealed class AdminUsersController(
+    IAdminUserService adminUserService,
+    ICacheInvalidationService cacheInvalidation) : ControllerBase
 {
     /// <summary>Get a paginated list of all users for admin.</summary>
     [HttpGet]
@@ -56,6 +59,8 @@ public sealed class AdminUsersController(IAdminUserService adminUserService) : C
     {
         var user = await adminUserService.CreateUserAsync(request, cancellationToken);
 
+        await cacheInvalidation.InvalidateUserRelatedCacheAsync(CancellationToken.None);
+
         return CreatedAtAction(
             nameof(GetById),
             new { id = user.Id },
@@ -79,6 +84,7 @@ public sealed class AdminUsersController(IAdminUserService adminUserService) : C
                 "Người dùng không tồn tại hoặc đã bị xóa."));
         }
 
+        await cacheInvalidation.InvalidateUserRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success(user, "Cập nhật người dùng thành công."));
     }
 
@@ -99,6 +105,7 @@ public sealed class AdminUsersController(IAdminUserService adminUserService) : C
                 "Không thể cập nhật vai trò."));
         }
 
+        await cacheInvalidation.InvalidateUserRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success<object?>(null, "Cập nhật vai trò thành công."));
     }
 
@@ -119,6 +126,7 @@ public sealed class AdminUsersController(IAdminUserService adminUserService) : C
                 "Không thể cập nhật trạng thái."));
         }
 
+        await cacheInvalidation.InvalidateUserRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success<object?>(null, "Cập nhật trạng thái thành công."));
     }
 
@@ -138,6 +146,7 @@ public sealed class AdminUsersController(IAdminUserService adminUserService) : C
                 "Người dùng không tồn tại hoặc đã bị xóa."));
         }
 
+        await cacheInvalidation.InvalidateUserRelatedCacheAsync(CancellationToken.None);
         return NoContent();
     }
 
@@ -157,6 +166,7 @@ public sealed class AdminUsersController(IAdminUserService adminUserService) : C
                 "Người dùng không tồn tại hoặc chưa bị xóa."));
         }
 
+        await cacheInvalidation.InvalidateUserRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success<object?>(null, "Khôi phục người dùng thành công."));
     }
 }

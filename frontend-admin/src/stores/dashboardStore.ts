@@ -21,14 +21,16 @@ interface DashboardState {
   period: Period
   loading: boolean
   error: string | null
+  lastFetch: number | null
+  cacheDurationMs: number
 
   fetchSummary: () => Promise<void>
-  fetchRevenue: (period?: Period) => Promise<void>
+  fetchRevenue: (period?: Period, force?: boolean) => Promise<void>
   fetchOrdersByStatus: () => Promise<void>
   fetchRecentOrders: () => Promise<void>
   fetchTopProducts: () => Promise<void>
-  fetchUserGrowth: (period?: Period) => Promise<void>
-  fetchAll: () => Promise<void>
+  fetchUserGrowth: (period?: Period, force?: boolean) => Promise<void>
+  fetchAll: (force?: boolean) => Promise<void>
   setPeriod: (period: Period) => void
 }
 
@@ -43,6 +45,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   loading: false,
   error: null,
 
+  lastFetch: null,
+  cacheDurationMs: 30_000,
+
   fetchSummary: async () => {
     try {
       const summary = await dashboardApi.getDashboardSummary()
@@ -53,8 +58,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }
   },
 
-  fetchRevenue: async (period?: Period) => {
+  fetchRevenue: async (period?: Period, force = false) => {
     try {
+      const { lastFetch, cacheDurationMs, revenue } = get()
+      if (!force && revenue.length > 0 && lastFetch && Date.now() - lastFetch < cacheDurationMs) return
+
       const p = period ?? get().period
       const data = await dashboardApi.getRevenue(p)
       set({ revenue: data.points, error: null })
@@ -94,8 +102,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }
   },
 
-  fetchUserGrowth: async (period?: Period) => {
+  fetchUserGrowth: async (period?: Period, force = false) => {
     try {
+      const { lastFetch, cacheDurationMs, userGrowth } = get()
+      if (!force && userGrowth.length > 0 && lastFetch && Date.now() - lastFetch < cacheDurationMs) return
+
       const p = period ?? get().period
       const data = await dashboardApi.getUserGrowth(p)
       set({ userGrowth: data.points, error: null })
@@ -105,7 +116,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }
   },
 
-  fetchAll: async () => {
+  fetchAll: async (force = false) => {
+    const { lastFetch, cacheDurationMs, summary } = get()
+    if (!force && summary && lastFetch && Date.now() - lastFetch < cacheDurationMs) return
+
     set({ loading: true, error: null })
     try {
       const period = get().period
@@ -127,6 +141,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         userGrowth: userGrowthData.points,
         loading: false,
         error: null,
+        lastFetch: Date.now(),
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể tải dữ liệu dashboard.'
@@ -136,7 +151,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   setPeriod: (period: Period) => {
     set({ period })
-    get().fetchRevenue(period)
-    get().fetchUserGrowth(period)
+    get().fetchRevenue(period, true)
+    get().fetchUserGrowth(period, true)
   },
 }))

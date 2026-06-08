@@ -1,15 +1,38 @@
+using AoDaiNhaUyen.Application.Constants;
+using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.Dashboard;
+using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
 public sealed class AdminDashboardService(
   AppDbContext dbContext,
-  IImageVisibilityService imageVisibilityService) : IAdminDashboardService
+  IImageVisibilityService imageVisibilityService,
+  IFusionCacheService cache,
+  ICacheKeyService cacheKeys,
+  IOptions<FusionCacheSettings> cacheSettings) : IAdminDashboardService
 {
+  private TimeSpan GetCacheDuration(string key, int fallbackSeconds)
+  {
+    var settings = cacheSettings.Value;
+    return settings.CacheDurations.TryGetValue(key, out var seconds)
+      ? TimeSpan.FromSeconds(seconds)
+      : TimeSpan.FromSeconds(fallbackSeconds);
+  }
+
   public async Task<DashboardSummaryDto> GetSummaryAsync(CancellationToken ct = default)
+    => await cache.GetOrSetAsync(
+      cacheKeys.BuildAdminKey("dashboard", "summary"),
+      GetSummaryCoreAsync,
+      tags: [CacheTags.Dashboard],
+      duration: GetCacheDuration("dashboard:summary", 60),
+      token: ct) ?? throw new InvalidOperationException("Không thể tải tổng quan dashboard.");
+
+  private async Task<DashboardSummaryDto> GetSummaryCoreAsync(CancellationToken ct)
   {
     var now = DateTime.UtcNow;
     var currentPeriodStart = now.AddDays(-30);
@@ -80,6 +103,16 @@ public sealed class AdminDashboardService(
   public async Task<RevenueDataDto> GetRevenueAsync(int periodDays, CancellationToken ct = default)
   {
     var period = Math.Clamp(periodDays, 1, 365);
+    return await cache.GetOrSetAsync(
+      cacheKeys.BuildAdminKey("dashboard", "revenue", period.ToString()),
+      token => GetRevenueCoreAsync(period, token),
+      tags: [CacheTags.Dashboard, CacheTags.Orders],
+      duration: GetCacheDuration("dashboard:revenue", 120),
+      token: ct) ?? throw new InvalidOperationException("Không thể tải dữ liệu doanh thu.");
+  }
+
+  private async Task<RevenueDataDto> GetRevenueCoreAsync(int period, CancellationToken ct)
+  {
     var start = DateTime.UtcNow.Date.AddDays(-period);
 
     var raw = await dbContext.Orders
@@ -108,6 +141,14 @@ public sealed class AdminDashboardService(
   }
 
   public async Task<OrderStatusDistributionDto> GetOrdersByStatusAsync(CancellationToken ct = default)
+    => await cache.GetOrSetAsync(
+      cacheKeys.BuildAdminKey("dashboard", "orders-by-status"),
+      GetOrdersByStatusCoreAsync,
+      tags: [CacheTags.Dashboard, CacheTags.Orders],
+      duration: GetCacheDuration("dashboard:orders-by-status", 60),
+      token: ct) ?? throw new InvalidOperationException("Không thể tải thống kê trạng thái đơn hàng.");
+
+  private async Task<OrderStatusDistributionDto> GetOrdersByStatusCoreAsync(CancellationToken ct)
   {
     var groups = await dbContext.Orders
       .AsNoTracking()
@@ -130,6 +171,17 @@ public sealed class AdminDashboardService(
 
   public async Task<IReadOnlyList<RecentOrderDto>> GetRecentOrdersAsync(int limit, CancellationToken ct = default)
   {
+    var normalizedLimit = Math.Clamp(limit, 1, 50);
+    return await cache.GetOrSetAsync(
+      cacheKeys.BuildAdminKey("dashboard", "recent-orders", normalizedLimit.ToString()),
+      token => GetRecentOrdersCoreAsync(normalizedLimit, token),
+      tags: [CacheTags.Dashboard, CacheTags.Orders],
+      duration: GetCacheDuration("dashboard:recent-orders", 30),
+      token: ct) ?? [];
+  }
+
+  private async Task<IReadOnlyList<RecentOrderDto>> GetRecentOrdersCoreAsync(int limit, CancellationToken ct)
+  {
     limit = Math.Clamp(limit, 1, 50);
 
     var orders = await dbContext.Orders
@@ -150,6 +202,17 @@ public sealed class AdminDashboardService(
   }
 
   public async Task<IReadOnlyList<TopProductDto>> GetTopProductsAsync(int limit, CancellationToken ct = default)
+  {
+    var normalizedLimit = Math.Clamp(limit, 1, 20);
+    return await cache.GetOrSetAsync(
+      cacheKeys.BuildAdminKey("dashboard", "top-products", normalizedLimit.ToString()),
+      token => GetTopProductsCoreAsync(normalizedLimit, token),
+      tags: [CacheTags.Dashboard, CacheTags.Products, CacheTags.Orders],
+      duration: GetCacheDuration("dashboard:top-products", 120),
+      token: ct) ?? [];
+  }
+
+  private async Task<IReadOnlyList<TopProductDto>> GetTopProductsCoreAsync(int limit, CancellationToken ct)
   {
     limit = Math.Clamp(limit, 1, 20);
 
@@ -204,6 +267,16 @@ public sealed class AdminDashboardService(
   public async Task<UserGrowthDataDto> GetUserGrowthAsync(int periodDays, CancellationToken ct = default)
   {
     var period = Math.Clamp(periodDays, 1, 365);
+    return await cache.GetOrSetAsync(
+      cacheKeys.BuildAdminKey("dashboard", "user-growth", period.ToString()),
+      token => GetUserGrowthCoreAsync(period, token),
+      tags: [CacheTags.Dashboard, CacheTags.Users],
+      duration: GetCacheDuration("dashboard:user-growth", 120),
+      token: ct) ?? throw new InvalidOperationException("Không thể tải dữ liệu tăng trưởng người dùng.");
+  }
+
+  private async Task<UserGrowthDataDto> GetUserGrowthCoreAsync(int period, CancellationToken ct)
+  {
     var start = DateTime.UtcNow.Date.AddDays(-period);
 
     var raw = await dbContext.Users
