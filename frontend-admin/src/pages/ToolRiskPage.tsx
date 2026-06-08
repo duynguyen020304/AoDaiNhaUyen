@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Loader2, Settings2, Bot, AlertTriangle, CheckCircle2, Activity } from 'lucide-react'
-import { request } from '@/lib/client'
+import { request } from '@/api/client'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 
