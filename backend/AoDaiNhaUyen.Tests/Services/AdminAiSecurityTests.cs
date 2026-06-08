@@ -191,6 +191,23 @@ public sealed class AdminAiSecurityTests
     Assert.False(webThread.IsDeleted);
   }
 
+  [Fact]
+  public async Task AdminAiPersistence_BlocksCrossAdminMessages()
+  {
+    var persistence = new FakeAdminChatPersistence();
+    var thread = await persistence.CreateThreadAsync(AdminA, null, CancellationToken.None);
+    await persistence.AddMessageAsync(thread.Id, AdminA, "user", "secret", null, null, CancellationToken.None);
+
+    var crossRead = await persistence.GetMessagesAsync(thread.Id, AdminB, CancellationToken.None);
+    var crossWrite = await persistence.AddMessageAsync(thread.Id, AdminB, "user", "evil", null, null, CancellationToken.None);
+    var ownerRead = await persistence.GetMessagesAsync(thread.Id, AdminA, CancellationToken.None);
+
+    Assert.Empty(crossRead);
+    Assert.Null(crossWrite);
+    Assert.Single(ownerRead);
+    Assert.Equal("secret", ownerRead[0].Content);
+  }
+
   private static AdminAgentService CreateService(
     IAdminLlmProvider llm,
     FakeProductService? products = null,
@@ -246,9 +263,13 @@ public sealed class AdminAiSecurityTests
         .OrderByDescending(t => t.UpdatedAt)
         .ToList());
 
-    public Task<ChatMessage> AddMessageAsync(Guid threadId, string role, string content,
+    public Task<ChatMessage?> AddMessageAsync(Guid threadId, Guid adminUserId, string role, string content,
       string? toolCallsJson, string? structuredPayloadJson, CancellationToken ct)
     {
+      var thread = _threads.FirstOrDefault(t =>
+        t.Id == threadId && t.UserId == adminUserId && t.Source == ChatSources.AdminAi && !t.IsDeleted);
+      if (thread is null) return Task.FromResult<ChatMessage?>(null);
+
       var message = new ChatMessage
       {
         Id = Guid.NewGuid(),
@@ -260,18 +281,24 @@ public sealed class AdminAiSecurityTests
         CreatedAt = DateTime.UtcNow
       };
       _messages.Add(message);
-      return Task.FromResult(message);
+      thread.UpdatedAt = DateTime.UtcNow;
+      return Task.FromResult<ChatMessage?>(message);
     }
 
-    public Task<List<ChatMessage>> GetMessagesAsync(Guid threadId, CancellationToken ct) =>
-      Task.FromResult(_messages.Where(m => m.ThreadId == threadId).OrderBy(m => m.CreatedAt).ToList());
+    public Task<List<ChatMessage>> GetMessagesAsync(Guid threadId, Guid adminUserId, CancellationToken ct) =>
+      Task.FromResult(_messages
+        .Where(m => m.ThreadId == threadId && _threads.Any(t =>
+          t.Id == threadId && t.UserId == adminUserId && t.Source == ChatSources.AdminAi && !t.IsDeleted))
+        .OrderBy(m => m.CreatedAt)
+        .ToList());
 
-    public async Task DeleteThreadAsync(Guid threadId, Guid adminUserId, CancellationToken ct)
+    public async Task<bool> DeleteThreadAsync(Guid threadId, Guid adminUserId, CancellationToken ct)
     {
       var thread = await GetThreadAsync(threadId, adminUserId, ct);
-      if (thread is null) return;
+      if (thread is null) return false;
       thread.IsDeleted = true;
       thread.DeletedAt = DateTime.UtcNow;
+      return true;
     }
   }
 

@@ -83,7 +83,7 @@ export function ChatHistorySidebar({ className = '', onSelect }: ChatHistorySide
                     : 'bg-white hover:bg-gray-50 border-transparent text-gray-700'
                 }`}
                 onClick={() => {
-                  loadConversation(convo.id)
+                  void loadConversation(convo.id)
                   onSelect?.()
                 }}
               >
@@ -99,7 +99,7 @@ export function ChatHistorySidebar({ className = '', onSelect }: ChatHistorySide
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    deleteConversation(convo.id)
+                    void deleteConversation(convo.id)
                   }}
                   className={`absolute right-2.5 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-150 shrink-0 hover:bg-black/5 ${
                     isActive ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-red-500'

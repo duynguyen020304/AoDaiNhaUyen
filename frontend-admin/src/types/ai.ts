@@ -1,6 +1,6 @@
 /** SSE chunk types from POST /api/admin/ai/chat */
 export interface AiLlmChunk {
-  type: 'text' | 'tool_call' | 'tool_result' | 'confirmation' | 'error' | 'done'
+  type: 'text' | 'tool_call' | 'tool_result' | 'confirmation' | 'conversation' | 'error' | 'done'
   content: string
   toolName?: string
   toolCallId?: string

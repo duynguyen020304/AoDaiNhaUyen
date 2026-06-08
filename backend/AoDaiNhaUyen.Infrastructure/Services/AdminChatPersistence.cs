@@ -38,9 +38,12 @@ public sealed class AdminChatPersistence(AppDbContext dbContext) : IAdminChatPer
       .Take(50)
       .ToListAsync(ct);
 
-  public async Task<ChatMessage> AddMessageAsync(Guid threadId, string role, string content,
+  public async Task<ChatMessage?> AddMessageAsync(Guid threadId, Guid adminUserId, string role, string content,
     string? toolCallsJson, string? structuredPayloadJson, CancellationToken ct)
   {
+    var thread = await GetThreadAsync(threadId, adminUserId, ct);
+    if (thread is null) return null;
+
     var message = new ChatMessage
     {
       ThreadId = threadId,
@@ -51,28 +54,30 @@ public sealed class AdminChatPersistence(AppDbContext dbContext) : IAdminChatPer
     };
 
     dbContext.ChatMessages.Add(message);
-    var thread = await dbContext.ChatThreads.FirstOrDefaultAsync(t => t.Id == threadId, ct);
-    if (thread is not null)
-      thread.UpdatedAt = DateTime.UtcNow;
+    thread.UpdatedAt = DateTime.UtcNow;
 
     await dbContext.SaveChangesAsync(ct);
     return message;
   }
 
-  public Task<List<ChatMessage>> GetMessagesAsync(Guid threadId, CancellationToken ct) =>
+  public Task<List<ChatMessage>> GetMessagesAsync(Guid threadId, Guid adminUserId, CancellationToken ct) =>
     dbContext.ChatMessages
-      .Where(m => m.ThreadId == threadId)
+      .Where(m => m.ThreadId == threadId
+        && m.Thread.UserId == adminUserId
+        && m.Thread.Source == ChatSources.AdminAi
+        && !m.Thread.IsDeleted)
       .OrderBy(m => m.CreatedAt)
       .ToListAsync(ct);
 
-  public async Task DeleteThreadAsync(Guid threadId, Guid adminUserId, CancellationToken ct)
+  public async Task<bool> DeleteThreadAsync(Guid threadId, Guid adminUserId, CancellationToken ct)
   {
     var thread = await GetThreadAsync(threadId, adminUserId, ct);
-    if (thread is null) return;
+    if (thread is null) return false;
 
     thread.IsDeleted = true;
     thread.DeletedAt = DateTime.UtcNow;
     thread.UpdatedAt = DateTime.UtcNow;
     await dbContext.SaveChangesAsync(ct);
+    return true;
   }
 }

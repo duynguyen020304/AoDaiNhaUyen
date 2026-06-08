@@ -259,7 +259,7 @@ public sealed class AdminAgentService : IAdminAgentService
     var history = conversation.History;
     if (history.Count == 0)
     {
-      var dbMessages = await _chatPersistence.GetMessagesAsync(thread.Id, ct);
+      var dbMessages = await _chatPersistence.GetMessagesAsync(thread.Id, adminUserId, ct);
       history.AddRange(dbMessages.Select(MapToLlmMessage));
     }
     _conversationStore.TrimHistory(conversationId, 30);
@@ -270,7 +270,7 @@ public sealed class AdminAgentService : IAdminAgentService
     if (!string.IsNullOrWhiteSpace(request.Message))
     {
       history.Add(new AdminLlmMessage(AdminLlmRole.User, request.Message));
-      await _chatPersistence.AddMessageAsync(thread.Id, "user", request.Message, null, null, ct);
+      await _chatPersistence.AddMessageAsync(thread.Id, adminUserId, "user", request.Message, null, null, ct);
     }
 
     var maxIterations = 5;
@@ -297,7 +297,7 @@ public sealed class AdminAgentService : IAdminAgentService
             if (!string.IsNullOrWhiteSpace(assistantText))
             {
               history.Add(new AdminLlmMessage(AdminLlmRole.Assistant, assistantText));
-              await _chatPersistence.AddMessageAsync(thread.Id, "assistant", assistantText, null, null, ct);
+              await _chatPersistence.AddMessageAsync(thread.Id, adminUserId, "assistant", assistantText, null, null, ct);
             }
 
             var actionId = Guid.NewGuid().ToString("N");
@@ -328,8 +328,8 @@ public sealed class AdminAgentService : IAdminAgentService
             toolResponseJson);
           history.Add(toolCall);
           history.Add(toolResponse);
-          await PersistLlmMessageAsync(thread.Id, toolCall, ct);
-          await PersistLlmMessageAsync(thread.Id, toolResponse, ct);
+          await PersistLlmMessageAsync(thread.Id, adminUserId, toolCall, ct);
+          await PersistLlmMessageAsync(thread.Id, adminUserId, toolResponse, ct);
           assistantText = ""; // reset for next iteration
         }
       }
@@ -337,7 +337,7 @@ public sealed class AdminAgentService : IAdminAgentService
       if (!string.IsNullOrWhiteSpace(assistantText))
       {
         history.Add(new AdminLlmMessage(AdminLlmRole.Assistant, assistantText));
-        await _chatPersistence.AddMessageAsync(thread.Id, "assistant", assistantText, null, null, ct);
+        await _chatPersistence.AddMessageAsync(thread.Id, adminUserId, "assistant", assistantText, null, null, ct);
       }
 
       if (!hadToolCall) break;
@@ -355,7 +355,7 @@ public sealed class AdminAgentService : IAdminAgentService
     return await _chatPersistence.CreateThreadAsync(adminUserId, null, ct);
   }
 
-  private async Task PersistLlmMessageAsync(Guid threadId, AdminLlmMessage message, CancellationToken ct)
+  private async Task PersistLlmMessageAsync(Guid threadId, Guid adminUserId, AdminLlmMessage message, CancellationToken ct)
   {
     var role = message.Role switch
     {
@@ -372,7 +372,7 @@ public sealed class AdminAgentService : IAdminAgentService
       : null;
     var structuredPayloadJson = message.Role == AdminLlmRole.ToolResponse ? message.ToolResponseJson : null;
 
-    await _chatPersistence.AddMessageAsync(threadId, role, message.Content, toolCallsJson, structuredPayloadJson, ct);
+    await _chatPersistence.AddMessageAsync(threadId, adminUserId, role, message.Content, toolCallsJson, structuredPayloadJson, ct);
   }
 
   private static AdminLlmMessage MapToLlmMessage(ChatMessage message)
@@ -465,8 +465,8 @@ public sealed class AdminAgentService : IAdminAgentService
         conv.History.Add(toolResponse);
         if (Guid.TryParse(pending.ConversationId, out var threadId))
         {
-          await PersistLlmMessageAsync(threadId, toolCall, ct);
-          await PersistLlmMessageAsync(threadId, toolResponse, ct);
+          await PersistLlmMessageAsync(threadId, adminUserId, toolCall, ct);
+          await PersistLlmMessageAsync(threadId, adminUserId, toolResponse, ct);
         }
       }
       else
@@ -474,7 +474,7 @@ public sealed class AdminAgentService : IAdminAgentService
         var rejection = $"[Người dùng đã từ chối thực hiện hành động '{pending.ToolName}']";
         conv.History.Add(new AdminLlmMessage(AdminLlmRole.User, rejection));
         if (Guid.TryParse(pending.ConversationId, out var threadId))
-          await _chatPersistence.AddMessageAsync(threadId, "user", rejection, null, null, ct);
+          await _chatPersistence.AddMessageAsync(threadId, adminUserId, "user", rejection, null, null, ct);
       }
     }
 

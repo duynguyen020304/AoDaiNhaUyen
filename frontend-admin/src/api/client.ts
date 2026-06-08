@@ -7,15 +7,36 @@ function shouldSetJsonContentType(body: BodyInit | null | undefined): boolean {
   return !(body instanceof FormData)
 }
 
-export async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers = new Headers(init?.headers)
-  if (shouldSetJsonContentType(init?.body) && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json')
+let refreshSessionPromise: Promise<boolean> | null = null
+
+function shouldAttemptRefresh(path: string, response: Response): boolean {
+  if (response.status !== 401) return false
+  return ![
+    '/api/auth/login',
+    '/api/auth/logout',
+    '/api/auth/refresh',
+  ].includes(path)
+}
+
+async function refreshSession(): Promise<boolean> {
+  if (!refreshSessionPromise) {
+    refreshSessionPromise = fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+      .then((response) => response.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshSessionPromise = null
+      })
   }
 
-  let response: Response
+  return refreshSessionPromise
+}
+
+async function fetchWithCookies(path: string, init: RequestInit | undefined, headers: Headers): Promise<Response> {
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+    return await fetch(`${API_BASE_URL}${path}`, {
       credentials: 'include',
       ...init,
       headers,
@@ -23,6 +44,26 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   } catch {
     throw new Error('Không thể kết nối đến máy chủ.')
   }
+}
+
+async function fetchWithAuthRetry(path: string, init: RequestInit | undefined, headers: Headers): Promise<Response> {
+  const response = await fetchWithCookies(path, init, headers)
+
+  if (!shouldAttemptRefresh(path, response)) return response
+
+  const refreshed = await refreshSession()
+  if (!refreshed) return response
+
+  return fetchWithCookies(path, init, headers)
+}
+
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers)
+  if (shouldSetJsonContentType(init?.body) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  const response = await fetchWithAuthRetry(path, init, headers)
 
   if (response.status === 204) return undefined as T
 
@@ -47,16 +88,7 @@ export async function requestPaginated<T>(path: string, init?: RequestInit): Pro
     headers.set('Content-Type', 'application/json')
   }
 
-  let response: Response
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      credentials: 'include',
-      ...init,
-      headers,
-    })
-  } catch {
-    throw new Error('Không thể kết nối đến máy chủ.')
-  }
+  const response = await fetchWithAuthRetry(path, init, headers)
 
   let payload: PaginatedApiEnvelope<T>
   try {

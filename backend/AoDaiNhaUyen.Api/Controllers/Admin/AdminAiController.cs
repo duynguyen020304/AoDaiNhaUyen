@@ -103,12 +103,12 @@ public sealed class AdminAiController(
     if (thread is null)
       return NotFound(ApiResponseFactory.Failure("Không tìm thấy cuộc trò chuyện.", "not_found", "Cuộc trò chuyện không tồn tại."));
 
-    var messages = await chatPersistence.GetMessagesAsync(threadId, cancellationToken);
+    var messages = await chatPersistence.GetMessagesAsync(threadId, adminUserId.Value, cancellationToken);
     var title = Truncate(messages.FirstOrDefault(m => m.Role == "user")?.Content, 40) ?? "Cuộc trò chuyện mới";
     var dto = new AdminConversationDetailDto(
       thread.Id,
       title,
-      messages.Select(m => new AdminMessageDto(m.Role, m.Content, m.ToolCallsJsonb, m.StructuredPayloadJsonb, m.CreatedAt)).ToList(),
+      messages.Select(m => new AdminMessageDto(m.Role, m.Content, m.ToolCallsJsonb, null, m.CreatedAt)).ToList(),
       thread.CreatedAt,
       thread.UpdatedAt);
 
@@ -124,8 +124,10 @@ public sealed class AdminAiController(
     if (adminUserId is null)
       return Unauthorized(ApiResponseFactory.Failure("Không xác thực.", "unauthorized", "Vui lòng đăng nhập lại."));
 
-    await chatPersistence.DeleteThreadAsync(threadId, adminUserId.Value, cancellationToken);
-    return Ok(ApiResponseFactory.Success<object?>(null, "Đã xóa cuộc trò chuyện."));
+    var deleted = await chatPersistence.DeleteThreadAsync(threadId, adminUserId.Value, cancellationToken);
+    return deleted
+      ? Ok(ApiResponseFactory.Success<object?>(null, "Đã xóa cuộc trò chuyện."))
+      : NotFound(ApiResponseFactory.Failure("Không tìm thấy cuộc trò chuyện.", "not_found", "Cuộc trò chuyện không tồn tại."));
   }
 
   /// <summary>Confirm or reject a pending AI action.</summary>

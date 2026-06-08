@@ -246,12 +246,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
             } else if (chunk.type === 'conversation') {
               set({ conversationId: chunk.content, activeConversationId: chunk.content })
             } else if (chunk.type === 'error') {
-              fullText += `\n❌ ${chunk.content}`
-              set((s) => ({
-                messages: s.messages.map((m) =>
-                  m.id === assistantMsg.id ? { ...m, content: fullText } : m,
-                ),
-              }))
+              set({ lastError: chunk.content || 'AI stream lỗi.' })
             }
           } catch (err) {
             logAiWarn('Bỏ qua SSE chunk lỗi', { length: data.length, err })
@@ -387,12 +382,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
             } else if (chunk.type === 'conversation') {
               set({ conversationId: chunk.content, activeConversationId: chunk.content })
             } else if (chunk.type === 'error') {
-              fullText += `\n❌ ${chunk.content}`
-              set((s) => ({
-                messages: s.messages.map((m) =>
-                  m.id === assistantMsg.id ? { ...m, content: fullText } : m,
-                ),
-              }))
+              set({ lastError: chunk.content || 'AI stream lỗi.' })
             }
           } catch (err) {
             logAiWarn('Bỏ qua SSE chunk lỗi khi tiếp tục', { length: data.length, err })
