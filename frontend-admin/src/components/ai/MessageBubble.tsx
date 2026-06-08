@@ -35,9 +35,24 @@ interface ToolCallCardProps {
   status: 'pending' | 'confirmed' | 'rejected' | 'completed'
 }
 
+function parseToolMeta(toolCall: AiToolCall) {
+  const raw = toolCall.result || toolCall.input
+  if (!raw) return toolCall.meta
+
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed?.meta || parsed?.result?.meta || toolCall.meta
+  } catch {
+    return toolCall.meta
+  }
+}
+
 function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
   const [expanded, setExpanded] = useState(false)
   const label = toolLabel(toolCall.toolName)
+
+  const meta = parseToolMeta(toolCall)
+  const hasMore = meta?.hasMore === true || meta?.completeness === 'partial_page'
 
   return (
     <div className="bg-gray-50 border border-gray-200/60 rounded-xl p-2.5 text-xs shadow-sm transition-all hover:bg-gray-100/50">
@@ -56,6 +71,11 @@ function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
         </span>
         {expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
       </button>
+      {hasMore && (
+        <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-800">
+          Còn trang khác → dữ liệu hiện tại chưa đầy đủ
+        </div>
+      )}
       {expanded && (
         <div className="mt-2 text-gray-500 font-mono text-[10px] bg-white border border-gray-100 rounded-lg p-2 overflow-x-auto whitespace-pre-wrap max-h-40">
           {toolCall.input}

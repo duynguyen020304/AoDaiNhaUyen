@@ -8,6 +8,8 @@ import type {
   AdminConversationSummary,
   AdminConversationDetail,
   AdminConversationMessage,
+  AiToolCall,
+  AiToolResultMeta,
 } from '@/types/ai'
 import { request } from '@/api/client'
 
@@ -20,6 +22,34 @@ function logAiWarn(message: string, context?: unknown) {
 
 function genId() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+function parseToolResultMeta(raw?: string): AiToolResultMeta | undefined {
+  if (!raw) return undefined
+
+  try {
+    const parsed = JSON.parse(raw)
+    if (parsed?.meta) return parsed.meta as AiToolResultMeta
+
+    if (typeof parsed?.result === 'string') {
+      const nested = JSON.parse(parsed.result)
+      return nested?.meta as AiToolResultMeta | undefined
+    }
+
+    return parsed?.result?.meta as AiToolResultMeta | undefined
+  } catch (err) {
+    logAiWarn('Không đọc được metadata kết quả tool', err)
+    return undefined
+  }
+}
+
+function makeToolCall(toolName: string, input: string): AiToolCall {
+  return {
+    toolName,
+    input,
+    result: input,
+    meta: parseToolResultMeta(input),
+  }
 }
 
 // --- localStorage helpers ---
@@ -53,10 +83,7 @@ function parseToolCalls(message: AdminConversationMessage): AiMessage['toolCalls
   if (!message.toolCallsJson) return undefined
   try {
     const parsed = JSON.parse(message.toolCallsJson) as { name?: string; callId?: string }
-    return [{
-      toolName: parsed.name || parsed.callId || 'unknown',
-      input: message.content,
-    }]
+    return [makeToolCall(parsed.name || parsed.callId || 'unknown', message.content)]
   } catch (err) {
     logAiWarn('Không đọc được metadata tool call', err)
     return undefined
@@ -217,10 +244,10 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                 ),
               }))
             } else if (chunk.type === 'tool_call') {
-              toolCalls.push({
-                toolName: chunk.toolName || chunk.toolCallId || 'unknown',
-                input: chunk.content,
-              })
+              toolCalls.push(makeToolCall(
+                chunk.toolName || chunk.toolCallId || 'unknown',
+                chunk.content,
+              ))
               set((s) => ({
                 messages: s.messages.map((m) =>
                   m.id === assistantMsg.id ? { ...m, toolCalls: [...toolCalls] } : m,
@@ -353,10 +380,10 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                 ),
               }))
             } else if (chunk.type === 'tool_call') {
-              toolCalls.push({
-                toolName: chunk.toolName || chunk.toolCallId || 'unknown',
-                input: chunk.content,
-              })
+              toolCalls.push(makeToolCall(
+                chunk.toolName || chunk.toolCallId || 'unknown',
+                chunk.content,
+              ))
               set((s) => ({
                 messages: s.messages.map((m) =>
                   m.id === assistantMsg.id ? { ...m, toolCalls: [...toolCalls] } : m,

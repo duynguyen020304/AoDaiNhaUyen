@@ -17,11 +17,21 @@ export interface AiMessage {
   createdAt: string
 }
 
+export interface AiToolResultMeta {
+  page?: number
+  pageSize?: number
+  total?: number
+  totalPages?: number
+  hasMore?: boolean
+  completeness?: string
+}
+
 export interface AiToolCall {
   toolName: string
   input: string
   result?: string
   riskLevel?: string
+  meta?: AiToolResultMeta
 }
 
 export interface AiPendingAction {

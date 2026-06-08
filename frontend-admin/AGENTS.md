@@ -17,12 +17,12 @@ React 19 + TypeScript 6 + Vite 8 admin panel SPA for Ao Dai Nha Uyen. Uses Tailw
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
+| `src/` | Admin app source and local guidance (see `src/AGENTS.md`) |
 | `src/api/` | Fetch-based API client (same pattern as `frontend/`) |
 | `src/auth/` | AdminRoute (admin role gate) + GuestRoute |
-| `src/components/admin/` | Admin-specific components: ModalOverlay, form modals, DeleteConfirmModal |
-| `src/components/ui/` | Hand-rolled shadcn-style primitives: Button, Card, Input, Table, Badge, Sheet, etc. |
-| `src/pages/` | 7 pages: LoginPage, ProductListPage, ProductFormPage, CategoriesPage, UsersPage, RolesPage, MediaPage |
-| `src/stores/` | Zustand stores: authStore, productStore, categoryStore, roleStore, userStore |
+| `src/components/` | Admin components + hand-rolled shadcn-style primitives (see `src/components/AGENTS.md`) |
+| `src/pages/` | Route pages: dashboard, products, categories, users, roles, media, AI/risk (see `src/pages/AGENTS.md`) |
+| `src/stores/` | Zustand stores per domain (see `src/stores/AGENTS.md`) |
 | `src/styles/` | `globals.css` with Tailwind theme (burgundy/gold palette) |
 | `src/types/` | TypeScript domain types |
 
