@@ -5,7 +5,7 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 
 public sealed class Pbkdf2PasswordHasher : IPasswordHasher
 {
-  private const int Iterations = 100_000;
+  private const int Iterations = 310_000;
   private const int SaltSize = 16;
   private const int KeySize = 32;
   private const string FormatMarker = "pbkdf2-sha256";
@@ -52,7 +52,12 @@ public sealed class Pbkdf2PasswordHasher : IPasswordHasher
       var actual = Rfc2898DeriveBytes.Pbkdf2(providedPassword, salt, iterations, HashAlgorithmName.SHA256, expected.Length);
       var matched = CryptographicOperations.FixedTimeEquals(actual, expected);
 
-      return matched ? PasswordVerificationResult.Success : PasswordVerificationResult.Failed;
+      if (!matched)
+      {
+        return PasswordVerificationResult.Failed;
+      }
+
+      return iterations < Iterations ? PasswordVerificationResult.SuccessRehashNeeded : PasswordVerificationResult.Success;
     }
     catch (FormatException)
     {

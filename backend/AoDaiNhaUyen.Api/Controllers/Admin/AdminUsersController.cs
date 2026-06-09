@@ -4,6 +4,7 @@ using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace AoDaiNhaUyen.Api.Controllers.Admin;
 
@@ -95,14 +96,14 @@ public sealed class AdminUsersController(
         UpdateUserRoleRequest request,
         CancellationToken cancellationToken = default)
     {
-        var success = await adminUserService.UpdateUserRoleAsync(id, request, cancellationToken);
+        var actorId = GetActorUserId();
+        if (actorId is null) return Unauthorized();
 
-        if (!success)
+        var result = await adminUserService.UpdateUserRoleAsync(actorId.Value, id, request, cancellationToken);
+
+        if (!result.Succeeded)
         {
-            return NotFound(ApiResponseFactory.Failure(
-                "Không tìm thấy người dùng hoặc vai trò không hợp lệ.",
-                "not_found",
-                "Không thể cập nhật vai trò."));
+            return ToMutationFailure(result);
         }
 
         await cacheInvalidation.InvalidateUserRelatedCacheAsync(CancellationToken.None);
@@ -116,14 +117,14 @@ public sealed class AdminUsersController(
         UpdateUserStatusRequest request,
         CancellationToken cancellationToken = default)
     {
-        var success = await adminUserService.UpdateUserStatusAsync(id, request, cancellationToken);
+        var actorId = GetActorUserId();
+        if (actorId is null) return Unauthorized();
 
-        if (!success)
+        var result = await adminUserService.UpdateUserStatusAsync(actorId.Value, id, request, cancellationToken);
+
+        if (!result.Succeeded)
         {
-            return NotFound(ApiResponseFactory.Failure(
-                "Không tìm thấy người dùng.",
-                "not_found",
-                "Không thể cập nhật trạng thái."));
+            return ToMutationFailure(result);
         }
 
         await cacheInvalidation.InvalidateUserRelatedCacheAsync(CancellationToken.None);
@@ -132,18 +133,18 @@ public sealed class AdminUsersController(
 
     /// <summary>Soft-delete a user.</summary>
     [HttpDelete("{id:guid}")]
-    public async Task<ActionResult> Delete(
+    public async Task<ActionResult<ApiResponse<object>>> Delete(
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var success = await adminUserService.DeleteUserAsync(id, cancellationToken);
+        var actorId = GetActorUserId();
+        if (actorId is null) return Unauthorized();
 
-        if (!success)
+        var result = await adminUserService.DeleteUserAsync(actorId.Value, id, cancellationToken);
+
+        if (!result.Succeeded)
         {
-            return NotFound(ApiResponseFactory.Failure(
-                "Không tìm thấy người dùng.",
-                "not_found",
-                "Người dùng không tồn tại hoặc đã bị xóa."));
+            return ToMutationFailure(result);
         }
 
         await cacheInvalidation.InvalidateUserRelatedCacheAsync(CancellationToken.None);
@@ -156,17 +157,35 @@ public sealed class AdminUsersController(
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var success = await adminUserService.RestoreUserAsync(id, cancellationToken);
+        var actorId = GetActorUserId();
+        if (actorId is null) return Unauthorized();
 
-        if (!success)
+        var result = await adminUserService.RestoreUserAsync(actorId.Value, id, cancellationToken);
+
+        if (!result.Succeeded)
         {
-            return NotFound(ApiResponseFactory.Failure(
-                "Không tìm thấy người dùng.",
-                "not_found",
-                "Người dùng không tồn tại hoặc chưa bị xóa."));
+            return ToMutationFailure(result);
         }
 
         await cacheInvalidation.InvalidateUserRelatedCacheAsync(CancellationToken.None);
         return Ok(ApiResponseFactory.Success<object?>(null, "Khôi phục người dùng thành công."));
     }
+    private Guid? GetActorUserId()
+    {
+        var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(raw, out var userId) ? userId : null;
+    }
+
+    private ActionResult<ApiResponse<object>> ToMutationFailure(AdminMutationResult result)
+    {
+        var payload = ApiResponseFactory.Failure(
+            result.ErrorMessage ?? "Không thể cập nhật người dùng.",
+            result.ErrorCode ?? "admin_user_mutation_failed",
+            result.ErrorMessage ?? "Thao tác không thể thực hiện.");
+
+        return result.ErrorCode is "not_found" or "invalid_role"
+            ? NotFound(payload)
+            : Conflict(payload);
+    }
+
 }

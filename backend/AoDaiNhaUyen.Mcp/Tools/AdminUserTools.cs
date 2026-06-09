@@ -56,9 +56,9 @@ public static class AdminUserTools
     if (!Guid.TryParse(id, out var gid)) return ToolJson.Error("ID không hợp lệ.", "invalid_id");
     if (!ToolValidation.IsActiveStatus(status)) return ToolJson.Error("Trạng thái phải là active hoặc inactive.", "invalid_status");
 
-    var ok = await users.UpdateUserStatusAsync(gid,
+    var result = await users.UpdateUserStatusAsync(Guid.Empty, gid,
       new UpdateUserStatusRequest { Status = status.ToLowerInvariant() }, cancellationToken);
-    return ToolJson.Ok(new { success = ok });
+    return ToolJson.Ok(new { success = result.Succeeded, result.ErrorCode, result.ErrorMessage });
   }
 
   [McpServerTool, Authorize(Policy = McpPolicies.Roles), Description("Thay đổi vai trò người dùng.")]
@@ -82,8 +82,8 @@ public static class AdminUserTools
     if (targetRole is null)
       return ToolJson.Error($"Không tìm thấy vai trò '{role}'.", "not_found");
 
-    var ok = await users.UpdateUserRoleAsync(gid,
+    var result = await users.UpdateUserRoleAsync(Guid.Empty, gid,
       new UpdateUserRoleRequest { RoleId = targetRole.Id }, cancellationToken);
-    return ToolJson.Ok(new { success = ok });
+    return ToolJson.Ok(new { success = result.Succeeded, result.ErrorCode, result.ErrorMessage });
   }
 }

@@ -1120,8 +1120,8 @@ public sealed class AdminAgentService : IAdminAgentService
 
   private async Task<string> UpdateUserStatus(Guid id, string status, CancellationToken ct)
   {
-    var ok = await _users.UpdateUserStatusAsync(id, new UpdateUserStatusRequest { Status = status }, ct);
-    return ok ? $"✅ Đã chuyển trạng thái người dùng thành '{status}'." : "❌ Không tìm thấy người dùng.";
+    var result = await _users.UpdateUserStatusAsync(Guid.Empty, id, new UpdateUserStatusRequest { Status = status }, ct);
+    return result.Succeeded ? $"✅ Đã chuyển trạng thái người dùng thành '{status}'." : $"❌ {result.ErrorMessage ?? "Không tìm thấy người dùng."}";
   }
 
   private async Task<string> UpdateUserRole(Guid id, string role, CancellationToken ct)
@@ -1132,8 +1132,8 @@ public sealed class AdminAgentService : IAdminAgentService
     if (targetRole is null)
       return $"❌ Không tìm thấy vai trò '{role}'. Các vai trò hiện có: {string.Join(", ", roles.Select(r => r.Name))}";
 
-    var ok = await _users.UpdateUserRoleAsync(id, new UpdateUserRoleRequest { RoleId = targetRole.Id }, ct);
-    return ok ? $"✅ Đã đổi vai trò người dùng thành '{role}'." : "❌ Không tìm thấy người dùng.";
+    var result = await _users.UpdateUserRoleAsync(Guid.Empty, id, new UpdateUserRoleRequest { RoleId = targetRole.Id }, ct);
+    return result.Succeeded ? $"✅ Đã đổi vai trò người dùng thành '{role}'." : $"❌ {result.ErrorMessage ?? "Không tìm thấy người dùng."}";
   }
 
   // --- Order tools ---

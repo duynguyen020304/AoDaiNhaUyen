@@ -15,7 +15,7 @@ public sealed record CreateUserRequest
     [Phone(ErrorMessage = "Số điện thoại không hợp lệ.")]
     public string? Phone { get; init; }
 
-    [StringLength(50, ErrorMessage = "Mật khẩu không được vượt quá 50 ký tự.")]
+    [StringLength(128, MinimumLength = 8, ErrorMessage = "Mật khẩu phải có từ 8 đến 128 ký tự.")]
     public string? Password { get; init; }
 
     public Guid? RoleId { get; init; }

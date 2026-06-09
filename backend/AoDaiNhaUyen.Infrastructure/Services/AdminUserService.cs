@@ -146,75 +146,67 @@ public sealed class AdminUserService(
         return await GetUserByIdAsync(user.Id, cancellationToken);
     }
 
-    public async Task<bool> UpdateUserRoleAsync(Guid id, UpdateUserRoleRequest request, CancellationToken cancellationToken = default)
+    public async Task<AdminMutationResult> UpdateUserRoleAsync(Guid actorUserId, Guid id, UpdateUserRoleRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await dbContext.Users
-            .Include(u => u.UserRoles)
-            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
-
-        if (user is null) return false;
-
-        var roleExists = await dbContext.Roles.AnyAsync(r => r.Id == request.RoleId, cancellationToken);
-        if (!roleExists) return false;
-
+        var user = await dbContext.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        if (user is null) return AdminMutationResult.Failure("not_found", "Không tìm thấy người dùng.");
+        var newRole = await dbContext.Roles.FirstOrDefaultAsync(r => r.Id == request.RoleId, cancellationToken);
+        if (newRole is null) return AdminMutationResult.Failure("invalid_role", "Vai trò không hợp lệ.");
+        var oldRoles = string.Join(",", user.UserRoles.Select(ur => ur.Role.Name));
+        var removesAdmin = user.UserRoles.Any(ur => ur.Role.Name == RoleNames.Admin) && newRole.Name != RoleNames.Admin;
+        if (id == actorUserId && removesAdmin) return AdminMutationResult.Failure("cannot_modify_self_role", "Không thể tự hạ quyền quản trị của chính mình.");
+        if (removesAdmin && !await HasAnotherActiveAdminAsync(id, cancellationToken)) return AdminMutationResult.Failure("cannot_disable_last_admin", "Không thể hạ quyền quản trị viên cuối cùng.");
         user.UserRoles.Clear();
         user.UserRoles.Add(new Domain.Entities.UserRole { UserId = user.Id, RoleId = request.RoleId });
-
         await dbContext.SaveChangesAsync(cancellationToken);
-
-        logger.LogInformation("Admin changed role for user {UserId} to {RoleId}", user.Id, request.RoleId);
-        return true;
+        logger.LogWarning("Admin {ActorUserId} changed role for user {UserId} from {OldRoles} to {RoleId}", actorUserId, user.Id, oldRoles, request.RoleId);
+        return AdminMutationResult.Success();
     }
 
-    public async Task<bool> UpdateUserStatusAsync(Guid id, UpdateUserStatusRequest request, CancellationToken cancellationToken = default)
+    public async Task<AdminMutationResult> UpdateUserStatusAsync(Guid actorUserId, Guid id, UpdateUserStatusRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await dbContext.Users
-            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
-
-        if (user is null) return false;
-
+        var user = await dbContext.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        if (user is null) return AdminMutationResult.Failure("not_found", "Không tìm thấy người dùng.");
+        var disables = !string.Equals(request.Status, "active", StringComparison.OrdinalIgnoreCase);
+        if (id == actorUserId && disables) return AdminMutationResult.Failure("cannot_disable_self", "Không thể tự vô hiệu hóa tài khoản của chính mình.");
+        if (disables && user.UserRoles.Any(ur => ur.Role.Name == RoleNames.Admin) && !await HasAnotherActiveAdminAsync(id, cancellationToken)) return AdminMutationResult.Failure("cannot_disable_last_admin", "Không thể vô hiệu hóa quản trị viên cuối cùng.");
+        var oldStatus = user.Status;
         user.Status = request.Status;
         user.UpdatedAt = DateTime.UtcNow;
-
         await dbContext.SaveChangesAsync(cancellationToken);
-
-        logger.LogInformation("Admin changed status for user {UserId} to {Status}", user.Id, request.Status);
-        return true;
+        logger.LogWarning("Admin {ActorUserId} changed status for user {UserId} from {OldStatus} to {Status}", actorUserId, user.Id, oldStatus, request.Status);
+        return AdminMutationResult.Success();
     }
 
-    public async Task<bool> DeleteUserAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<AdminMutationResult> DeleteUserAsync(Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
-        var user = await dbContext.Users
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
-
-        if (user is null || user.IsDeleted) return false;
-
+        var user = await dbContext.Users.IgnoreQueryFilters().Include(u => u.UserRoles).ThenInclude(ur => ur.Role).FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        if (user is null || user.IsDeleted) return AdminMutationResult.Failure("not_found", "Người dùng không tồn tại hoặc đã bị xóa.");
+        if (id == actorUserId) return AdminMutationResult.Failure("cannot_delete_self", "Không thể tự xóa tài khoản của chính mình.");
+        if (user.UserRoles.Any(ur => ur.Role.Name == RoleNames.Admin) && !await HasAnotherActiveAdminAsync(id, cancellationToken)) return AdminMutationResult.Failure("cannot_disable_last_admin", "Không thể xóa quản trị viên cuối cùng.");
         user.IsDeleted = true;
         user.DeletedAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
-
         await dbContext.SaveChangesAsync(cancellationToken);
-
-        logger.LogInformation("Admin soft-deleted user {UserId} ({FullName})", user.Id, user.FullName);
-        return true;
+        logger.LogWarning("Admin {ActorUserId} soft-deleted user {UserId}", actorUserId, user.Id);
+        return AdminMutationResult.Success();
     }
 
-    public async Task<bool> RestoreUserAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<AdminMutationResult> RestoreUserAsync(Guid actorUserId, Guid id, CancellationToken cancellationToken = default)
     {
-        var user = await dbContext.Users
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
-
-        if (user is null || !user.IsDeleted) return false;
-
+        var user = await dbContext.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        if (user is null || !user.IsDeleted) return AdminMutationResult.Failure("not_found", "Người dùng không tồn tại hoặc chưa bị xóa.");
         user.IsDeleted = false;
         user.DeletedAt = null;
         user.UpdatedAt = DateTime.UtcNow;
-
         await dbContext.SaveChangesAsync(cancellationToken);
-
-        logger.LogInformation("Admin restored user {UserId} ({FullName})", user.Id, user.FullName);
-        return true;
+        logger.LogWarning("Admin {ActorUserId} restored user {UserId}", actorUserId, user.Id);
+        return AdminMutationResult.Success();
     }
+
+    private Task<bool> HasAnotherActiveAdminAsync(Guid excludedUserId, CancellationToken cancellationToken) =>
+        dbContext.UserRoles.AnyAsync(ur => ur.UserId != excludedUserId && ur.Role.Name == RoleNames.Admin && !ur.User.IsDeleted && ur.User.Status == "active", cancellationToken);
+
+    private static string? NormalizeEmail(string? email) => string.IsNullOrWhiteSpace(email) ? null : email.Trim().ToLowerInvariant();
+
 }
