@@ -183,7 +183,6 @@ public sealed class ChatController(
     await Response.Body.FlushAsync(cancellationToken);
   }
 
-  [Authorize(Policy = "RequireAdminOrCustomer")]
   [EnableRateLimiting("ai")]
   [HttpPost("{threadId:guid}/try-on")]
   public async Task<IActionResult> ExecuteTryOn(

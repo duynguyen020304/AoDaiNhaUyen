@@ -40,7 +40,6 @@ public sealed class AiTryOnController(
     return Ok(ApiResponseFactory.Success(result));
   }
 
-  [Authorize(Policy = "RequireAdminOrCustomer")]
   [EnableRateLimiting("ai")]
   [HttpPost]
   [RequestSizeLimit(MaxRequestBytes)]

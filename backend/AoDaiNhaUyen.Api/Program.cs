@@ -153,7 +153,7 @@ builder.Services.AddRateLimiter(options =>
     GetClientPartitionKey(httpContext, includeGuestKey: true),
     _ => new FixedWindowRateLimiterOptions
     {
-      PermitLimit = 3,
+      PermitLimit = 20,
       Window = TimeSpan.FromMinutes(10),
       QueueLimit = 0,
       AutoReplenishment = true
@@ -163,7 +163,7 @@ builder.Services.AddRateLimiter(options =>
     GetClientPartitionKey(httpContext, includeGuestKey: true),
     _ => new FixedWindowRateLimiterOptions
     {
-      PermitLimit = 20,
+      PermitLimit = 120,
       Window = TimeSpan.FromMinutes(1),
       QueueLimit = 0,
       AutoReplenishment = true
@@ -174,7 +174,7 @@ builder.Services.AddRateLimiter(options =>
       GetClientPartitionKey(httpContext, includeGuestKey: false),
       _ => new FixedWindowRateLimiterOptions
       {
-        PermitLimit = 300,
+        PermitLimit = 1500,
         Window = TimeSpan.FromMinutes(1),
         QueueLimit = 0,
         AutoReplenishment = true
