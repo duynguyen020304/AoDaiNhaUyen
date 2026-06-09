@@ -16,6 +16,8 @@ import { MediaPage } from '@/pages/MediaPage'
 import { AiChatPage } from '@/pages/AiChatPage'
 import { OrdersPage } from '@/pages/OrdersPage'
 import { ToolRiskPage } from '@/pages/ToolRiskPage'
+import { LlmLogsPage } from '@/pages/LlmLogsPage'
+import { PromosPage } from '@/pages/PromosPage'
 
 export function App() {
   const status = useAuthStore((s) => s.status)
@@ -51,11 +53,13 @@ export function App() {
             <Route path="products/:id" element={<ProductFormPage />} />
             <Route path="products/:id/edit" element={<ProductFormPage />} />
             <Route path="categories" element={<CategoriesPage />} />
+            <Route path="promos" element={<PromosPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="roles" element={<RolesPage />} />
             <Route path="media" element={<MediaPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="ai-chat" element={<AiChatPage />} />
+            <Route path="llm-logs" element={<LlmLogsPage />} />
             <Route path="tools-risk" element={<ToolRiskPage />} />
           </Route>
         </Route>

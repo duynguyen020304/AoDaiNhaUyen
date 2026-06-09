@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2 } from 'lucide-react'
+import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, FileSearch } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { Button } from '@/components/ui/button'
@@ -12,10 +12,12 @@ const NAV_ITEMS = [
   { to: '/admin/products', icon: Package, label: 'Sản phẩm', end: false },
   { to: '/admin/orders', icon: ClipboardList, label: 'Đơn hàng', end: false },
   { to: '/admin/categories', icon: FolderTree, label: 'Danh mục', end: false },
+  { to: '/admin/promos', icon: Tag, label: 'Mã giảm giá', end: false },
   { to: '/admin/users', icon: Users, label: 'Người dùng', end: false },
   { to: '/admin/roles', icon: Shield, label: 'Vai trò', end: false },
   { to: '/admin/media', icon: Image, label: 'Hình ảnh', end: false },
   { to: '/admin/ai-chat', icon: Bot, label: 'AI Trợ lý', end: false },
+  { to: '/admin/llm-logs', icon: FileSearch, label: 'Nhật ký LLM', end: false },
   { to: '/admin/tools-risk', icon: Settings2, label: 'Cấu hình AI', end: false },
 ] as const
 

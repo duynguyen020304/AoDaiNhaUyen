@@ -19,6 +19,9 @@ import type {
   UpdateCategoryRequest,
   CreateRoleRequest,
   UpdateRoleRequest,
+  AdminPromoItem,
+  CreatePromoRequest,
+  UpdatePromoRequest,
 } from '@/types/admin'
 
 // ── Users ──
@@ -215,6 +218,57 @@ export async function deleteCategory(id: string): Promise<void> {
 
 export async function restoreCategory(id: string): Promise<void> {
   await request<void>(`/api/admin/categories/${id}/restore`, { method: 'PATCH' })
+}
+
+// ── Promos ──
+
+export async function getPromos(params?: {
+  includeDeleted?: boolean
+  search?: string
+  isActive?: boolean
+  page?: number
+  pageSize?: number
+}): Promise<PaginatedApiEnvelope<AdminPromoItem[]>> {
+  const qs = new URLSearchParams()
+  if (params?.includeDeleted) qs.set('includeDeleted', 'true')
+  if (params?.search) qs.set('search', params.search)
+  if (params?.isActive !== undefined) qs.set('isActive', String(params.isActive))
+  qs.set('page', String(params?.page ?? 1))
+  qs.set('pageSize', String(params?.pageSize ?? 20))
+  return requestPaginated<AdminPromoItem[]>(`/api/admin/promos?${qs}`)
+}
+
+export async function getPromo(id: string): Promise<AdminPromoItem> {
+  return request<AdminPromoItem>(`/api/admin/promos/${id}`)
+}
+
+export async function createPromo(data: CreatePromoRequest): Promise<AdminPromoItem> {
+  return request<AdminPromoItem>('/api/admin/promos', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updatePromo(id: string, data: UpdatePromoRequest): Promise<AdminPromoItem> {
+  return request<AdminPromoItem>(`/api/admin/promos/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function togglePromoStatus(id: string, isActive: boolean): Promise<void> {
+  await request<void>(`/api/admin/promos/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isActive }),
+  })
+}
+
+export async function deletePromo(id: string): Promise<void> {
+  await request<void>(`/api/admin/promos/${id}`, { method: 'DELETE' })
+}
+
+export async function restorePromo(id: string): Promise<void> {
+  await request<void>(`/api/admin/promos/${id}/restore`, { method: 'PATCH' })
 }
 
 // ── Orders ──

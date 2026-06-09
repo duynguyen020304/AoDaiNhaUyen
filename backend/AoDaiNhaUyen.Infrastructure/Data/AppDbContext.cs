@@ -44,6 +44,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<UserGeneratedImage> UserGeneratedImages => Set<UserGeneratedImage>();
   public DbSet<AdminAiAction> AdminAiActions => Set<AdminAiAction>();
   public DbSet<ToolRiskConfig> ToolRiskConfigs => Set<ToolRiskConfig>();
+  public DbSet<LlmAuditLog> LlmAuditLogs => Set<LlmAuditLog>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
@@ -646,6 +647,44 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => x.CreatedAt).HasDatabaseName("idx_admin_ai_actions_created_at");
       builder.HasOne(x => x.AdminUser).WithMany().HasForeignKey(x => x.AdminUserId).OnDelete(DeleteBehavior.Cascade);
     });
+    modelBuilder.Entity<LlmAuditLog>(builder =>
+    {
+      builder.ToTable("llm_audit_logs");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.RequestId).HasMaxLength(64).IsRequired();
+      builder.Property(x => x.CorrelationId).HasMaxLength(64).IsRequired();
+      builder.Property(x => x.TraceId).HasMaxLength(128);
+      builder.Property(x => x.ActorRole).HasMaxLength(40);
+      builder.Property(x => x.Source).HasMaxLength(80).IsRequired();
+      builder.Property(x => x.IpHash).HasMaxLength(128);
+      builder.Property(x => x.UserAgentHash).HasMaxLength(128);
+      builder.Property(x => x.Provider).HasMaxLength(80).IsRequired();
+      builder.Property(x => x.Model).HasMaxLength(160);
+      builder.Property(x => x.Operation).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.ActionType).HasMaxLength(80);
+      builder.Property(x => x.ToolName).HasMaxLength(120);
+      builder.Property(x => x.RiskLevel).HasMaxLength(30);
+      builder.Property(x => x.Status).HasMaxLength(30).IsRequired();
+      builder.Property(x => x.ErrorCode).HasMaxLength(80);
+      builder.Property(x => x.EstimatedCost).HasColumnType("numeric(12,6)");
+      builder.Property(x => x.PromptPreviewRedacted).HasColumnType("text");
+      builder.Property(x => x.CompletionPreviewRedacted).HasColumnType("text");
+      builder.Property(x => x.InputMetadataJson).HasColumnType("jsonb");
+      builder.Property(x => x.OutputMetadataJson).HasColumnType("jsonb");
+      builder.Property(x => x.SafetyFlagsJson).HasColumnType("jsonb");
+      builder.Property(x => x.RedactionVersion).HasMaxLength(20).IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.CreatedAt).HasDatabaseName("idx_llm_audit_logs_created_at");
+      builder.HasIndex(x => new { x.Source, x.CreatedAt }).HasDatabaseName("idx_llm_audit_logs_source_created_at");
+      builder.HasIndex(x => new { x.Status, x.CreatedAt }).HasDatabaseName("idx_llm_audit_logs_status_created_at");
+      builder.HasIndex(x => new { x.ActorUserId, x.CreatedAt }).HasDatabaseName("idx_llm_audit_logs_actor_created_at");
+      builder.HasIndex(x => x.ThreadId).HasDatabaseName("idx_llm_audit_logs_thread_id");
+      builder.HasIndex(x => x.ConversationId).HasDatabaseName("idx_llm_audit_logs_conversation_id");
+      builder.HasIndex(x => x.RequestId).HasDatabaseName("idx_llm_audit_logs_request_id");
+      builder.HasIndex(x => new { x.Provider, x.Model }).HasDatabaseName("idx_llm_audit_logs_provider_model");
+    });
+
     ApplySnakeCaseColumnNames(modelBuilder);
     ApplyGlobalSoftDeleteQueryFilters(modelBuilder);
   }

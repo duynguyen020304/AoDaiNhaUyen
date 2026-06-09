@@ -187,6 +187,53 @@ export interface UpdateRoleRequest {
   description?: string
 }
 
+// ── Promos ──
+
+export interface AdminPromoItem {
+  id: string
+  code: string
+  discountType: 'percentage' | 'fixed'
+  discountValue: number
+  minOrderAmount: number
+  maxUses: number
+  currentUses: number
+  isActive: boolean
+  isDeleted: boolean
+  freeShipping: boolean
+  startDate: string
+  endDate: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreatePromoRequest {
+  code: string
+  discountType: 'percentage' | 'fixed'
+  discountValue: number
+  minOrderAmount?: number
+  maxUses?: number
+  startDate?: string
+  endDate?: string
+  freeShipping?: boolean
+  isActive?: boolean
+}
+
+export interface UpdatePromoRequest {
+  code: string
+  discountType: 'percentage' | 'fixed'
+  discountValue: number
+  minOrderAmount: number
+  maxUses: number
+  startDate?: string
+  endDate?: string
+  freeShipping: boolean
+  isActive: boolean
+}
+
+export interface TogglePromoStatusRequest {
+  isActive: boolean
+}
+
 // ── Orders ──
 
 export interface AdminOrderListItem {
