@@ -424,10 +424,10 @@ public sealed class AdminAiSecurityTests
     public Task<AdminUserListItemDto?> GetUserByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<AdminUserListItemDto?>(new(id, "User", "u@example.com", null, "active", ["customer"], DateTime.UtcNow, null));
     public Task<AdminUserListItemDto> CreateUserAsync(CreateUserRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     public Task<AdminUserListItemDto?> UpdateUserAsync(Guid id, UpdateUserRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-    public Task<bool> UpdateUserRoleAsync(Guid id, UpdateUserRoleRequest request, CancellationToken cancellationToken = default) => Task.FromResult(true);
-    public Task<bool> UpdateUserStatusAsync(Guid id, UpdateUserStatusRequest request, CancellationToken cancellationToken = default) => Task.FromResult(true);
-    public Task<bool> DeleteUserAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
-    public Task<bool> RestoreUserAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
+    public Task<AdminMutationResult> UpdateUserRoleAsync(Guid actorUserId, Guid id, UpdateUserRoleRequest request, CancellationToken cancellationToken = default) => Task.FromResult(AdminMutationResult.Success());
+    public Task<AdminMutationResult> UpdateUserStatusAsync(Guid actorUserId, Guid id, UpdateUserStatusRequest request, CancellationToken cancellationToken = default) => Task.FromResult(AdminMutationResult.Success());
+    public Task<AdminMutationResult> DeleteUserAsync(Guid actorUserId, Guid id, CancellationToken cancellationToken = default) => Task.FromResult(AdminMutationResult.Success());
+    public Task<AdminMutationResult> RestoreUserAsync(Guid actorUserId, Guid id, CancellationToken cancellationToken = default) => Task.FromResult(AdminMutationResult.Success());
   }
 
   private sealed class FakeRoleService : IAdminRoleService
@@ -474,5 +474,19 @@ public sealed class AdminAiSecurityTests
   {
     public Task<IReadOnlyList<AdminPromoItem>> GetAllAsync(CancellationToken ct = default) => Task.FromResult((IReadOnlyList<AdminPromoItem>)[]);
     public Task<AdminPromoResult> CreateAsync(CreateAdminPromoRequest request, CancellationToken ct = default) => Task.FromResult(new AdminPromoResult(true, "OK", Guid.NewGuid()));
+    public Task<(IReadOnlyList<AdminPromoListItemResponse> Items, int TotalItem)> GetAllAdminAsync(bool includeDeleted = false, string? search = null, bool? isActive = null, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default) =>
+      Task.FromResult(((IReadOnlyList<AdminPromoListItemResponse>)[], 0));
+
+    public Task<AdminPromoDetailResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<AdminPromoDetailResponse?>(null);
+
+    public Task<AdminPromoDetailResponse> CreatePromoAsync(CreatePromoRequest request, CancellationToken cancellationToken = default) =>
+      Task.FromResult(new AdminPromoDetailResponse(Guid.NewGuid(), request.Code, request.DiscountType, request.DiscountValue, request.MinOrderAmount, request.MaxUses, 0, true, false, request.FreeShipping, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+
+    public Task<AdminPromoDetailResponse?> UpdateAsync(Guid id, UpdatePromoRequest request, CancellationToken cancellationToken = default) =>
+      Task.FromResult<AdminPromoDetailResponse?>(new AdminPromoDetailResponse(id, request.Code, request.DiscountType, request.DiscountValue, request.MinOrderAmount, request.MaxUses, 0, request.IsActive, false, request.FreeShipping, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+
+    public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
+    public Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
+    public Task<bool> ToggleActiveAsync(Guid id, bool isActive, CancellationToken cancellationToken = default) => Task.FromResult(true);
   }
 }
