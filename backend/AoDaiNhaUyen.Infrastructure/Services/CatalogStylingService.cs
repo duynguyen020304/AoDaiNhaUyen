@@ -360,6 +360,15 @@ public sealed class CatalogStylingService(AppDbContext dbContext, IImageVisibili
   {
     if (items.Count == 0) return items;
 
+    var imageUrls = items.Select(i => i.PrimaryImageUrl).Where(url => url != null).Distinct().ToList();
+    var productImages = await dbContext.ProductImages
+      .Where(img => imageUrls.Contains(img.ImageUrl))
+      .ToListAsync(cancellationToken);
+
+    var imageDict = productImages
+      .GroupBy(img => img.ImageUrl)
+      .ToDictionary(g => g.Key, g => g.First());
+
     var resolved = new List<ChatRecommendationItemDto>(items.Count);
     foreach (var item in items)
     {
@@ -376,7 +385,15 @@ public sealed class CatalogStylingService(AppDbContext dbContext, IImageVisibili
         continue;
       }
 
-      var resolvedUrl = await imageVisibilityService.ResolveUrlAsync(item.PrimaryImageUrl, false, null, cancellationToken);
+      bool isPublic = false;
+      string? publicObjectKey = null;
+      if (imageDict.TryGetValue(item.PrimaryImageUrl, out var img))
+      {
+        isPublic = img.IsPublic;
+        publicObjectKey = img.PublicObjectKey;
+      }
+
+      var resolvedUrl = await imageVisibilityService.ResolveUrlAsync(item.PrimaryImageUrl, isPublic, publicObjectKey, cancellationToken);
       resolved.Add(item with { PrimaryImageUrl = resolvedUrl });
     }
 

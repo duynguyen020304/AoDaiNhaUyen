@@ -130,7 +130,73 @@ public sealed class CatalogStylingServiceTests
       .UseInMemoryDatabase($"catalog-styling-{Guid.NewGuid():N}")
       .Options;
     return new AppDbContext(options);
-  }  private sealed class StubImageVisibilityService : IImageVisibilityService
+  }
+
+  [Fact]
+  public async Task ResolveImageUrlsAsync_PassesPublicVisibilityProperties_ToResolveUrlAsync()
+  {
+    await using var dbContext = CreateDbContext();
+    var categoryId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    var category = new Category
+    {
+      Id = categoryId,
+      Name = "Áo dài",
+      Slug = "ao-dai"
+    };
+
+    var scenarioId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+    var scenario = new StyleScenario
+    {
+      Id = scenarioId,
+      Name = "Giáo viên",
+      Slug = "giao-vien"
+    };
+
+    dbContext.Categories.Add(category);
+    dbContext.StyleScenarios.Add(scenario);
+
+    var productId = Guid.Parse("00000000-0000-0000-0000-000000000101");
+    var product = BuildProduct(
+      productId,
+      "Áo dài truyền thống 6",
+      category,
+      isFeatured: true,
+      stockQty: 2,
+      scenario,
+      profile: new ProductStyleProfile
+      {
+        PrimaryColorFamily = "blue",
+        Formality = "medium"
+      });
+
+    var image = new ProductImage
+    {
+      Id = Guid.NewGuid(),
+      ProductId = productId,
+      ImageUrl = "aodainhauyen/private/products/ao-dai-truyen-thong-6.webp",
+      IsPrimary = true,
+      IsPublic = true,
+      PublicObjectKey = "aodainhauyen/public/products/ao-dai-truyen-thong-6.webp"
+    };
+    product.Images = [image];
+
+    dbContext.Products.Add(product);
+    dbContext.ProductImages.Add(image);
+    await dbContext.SaveChangesAsync();
+
+    var spyVisibilityService = new SpyImageVisibilityService();
+    var service = new CatalogStylingService(dbContext, spyVisibilityService);
+
+    var results = await service.RecommendAsync("giao-vien", null, "blue", null, "ao_dai", 1, cancellationToken: CancellationToken.None);
+
+    Assert.Single(results);
+    Assert.Equal("https://public.example/aodainhauyen/public/products/ao-dai-truyen-thong-6.webp", results[0].PrimaryImageUrl);
+    Assert.Equal("aodainhauyen/private/products/ao-dai-truyen-thong-6.webp", spyVisibilityService.LastObjectKey);
+    Assert.True(spyVisibilityService.LastIsPublic);
+    Assert.Equal("aodainhauyen/public/products/ao-dai-truyen-thong-6.webp", spyVisibilityService.LastPublicObjectKey);
+  }
+
+  private sealed class StubImageVisibilityService : IImageVisibilityService
   {
     public Task<ProductImageVisibilityDto> MakePrivateAsync(Guid productImageId, Guid productId, CancellationToken ct = default)
       => Task.FromResult(new ProductImageVisibilityDto(productImageId, false, null, "url"));
@@ -140,5 +206,26 @@ public sealed class CatalogStylingServiceTests
 
     public Task<string> ResolveUrlAsync(string objectKey, bool isPublic, string? publicObjectKey, CancellationToken ct = default)
       => Task.FromResult("https://stub.example/url");
+  }
+
+  private sealed class SpyImageVisibilityService : IImageVisibilityService
+  {
+    public string? LastObjectKey { get; private set; }
+    public bool LastIsPublic { get; private set; }
+    public string? LastPublicObjectKey { get; private set; }
+
+    public Task<ProductImageVisibilityDto> MakePrivateAsync(Guid productImageId, Guid productId, CancellationToken ct = default)
+      => Task.FromResult(new ProductImageVisibilityDto(productImageId, false, null, "url"));
+
+    public Task<ProductImageVisibilityDto> MakePublicAsync(Guid productImageId, Guid productId, CancellationToken ct = default)
+      => Task.FromResult(new ProductImageVisibilityDto(productImageId, true, "pub", "url"));
+
+    public Task<string> ResolveUrlAsync(string objectKey, bool isPublic, string? publicObjectKey, CancellationToken ct = default)
+    {
+      LastObjectKey = objectKey;
+      LastIsPublic = isPublic;
+      LastPublicObjectKey = publicObjectKey;
+      return Task.FromResult(isPublic ? $"https://public.example/{publicObjectKey}" : $"https://private.example/{objectKey}");
+    }
   }
 }
