@@ -1,4 +1,5 @@
 import { request } from './client';
+import { getAnonymousSessionId } from './events';
 
 export interface CheckoutPayload {
   addressId?: string;
@@ -12,6 +13,7 @@ export interface CheckoutPayload {
   };
   note?: string;
   paymentMethod: string;
+  anonymousSessionId?: string;
   promoCode?: string;
 }
 
@@ -41,7 +43,7 @@ export interface PromoValidationResult {
 export function checkout(payload: CheckoutPayload): Promise<CheckoutResult> {
   return request<CheckoutResult>('/api/users/me/checkout', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, anonymousSessionId: payload.anonymousSessionId ?? getAnonymousSessionId() }),
   });
 }
 

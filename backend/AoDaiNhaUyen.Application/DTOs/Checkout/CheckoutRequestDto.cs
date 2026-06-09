@@ -5,4 +5,5 @@ public sealed record CheckoutRequestDto(
   CheckoutAddressDto? Address,
   string? Note,
   string PaymentMethod,
-  string? PromoCode);
+  string? PromoCode,
+  string? AnonymousSessionId = null);

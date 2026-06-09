@@ -6,6 +6,7 @@ import { useProductDetailQuery } from '../../hooks/catalog/useCatalogQueries';
 import { fadeUp } from '../../utils/motion';
 import ImageGallery from '../../components/ImageGallery/ImageGallery';
 import ProductInfo from '../../components/ProductInfo/ProductInfo';
+import { trackEvent } from '../../api/events';
 import UserFeedbackSection from '../../components/UserFeedbackSection/UserFeedbackSection';
 
 export default function ProductDetailPage() {
@@ -16,6 +17,11 @@ export default function ProductDetailPage() {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [slug]);
+
+  useEffect(() => {
+    if (!product) return;
+    void trackEvent({ eventType: 'viewed_product', productId: product.id, metadata: { slug: product.slug } });
+  }, [product]);
 
   const missingSlug = !slug;
   const displayError = missingSlug || productQuery.isError ? 'Không tìm thấy sản phẩm.' : null;

@@ -16,6 +16,7 @@ import {
   type AiTryOnCatalogItem,
   type AiTryOnCatalogPage,
 } from '../../api/aiTryon';
+import { trackEvent } from '../../api/events';
 import { addCartItem } from '../../api/cart';
 import styles from './AiTryonPage.module.css';
 
@@ -207,6 +208,7 @@ export default function AiTryonPage() {
       return;
     }
 
+    void trackEvent({ eventType: 'ai_tryon_started', productId: garment.productId, productVariantId: garment.defaultVariantId, metadata: { accessoryProductIds: selectedAccessories } });
     setIsProcessing(true);
     setTryonError(null);
 
@@ -218,6 +220,7 @@ export default function AiTryonPage() {
         accessoryProductIds: selectedAccessories,
       });
 
+      void trackEvent({ eventType: 'ai_tryon_completed', productId: garment.productId, productVariantId: garment.defaultVariantId, metadata: { accessoryProductIds: selectedAccessories } });
       setTryonResult(result.resultImageUrl);
     } catch (error) {
       setTryonResult(null);

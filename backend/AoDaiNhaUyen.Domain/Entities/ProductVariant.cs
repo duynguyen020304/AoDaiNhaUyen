@@ -11,6 +11,7 @@ public sealed class ProductVariant : BaseEntity
   public string? Color { get; set; }
   public decimal Price { get; set; }
   public decimal? SalePrice { get; set; }
+  public decimal CostPrice { get; set; }
   public int StockQty { get; set; }
   public int? WeightGram { get; set; }
   public bool IsDefault { get; set; }

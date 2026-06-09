@@ -15,6 +15,7 @@ import LoginPage from './pages/LoginPage/LoginPage';
 import AccountPage, { type AccountView } from './pages/AccountPage/AccountPage';
 import AuthGoogleCallbackPage from './pages/AuthGoogleCallbackPage/AuthGoogleCallbackPage';
 import AuthZaloCallbackPage from './pages/AuthZaloCallbackPage/AuthZaloCallbackPage';
+import UnsubscribePage from './pages/UnsubscribePage/UnsubscribePage';
 import ResetPasswordPage from './pages/ResetPasswordPage/ResetPasswordPage';
 import { AuthModalProvider, type AuthTab } from './auth/AuthModalContext';
 import { useAuth } from './auth/useAuth';
@@ -137,6 +138,8 @@ export default function App() {
         <Route path="/product/:slug" element={<ProductDetailPage />} />
         <Route path="/cart" element={status === 'anonymous' ? <HomePage /> : <CartPage />} />
         <Route path="/login" element={<HomePage />} />
+        <Route path="/newsletter/confirm" element={<UnsubscribePage mode="confirm" />} />
+        <Route path="/unsubscribe" element={<UnsubscribePage mode="unsubscribe" />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/google/callback" element={<AuthGoogleCallbackPage />} />
         <Route path="/auth/callback/zalo" element={<AuthZaloCallbackPage />} />

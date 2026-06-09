@@ -137,6 +137,14 @@ public static class ServiceRegistration
     services.AddScoped<ICheckoutService, CheckoutService>();
     services.AddScoped<IPromoService, PromoService>();
     services.AddScoped<IStockService, StockService>();
+    services.AddScoped<IOrderAttributionService, OrderAttributionService>();
+    services.AddScoped<ICustomerEventService, CustomerEventService>();
+    services.AddScoped<IEmailQueueService, EmailQueueService>();
+    services.AddScoped<IEmailTemplateService, EmailTemplateService>();
+    services.AddScoped<ISubscriberService, SubscriberService>();
+    services.AddScoped<IMarketingConsentService, MarketingConsentService>();
+    services.AddScoped<IPromoCostService, PromoCostService>();
+    services.AddHostedService<BackgroundEmailWorker>();
     services.AddScoped<IOrderService, OrderService>();
     services.AddScoped<IUserService, UserService>();
     services.AddScoped<ISeedDataService, SeedDataService>();

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import styles from './CartSummary.module.css';
 import type { UserAddress } from '../../types/address';
 import { formatCurrency } from './currency';
+import { trackEvent } from '../../api/events';
 import { validatePromo } from '../../api/checkout';
 
 interface CartSummaryProps {
@@ -52,7 +53,9 @@ export default function CartSummary({
     setPromoError(null);
     try {
       const result = await validatePromo(promoInput.trim(), subtotal);
+      void trackEvent({ eventType: 'promo_validated', metadata: { code: promoInput.trim(), subtotal, isValid: result.isValid } });
       if (result.isValid) {
+        void trackEvent({ eventType: 'promo_applied', metadata: { code: promoInput.trim(), discountAmount: result.discountAmount, freeShipping: result.freeShipping } });
         onPromoApplied(promoInput.trim(), result.discountAmount, result.discountLabel ?? 'Giảm giá', result.freeShipping);
       } else {
         setPromoError(result.errorMessage ?? 'Mã không hợp lệ.');

@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Text;
 using AoDaiNhaUyen.Application.DTOs.Auth;
 using AoDaiNhaUyen.Application.DTOs.Checkout;
@@ -12,8 +13,10 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 public sealed class CheckoutService(
   AppDbContext dbContext,
   ICartRepository cartRepository,
-  IEmailService emailService,
+  IEmailQueueService emailQueueService,
   IPromoService promoService,
+  IOrderAttributionService orderAttributionService,
+  IPromoCostService promoCostService,
   IStockService stockService) : ICheckoutService
 {
   private const decimal DefaultShippingFee = 25000m;
@@ -165,6 +168,9 @@ public sealed class CheckoutService(
         }
       }
 
+      await orderAttributionService.CreateAsync(order, request.AnonymousSessionId, appliedPromoCode, DefaultShippingFee, cancellationToken);
+      await promoCostService.CreateOrderSnapshotAsync(order, appliedPromoCode, DefaultShippingFee, cancellationToken);
+
       dbContext.CartItems.RemoveRange(cart.Items);
       cart.UpdatedAt = now;
 
@@ -186,11 +192,22 @@ public sealed class CheckoutService(
 
       if (!string.IsNullOrWhiteSpace(user.Email))
       {
-        await emailService.SendEmailAsync(
-          user.Email,
-          $"Hóa đơn đơn hàng {order.OrderCode}",
-          BuildInvoiceEmail(order, "paid"),
-          cancellationToken);
+        try
+        {
+          await emailQueueService.QueueAsync(
+            user.Email,
+            "order.invoice",
+            new
+            {
+              subject = $"Hóa đơn đơn hàng {order.OrderCode}",
+              trustedHtmlBody = BuildInvoiceEmail(order, "paid")
+            },
+            cancellationToken: cancellationToken);
+        }
+        catch
+        {
+          // Email queue failure must not make a committed checkout look failed.
+        }
       }
 
       return AuthResult<CheckoutResultDto>.Success(result);
@@ -256,13 +273,14 @@ public sealed class CheckoutService(
       ? "Đã thanh toán"
       : paymentStatus;
 
-    var wardPart = string.IsNullOrWhiteSpace(order.Ward) ? string.Empty : $", {order.Ward}";
+    var encoder = HtmlEncoder.Default;
+    var wardPart = string.IsNullOrWhiteSpace(order.Ward) ? string.Empty : $", {encoder.Encode(order.Ward)}";
     var builder = new StringBuilder();
     builder.Append("<h1>Hóa đơn đặt hàng</h1>");
-    builder.Append($"<p>Mã đơn hàng: <strong>{order.OrderCode}</strong></p>");
-    builder.Append($"<p>Trạng thái thanh toán: <strong>{paymentStatusLabel}</strong></p>");
-    builder.Append($"<p>Người nhận: {order.RecipientName} - {order.RecipientPhone}</p>");
-    builder.Append($"<p>Địa chỉ: {order.AddressLine}{wardPart}, {order.District}, {order.Province}</p>");
+    builder.Append($"<p>Mã đơn hàng: <strong>{encoder.Encode(order.OrderCode)}</strong></p>");
+    builder.Append($"<p>Trạng thái thanh toán: <strong>{encoder.Encode(paymentStatusLabel)}</strong></p>");
+    builder.Append($"<p>Người nhận: {encoder.Encode(order.RecipientName)} - {encoder.Encode(order.RecipientPhone)}</p>");
+    builder.Append($"<p>Địa chỉ: {encoder.Encode(order.AddressLine)}{wardPart}, {encoder.Encode(order.District)}, {encoder.Encode(order.Province)}</p>");
     builder.Append("<table cellpadding=\"8\" cellspacing=\"0\" border=\"1\" style=\"border-collapse:collapse; width:100%\">");
     builder.Append("<thead><tr><th>Sản phẩm</th><th>Phân loại</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead><tbody>");
 
@@ -272,8 +290,8 @@ public sealed class CheckoutService(
         .Where(value => !string.IsNullOrWhiteSpace(value)));
 
       builder.Append("<tr>");
-      builder.Append($"<td>{item.ProductName}</td>");
-      builder.Append($"<td>{(string.IsNullOrWhiteSpace(variantLabel) ? "-" : variantLabel)}</td>");
+      builder.Append($"<td>{encoder.Encode(item.ProductName)}</td>");
+      builder.Append($"<td>{(string.IsNullOrWhiteSpace(variantLabel) ? "-" : encoder.Encode(variantLabel))}</td>");
       builder.Append($"<td>{item.Quantity}</td>");
       builder.Append($"<td>{item.UnitPrice:N0} VND</td>");
       builder.Append($"<td>{item.LineTotal:N0} VND</td>");

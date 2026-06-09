@@ -1,5 +1,6 @@
 using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs.Admin;
+using AoDaiNhaUyen.Application.DTOs.Marketing;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ namespace AoDaiNhaUyen.Api.Controllers.Admin;
 [ApiController]
 [Route("api/admin/promos")]
 [Authorize(Policy = "RequireAdminRole")]
-public sealed class AdminPromosController(IAdminPromoService adminPromoService) : ControllerBase
+public sealed class AdminPromosController(IAdminPromoService adminPromoService, IPromoCostService promoCostService) : ControllerBase
 {
   /// <summary>Get promo codes for admin.</summary>
   [HttpGet]
@@ -53,6 +54,26 @@ public sealed class AdminPromosController(IAdminPromoService adminPromoService) 
     }
 
     return Ok(ApiResponseFactory.Success(promo));
+  }
+
+  /// <summary>Get promo cost/revenue performance.</summary>
+  [HttpGet("{id:guid}/performance")]
+  public async Task<ActionResult<ApiResponse<PromoPerformanceDto>>> GetPerformance(
+    Guid id,
+    [FromQuery] DateTime? from = null,
+    [FromQuery] DateTime? to = null,
+    CancellationToken cancellationToken = default)
+  {
+    var performance = await promoCostService.GetPromoPerformanceAsync(id, from, to, cancellationToken);
+    if (performance is null)
+    {
+      return NotFound(ApiResponseFactory.Failure(
+        "Không tìm thấy mã giảm giá.",
+        "not_found",
+        "Mã giảm giá không tồn tại."));
+    }
+
+    return Ok(ApiResponseFactory.Success(performance, "Lấy hiệu quả mã giảm giá thành công."));
   }
 
   /// <summary>Create a new promo code.</summary>

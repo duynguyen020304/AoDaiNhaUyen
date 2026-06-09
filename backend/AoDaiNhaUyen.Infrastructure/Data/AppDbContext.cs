@@ -45,6 +45,14 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<AdminAiAction> AdminAiActions => Set<AdminAiAction>();
   public DbSet<ToolRiskConfig> ToolRiskConfigs => Set<ToolRiskConfig>();
   public DbSet<LlmAuditLog> LlmAuditLogs => Set<LlmAuditLog>();
+  public DbSet<OrderAttribution> OrderAttributions => Set<OrderAttribution>();
+  public DbSet<CustomerEvent> CustomerEvents => Set<CustomerEvent>();
+  public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
+  public DbSet<EmailJob> EmailJobs => Set<EmailJob>();
+  public DbSet<EmailSendLog> EmailSendLogs => Set<EmailSendLog>();
+  public DbSet<Subscriber> Subscribers => Set<Subscriber>();
+  public DbSet<MarketingConsent> MarketingConsents => Set<MarketingConsent>();
+  public DbSet<OrderPromoCostSnapshot> OrderPromoCostSnapshots => Set<OrderPromoCostSnapshot>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
@@ -228,6 +236,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.Price).HasColumnType("numeric(12,2)");
       builder.Property(x => x.SalePrice).HasColumnType("numeric(12,2)");
       builder.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("active").IsRequired();
+      builder.Property(x => x.CostPrice).HasColumnType("numeric(12,2)").HasDefaultValue(0);
       builder.Property(x => x.StockQty).HasDefaultValue(0).IsRequired();
       builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
       builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
@@ -683,6 +692,146 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => x.ConversationId).HasDatabaseName("idx_llm_audit_logs_conversation_id");
       builder.HasIndex(x => x.RequestId).HasDatabaseName("idx_llm_audit_logs_request_id");
       builder.HasIndex(x => new { x.Provider, x.Model }).HasDatabaseName("idx_llm_audit_logs_provider_model");
+    });
+
+    modelBuilder.Entity<OrderAttribution>(builder =>
+    {
+      builder.ToTable("order_attributions");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.AnonymousSessionId).HasMaxLength(128);
+      builder.Property(x => x.FirstTouchSource).HasMaxLength(80);
+      builder.Property(x => x.FirstTouchMedium).HasMaxLength(80);
+      builder.Property(x => x.FirstTouchCampaign).HasMaxLength(120);
+      builder.Property(x => x.LastTouchSource).HasMaxLength(80);
+      builder.Property(x => x.LastTouchMedium).HasMaxLength(80);
+      builder.Property(x => x.LastTouchCampaign).HasMaxLength(120);
+      builder.Property(x => x.PromoCode).HasMaxLength(50);
+      builder.Property(x => x.AttributedRevenue).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.AttributedDiscount).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.AttributedShippingSubsidy).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.MetadataJson).HasColumnType("jsonb");
+      builder.HasIndex(x => x.OrderId).IsUnique();
+      builder.HasIndex(x => new { x.UserId, x.CreatedAt }).HasDatabaseName("idx_order_attributions_user_created_at");
+      builder.HasIndex(x => new { x.LastTouchSource, x.LastTouchMedium, x.LastTouchCampaign }).HasDatabaseName("idx_order_attributions_last_touch");
+      builder.HasIndex(x => x.PromoCodeId).HasDatabaseName("idx_order_attributions_promo_code_id");
+      builder.HasOne(x => x.Order).WithOne().HasForeignKey<OrderAttribution>(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.Promo).WithMany().HasForeignKey(x => x.PromoCodeId).OnDelete(DeleteBehavior.SetNull);
+    });
+
+    modelBuilder.Entity<CustomerEvent>(builder =>
+    {
+      builder.ToTable("customer_events");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.AnonymousSessionId).HasMaxLength(128);
+      builder.Property(x => x.EventType).HasMaxLength(60).IsRequired();
+      builder.Property(x => x.Source).HasMaxLength(80);
+      builder.Property(x => x.Medium).HasMaxLength(80);
+      builder.Property(x => x.Campaign).HasMaxLength(120);
+      builder.Property(x => x.MetadataJson).HasColumnType("jsonb");
+      builder.Property(x => x.IpHash).HasMaxLength(128);
+      builder.Property(x => x.UserAgentHash).HasMaxLength(128);
+      builder.HasIndex(x => new { x.UserId, x.OccurredAt }).HasDatabaseName("idx_customer_events_user_occurred_at");
+      builder.HasIndex(x => new { x.AnonymousSessionId, x.OccurredAt }).HasDatabaseName("idx_customer_events_session_occurred_at");
+      builder.HasIndex(x => new { x.EventType, x.OccurredAt }).HasDatabaseName("idx_customer_events_type_occurred_at");
+      builder.HasIndex(x => new { x.CampaignId, x.OccurredAt }).HasDatabaseName("idx_customer_events_campaign_occurred_at");
+      builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+      builder.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.SetNull);
+      builder.HasOne(x => x.ProductVariant).WithMany().HasForeignKey(x => x.ProductVariantId).OnDelete(DeleteBehavior.SetNull);
+      builder.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.SetNull);
+      builder.HasOne(x => x.PromoCode).WithMany().HasForeignKey(x => x.PromoCodeId).OnDelete(DeleteBehavior.SetNull);
+    });
+
+    modelBuilder.Entity<EmailTemplate>(builder =>
+    {
+      builder.ToTable("email_templates");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Key).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.Name).HasMaxLength(160).IsRequired();
+      builder.Property(x => x.Subject).HasMaxLength(255).IsRequired();
+      builder.Property(x => x.Preheader).HasMaxLength(255);
+      builder.Property(x => x.HtmlBody).HasColumnType("text").IsRequired();
+      builder.Property(x => x.TextBody).HasColumnType("text");
+      builder.Property(x => x.Locale).HasMaxLength(20).HasDefaultValue("vi-VN").IsRequired();
+      builder.Property(x => x.Version).HasDefaultValue(1).IsRequired();
+      builder.HasIndex(x => new { x.Key, x.Locale, x.Version }).IsUnique();
+    });
+
+    modelBuilder.Entity<EmailJob>(builder =>
+    {
+      builder.ToTable("email_jobs");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.ToEmail).HasMaxLength(150).IsRequired();
+      builder.Property(x => x.TemplateKey).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.PayloadJson).HasColumnType("jsonb").IsRequired();
+      builder.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("queued").IsRequired();
+      builder.Property(x => x.ProviderMessageId).HasMaxLength(255);
+      builder.Property(x => x.ErrorMessage).HasMaxLength(1000);
+      builder.HasIndex(x => new { x.Status, x.ScheduledAt }).HasDatabaseName("idx_email_jobs_status_scheduled_at");
+    });
+
+    modelBuilder.Entity<EmailSendLog>(builder =>
+    {
+      builder.ToTable("email_send_logs");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.ToEmail).HasMaxLength(150).IsRequired();
+      builder.Property(x => x.TemplateKey).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.Status).HasMaxLength(20).IsRequired();
+      builder.Property(x => x.ProviderMessageId).HasMaxLength(255);
+      builder.Property(x => x.ErrorMessage).HasMaxLength(1000);
+      builder.HasIndex(x => x.EmailJobId);
+      builder.HasOne(x => x.EmailJob).WithMany(x => x.SendLogs).HasForeignKey(x => x.EmailJobId).OnDelete(DeleteBehavior.Cascade);
+    });
+
+    modelBuilder.Entity<Subscriber>(builder =>
+    {
+      builder.ToTable("subscribers");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Email).HasMaxLength(150).IsRequired();
+      builder.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("pending").IsRequired();
+      builder.Property(x => x.UnsubscribeToken).HasMaxLength(128).IsRequired();
+      builder.Property(x => x.ConfirmationToken).HasMaxLength(128).IsRequired();
+      builder.HasIndex(x => x.Email).IsUnique();
+      builder.HasIndex(x => x.UnsubscribeToken).IsUnique();
+      builder.HasIndex(x => x.ConfirmationToken).IsUnique();
+      builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+    });
+
+    modelBuilder.Entity<MarketingConsent>(builder =>
+    {
+      builder.ToTable("marketing_consents");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Channel).HasMaxLength(20).HasDefaultValue("email").IsRequired();
+      builder.Property(x => x.Source).HasMaxLength(80).IsRequired();
+      builder.Property(x => x.ConsentVersion).HasMaxLength(30).HasDefaultValue("2026-01").IsRequired();
+      builder.Property(x => x.IpHash).HasMaxLength(128);
+      builder.Property(x => x.UserAgentHash).HasMaxLength(128);
+      builder.HasIndex(x => new { x.SubscriberId, x.Channel, x.IsOptIn });
+      builder.HasOne(x => x.Subscriber).WithMany(x => x.Consents).HasForeignKey(x => x.SubscriberId).OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+    });
+
+    modelBuilder.Entity<OrderPromoCostSnapshot>(builder =>
+    {
+      builder.ToTable("order_promo_cost_snapshots");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Code).HasMaxLength(50);
+      builder.Property(x => x.DiscountType).HasMaxLength(20);
+      builder.Property(x => x.DiscountValue).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.SubtotalBeforeDiscount).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.DiscountAmount).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.ShippingFeeBeforePromo).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.ShippingFeeCharged).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.ShippingSubsidy).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.TotalAfterDiscount).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.EstimatedCostOfGoods).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.EstimatedGrossProfitBeforePromo).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.EstimatedGrossProfitAfterPromo).HasColumnType("numeric(12,2)");
+      builder.Property(x => x.MarginLoss).HasColumnType("numeric(12,2)");
+      builder.HasIndex(x => new { x.PromoCodeId, x.CreatedAt }).HasDatabaseName("idx_order_promo_cost_snapshots_promo_created_at");
+      builder.HasIndex(x => x.OrderId).IsUnique();
+      builder.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.PromoCode).WithMany().HasForeignKey(x => x.PromoCodeId).OnDelete(DeleteBehavior.SetNull);
     });
 
     ApplySnakeCaseColumnNames(modelBuilder);

@@ -72,6 +72,17 @@ public sealed class PromoService(AppDbContext dbContext) : IPromoService
 
     if (orderId.HasValue)
     {
+      var updatedRows = await dbContext.PromoCodes
+        .Where(p => p.Id == promo.Id && p.IsActive && !p.IsDeleted && (p.MaxUses == 0 || p.CurrentUses < p.MaxUses))
+        .ExecuteUpdateAsync(setters => setters
+          .SetProperty(p => p.CurrentUses, p => p.CurrentUses + 1)
+          .SetProperty(p => p.UpdatedAt, now), cancellationToken);
+
+      if (updatedRows == 0)
+      {
+        return Invalid("max_uses_reached", "Mã giảm giá đã được sử dụng hết.");
+      }
+
       var orderPromo = new OrderPromoCode
       {
         OrderId = orderId.Value,
@@ -80,11 +91,6 @@ public sealed class PromoService(AppDbContext dbContext) : IPromoService
         CreatedAt = now
       };
       dbContext.OrderPromoCodes.Add(orderPromo);
-
-      var trackedPromo = await dbContext.PromoCodes
-        .FirstAsync(p => p.Id == promo.Id, cancellationToken);
-      trackedPromo.CurrentUses += 1;
-      trackedPromo.UpdatedAt = now;
     }
 
     return new PromoValidationResult(true, null, null, discountAmount, promo.FreeShipping, label);

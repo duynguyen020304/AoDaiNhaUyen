@@ -18,7 +18,7 @@ public sealed class AuthService(
   IRefreshTokenService refreshTokenService,
   IGoogleOAuthService googleOAuthService,
   IZaloOAuthService zaloOAuthService,
-  IEmailService emailService,
+  IEmailQueueService emailQueueService,
   IOptions<JwtSettings> jwtSettings,
   IOptions<EmailSettings> emailSettings,
   ILogger<AuthService> logger) : IAuthService
@@ -91,67 +91,80 @@ public sealed class AuthService(
       }
     }
 
-    if (user is null)
+    await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+    try
     {
-      user = new User
+      if (user is null)
       {
-        FullName = fullName,
-        Email = normalizedEmail,
-        Phone = phone,
-        Status = "active"
-      };
+        user = new User
+        {
+          Id = Guid.NewGuid(),
+          FullName = fullName,
+          Email = normalizedEmail,
+          Phone = phone,
+          Status = "active"
+        };
 
-      dbContext.Users.Add(user);
+        dbContext.Users.Add(user);
+
+        var customerRole = await dbContext.Roles.FirstAsync(x => x.Name == "customer", cancellationToken);
+        user.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = customerRole.Id, Role = customerRole });
+      }
+      else
+      {
+        user.FullName = fullName;
+        user.Email = normalizedEmail;
+        user.Phone = phone;
+        user.Status = "active";
+        user.EmailVerifiedAt = null;
+        user.UpdatedAt = DateTime.UtcNow;
+      }
+
+      var account = user.UserAccounts.FirstOrDefault(x => x.Provider == "credentials");
+      if (account is null)
+      {
+        account = new UserAccount
+        {
+          User = user,
+          Provider = "credentials",
+          ProviderAccountId = normalizedEmail,
+          PasswordHash = passwordHasher.HashPassword(password),
+          IsVerified = false
+        };
+
+        dbContext.UserAccounts.Add(account);
+      }
+      else
+      {
+        account.ProviderAccountId = normalizedEmail;
+        account.PasswordHash = passwordHasher.HashPassword(password);
+        account.IsVerified = false;
+        account.UpdatedAt = DateTime.UtcNow;
+      }
+
+      var verificationToken = jwtTokenService.GenerateEmailVerificationToken(user.Id);
+      var verifyLink = BuildVerifyLink(verificationToken);
+      var htmlBody = BuildEmailVerificationHtml(fullName, verifyLink);
+
+      emailQueueService.Enqueue(
+        normalizedEmail,
+        "auth.verify_email",
+        new
+        {
+          subject = "Xác thực tài khoản Ao Dai Nha Uyen",
+          trustedHtmlBody = htmlBody
+        });
+
       await dbContext.SaveChangesAsync(cancellationToken);
+      await transaction.CommitAsync(cancellationToken);
 
-      var customerRole = await dbContext.Roles.FirstAsync(x => x.Name == "customer", cancellationToken);
-      user.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = customerRole.Id, Role = customerRole });
+      return AuthResult<string>.Success("Vui lòng kiểm tra email để xác thực tài khoản.");
     }
-    else
+    catch
     {
-      user.FullName = fullName;
-      user.Email = normalizedEmail;
-      user.Phone = phone;
-      user.Status = "active";
-      user.EmailVerifiedAt = null;
-      user.UpdatedAt = DateTime.UtcNow;
+      await transaction.RollbackAsync(cancellationToken);
+      throw;
     }
-
-    var account = user.UserAccounts.FirstOrDefault(x => x.Provider == "credentials");
-    if (account is null)
-    {
-      account = new UserAccount
-      {
-        User = user,
-        Provider = "credentials",
-        ProviderAccountId = normalizedEmail,
-        PasswordHash = passwordHasher.HashPassword(password),
-        IsVerified = false
-      };
-
-      dbContext.UserAccounts.Add(account);
-    }
-    else
-    {
-      account.ProviderAccountId = normalizedEmail;
-      account.PasswordHash = passwordHasher.HashPassword(password);
-      account.IsVerified = false;
-      account.UpdatedAt = DateTime.UtcNow;
-    }
-
-    var verificationToken = jwtTokenService.GenerateEmailVerificationToken(user.Id);
-    var verifyLink = BuildVerifyLink(verificationToken);
-    var htmlBody = BuildEmailVerificationHtml(fullName, verifyLink);
-
-    await emailService.SendEmailAsync(
-      normalizedEmail,
-      "Xác thực tài khoản Ao Dai Nha Uyen",
-      htmlBody,
-      cancellationToken);
-
-    await dbContext.SaveChangesAsync(cancellationToken);
-
-    return AuthResult<string>.Success("Vui lòng kiểm tra email để xác thực tài khoản.");
   }
 
   public async Task<AuthResult<AuthSessionDto>> LoginAsync(
@@ -508,11 +521,15 @@ public sealed class AuthService(
       var resetLink = BuildPasswordResetLink(account.UserId, token);
       var htmlBody = BuildPasswordResetHtml(account.User.FullName, resetLink);
 
-      await emailService.SendEmailAsync(
+      await emailQueueService.QueueAsync(
         normalizedEmail,
-        "Đặt lại mật khẩu Ao Dai Nha Uyen",
-        htmlBody,
-        cancellationToken);
+        "auth.reset_password",
+        new
+        {
+          subject = "Đặt lại mật khẩu Ao Dai Nha Uyen",
+          trustedHtmlBody = htmlBody
+        },
+        cancellationToken: cancellationToken);
     }
     catch (Exception ex)
     {

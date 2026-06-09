@@ -4,6 +4,7 @@ using System.Net;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260609053417_AddCustomerEvents")]
+    partial class AddCustomerEvents
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1817,130 +1820,6 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
                             t.HasCheckConstraint("ck_orders_total", "total_amount >= 0");
                         });
-                });
-
-            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.OrderAttribution", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AnonymousSessionId")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("anonymous_session_id");
-
-                    b.Property<decimal>("AttributedDiscount")
-                        .HasColumnType("numeric(12,2)")
-                        .HasColumnName("attributed_discount");
-
-                    b.Property<decimal>("AttributedRevenue")
-                        .HasColumnType("numeric(12,2)")
-                        .HasColumnName("attributed_revenue");
-
-                    b.Property<decimal>("AttributedShippingSubsidy")
-                        .HasColumnType("numeric(12,2)")
-                        .HasColumnName("attributed_shipping_subsidy");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<DateTime?>("FirstTouchAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("first_touch_at");
-
-                    b.Property<string>("FirstTouchCampaign")
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)")
-                        .HasColumnName("first_touch_campaign");
-
-                    b.Property<string>("FirstTouchMedium")
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("first_touch_medium");
-
-                    b.Property<string>("FirstTouchSource")
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("first_touch_source");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_deleted");
-
-                    b.Property<DateTime?>("LastTouchAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_touch_at");
-
-                    b.Property<string>("LastTouchCampaign")
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)")
-                        .HasColumnName("last_touch_campaign");
-
-                    b.Property<string>("LastTouchMedium")
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("last_touch_medium");
-
-                    b.Property<string>("LastTouchSource")
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("last_touch_source");
-
-                    b.Property<string>("MetadataJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("metadata_json");
-
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("order_id");
-
-                    b.Property<string>("PromoCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("promo_code");
-
-                    b.Property<Guid?>("PromoCodeId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("promo_code_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderId")
-                        .IsUnique();
-
-                    b.HasIndex("PromoCodeId")
-                        .HasDatabaseName("idx_order_attributions_promo_code_id");
-
-                    b.HasIndex("UserId", "CreatedAt")
-                        .HasDatabaseName("idx_order_attributions_user_created_at");
-
-                    b.HasIndex("LastTouchSource", "LastTouchMedium", "LastTouchCampaign")
-                        .HasDatabaseName("idx_order_attributions_last_touch");
-
-                    b.ToTable("order_attributions", (string)null);
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.OrderItem", b =>
@@ -4158,32 +4037,6 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Address");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.OrderAttribution", b =>
-                {
-                    b.HasOne("AoDaiNhaUyen.Domain.Entities.Order", "Order")
-                        .WithOne()
-                        .HasForeignKey("AoDaiNhaUyen.Domain.Entities.OrderAttribution", "OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("AoDaiNhaUyen.Domain.Entities.PromoCode", "Promo")
-                        .WithMany()
-                        .HasForeignKey("PromoCodeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("AoDaiNhaUyen.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-
-                    b.Navigation("Promo");
 
                     b.Navigation("User");
                 });

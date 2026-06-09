@@ -14,6 +14,7 @@ import { useRemoveCartItemMutation, useUpdateCartItemMutation } from '../../hook
 import { useAddressesQuery } from '../../hooks/user/useUserQueries';
 import { queryKeys } from '../../lib/queryKeys';
 import { useToast } from '../../components/Toast/useToast';
+import { trackEvent } from '../../api/events';
 import { useAuth } from '../../auth/useAuth';
 
 export default function CartPage() {
@@ -86,6 +87,7 @@ export default function CartPage() {
       return;
     }
 
+    void trackEvent({ eventType: 'checkout_started', metadata: { promoCode: appliedPromoCode, itemCount: cart?.totalItemCount ?? 0 } });
     try {
       setCheckingOut(true);
       const result = await checkout({
@@ -94,6 +96,7 @@ export default function CartPage() {
         paymentMethod: 'cash',
         promoCode: appliedPromoCode ?? undefined,
       });
+      void trackEvent({ eventType: 'checkout_completed', orderId: result.orderId, metadata: { orderCode: result.orderCode, totalAmount: result.totalAmount, promoCode: appliedPromoCode } });
       queryClient.setQueryData<Cart | null>(queryKeys.cart.current, (current) => current ? { ...current, items: [], subtotal: 0, totalItemCount: 0 } : current);
       void queryClient.invalidateQueries({ queryKey: queryKeys.orders.list });
       showToast(`Thanh toán thành công. Mã đơn hàng: ${result.orderCode}`);

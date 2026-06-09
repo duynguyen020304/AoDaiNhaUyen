@@ -208,11 +208,22 @@ public sealed class AuthServiceTests
     public string HashToken(string token) => token;
   }
 
-  private sealed class StubEmailService : IEmailService
+  private sealed class StubEmailService : IEmailQueueService
   {
-    public Task SendEmailAsync(string toEmail, string subject, string htmlBody, CancellationToken cancellationToken = default)
+    public Task<Guid> QueueAsync(string toEmail, string templateKey, object payload, DateTime? scheduledAt = null, CancellationToken cancellationToken = default)
     {
-      return Task.CompletedTask;
+      return Task.FromResult(Guid.NewGuid());
+    }
+
+    public EmailJob Enqueue(string toEmail, string templateKey, object payload, DateTime? scheduledAt = null)
+    {
+      return new EmailJob
+      {
+        ToEmail = toEmail,
+        TemplateKey = templateKey,
+        PayloadJson = "{}",
+        ScheduledAt = scheduledAt ?? DateTime.UtcNow
+      };
     }
   }
 }

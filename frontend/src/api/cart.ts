@@ -1,6 +1,7 @@
 import { request } from './client';
 import { queryClient } from '../lib/queryClient';
 import { queryKeys } from '../lib/queryKeys';
+import { trackEvent } from './events';
 import type { AddCartItemPayload, Cart, UpdateCartItemPayload } from '../types/cart';
 import { emptyCartFrom, normalizeCartAssets } from '../utils/cartMapping';
 
@@ -14,6 +15,7 @@ export async function addCartItem(payload: AddCartItemPayload): Promise<Cart> {
     body: JSON.stringify(payload),
   });
   updateCartCache(cart);
+  void trackEvent({ eventType: 'added_to_cart', productVariantId: payload.variantId, metadata: { quantity: payload.quantity } });
   return cart;
 }
 
