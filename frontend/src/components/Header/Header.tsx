@@ -20,6 +20,7 @@ const navLinks: NavLinkConfig[] = [
   { label: '\u2728 THỬ ĐỒ AI', to: '/ai-tryon', matchPath: '/ai-tryon' },
   { label: 'Áo dài', to: '/products', matchPath: '/products' },
   { label: 'Phụ kiện', to: '/accessories', matchPath: '/accessories' },
+  { label: 'Bài viết', to: '/blog/', matchPath: '/blog' },
 ];
 
 const NAV_FALLBACK_CATEGORIES: HeaderCategory[] = [
@@ -119,7 +120,7 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
               ? categoriesBySlug.get('phu-kien')
               : undefined;
           const isCategoryActive = category?.children.some((child) => child.slug === activeCategory) ?? false;
-          const isActive = location.pathname === link.matchPath || isCategoryActive;
+          const isActive = location.pathname === link.matchPath || location.pathname.startsWith(`${link.matchPath}/`) || isCategoryActive;
           return (
             <motion.div
               key={link.to}

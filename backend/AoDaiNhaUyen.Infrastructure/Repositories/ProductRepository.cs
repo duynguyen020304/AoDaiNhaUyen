@@ -68,4 +68,24 @@ public sealed class ProductRepository(AppDbContext dbContext) : IProductReposito
       .Include(p => p.Images)
       .FirstOrDefaultAsync(p => p.Slug == slug && p.Status == "active" && p.IsPublic, cancellationToken);
   }
+
+  public async Task<IReadOnlyList<Product>> GetBySlugsAsync(IReadOnlyList<string> slugs, CancellationToken cancellationToken = default)
+  {
+    var normalized = slugs
+      .Where(s => !string.IsNullOrWhiteSpace(s))
+      .Select(s => s.Trim())
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .Take(12)
+      .ToList();
+
+    if (normalized.Count == 0) return [];
+
+    return await dbContext.Products
+      .AsNoTracking()
+      .Include(p => p.Category)
+      .Include(p => p.Variants)
+      .Include(p => p.Images)
+      .Where(p => normalized.Contains(p.Slug) && p.Status == "active" && p.IsPublic)
+      .ToListAsync(cancellationToken);
+  }
 }

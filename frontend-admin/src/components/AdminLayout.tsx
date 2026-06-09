@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, FileSearch } from 'lucide-react'
+import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, FileSearch, Newspaper } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { to: '/admin/orders', icon: ClipboardList, label: 'Đơn hàng', end: false },
   { to: '/admin/categories', icon: FolderTree, label: 'Danh mục', end: false },
   { to: '/admin/promos', icon: Tag, label: 'Mã giảm giá', end: false },
+  { to: '/admin/blog', icon: Newspaper, label: 'Bài đăng', end: false },
   { to: '/admin/users', icon: Users, label: 'Người dùng', end: false },
   { to: '/admin/roles', icon: Shield, label: 'Vai trò', end: false },
   { to: '/admin/media', icon: Image, label: 'Hình ảnh', end: false },

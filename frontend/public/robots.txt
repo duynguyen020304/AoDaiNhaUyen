@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Allow: /blog/
+Sitemap: https://aodainhauyen.io.vn/api/v1/sitemap/blog
+
+User-agent: GPTBot
+Allow: /blog/
+
+User-agent: OAI-SearchBot
+Allow: /blog/
+
+User-agent: ClaudeBot
+Allow: /blog/
+
+User-agent: PerplexityBot
+Allow: /blog/
+
+User-agent: CCBot
+Disallow: /

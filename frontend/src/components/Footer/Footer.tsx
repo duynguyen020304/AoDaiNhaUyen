@@ -27,7 +27,7 @@ export default function Footer() {
           <a href="/collection">Về Nhã Uyên</a>
           <a href="#collection">Chính sách đổi trả</a>
           <a href="#collection">Hướng dẫn chọn size</a>
-          <a href="#collection">Blog thời trang</a>
+          <a href="/blog/">Blog thời trang</a>
         </motion.section>
         <motion.section variants={fadeUp} whileHover={cardHover.hover} transition={{ duration: 0.24, ease: 'easeOut' }}>
           <h3>Pháp Lý</h3>

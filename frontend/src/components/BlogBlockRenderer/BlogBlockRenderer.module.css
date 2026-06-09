@@ -1,0 +1,23 @@
+.content { max-width: 72ch; margin: 0 auto; display: grid; gap: 24px; color: var(--ink); }
+.content h2, .content h3 { color: var(--wine); line-height: 1.2; margin: 22px 0 0; }
+.content h2 { font-size: clamp(1.7rem, 3vw, 2.4rem); }
+.content h3 { font-size: clamp(1.3rem, 2vw, 1.7rem); }
+.content p { font-size: 1.05rem; line-height: 1.85; color: #344054; }
+.image { width: 100%; height: auto; border-radius: 24px; object-fit: cover; display: block; }
+.full { max-width: min(1100px, 92vw); width: min(1100px, 92vw); margin-left: 50%; transform: translateX(-50%); }
+figcaption { margin-top: 8px; color: var(--muted); font-size: .9rem; text-align: center; }
+.gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.video, .embed { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 24px; background: #111; }
+.callout, .step { border-left: 4px solid var(--burgundy); background: rgba(114,19,17,.06); border-radius: 18px; padding: 18px; line-height: 1.7; }
+.tip { border-color: #b7791f; background: rgba(255,212,0,.14); }
+.warning { border-color: #c2410c; background: rgba(194,65,12,.08); }
+blockquote { margin: 0; padding: 28px; border-radius: 24px; background: var(--wine); color: #fff; font-size: 1.25rem; line-height: 1.65; }
+cite { display: block; margin-top: 12px; font-size: .9rem; opacity: .8; }
+pre { overflow-x: auto; border-radius: 18px; padding: 18px; background: #101828; color: #f9fafb; }
+.productSpotlight { border: 1px solid rgba(114,19,17,.12); border-radius: 24px; padding: 20px; background: rgba(255,248,231,.7); }
+.productGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.productCard { display: grid; gap: 8px; color: var(--ink); text-decoration: none; }
+.productCard strong { color: var(--wine); }
+.productCard span { color: var(--burgundy); font-weight: 700; }
+.productImage { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 18px; }
+@media (max-width: 768px) { .content { max-width: 100%; } .gallery { grid-template-columns: 1fr; } .full { width: 100%; max-width: 100%; } }

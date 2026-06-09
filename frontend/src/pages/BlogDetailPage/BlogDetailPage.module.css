@@ -1,0 +1,17 @@
+.page { background: #fff; min-height: 100dvh; padding: 128px clamp(18px, 5vw, 72px) 80px; }
+.hero { max-width: 980px; margin: 0 auto 30px; }
+.hero nav { display: flex; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: .95rem; margin-bottom: 20px; }
+.hero a { color: var(--burgundy); text-decoration: none; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.tags a { border: 1px solid rgba(114,19,17,.16); border-radius: 999px; padding: 6px 12px; background: rgba(255,212,0,.14); }
+h1 { margin: 0; max-width: 12ch; color: var(--wine); font-size: clamp(2.8rem, 8vw, 6.8rem); line-height: .98; letter-spacing: -.06em; }
+.hero p { max-width: 65ch; color: #344054; font-size: 1.15rem; line-height: 1.8; }
+.byline, .reviewed { color: var(--muted); font-size: .95rem; }
+.heroImage { max-width: 1160px; margin: 0 auto 36px; }
+.image { width: 100%; height: auto; display: block; border-radius: 32px; object-fit: cover; box-shadow: 0 28px 80px rgba(16,24,40,.14); }
+.authorBio { max-width: 72ch; margin: 0 auto 28px; border-left: 4px solid var(--gold); background: #fff8d8; border-radius: 18px; padding: 18px; color: #344054; line-height: 1.7; }
+.state { max-width: 960px; margin: 160px auto; border-radius: 24px; padding: 40px; text-align: center; color: var(--muted); background: #f7f4f2; }
+.related { max-width: 1160px; margin: 72px auto 0; }
+.related h2 { color: var(--wine); font-size: clamp(1.8rem, 3vw, 2.6rem); }
+.relatedGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+@media (max-width: 640px) { .page { padding-top: 104px; } h1 { max-width: 100%; } .image { border-radius: 22px; } }

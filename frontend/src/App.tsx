@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, Routes, Route, useLocation, useNavigate, useParams } from 'react-router-dom';
 import Header from './components/Header/Header';
 import Footer from './components/Footer/Footer';
 import ChatWidget from './components/ChatWidget/ChatWidget';
@@ -11,6 +11,8 @@ import AccessoriesPage from './pages/AccessoriesPage/AccessoriesPage';
 import CartPage from './pages/CartPage/CartPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import ProductDetailPage from './pages/ProductDetailPage/ProductDetailPage';
+import BlogPage from './pages/BlogPage/BlogPage';
+import BlogDetailPage from './pages/BlogDetailPage/BlogDetailPage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import AccountPage, { type AccountView } from './pages/AccountPage/AccountPage';
 import AuthGoogleCallbackPage from './pages/AuthGoogleCallbackPage/AuthGoogleCallbackPage';
@@ -34,6 +36,11 @@ function ScrollToTop() {
   }, [location.key]);
 
   return null;
+}
+
+function BlogRedirectToSlashed() {
+  const { slug } = useParams();
+  return <Navigate to={`/blog/${slug ?? ''}/`} replace />;
 }
 
 function resolveAccountView(pathname: string): AccountView {
@@ -136,6 +143,10 @@ export default function App() {
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/accessories" element={<AccessoriesPage />} />
         <Route path="/product/:slug" element={<ProductDetailPage />} />
+        <Route path="/blog" element={<Navigate to="/blog/" replace />} />
+        <Route path="/blog/" element={<BlogPage />} />
+        <Route path="/blog/:slug" element={<BlogRedirectToSlashed />} />
+        <Route path="/blog/:slug/" element={<BlogDetailPage />} />
         <Route path="/cart" element={status === 'anonymous' ? <HomePage /> : <CartPage />} />
         <Route path="/login" element={<HomePage />} />
         <Route path="/newsletter/confirm" element={<UnsubscribePage mode="confirm" />} />

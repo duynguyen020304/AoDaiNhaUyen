@@ -20,5 +20,8 @@ backend/**/.env
 # Backup files
 *.old.*
 
+
+# Mux build artifacts
+.mux-build/
 # Playwright MCP
 .playwright-mcp/

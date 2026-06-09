@@ -18,6 +18,8 @@ import { OrdersPage } from '@/pages/OrdersPage'
 import { ToolRiskPage } from '@/pages/ToolRiskPage'
 import { LlmLogsPage } from '@/pages/LlmLogsPage'
 import { PromosPage } from '@/pages/PromosPage'
+import { BlogListPage } from '@/pages/BlogListPage'
+import { BlogFormPage } from '@/pages/BlogFormPage'
 
 export function App() {
   const status = useAuthStore((s) => s.status)
@@ -54,6 +56,9 @@ export function App() {
             <Route path="products/:id/edit" element={<ProductFormPage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="promos" element={<PromosPage />} />
+            <Route path="blog" element={<BlogListPage />} />
+            <Route path="blog/new" element={<BlogFormPage />} />
+            <Route path="blog/:id/edit" element={<BlogFormPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="roles" element={<RolesPage />} />
             <Route path="media" element={<MediaPage />} />

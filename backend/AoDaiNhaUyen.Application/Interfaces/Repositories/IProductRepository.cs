@@ -14,4 +14,5 @@ public interface IProductRepository
     CancellationToken cancellationToken = default);
 
   Task<Product?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default);
+  Task<IReadOnlyList<Product>> GetBySlugsAsync(IReadOnlyList<string> slugs, CancellationToken cancellationToken = default);
 }

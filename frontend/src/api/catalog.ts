@@ -45,6 +45,11 @@ export function getProducts(params: GetProductsParams = {}): Promise<PaginatedPr
   return requestPaginated<ProductListItem[]>(`/api/v1/products${query ? `?${query}` : ''}`);
 }
 
+export function getProductsBySlugs(slugs: string[]): Promise<ProductListItem[]> {
+  const query = new URLSearchParams({ slugs: slugs.join(',') });
+  return request<ProductListItem[]>(`/api/v1/products/batch?${query}`);
+}
+
 export function getProductBySlug(slug: string): Promise<ProductDetail> {
   return request<ProductDetail>(`/api/v1/products/${slug}`);
 }

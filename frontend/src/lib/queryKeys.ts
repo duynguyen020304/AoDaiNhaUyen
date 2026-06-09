@@ -12,6 +12,13 @@ export const queryKeys = {
     list: (params: GetProductsParams = {}) => ['products', 'list', params] as const,
     detail: (slug: string) => ['products', 'detail', slug] as const,
   },
+  blog: {
+    all: ['blog'] as const,
+    list: (params: unknown = {}) => ['blog', 'list', params] as const,
+    detail: (slug: string) => ['blog', 'detail', slug] as const,
+    related: (slug: string) => ['blog', 'related', slug] as const,
+    tags: ['blog', 'tags'] as const,
+  },
   cart: {
     current: ['cart'] as const,
   },

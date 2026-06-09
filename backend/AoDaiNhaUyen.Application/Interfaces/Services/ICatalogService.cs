@@ -16,4 +16,5 @@ public interface ICatalogService
     CancellationToken cancellationToken = default);
 
   Task<ProductDetailDto?> GetProductBySlugAsync(string slug, CancellationToken cancellationToken = default);
+  Task<IReadOnlyList<ProductListItemDto>> GetProductsBySlugsAsync(IReadOnlyList<string> slugs, CancellationToken cancellationToken = default);
 }

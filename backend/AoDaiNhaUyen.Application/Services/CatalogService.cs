@@ -160,6 +160,47 @@ public sealed class CatalogService(
     return new PagedResult<ProductListItemDto>(enrichedItems, totalCount, validatedPage, validatedPageSize);
   }
 
+  public async Task<IReadOnlyList<ProductListItemDto>> GetProductsBySlugsAsync(IReadOnlyList<string> slugs, CancellationToken cancellationToken = default)
+  {
+    var products = await productRepository.GetBySlugsAsync(slugs, cancellationToken);
+    var requestedOrder = slugs.Select((slug, index) => new { slug, index }).ToDictionary(x => x.slug, x => x.index, StringComparer.OrdinalIgnoreCase);
+    var result = new List<ProductListItemDto>();
+
+    foreach (var product in products.OrderBy(p => requestedOrder.GetValueOrDefault(p.Slug, int.MaxValue)))
+    {
+      var primaryVariant = product.Variants
+        .OrderByDescending(v => v.IsDefault)
+        .ThenBy(v => v.Id)
+        .FirstOrDefault();
+      var primaryImageEntity = product.Images
+        .OrderBy(i => i.SortOrder)
+        .FirstOrDefault(i => i.IsPrimary) ?? product.Images.OrderBy(i => i.SortOrder).FirstOrDefault();
+      var resolvedUrl = primaryImageEntity is not null
+        ? await imageVisibilityService.ResolveUrlAsync(primaryImageEntity.ImageUrl, primaryImageEntity.IsPublic, primaryImageEntity.PublicObjectKey, cancellationToken)
+        : null;
+
+      result.Add(new ProductListItemDto(
+        product.Id,
+        product.Name,
+        product.Slug,
+        product.ProductType,
+        product.Status,
+        product.ShortDescription,
+        primaryVariant?.Price ?? 0,
+        primaryVariant?.SalePrice,
+        product.Category.Slug,
+        product.IsFeatured,
+        primaryVariant?.StockQty ?? 0,
+        resolvedUrl,
+        primaryVariant?.Id,
+        primaryVariant?.Sku,
+        0,
+        0));
+    }
+
+    return result;
+  }
+
   public async Task<ProductDetailDto?> GetProductBySlugAsync(string slug, CancellationToken cancellationToken = default)
   {
     var product = await productRepository.GetBySlugAsync(slug, cancellationToken);

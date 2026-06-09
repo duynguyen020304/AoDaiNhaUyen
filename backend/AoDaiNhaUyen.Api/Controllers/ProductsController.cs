@@ -34,6 +34,14 @@ public sealed class ProductsController(ICatalogService catalogService) : Control
       result.TotalCount));
   }
 
+  [HttpGet("batch")]
+  public async Task<IActionResult> GetBatch([FromQuery] string slugs, CancellationToken cancellationToken)
+  {
+    var values = slugs.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(12).ToList();
+    var products = await catalogService.GetProductsBySlugsAsync(values, cancellationToken);
+    return Ok(ApiResponseFactory.Success(products));
+  }
+
   [HttpGet("{slug}")]
   public async Task<IActionResult> GetBySlug(string slug, CancellationToken cancellationToken)
   {

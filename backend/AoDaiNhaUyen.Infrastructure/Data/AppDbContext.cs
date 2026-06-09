@@ -52,6 +52,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<EmailSendLog> EmailSendLogs => Set<EmailSendLog>();
   public DbSet<Subscriber> Subscribers => Set<Subscriber>();
   public DbSet<MarketingConsent> MarketingConsents => Set<MarketingConsent>();
+  public DbSet<BlogPost> BlogPosts => Set<BlogPost>();
   public DbSet<OrderPromoCostSnapshot> OrderPromoCostSnapshots => Set<OrderPromoCostSnapshot>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -832,6 +833,32 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => x.OrderId).IsUnique();
       builder.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
       builder.HasOne(x => x.PromoCode).WithMany().HasForeignKey(x => x.PromoCodeId).OnDelete(DeleteBehavior.SetNull);
+    });
+
+    modelBuilder.Entity<BlogPost>(builder =>
+    {
+      builder.ToTable("blog_posts");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Title).HasMaxLength(500).IsRequired();
+      builder.Property(x => x.Slug).HasMaxLength(500).IsRequired();
+      builder.Property(x => x.Excerpt).IsRequired();
+      builder.Property(x => x.FeaturedImage).HasMaxLength(1000);
+      builder.Property(x => x.Template).HasConversion<string>().HasMaxLength(50).IsRequired();
+      builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+      builder.Property(x => x.Content).HasColumnType("jsonb").IsRequired();
+      builder.Property(x => x.Tags).HasColumnType("jsonb").IsRequired();
+      builder.Property(x => x.AuthorNameOverride).HasMaxLength(200);
+      builder.Property(x => x.ReviewedBy).HasMaxLength(200);
+      builder.Property(x => x.MetaTitle).HasMaxLength(200);
+      builder.Property(x => x.MetaDescription).HasMaxLength(500);
+      builder.Property(x => x.CanonicalUrl).HasMaxLength(2000);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.Slug).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_blog_posts_slug_unique");
+      builder.HasIndex(x => new { x.Status, x.PublishedAt }).HasDatabaseName("idx_blog_posts_status_published_at");
+      builder.HasIndex(x => x.AuthorId).HasDatabaseName("idx_blog_posts_author_id");
+      builder.HasIndex(x => x.Tags).HasMethod("gin").HasDatabaseName("idx_blog_posts_tags_gin");
+      builder.HasOne(x => x.Author).WithMany().HasForeignKey(x => x.AuthorId).OnDelete(DeleteBehavior.SetNull);
     });
 
     ApplySnakeCaseColumnNames(modelBuilder);

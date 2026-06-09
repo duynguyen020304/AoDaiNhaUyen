@@ -17,6 +17,11 @@ export const queryKeys = {
   products: {
     root: ['products'] as const,
   },
+  blog: {
+    root: ['blog'] as const,
+    list: (params?: unknown) => ['blog', 'list', params] as const,
+    detail: (id: string) => ['blog', 'detail', id] as const,
+  },
   categories: {
     root: ['categories'] as const,
   },

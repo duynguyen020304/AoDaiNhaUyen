@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { HelmetProvider } from 'react-helmet-async';
 import App from './App';
 import { AuthProvider } from './auth/AuthContext';
 import { ToastProvider } from './components/Toast/ToastContext';
@@ -22,14 +23,16 @@ createRoot(document.getElementById('root')!).render(
         },
       }}
     >
-      <BrowserRouter>
+      <HelmetProvider>
+        <BrowserRouter>
         <AuthProvider>
           <ToastProvider>
             <App />
             {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
           </ToastProvider>
         </AuthProvider>
-      </BrowserRouter>
+        </BrowserRouter>
+      </HelmetProvider>
     </PersistQueryClientProvider>
   </StrictMode>,
 );

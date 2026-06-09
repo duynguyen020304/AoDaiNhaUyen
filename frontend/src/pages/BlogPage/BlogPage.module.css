@@ -1,0 +1,15 @@
+.page { background: linear-gradient(180deg, #fff 0%, #f7f4f2 100%); min-height: 100dvh; padding: 128px clamp(18px, 5vw, 72px) 72px; }
+.hero { max-width: 960px; margin: 0 auto 34px; text-align: left; }
+.hero nav { display: flex; gap: 8px; color: var(--muted); font-size: .95rem; margin-bottom: 18px; }
+.hero a { color: var(--burgundy); text-decoration: none; }
+.hero h1 { margin: 0; color: var(--wine); font-size: clamp(3rem, 9vw, 7rem); line-height: .95; letter-spacing: -.06em; }
+.hero p { max-width: 62ch; color: var(--muted); font-size: 1.1rem; line-height: 1.8; }
+.filters { max-width: 1120px; margin: 0 auto 28px; display: flex; flex-wrap: wrap; gap: 10px; }
+.filters button, .pagination button { border: 1px solid rgba(114,19,17,.18); background: #fff; color: var(--wine); border-radius: 999px; padding: 10px 16px; cursor: pointer; }
+.filters .active { background: var(--wine); color: #fff; }
+.grid { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.state { max-width: 1120px; margin: 24px auto; border: 1px dashed rgba(114,19,17,.18); border-radius: 24px; padding: 34px; text-align: center; color: var(--muted); background: #fff; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 36px; }
+.pagination button:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 920px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .page { padding-top: 104px; } .grid { grid-template-columns: 1fr; } }
