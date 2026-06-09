@@ -7,6 +7,7 @@ import type { HeaderCategory } from '../../types/catalog';
 import { useAuth } from '../../auth/useAuth';
 import { useCartQuery } from '../../hooks/cart/useCartQueries';
 import { useHeaderCategoriesQuery } from '../../hooks/catalog/useCatalogQueries';
+import { useBlogTags } from '../../hooks/blog/useBlogQueries';
 
 interface NavLinkConfig {
   label: string;
@@ -61,6 +62,7 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
   const navigate = useNavigate();
   const { status, user, logout } = useAuth();
   const categoriesQuery = useHeaderCategoriesQuery();
+  const blogTagsQuery = useBlogTags();
   const cartQuery = useCartQuery(status === 'authenticated');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const categories = categoriesQuery.data && categoriesQuery.data.length > 0
@@ -119,6 +121,10 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
             : link.to === '/accessories'
               ? categoriesBySlug.get('phu-kien')
               : undefined;
+          const isBlog = link.to === '/blog/';
+          const blogTags = blogTagsQuery.data ?? [];
+          const hasDropdown = category !== undefined || (isBlog && blogTags.length > 0);
+          const currentBlogTag = isBlog ? new URLSearchParams(location.search).get('tag') : null;
           const isCategoryActive = category?.children.some((child) => child.slug === activeCategory) ?? false;
           const isActive = location.pathname === link.matchPath || location.pathname.startsWith(`${link.matchPath}/`) || isCategoryActive;
           return (
@@ -127,9 +133,9 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
               className={`${styles.navItem} ${openDropdown === link.to ? styles.dropdownOpen : ''}`}
               variants={fadeUp}
               whileHover={{ y: -1 }}
-              onMouseEnter={() => setOpenDropdown(category ? link.to : null)}
+              onMouseEnter={() => setOpenDropdown(hasDropdown ? link.to : null)}
               onMouseLeave={() => setOpenDropdown(null)}
-              onFocus={() => setOpenDropdown(category ? link.to : null)}
+              onFocus={() => setOpenDropdown(hasDropdown ? link.to : null)}
               onBlur={(event) => {
                 if (!event.currentTarget.contains(event.relatedTarget)) {
                   setOpenDropdown(null);
@@ -146,29 +152,50 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
                 ) : null}
                 <span className={styles.navLabel}>
                   {link.label}
-                  {category ? <span className={styles.caret}></span> : null}
+                  {hasDropdown ? <span className={styles.caret}></span> : null}
                 </span>
               </a>
-              {category && category.children.length > 0 ? (
+              {hasDropdown ? (
                 <div className={styles.dropdown}>
-                  {category.children.map((child) => {
-                    const targetPath = category.slug === 'ao-dai' ? '/products' : '/accessories';
-                    const target = `${targetPath}?category=${child.slug}`;
-                    return (
-                      <a
-                        key={child.slug}
-                        className={`${styles.dropdownLink} ${activeCategory === child.slug ? styles.dropdownActive : ''}`}
-                        href={target}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          setOpenDropdown(null);
-                          navigate(target);
-                        }}
-                      >
-                        {child.name}
-                      </a>
-                    );
-                  })}
+                  {category && category.children.length > 0
+                    ? category.children.map((child) => {
+                        const targetPath = category.slug === 'ao-dai' ? '/products' : '/accessories';
+                        const target = `${targetPath}?category=${child.slug}`;
+                        return (
+                          <a
+                            key={child.slug}
+                            className={`${styles.dropdownLink} ${activeCategory === child.slug ? styles.dropdownActive : ''}`}
+                            href={target}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              setOpenDropdown(null);
+                              navigate(target);
+                            }}
+                          >
+                            {child.name}
+                          </a>
+                        );
+                      })
+                    : null}
+                  {isBlog && blogTags.length > 0
+                    ? blogTags.map((tag) => {
+                        const target = `/blog/?tag=${encodeURIComponent(tag)}`;
+                        return (
+                          <a
+                            key={tag}
+                            className={`${styles.dropdownLink} ${currentBlogTag === tag ? styles.dropdownActive : ''}`}
+                            href={target}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              setOpenDropdown(null);
+                              navigate(target);
+                            }}
+                          >
+                            {tag}
+                          </a>
+                        );
+                      })
+                    : null}
                 </div>
               ) : null}
             </motion.div>
