@@ -5,6 +5,7 @@ import { uploadBlogImage } from '@/api/blog'
 import { useBlogStore } from '@/stores/blogStore'
 import { blogTemplates, type BlogBlock, type BlogPostPayload, type BlogStatus, type BlogTemplate } from '@/types/blog'
 import { BlockEditor } from '@/components/blog/BlockEditor'
+import { BlogPreview } from '@/components/blog/BlogPreview'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -48,6 +49,7 @@ export function BlogFormPage() {
   const [saving, setSaving] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [tagsInput, setTagsInput] = useState('')
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
   const [form, setForm] = useState<BlogPostPayload>({
     title: '',
     slug: '',
@@ -165,9 +167,39 @@ export function BlogFormPage() {
         </div>
       </div>
 
+      <div className="flex border-b border-slate-200 gap-4">
+        <button
+          type="button"
+          className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'edit'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+          }`}
+          onClick={() => setActiveTab('edit')}
+        >
+          Chỉnh sửa bài đăng
+        </button>
+        <button
+          type="button"
+          className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'preview'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+          }`}
+          onClick={() => {
+            // Sync tags array into the form before previewing
+            patch({ tags: splitTags(tagsInput) })
+            setActiveTab('preview')
+          }}
+        >
+          Xem trước bài viết
+        </button>
+      </div>
+
       {error && <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      {activeTab === 'edit' ? (
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
           <section className="rounded-xl border bg-white p-4 space-y-4">
             <h2 className="font-semibold">Thông tin chính</h2>
@@ -276,6 +308,9 @@ export function BlogFormPage() {
           </section>
         </aside>
       </div>
+      ) : (
+        <BlogPreview post={form} />
+      )}
     </div>
   )
 }
