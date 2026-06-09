@@ -5,6 +5,8 @@ using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace AoDaiNhaUyen.Tests.Controllers;
@@ -140,7 +142,11 @@ public sealed class ChatControllerTests
 
   private static ChatController BuildController(IStylistChatService stylistChatService)
   {
-    var controller = new ChatController(stylistChatService)
+    var controller = new ChatController(
+      stylistChatService,
+      new StubImageUploadValidator(),
+      new StubEnvironment(),
+      NullLogger<ChatController>.Instance)
     {
       ControllerContext = new ControllerContext
       {
@@ -163,6 +169,22 @@ public sealed class ChatControllerTests
   private static readonly Guid A201 = Guid.Parse("c2012012-0120-1201-2012-012012012012");
   private static readonly Guid A202 = Guid.Parse("c2022022-0220-2202-2022-022022022022");
   private static readonly Guid A203 = Guid.Parse("c2032032-0320-3203-2032-032032032032");
+
+  private sealed class StubImageUploadValidator : IImageUploadValidator
+  {
+    public ImageUploadValidationResult Validate(string? contentType, byte[] bytes, long declaredLength, long maxBytes) =>
+      ImageUploadValidationResult.Success(contentType ?? "image/png");
+  }
+
+  private sealed class StubEnvironment : IWebHostEnvironment
+  {
+    public string EnvironmentName { get; set; } = "Development";
+    public string ApplicationName { get; set; } = "Tests";
+    public string WebRootPath { get; set; } = string.Empty;
+    public Microsoft.Extensions.FileProviders.IFileProvider WebRootFileProvider { get; set; } = new Microsoft.Extensions.FileProviders.NullFileProvider();
+    public string ContentRootPath { get; set; } = string.Empty;
+    public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } = new Microsoft.Extensions.FileProviders.NullFileProvider();
+  }
 
   private sealed class StubStylistChatService : IStylistChatService
   {

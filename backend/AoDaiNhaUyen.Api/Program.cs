@@ -15,6 +15,9 @@ using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
 using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
 using Microsoft.Extensions.FileProviders;
 using System.Security.Claims;
+using System.Threading.RateLimiting;
+using AoDaiNhaUyen.Api.Responses;
+using Microsoft.AspNetCore.RateLimiting;
 
 var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env");
 if (File.Exists(envPath))
@@ -122,6 +125,62 @@ builder.Services.AddCors(options =>
       .AllowCredentials();
     });
 });
+builder.Services.AddRateLimiter(options =>
+{
+  options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+  options.OnRejected = async (context, cancellationToken) =>
+  {
+    context.HttpContext.Response.ContentType = "application/json";
+    await context.HttpContext.Response.WriteAsJsonAsync(
+      ApiResponseFactory.Failure(
+        "Quá nhiều yêu cầu",
+        "rate_limited",
+        "Vui lòng thử lại sau."),
+      cancellationToken);
+  };
+
+  options.AddPolicy("auth", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+    GetClientPartitionKey(httpContext, includeGuestKey: false),
+    _ => new FixedWindowRateLimiterOptions
+    {
+      PermitLimit = 5,
+      Window = TimeSpan.FromMinutes(1),
+      QueueLimit = 0,
+      AutoReplenishment = true
+    }));
+
+  options.AddPolicy("ai", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+    GetClientPartitionKey(httpContext, includeGuestKey: true),
+    _ => new FixedWindowRateLimiterOptions
+    {
+      PermitLimit = 3,
+      Window = TimeSpan.FromMinutes(10),
+      QueueLimit = 0,
+      AutoReplenishment = true
+    }));
+
+  options.AddPolicy("chat", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+    GetClientPartitionKey(httpContext, includeGuestKey: true),
+    _ => new FixedWindowRateLimiterOptions
+    {
+      PermitLimit = 20,
+      Window = TimeSpan.FromMinutes(1),
+      QueueLimit = 0,
+      AutoReplenishment = true
+    }));
+
+  options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+    RateLimitPartition.GetFixedWindowLimiter(
+      GetClientPartitionKey(httpContext, includeGuestKey: false),
+      _ => new FixedWindowRateLimiterOptions
+      {
+        PermitLimit = 300,
+        Window = TimeSpan.FromMinutes(1),
+        QueueLimit = 0,
+        AutoReplenishment = true
+      }));
+});
+
 builder.Services.AddOpenApi();
 builder.Services.AddSingleton<IUploadStoragePathResolver>(
   _ => new UploadStoragePathResolver(Path.Combine(builder.Environment.ContentRootPath, "upload")));
@@ -138,8 +197,17 @@ app.UseCors("Frontend");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 if (!app.Environment.IsDevelopment())
 {
+    app.UseHsts();
     app.UseHttpsRedirection();
 }
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.TryAdd("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.TryAdd("X-Frame-Options", "DENY");
+    context.Response.Headers.TryAdd("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.TryAdd("Content-Security-Policy", "frame-ancestors 'none'");
+    await next(context);
+});
 app.UseStaticFiles();
 
 // TODO: Remove /upload static file serving once all consumers migrated to S3.
@@ -155,6 +223,7 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseMiddleware<SensitiveResponseCacheMiddleware>();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 app.Use(async (context, next) =>
 {
@@ -178,6 +247,26 @@ if (app.Configuration.GetValue<bool>("RunMigrationsAndSeedOnStartup"))
 }
 
 app.Run();
+
+static string GetClientPartitionKey(HttpContext context, bool includeGuestKey)
+{
+  var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+  if (!string.IsNullOrWhiteSpace(userId))
+  {
+    return $"user:{userId}";
+  }
+
+  if (includeGuestKey && context.Request.Cookies.TryGetValue("stylist_guest", out var guestKey) && !string.IsNullOrWhiteSpace(guestKey))
+  {
+    return $"guest:{guestKey}";
+  }
+
+  var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim();
+  var ip = !string.IsNullOrWhiteSpace(forwardedFor)
+    ? forwardedFor
+    : context.Connection.RemoteIpAddress?.ToString();
+  return $"ip:{ip ?? "unknown"}";
+}
 
 static string[] GetFrontendOrigins(IConfiguration configuration)
 {

@@ -16,7 +16,7 @@ public sealed class GoogleOAuthSettingsValidationTests
       .AddInMemoryCollection(new Dictionary<string, string?>
       {
         ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Database=test;Username=test;Password=test",
-        ["JwtSettings:SecretKey"] = "abcdefghijklmnopqrstuvwxyz123456",
+        ["JwtSettings:SecretKey"] = "abcdefghijklmnopqrstuvwxyz123456abcdefghijklmnopqrstuvwxyz1234567890AB",
         ["JwtSettings:Issuer"] = "AoDaiNhaUyen.Api",
         ["JwtSettings:Audience"] = "AoDaiNhaUyen.Frontend",
         ["GoogleOAuth:ClientId"] = "client-id",

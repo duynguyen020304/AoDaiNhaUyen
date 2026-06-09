@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.Text.RegularExpressions;
 
 namespace AoDaiNhaUyen.Api.Configuration;
 
@@ -37,7 +38,11 @@ public static class ServiceRegistration
       throw new InvalidOperationException("Database connection string was not configured.");
     }
 
-    services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+    services
+      .AddOptions<JwtSettings>()
+      .Bind(configuration.GetSection("JwtSettings"))
+      .Validate(settings => ValidateJwtSettings(settings, out _), "JwtSettings không hợp lệ.")
+      .ValidateOnStart();
     services
       .AddOptions<EmailSettings>()
       .Bind(configuration.GetSection("EmailSettings"))
@@ -68,9 +73,9 @@ public static class ServiceRegistration
     services.Configure<CookieSettings>(configuration.GetSection("CookieSettings"));
 
     var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
-    if (string.IsNullOrWhiteSpace(jwtSettings.SecretKey))
+    if (!ValidateJwtSettings(jwtSettings, out var jwtError))
     {
-      throw new InvalidOperationException("JwtSettings:SecretKey was not configured.");
+      throw new InvalidOperationException(jwtError);
     }
 
     services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
@@ -180,6 +185,8 @@ public static class ServiceRegistration
     services.AddScoped<IAdminToolRiskService, AdminToolRiskService>();
     services.AddScoped<IAdminReviewService, AdminReviewService>();
     services.AddScoped<IAdminPromoService, AdminPromoService>();
+    services.AddScoped<IPromptRedactionService, PromptRedactionService>();
+    services.AddScoped<ILlmAuditService, LlmAuditService>();
     services.AddScoped<ISafetyGate, SafetyGate>();
     services.AddSingleton<IAutoModeStore, AutoModeStore>();
     services.AddSingleton<IPendingActionStore, PendingActionStore>();
@@ -190,6 +197,7 @@ public static class ServiceRegistration
       httpClient.Timeout = Timeout.InfiniteTimeSpan;
     });
     services.AddScoped<IImageVisibilityService, ImageVisibilityService>();
+    services.AddSingleton<IImageUploadValidator, ImageUploadValidator>();
     services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
     services.AddScoped<IRefreshTokenService, RefreshTokenService>();
     services.AddScoped<IJwtTokenService, JwtTokenService>();
@@ -243,5 +251,42 @@ public static class ServiceRegistration
         serviceProvider.GetRequiredService<ILogger<ConcurrencyLimitedAiTryOnService>>()));
 
     return services;
+  }
+
+  private static bool ValidateJwtSettings(JwtSettings settings, out string? error)
+  {
+    if (string.IsNullOrWhiteSpace(settings.SecretKey))
+    {
+      error = "JwtSettings:SecretKey was not configured.";
+      return false;
+    }
+
+    var secret = settings.SecretKey.Trim();
+    if (secret.Length < 64 || Regex.IsMatch(secret, "CHANGE_ME|DEV_ONLY", RegexOptions.IgnoreCase))
+    {
+      error = "JwtSettings:SecretKey must be a strong non-placeholder secret with at least 64 characters.";
+      return false;
+    }
+
+    if (string.IsNullOrWhiteSpace(settings.Issuer) || string.IsNullOrWhiteSpace(settings.Audience))
+    {
+      error = "JwtSettings:Issuer and Audience are required.";
+      return false;
+    }
+
+    if (settings.ExpiryMinutes is < 5 or > 120)
+    {
+      error = "JwtSettings:ExpiryMinutes must be between 5 and 120.";
+      return false;
+    }
+
+    if (settings.RefreshTokenExpiryDays is < 1 or > 60)
+    {
+      error = "JwtSettings:RefreshTokenExpiryDays must be between 1 and 60.";
+      return false;
+    }
+
+    error = null;
+    return true;
   }
 }

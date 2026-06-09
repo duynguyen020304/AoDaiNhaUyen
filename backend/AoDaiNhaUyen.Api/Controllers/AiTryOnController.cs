@@ -2,13 +2,18 @@ using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.Exceptions;
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AoDaiNhaUyen.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/ai-tryon")]
-public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) : ControllerBase
+public sealed class AiTryOnController(
+  ICatalogTryOnService catalogTryOnService,
+  IImageUploadValidator imageUploadValidator,
+  ILogger<AiTryOnController> logger) : ControllerBase
 {
   private const long MaxImageBytes = 8 * 1024 * 1024;
   private const int MaxAccessoryImages = 3;
@@ -35,6 +40,8 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
     return Ok(ApiResponseFactory.Success(result));
   }
 
+  [Authorize(Policy = "RequireAdminOrCustomer")]
+  [EnableRateLimiting("ai")]
   [HttpPost]
   [RequestSizeLimit(MaxRequestBytes)]
   public async Task<IActionResult> Create(
@@ -48,13 +55,14 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
     [FromForm] List<Guid>? accessoryProductIds,
     CancellationToken cancellationToken)
   {
-    var validationError = Validate(
+    var validationError = await ValidateAsync(
       personImage,
       garmentImage,
       garmentId,
       garmentProductId,
       accessoryImages,
-      accessoryIds);
+      accessoryIds,
+      cancellationToken);
     if (validationError is not null)
     {
       return BadRequest(ApiResponseFactory.Failure(
@@ -102,10 +110,11 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
     }
     catch (ImageValidationConfigurationException ex)
     {
+      var errorId = LogSafeError(ex, "Image validation configuration failed");
       return StatusCode(StatusCodes.Status503ServiceUnavailable, ApiResponseFactory.Failure(
         "Dịch vụ kiểm tra ảnh chưa được cấu hình",
         "image_validation_not_configured",
-        ex.Message));
+        $"Dịch vụ hiện không khả dụng. Mã lỗi: {errorId}"));
     }
     catch (ImageValidationProviderException)
     {
@@ -116,27 +125,30 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
     }
     catch (AiTryOnConfigurationException ex)
     {
+      var errorId = LogSafeError(ex, "AI try-on configuration failed");
       return StatusCode(StatusCodes.Status503ServiceUnavailable, ApiResponseFactory.Failure(
         "Dịch vụ thử đồ AI chưa được cấu hình",
         "vertex_ai_not_configured",
-        ex.Message));
+        $"Dịch vụ hiện không khả dụng. Mã lỗi: {errorId}"));
     }
     catch (AiTryOnProviderException ex)
     {
+      var errorId = LogSafeError(ex, "AI try-on provider failed");
       return StatusCode(StatusCodes.Status502BadGateway, ApiResponseFactory.Failure(
         "Không thể tạo ảnh thử đồ",
         "vertex_ai_failed",
-        ex.Message));
+        $"Không thể tạo ảnh thử đồ lúc này. Mã lỗi: {errorId}"));
     }
   }
 
-  private static (string Code, string Message)? Validate(
+  private async Task<(string Code, string Message)?> ValidateAsync(
     IFormFile? personImage,
     IFormFile? garmentImage,
     string? garmentId,
     Guid? garmentProductId,
     IReadOnlyList<IFormFile>? accessoryImages,
-    IReadOnlyList<string>? accessoryIds)
+    IReadOnlyList<string>? accessoryIds,
+    CancellationToken cancellationToken)
   {
     if (personImage is null)
     {
@@ -153,7 +165,7 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
       return ("missing_garment", "Garment selection is required.");
     }
 
-    var personError = ValidateImage(personImage, "Person image");
+    var personError = await ValidateImageAsync(personImage, cancellationToken);
     if (personError is not null)
     {
       return personError;
@@ -161,7 +173,7 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
 
     if (garmentImage is not null)
     {
-      var garmentError = ValidateImage(garmentImage, "Garment image");
+      var garmentError = await ValidateImageAsync(garmentImage, cancellationToken);
       if (garmentError is not null)
       {
         return garmentError;
@@ -180,7 +192,7 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
 
     foreach (var accessoryImage in accessoryImages ?? [])
     {
-      var accessoryError = ValidateImage(accessoryImage, "Accessory image");
+      var accessoryError = await ValidateImageAsync(accessoryImage, cancellationToken);
       if (accessoryError is not null)
       {
         return accessoryError;
@@ -190,26 +202,11 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
     return null;
   }
 
-  private static (string Code, string Message)? ValidateImage(IFormFile file, string label)
+  private async Task<(string Code, string Message)?> ValidateImageAsync(IFormFile file, CancellationToken cancellationToken)
   {
-    if (file.Length <= 0)
-    {
-      return ("invalid_image", $"{label} is empty.");
-    }
-
-    if (file.Length > MaxImageBytes)
-    {
-      return ("invalid_image", $"{label} must be 8MB or smaller.");
-    }
-
-    if (string.IsNullOrWhiteSpace(file.ContentType)
-        || !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
-        || file.ContentType.Equals("image/gif", StringComparison.OrdinalIgnoreCase))
-    {
-      return ("invalid_image", $"{label} must be an image (GIF is not supported).");
-    }
-
-    return null;
+    var bytes = await ReadFileAsync(file, cancellationToken);
+    var validation = imageUploadValidator.Validate(file.ContentType, bytes, file.Length, MaxImageBytes);
+    return validation.IsValid ? null : (validation.ErrorCode ?? "invalid_image", validation.ErrorMessage ?? "Ảnh không hợp lệ.");
   }
 
   private static async Task<byte[]> ReadFileAsync(IFormFile file, CancellationToken cancellationToken)
@@ -238,6 +235,13 @@ public sealed class AiTryOnController(ICatalogTryOnService catalogTryOnService) 
     }
 
     return results;
+  }
+
+  private string LogSafeError(Exception exception, string message)
+  {
+    var errorId = Guid.NewGuid().ToString("N");
+    logger.LogError(exception, "{Message}. ErrorId={ErrorId}", message, errorId);
+    return errorId;
   }
 
   private static string? ComputeGuestKeyHash(HttpContext context)

@@ -5,6 +5,7 @@ using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 
 namespace AoDaiNhaUyen.Api.Controllers;
@@ -20,6 +21,7 @@ public sealed class AuthController(
   private readonly CookieSettings cookieSettings = cookieSettings.Value;
   private readonly EmailSettings emailSettings = emailSettings.Value;
 
+  [EnableRateLimiting("auth")]
   [HttpPost("register")]
   public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
   {
@@ -42,6 +44,7 @@ public sealed class AuthController(
     return Ok(ApiResponseFactory.Success(new { registered = true }, result.Value ?? "Vui long kiem tra email de xac thuc tai khoan."));
   }
 
+  [EnableRateLimiting("auth")]
   [HttpPost("login")]
   public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
   {
@@ -101,6 +104,7 @@ public sealed class AuthController(
     return Ok(ApiResponseFactory.Success(result.Value.User, "Đăng nhập Zalo thành công"));
   }
 
+  [EnableRateLimiting("auth")]
   [HttpPost("refresh")]
   public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
   {
@@ -152,6 +156,7 @@ public sealed class AuthController(
     return Redirect(BuildFrontendRedirect("verified=true", "autologin=true"));
   }
 
+  [EnableRateLimiting("auth")]
   [HttpPost("forgot-password")]
   public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
   {
@@ -159,6 +164,7 @@ public sealed class AuthController(
     return Ok(ApiResponseFactory.Success(new { sent = true }, "Neu email ton tai, huong dan dat lai mat khau da duoc gui."));
   }
 
+  [EnableRateLimiting("auth")]
   [HttpPost("reset-password")]
   public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
   {

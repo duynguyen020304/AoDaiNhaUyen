@@ -5,13 +5,19 @@ using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.Exceptions;
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AoDaiNhaUyen.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/chat/threads")]
-public sealed class ChatController(IStylistChatService stylistChatService) : ControllerBase
+public sealed class ChatController(
+  IStylistChatService stylistChatService,
+  IImageUploadValidator imageUploadValidator,
+  IWebHostEnvironment environment,
+  ILogger<ChatController> logger) : ControllerBase
 {
   private const string GuestCookieName = "stylist_guest";
   private const long MaxAttachmentBytes = 8 * 1024 * 1024;
@@ -49,6 +55,7 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     }
   }
 
+  [EnableRateLimiting("chat")]
   [HttpPost("{threadId:guid}/messages")]
   [RequestSizeLimit(MaxAttachmentBytes * MaxAttachments)]
   public async Task<IActionResult> AddMessage(
@@ -82,6 +89,7 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     }
   }
 
+  [EnableRateLimiting("chat")]
   [HttpPost("{threadId:guid}/messages/stream")]
   [RequestSizeLimit(MaxAttachmentBytes * MaxAttachments)]
   public async Task<IActionResult> AddMessageStream(
@@ -144,12 +152,14 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     }
     catch (Exception ex)
     {
+      var errorId = LogSafeError(ex, "Chat stream failed");
+      var safeMessage = $"Dịch vụ hiện không khả dụng. Mã lỗi: {errorId}";
       if (!Response.HasStarted)
       {
-        return StatusCode(500, ApiResponseFactory.Failure("Có lỗi xảy ra", "stream_failed", ex.Message));
+        return StatusCode(500, ApiResponseFactory.Failure("Có lỗi xảy ra", "stream_failed", safeMessage));
       }
 
-      await WriteSseEventAsync(new SseChatEvent.StreamError("stream_failed", ex.Message), cancellationToken);
+      await WriteSseEventAsync(new SseChatEvent.StreamError("stream_failed", safeMessage), cancellationToken);
       await WriteSseEventAsync(new SseChatEvent.Done(), cancellationToken);
       return new EmptyResult();
     }
@@ -173,6 +183,8 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     await Response.Body.FlushAsync(cancellationToken);
   }
 
+  [Authorize(Policy = "RequireAdminOrCustomer")]
+  [EnableRateLimiting("ai")]
   [HttpPost("{threadId:guid}/try-on")]
   public async Task<IActionResult> ExecuteTryOn(
     Guid threadId,
@@ -197,10 +209,11 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     }
     catch (ImageValidationConfigurationException ex)
     {
+      var errorId = LogSafeError(ex, "Chat try-on image validation configuration failed");
       return StatusCode(StatusCodes.Status503ServiceUnavailable, ApiResponseFactory.Failure(
         "Dịch vụ kiểm tra ảnh chưa được cấu hình",
         "image_validation_not_configured",
-        ex.Message));
+        $"Dịch vụ hiện không khả dụng. Mã lỗi: {errorId}"));
     }
     catch (ImageValidationProviderException)
     {
@@ -228,21 +241,21 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
         throw new InvalidOperationException("Ảnh đính kèm phải lớn hơn 0 và không quá 8MB.");
       }
 
-      if (string.IsNullOrWhiteSpace(attachment.ContentType) ||
-          !attachment.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) ||
-          string.Equals(attachment.ContentType, "image/gif", StringComparison.OrdinalIgnoreCase))
-      {
-        throw new InvalidOperationException("Chỉ hỗ trợ ảnh PNG, JPG hoặc WEBP.");
-      }
-
       await using var stream = attachment.OpenReadStream();
       using var memoryStream = new MemoryStream();
       await stream.CopyToAsync(memoryStream, cancellationToken);
+      var bytes = memoryStream.ToArray();
+      var validation = imageUploadValidator.Validate(attachment.ContentType, bytes, attachment.Length, MaxAttachmentBytes);
+      if (!validation.IsValid)
+      {
+        throw new InvalidOperationException(validation.ErrorMessage ?? "Chỉ hỗ trợ ảnh PNG, JPG hoặc WEBP.");
+      }
+
       results.Add(new IncomingChatAttachmentDto(
         "user_image",
         attachment.FileName,
-        attachment.ContentType,
-        memoryStream.ToArray()));
+        validation.NormalizedContentType ?? attachment.ContentType,
+        bytes));
     }
 
     return results;
@@ -274,14 +287,21 @@ public sealed class ChatController(IStylistChatService stylistChatService) : Con
     return Guid.TryParse(raw, out var userId) ? userId : null;
   }
 
-  private static CookieOptions BuildGuestCookieOptions() => new()
+  private CookieOptions BuildGuestCookieOptions() => new()
   {
     HttpOnly = true,
-    Secure = false,
+    Secure = !environment.IsDevelopment(),
     SameSite = SameSiteMode.Lax,
     Path = "/",
     Expires = DateTimeOffset.UtcNow.AddDays(30)
   };
+
+  private string LogSafeError(Exception exception, string message)
+  {
+    var errorId = Guid.NewGuid().ToString("N");
+    logger.LogError(exception, "{Message}. ErrorId={ErrorId}", message, errorId);
+    return errorId;
+  }
 
   public sealed record ExecuteTryOnRequest(Guid? GarmentProductId, IReadOnlyList<Guid>? AccessoryProductIds);
 }
