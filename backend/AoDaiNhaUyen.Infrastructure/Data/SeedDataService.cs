@@ -1,5 +1,6 @@
 using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Domain.Common;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Domain.SeedData;
 using Microsoft.EntityFrameworkCore;
@@ -124,8 +125,32 @@ public sealed class SeedDataService(
     await SeedDemoOrdersAsync();
     await SeedLowStockVariantsAsync();
     await SeedDemoReviewsAsync();
+    await SeedBlogPostsAsync();
     await SeedToolRiskConfigsAsync();
+    await SeedEmailTemplatesAsync();
     await RemoveStaleCategoriesAsync();
+  }
+
+  private async Task SeedEmailTemplatesAsync()
+  {
+    if (await dbContext.EmailTemplates.AnyAsync())
+    {
+      return;
+    }
+
+    var now = DateTime.UtcNow;
+    var templates = new[]
+    {
+      new EmailTemplate { Id = Guid.NewGuid(), Key = "auth.verify_email", Name = "Xác thực email", Subject = "{{subject}}", HtmlBody = "<p>Vui lòng xác thực email để kích hoạt tài khoản.</p>", Locale = "vi-VN", Version = 1, CreatedAt = now, UpdatedAt = now },
+      new EmailTemplate { Id = Guid.NewGuid(), Key = "auth.reset_password", Name = "Đặt lại mật khẩu", Subject = "{{subject}}", HtmlBody = "<p>Nhấn vào link để đặt lại mật khẩu của bạn.</p>", Locale = "vi-VN", Version = 1, CreatedAt = now, UpdatedAt = now },
+      new EmailTemplate { Id = Guid.NewGuid(), Key = "order.invoice", Name = "Hóa đơn đơn hàng", Subject = "{{subject}}", HtmlBody = "<p>Cảm ơn bạn đã mua hàng tại Ao Dai Nha Uyen. Vui lòng xem hóa đơn đơn hàng trong email này.</p>", Locale = "vi-VN", Version = 1, CreatedAt = now, UpdatedAt = now },
+      new EmailTemplate { Id = Guid.NewGuid(), Key = "marketing.confirm_subscription", Name = "Xác nhận đăng ký nhận tin", Subject = "{{subject}}", Preheader = "Xác nhận để nhận bộ sưu tập mới và ưu đãi từ Ao Dai Nha Uyen", HtmlBody = "<h2>Xác nhận đăng ký nhận tin</h2><p>Chào bạn,</p><p>Cảm ơn bạn đã đăng ký nhận tin từ <strong>Ao Dai Nha Uyen</strong>. Chỉ còn một bước nữa.</p><p style=\"text-align:center;margin:24px 0;\"><a href=\"{{confirmUrl}}\" style=\"display:inline-block;background:#8B4513;color:#fff;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:600;\">Xác nhận đăng ký</a></p><p style=\"font-size:13px;color:#6b7280;\">Nếu nút không hoạt động, vui lòng sao chép link sau vào trình duyệt: {{confirmUrl}}</p><p>Bạn sẽ nhận được các thông tin về:</p><ul><li>Bộ sưu tập áo dài mới</li><li>Khuyến mãi đặc biệt</li><li>Sự kiện và workshop</li></ul>", TextBody = "Xác nhận đăng ký nhận tin tại: {{confirmUrl}}", Locale = "vi-VN", Version = 1, CreatedAt = now, UpdatedAt = now },
+      new EmailTemplate { Id = Guid.NewGuid(), Key = "marketing.welcome", Name = "Chào mừng đăng ký nhận tin", Subject = "Chào mừng bạn đến với Ao Dai Nha Uyen", Preheader = "Cảm ơn bạn đã gia nhập cộng đồng yêu áo dài", HtmlBody = "<h2>Chào mừng bạn, {{name}}!</h2><p>Cảm ơn bạn đã xác nhận đăng ký nhận tin từ <strong>Ao Dai Nha Uyen</strong>.</p><p>Chúng tôi sẽ gửi đến bạn:</p><ul><li>Bộ sưu tập áo dài mới nhất</li><li>Ưu đãi đặc biệt dành riêng cho thành viên</li><li>Lịch sự kiện và workshop</li><li>Mẹo phối đồ và bảo quản áo dài</li></ul><p style=\"text-align:center;margin:24px 0;\"><a href=\"{{shopUrl}}\" style=\"display:inline-block;background:#8B4513;color:#fff;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:600;\">Khám phá bộ sưu tập</a></p>", TextBody = "Chào mừng bạn đến với Ao Dai Nha Uyen. Khám phá bộ sưu tập tại {{shopUrl}}", Locale = "vi-VN", Version = 1, CreatedAt = now, UpdatedAt = now },
+      new EmailTemplate { Id = Guid.NewGuid(), Key = "marketing.promo", Name = "Khuyến mãi", Subject = "{{subject}}", Preheader = "Ưu đãi đặc biệt từ Ao Dai Nha Uyen", HtmlBody = "<h2>{{heading}}</h2><p>{{body}}</p><p style=\"text-align:center;margin:24px 0;\"><a href=\"{{ctaUrl}}\" style=\"display:inline-block;background:#8B4513;color:#fff;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:600;\">{{ctaText}}</a></p><p style=\"font-size:12px;color:#9ca3af;\">Áp dụng đến {{expiryDate}}. Điều kiện áp dụng.</p>", TextBody = "{{heading}}\n{{body}}\n{{ctaText}}: {{ctaUrl}}\nÁp dụng đến {{expiryDate}}.", Locale = "vi-VN", Version = 1, CreatedAt = now, UpdatedAt = now }
+    };
+
+    dbContext.EmailTemplates.AddRange(templates);
+    await dbContext.SaveChangesAsync();
   }
 
   private void ValidateS3Configuration()
@@ -212,6 +237,192 @@ public sealed class SeedDataService(
         await storageService.PutObjectWithKeyAsync(objectKey, stream, contentType, ct: CancellationToken.None);
       }
     }
+  }
+
+  private async Task SeedBlogPostsAsync()
+  {
+    if (await dbContext.BlogPosts.AnyAsync(p => p.Slug == "lich-su-va-y-nghia-cua-ao-dai-viet-nam"))
+    {
+      return;
+    }
+
+    var uploadRoot = uploadStoragePathResolver.UploadRootPath;
+    var now = DateTime.UtcNow;
+
+    async Task<string> BlogImageUrlAsync(string fileName, bool published)
+    {
+      var privateKey = $"aodainhauyen/private/blog/{fileName}";
+      var localPath = Path.Combine(uploadRoot, fileName);
+      if (File.Exists(localPath) && !await storageService.ExistsAsync(privateKey))
+      {
+        await using var stream = File.OpenRead(localPath);
+        await storageService.PutObjectWithKeyAsync(privateKey, stream, "image/webp");
+      }
+
+      if (!published)
+      {
+        return privateKey;
+      }
+
+      var publicKey = $"aodainhauyen/public/blog/{fileName}";
+      if (!await storageService.ExistsAsync(publicKey))
+      {
+        await storageService.CopyToPublicBlogAsync(privateKey);
+      }
+
+      return storageService.BuildCanonicalUrl(publicKey);
+    }
+
+    string Json(object value) => JsonSerializer.Serialize(value, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+    var productSlugs = await dbContext.Products.AsNoTracking().OrderBy(p => p.Name).Select(p => p.Slug).Take(4).ToListAsync();
+    if (productSlugs.Count == 0)
+    {
+      productSlugs = ["ao-dai-truyen-thong", "ao-dai-lua-tron", "ao-dai-theu-hoa"];
+    }
+
+    var posts = new List<BlogPost>
+    {
+      new()
+      {
+        Title = "Lịch sử và ý nghĩa của Áo Dài Việt Nam",
+        Slug = "lich-su-va-y-nghia-cua-ao-dai-viet-nam",
+        Excerpt = "Hành trình của áo dài từ trang phục truyền thống đến biểu tượng thanh lịch của phụ nữ Việt.",
+        FeaturedImage = await BlogImageUrlAsync("home-ao-dai-truyen-thong.webp", true),
+        FeaturedImageWidth = 1200,
+        FeaturedImageHeight = 800,
+        Template = BlogPostTemplate.StandardArticle,
+        Content = Json(new object[]
+        {
+          new { type = "heading", level = 2, content = "Áo dài trong dòng chảy văn hóa Việt" },
+          new { type = "paragraph", content = "Áo dài không chỉ là trang phục, mà còn là ký ức văn hóa được gìn giữ qua nhiều thế hệ." },
+          new { type = "image", src = await BlogImageUrlAsync("home-ao-dai-truyen-thong-node.webp", true), alt = "Người mẫu mặc áo dài truyền thống Việt Nam thanh lịch", caption = "Dáng áo truyền thống tôn nét mềm mại." },
+          new { type = "paragraph", content = "Từ tà áo trắng học trò đến áo dài cưới, mỗi biến thể đều mang một câu chuyện riêng về sự duyên dáng và tự hào dân tộc." },
+          new { type = "quote", content = "Một tà áo đẹp là sự cân bằng giữa chất liệu, phom dáng và cảm xúc của người mặc.", attribution = "Áo Dài Nhà Uyên" },
+          new { type = "divider" },
+          new { type = "callout", variant = "info", content = "Chọn áo dài nên bắt đầu từ hoàn cảnh sử dụng: lễ cưới, đi tiệc, chụp ảnh hay mặc hằng ngày." }
+        }),
+        Tags = Json(new[] { "áo dài", "văn hóa Việt", "truyền thống" }),
+        AuthorNameOverride = "Nhà Uyên Editorial",
+        AuthorBio = "Đội ngũ biên tập thời trang Áo Dài Nhà Uyên.",
+        ReviewedBy = "Uyên Nguyễn",
+        Status = BlogPostStatus.Published,
+        PublishedAt = now.AddDays(-12),
+        MetaTitle = "Lịch sử và ý nghĩa Áo Dài Việt Nam",
+        MetaDescription = "Tìm hiểu lịch sử, ý nghĩa và nét đẹp văn hóa của áo dài Việt Nam.",
+        CreatedAt = now.AddDays(-12),
+        UpdatedAt = now.AddDays(-12)
+      },
+      new()
+      {
+        Title = "Bộ sưu tập Áo Dài xuân hè 2025",
+        Slug = "bo-suu-tap-ao-dai-xuan-he-2025",
+        Excerpt = "Những gợi ý màu sắc, chất liệu và họa tiết nổi bật cho mùa xuân hè 2025.",
+        FeaturedImage = await BlogImageUrlAsync("ao-dai-cach-tan-1.webp", true),
+        FeaturedImageWidth = 1200,
+        FeaturedImageHeight = 800,
+        Template = BlogPostTemplate.PhotoGallery,
+        Content = Json(new object[]
+        {
+          new { type = "heading", level = 2, content = "Sắc màu nhẹ, phom dáng hiện đại" },
+          new { type = "paragraph", content = "Xuân hè 2025 ưu tiên chất liệu thoáng, sắc pastel và chi tiết thêu tinh tế." },
+          new { type = "gallery", images = new object[]
+            {
+              new { src = await BlogImageUrlAsync("ao-dai-cach-tan-3.webp", true), alt = "Áo dài cách tân màu sáng cho xuân hè", caption = "Cách tân nhẹ nhàng" },
+              new { src = await BlogImageUrlAsync("ao-dai-lua-tron-1.webp", true), alt = "Áo dài lụa trơn mềm mại màu pastel", caption = "Lụa trơn thanh lịch" },
+              new { src = await BlogImageUrlAsync("ao-dai-theu-hoa-1.webp", true), alt = "Áo dài thêu hoa tinh tế cho dịp lễ", caption = "Thêu hoa nữ tính" },
+              new { src = await BlogImageUrlAsync("ao-dai-lua-tron-4.webp", true), alt = "Áo dài lụa trơn dáng suông sang trọng", caption = "Dáng suông dễ mặc" }
+            }
+          },
+          new { type = "paragraph", content = "Một bộ sưu tập tốt không chạy theo xu hướng quá nhanh, mà chọn điểm nhấn đủ bền để mặc nhiều dịp." }
+        }),
+        Tags = Json(new[] { "bộ sưu tập", "xuân hè", "áo dài cách tân" }),
+        AuthorNameOverride = "Nhà Uyên Editorial",
+        Status = BlogPostStatus.Published,
+        PublishedAt = now.AddDays(-8),
+        MetaTitle = "Bộ sưu tập Áo Dài xuân hè 2025",
+        MetaDescription = "Khám phá xu hướng áo dài xuân hè 2025 qua bộ sưu tập ảnh chọn lọc.",
+        CreatedAt = now.AddDays(-8),
+        UpdatedAt = now.AddDays(-8)
+      },
+      new()
+      {
+        Title = "Hậu trường buổi chụp hình BST Áo Dài",
+        Slug = "hau-truong-buoi-chup-hinh-bst-ao-dai",
+        Excerpt = "Một góc nhìn hậu trường về ánh sáng, chất liệu và chuyển động tà áo trong buổi chụp hình.",
+        FeaturedImage = await BlogImageUrlAsync("ao-dai-truyen-thong-1.webp", false),
+        FeaturedImageWidth = 1200,
+        FeaturedImageHeight = 800,
+        Template = BlogPostTemplate.VideoFeature,
+        Content = Json(new object[]
+        {
+          new { type = "heading", level = 2, content = "Khi tà áo chuyển động trước ống kính" },
+          new { type = "paragraph", content = "Buổi chụp tập trung vào chuyển động tự nhiên, ánh sáng mềm và cách chất liệu bắt sáng." },
+          new { type = "embed", url = "https://www.youtube.com/embed/dQw4w9WgXcQ", caption = "Video hậu trường minh họa" },
+          new { type = "quote", content = "Chúng tôi luôn thử nhiều nhịp bước để tà áo rơi đúng khoảnh khắc đẹp nhất.", attribution = "Đội ngũ styling" }
+        }),
+        Tags = Json(new[] { "hậu trường", "video", "bộ sưu tập" }),
+        AuthorNameOverride = "Nhà Uyên Studio",
+        Status = BlogPostStatus.Draft,
+        CreatedAt = now.AddDays(-6),
+        UpdatedAt = now.AddDays(-6)
+      },
+      new()
+      {
+        Title = "Áo Dài cưới - Lựa chọn hoàn hảo cho ngày trọng đại",
+        Slug = "ao-dai-cuoi-lua-chon-hoan-hao-cho-ngay-trong-dai",
+        Excerpt = "Cách chọn áo dài cưới hài hòa với dáng người, màu da và phong cách lễ gia tiên.",
+        FeaturedImage = await BlogImageUrlAsync("ao-dai-theu-hoa-5.webp", true),
+        FeaturedImageWidth = 1200,
+        FeaturedImageHeight = 800,
+        Template = BlogPostTemplate.ProductSpotlight,
+        Content = Json(new object[]
+        {
+          new { type = "heading", level = 2, content = "Áo dài cưới cần vừa trang trọng vừa thoải mái" },
+          new { type = "paragraph", content = "Ngày cưới kéo dài nhiều giờ, nên áo dài cần đẹp khi đứng, ngồi, di chuyển và chụp ảnh." },
+          new { type = "product_spotlight", productSlugs = productSlugs.Take(4).ToArray() },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-theu-hoa-6.webp", true), alt = "Áo dài thêu hoa sang trọng dành cho cô dâu", caption = "Họa tiết thêu tạo điểm nhấn cho lễ gia tiên." },
+          new { type = "paragraph", content = "Ưu tiên phom ôm vừa, chất liệu có độ đứng nhẹ và họa tiết tập trung ở cổ, tay hoặc tà áo." }
+        }),
+        Tags = Json(new[] { "áo dài cưới", "cô dâu", "product spotlight" }),
+        AuthorNameOverride = "Nhà Uyên Bridal",
+        ReviewedBy = "Uyên Nguyễn",
+        Status = BlogPostStatus.Published,
+        PublishedAt = now.AddDays(-4),
+        MetaTitle = "Cách chọn Áo Dài cưới đẹp cho ngày trọng đại",
+        MetaDescription = "Gợi ý chọn áo dài cưới theo dáng người, chất liệu và phong cách lễ gia tiên.",
+        CreatedAt = now.AddDays(-4),
+        UpdatedAt = now.AddDays(-4)
+      },
+      new()
+      {
+        Title = "Cách chọn và bảo quản Áo Dài đúng cách",
+        Slug = "cach-chon-va-bao-quan-ao-dai-dung-cach",
+        Excerpt = "Hướng dẫn chọn size, thử áo, giặt và cất giữ áo dài để giữ phom dáng lâu bền.",
+        FeaturedImage = await BlogImageUrlAsync("ao-dai-lua-tron-extra.webp", false),
+        FeaturedImageWidth = 1200,
+        FeaturedImageHeight = 800,
+        Template = BlogPostTemplate.HowTo,
+        Content = Json(new object[]
+        {
+          new { type = "heading", level = 2, content = "Quy trình 6 bước chăm sóc áo dài" },
+          new { type = "paragraph", content = "Áo dài đẹp lâu khi được chọn đúng số đo và bảo quản đúng chất liệu." },
+          new { type = "step", stepNumber = 1, title = "Đo số đo cơ bản", content = "Ghi lại vòng ngực, eo, mông, vai và chiều dài áo trước khi chọn size.", tip = "Nên đo khi mặc đồ mỏng để số đo sát hơn." },
+          new { type = "step", stepNumber = 2, title = "Thử cử động", content = "Khi thử áo, hãy ngồi xuống, đưa tay nhẹ và bước vài bước để kiểm tra độ thoải mái." },
+          new { type = "step", stepNumber = 3, title = "Giặt nhẹ", content = "Ưu tiên giặt tay bằng nước mát, tránh vò mạnh phần thêu hoặc đính kết." },
+          new { type = "callout", variant = "tip", content = "Không phơi áo dài dưới nắng gắt. Lộn trái áo và phơi nơi thoáng mát." },
+          new { type = "image", src = await BlogImageUrlAsync("phu-kien-quat.webp", false), alt = "Phụ kiện quạt kết hợp cùng áo dài truyền thống", caption = "Bảo quản phụ kiện riêng để tránh móc vào vải áo." }
+        }),
+        Tags = Json(new[] { "hướng dẫn", "bảo quản áo dài", "chọn size" }),
+        AuthorNameOverride = "Nhà Uyên Care",
+        Status = BlogPostStatus.Draft,
+        CreatedAt = now.AddDays(-2),
+        UpdatedAt = now.AddDays(-2)
+      }
+    };
+
+    dbContext.BlogPosts.AddRange(posts);
+    await dbContext.SaveChangesAsync();
   }
 
   private async Task SeedRolesAsync()

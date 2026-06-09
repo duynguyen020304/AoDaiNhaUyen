@@ -53,6 +53,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<Subscriber> Subscribers => Set<Subscriber>();
   public DbSet<MarketingConsent> MarketingConsents => Set<MarketingConsent>();
   public DbSet<BlogPost> BlogPosts => Set<BlogPost>();
+  public DbSet<BlogImage> BlogImages => Set<BlogImage>();
   public DbSet<OrderPromoCostSnapshot> OrderPromoCostSnapshots => Set<OrderPromoCostSnapshot>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -861,6 +862,21 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasOne(x => x.Author).WithMany().HasForeignKey(x => x.AuthorId).OnDelete(DeleteBehavior.SetNull);
     });
 
+
+    modelBuilder.Entity<BlogImage>(builder =>
+    {
+      builder.ToTable("blog_images");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.ImageUrl).HasMaxLength(1000).IsRequired();
+      builder.Property(x => x.PublicObjectKey).HasMaxLength(1000);
+      builder.Property(x => x.AltText).HasMaxLength(255);
+      builder.Property(x => x.SortOrder).HasDefaultValue(0).IsRequired();
+      builder.Property(x => x.IsPublic).HasDefaultValue(false).IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.BlogPostId).HasDatabaseName("idx_blog_images_blog_post_id");
+      builder.HasOne(x => x.BlogPost).WithMany().HasForeignKey(x => x.BlogPostId).OnDelete(DeleteBehavior.SetNull);
+    });
     ApplySnakeCaseColumnNames(modelBuilder);
     ApplyGlobalSoftDeleteQueryFilters(modelBuilder);
   }

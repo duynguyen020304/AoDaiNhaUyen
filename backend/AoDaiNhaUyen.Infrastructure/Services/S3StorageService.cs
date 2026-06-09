@@ -16,6 +16,7 @@ public sealed class S3StorageService : IStorageService
   private const string PrivatePrefix = "aodainhauyen/private";
   private const string PublicPrefix = "aodainhauyen/public";
   private const string PublicProductsPrefix = "aodainhauyen/public/products";
+  private const string PublicBlogPrefix = "aodainhauyen/public/blog";
   private const long MultipartUploadThresholdBytes = 50L * 1024 * 1024;
   private const long MultipartPartSizeBytes = 10L * 1024 * 1024;
 
@@ -208,6 +209,28 @@ public sealed class S3StorageService : IStorageService
     await _amazonS3.CopyObjectAsync(copyRequest, ct);
 
     _logger.LogInformation("Copied {SourceKey} to public key {PublicKey}", normalizedKey, publicKey);
+
+    return BuildCanonicalUrl(publicKey);
+  }
+
+  public async Task<string> CopyToPublicBlogAsync(string objectKey, CancellationToken ct = default)
+  {
+    EnsureConfigured();
+    var normalizedKey = NormalizeObjectKey(objectKey);
+
+    var fileName = normalizedKey[(normalizedKey.LastIndexOf('/') + 1)..];
+    var publicKey = $"{PublicBlogPrefix}/{fileName}";
+
+    var copyRequest = new CopyObjectRequest
+    {
+      SourceBucket = _settings.BucketName,
+      SourceKey = normalizedKey,
+      DestinationBucket = _settings.BucketName,
+      DestinationKey = publicKey
+    };
+    await _amazonS3.CopyObjectAsync(copyRequest, ct);
+
+    _logger.LogInformation("Copied blog image {SourceKey} to public key {PublicKey}", normalizedKey, publicKey);
 
     return BuildCanonicalUrl(publicKey);
   }

@@ -147,6 +147,10 @@ public static class ServiceRegistration
     services.AddScoped<IMarketingConsentService, MarketingConsentService>();
     services.AddScoped<IPromoCostService, PromoCostService>();
     services.AddHostedService<BackgroundEmailWorker>();
+    services.AddScoped<IAdminEmailTemplateService, AdminEmailTemplateService>();
+    services.AddScoped<IAdminSubscriberService, AdminSubscriberService>();
+    services.AddScoped<IAdminEmailJobService, AdminEmailJobService>();
+    services.AddScoped<IAdminMarketingStatsService, AdminMarketingStatsService>();
     services.AddScoped<IOrderService, OrderService>();
     services.AddScoped<IUserService, UserService>();
     services.AddScoped<ISeedDataService, SeedDataService>();
@@ -207,6 +211,7 @@ public static class ServiceRegistration
       httpClient.Timeout = Timeout.InfiniteTimeSpan;
     });
     services.AddScoped<IImageVisibilityService, ImageVisibilityService>();
+    services.AddScoped<IBlogImageVisibilityService, BlogImageVisibilityService>();
     services.AddSingleton<IImageUploadValidator, ImageUploadValidator>();
     services.AddScoped<IPasswordHasher, Pbkdf2PasswordHasher>();
     services.AddScoped<IRefreshTokenService, RefreshTokenService>();

@@ -20,6 +20,10 @@ import { LlmLogsPage } from '@/pages/LlmLogsPage'
 import { PromosPage } from '@/pages/PromosPage'
 import { BlogListPage } from '@/pages/BlogListPage'
 import { BlogFormPage } from '@/pages/BlogFormPage'
+import { MarketingDashboardPage } from '@/pages/MarketingDashboardPage'
+import { EmailTemplatesPage } from '@/pages/EmailTemplatesPage'
+import { SubscribersPage } from '@/pages/SubscribersPage'
+import { EmailQueuePage } from '@/pages/EmailQueuePage'
 
 export function App() {
   const status = useAuthStore((s) => s.status)
@@ -59,6 +63,10 @@ export function App() {
             <Route path="blog" element={<BlogListPage />} />
             <Route path="blog/new" element={<BlogFormPage />} />
             <Route path="blog/:id/edit" element={<BlogFormPage />} />
+            <Route path="marketing" element={<MarketingDashboardPage />} />
+            <Route path="email-templates" element={<EmailTemplatesPage />} />
+            <Route path="subscribers" element={<SubscribersPage />} />
+            <Route path="email-queue" element={<EmailQueuePage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="roles" element={<RolesPage />} />
             <Route path="media" element={<MediaPage />} />

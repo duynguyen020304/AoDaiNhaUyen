@@ -2,6 +2,8 @@ using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs.BlogPost;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Common;
+using AoDaiNhaUyen.Domain.Entities;
+using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +14,9 @@ namespace AoDaiNhaUyen.Api.Controllers;
 public sealed class BlogPostsController(
   IBlogPostService blogPostService,
   IImageUploadValidator imageUploadValidator,
-  IStorageService storageService) : ControllerBase
+  IStorageService storageService,
+  IBlogImageVisibilityService blogImageVisibilityService,
+  AppDbContext dbContext) : ControllerBase
 {
   [HttpGet("api/v1/blog")]
   public async Task<IActionResult> GetPublic(
@@ -115,9 +119,19 @@ public sealed class BlogPostsController(
     }
 
     memory.Position = 0;
-    var upload = await storageService.UploadAsync(memory, file.FileName, validation.NormalizedContentType ?? file.ContentType, "public/blog", cancellationToken);
-    var url = storageService.BuildCanonicalUrl(upload.ObjectKey);
-    return Ok(ApiResponseFactory.Success(new BlogImageUploadResponse(url, null, null), "Tải ảnh lên thành công"));
+    var upload = await storageService.UploadAsync(memory, file.FileName, validation.NormalizedContentType ?? file.ContentType, "private/blog", cancellationToken);
+    var image = new BlogImage
+    {
+      ImageUrl = upload.ObjectKey,
+      AltText = file.FileName,
+      IsPublic = false,
+      SortOrder = 0
+    };
+    dbContext.BlogImages.Add(image);
+    await dbContext.SaveChangesAsync(cancellationToken);
+
+    var url = await blogImageVisibilityService.ResolveUrlAsync(image.ImageUrl, image.IsPublic, image.PublicObjectKey, cancellationToken);
+    return Ok(ApiResponseFactory.Success(new BlogImageUploadResponse(image.Id, url, image.ImageUrl, null, null), "Tải ảnh lên thành công"));
   }
 
   [HttpDelete("api/v1/admin/blog/{id:guid}")]

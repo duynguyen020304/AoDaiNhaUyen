@@ -243,3 +243,19 @@ export interface AdminOrderListItem {
   status: string
   createdAt: string
 }
+
+// ── Email Marketing ──
+
+export interface EmailTemplateListItem { id: string; key: string; name: string; subject: string; locale: string; version: number; isActive: boolean; isDeleted: boolean; createdAt: string; updatedAt: string }
+export interface EmailTemplateDetail extends EmailTemplateListItem { preheader: string | null; htmlBody: string; textBody: string | null }
+export interface CreateEmailTemplateRequest { key: string; name: string; subject: string; preheader?: string; htmlBody: string; textBody?: string; locale: string }
+export interface UpdateEmailTemplateRequest { name: string; subject: string; preheader?: string; htmlBody: string; textBody?: string; locale: string; isActive: boolean }
+export interface SubscriberListItem { id: string; email: string; status: string; subscribedAt: string | null; unsubscribedAt: string | null; lastSentAt: string | null; userId: string | null; isDeleted: boolean }
+export interface ConsentRecord { channel: string; isOptIn: boolean; source: string; consentedAt: string | null; revokedAt: string | null }
+export interface SubscriberDetail extends SubscriberListItem { lastOpenAt: string | null; lastClickAt: string | null; consents: ConsentRecord[] }
+export interface ImportSubscribersRequest { emails: string[]; source: string }
+export interface ImportSubscribersResult { imported: number; skipped: number }
+export interface EmailJobListItem { id: string; toEmail: string; templateKey: string; status: string; retryCount: number; scheduledAt: string; sentAt: string | null; errorMessage: string | null }
+export interface SendLogRecord { status: string; sentAt: string | null; failedAt: string | null; errorMessage: string | null }
+export interface EmailJobDetail extends EmailJobListItem { payloadJson: string; logs: SendLogRecord[] }
+export interface MarketingStats { totalSubscribers: number; activeSubscribers: number; pendingSubscribers: number; unsubscribedSubscribers: number; queuedJobs: number; sentJobsToday: number; failedJobs: number; templateCount: number }

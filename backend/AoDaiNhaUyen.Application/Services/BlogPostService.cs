@@ -12,7 +12,7 @@ using AoDaiNhaUyen.Domain.Entities;
 
 namespace AoDaiNhaUyen.Application.Services;
 
-public sealed class BlogPostService(IBlogPostRepository blogPostRepository) : IBlogPostService
+public sealed class BlogPostService(IBlogPostRepository blogPostRepository, IStorageService storageService) : IBlogPostService
 {
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
   {
@@ -31,20 +31,21 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository) : IB
     var validPage = page <= 0 ? 1 : page;
     var validPageSize = pageSize is <= 0 or > 50 ? 12 : pageSize;
     var (items, totalCount) = await blogPostRepository.GetAllAsync(status, tag, search, validPage, validPageSize, includeDeleted, cancellationToken);
-    return new PagedResult<BlogPostListItemDto>(items.Select(MapListItem).ToList(), totalCount, validPage, validPageSize);
+    var mapped = await Task.WhenAll(items.Select(item => MapListItemAsync(item, cancellationToken)));
+    return new PagedResult<BlogPostListItemDto>(mapped.ToList(), totalCount, validPage, validPageSize);
   }
 
   public async Task<BlogPostDto?> GetBySlugAsync(string slug, bool includeDrafts = false, CancellationToken cancellationToken = default)
   {
     if (string.IsNullOrWhiteSpace(slug)) return null;
     var post = await blogPostRepository.GetBySlugAsync(slug.Trim(), includeDrafts, cancellationToken);
-    return post is null ? null : MapPost(post);
+    return post is null ? null : await MapPostAsync(post, cancellationToken);
   }
 
   public async Task<BlogPostDto?> GetByIdAsync(Guid id, bool includeDeleted = false, CancellationToken cancellationToken = default)
   {
     var post = await blogPostRepository.GetByIdAsync(id, includeDeleted, cancellationToken);
-    return post is null ? null : MapPost(post);
+    return post is null ? null : await MapPostAsync(post, cancellationToken);
   }
 
   public async Task<IReadOnlyList<BlogPostListItemDto>> GetRelatedAsync(string slug, int count, CancellationToken cancellationToken = default)
@@ -55,7 +56,8 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository) : IB
 
     var validCount = count is <= 0 or > 6 ? 3 : count;
     var related = await blogPostRepository.GetRelatedAsync(post.Id, DeserializeTags(post.Tags), validCount, cancellationToken);
-    return related.Select(MapListItem).ToList();
+    var mapped = await Task.WhenAll(related.Select(item => MapListItemAsync(item, cancellationToken)));
+    return mapped.ToList();
   }
 
   public Task<IReadOnlyList<string>> GetTagsAsync(CancellationToken cancellationToken = default)
@@ -66,16 +68,18 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository) : IB
     ValidateRequest(request.Title, request.Excerpt, request.Content, request.CanonicalUrl);
     var status = request.Status;
     var now = DateTime.UtcNow;
+    var normalizedFeaturedImage = await NormalizeFeaturedImageForStatusAsync(request.FeaturedImage, status, cancellationToken);
+    var normalizedContent = await NormalizeContentForStatusAsync(request.Content.GetRawText(), status, cancellationToken);
     var post = new BlogPost
     {
       Title = request.Title.Trim(),
       Slug = BuildSlug(request.Slug, request.Title),
       Excerpt = request.Excerpt.Trim(),
-      FeaturedImage = NormalizeOptional(request.FeaturedImage),
+      FeaturedImage = normalizedFeaturedImage,
       FeaturedImageWidth = request.FeaturedImageWidth,
       FeaturedImageHeight = request.FeaturedImageHeight,
       Template = request.Template,
-      Content = request.Content.GetRawText(),
+      Content = normalizedContent,
       Tags = JsonSerializer.Serialize(NormalizeTags(request.Tags), JsonOptions),
       AuthorId = request.AuthorId,
       AuthorNameOverride = NormalizeOptional(request.AuthorNameOverride),
@@ -93,7 +97,7 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository) : IB
 
     await blogPostRepository.AddAsync(post, cancellationToken);
     var created = await blogPostRepository.GetByIdAsync(post.Id, false, cancellationToken) ?? post;
-    return MapPost(created);
+    return await MapPostAsync(created, cancellationToken);
   }
 
   public async Task<BlogPostDto> UpdateAsync(Guid id, UpdateBlogPostRequest request, CancellationToken cancellationToken = default)
@@ -102,14 +106,17 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository) : IB
     var post = await blogPostRepository.GetByIdAsync(id, true, cancellationToken)
       ?? throw new InvalidOperationException("Không tìm thấy bài viết.");
 
+    var normalizedFeaturedImage = await NormalizeFeaturedImageForStatusAsync(request.FeaturedImage, request.Status, cancellationToken);
+    var normalizedContent = await NormalizeContentForStatusAsync(request.Content.GetRawText(), request.Status, cancellationToken);
+
     post.Title = request.Title.Trim();
     post.Slug = BuildSlug(request.Slug, request.Title);
     post.Excerpt = request.Excerpt.Trim();
-    post.FeaturedImage = NormalizeOptional(request.FeaturedImage);
+    post.FeaturedImage = normalizedFeaturedImage;
     post.FeaturedImageWidth = request.FeaturedImageWidth;
     post.FeaturedImageHeight = request.FeaturedImageHeight;
     post.Template = request.Template;
-    post.Content = request.Content.GetRawText();
+    post.Content = normalizedContent;
     post.Tags = JsonSerializer.Serialize(NormalizeTags(request.Tags), JsonOptions);
     post.AuthorId = request.AuthorId;
     post.AuthorNameOverride = NormalizeOptional(request.AuthorNameOverride);
@@ -127,7 +134,7 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository) : IB
 
     await blogPostRepository.UpdateAsync(post, cancellationToken);
     var updated = await blogPostRepository.GetByIdAsync(post.Id, false, cancellationToken) ?? post;
-    return MapPost(updated);
+    return await MapPostAsync(updated, cancellationToken);
   }
 
   public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -167,6 +174,168 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository) : IB
       sb.AppendLine($"- [{post.Title}]({baseUrl}/blog/{post.Slug}/): {post.Excerpt}");
     }
     return sb.ToString();
+  }
+
+  private async Task<string?> NormalizeFeaturedImageForStatusAsync(string? value, BlogPostStatus status, CancellationToken cancellationToken)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return null;
+    return status == BlogPostStatus.Published
+      ? await PromoteBlogImageReferenceAsync(value.Trim(), cancellationToken)
+      : await DemoteBlogImageReferenceAsync(value.Trim(), cancellationToken);
+  }
+
+  private async Task<string> NormalizeContentForStatusAsync(string rawContent, BlogPostStatus status, CancellationToken cancellationToken)
+  {
+    using var document = JsonDocument.Parse(rawContent);
+    using var stream = new MemoryStream();
+    await using (var writer = new Utf8JsonWriter(stream))
+    {
+      await RewriteElementAsync(writer, document.RootElement, status, cancellationToken);
+    }
+
+    return Encoding.UTF8.GetString(stream.ToArray());
+  }
+
+  private async Task RewriteElementAsync(Utf8JsonWriter writer, JsonElement element, BlogPostStatus status, CancellationToken cancellationToken)
+  {
+    switch (element.ValueKind)
+    {
+      case JsonValueKind.Object:
+        writer.WriteStartObject();
+        foreach (var property in element.EnumerateObject())
+        {
+          writer.WritePropertyName(property.Name);
+          if (property.Name is "src" && property.Value.ValueKind == JsonValueKind.String)
+          {
+            var value = property.Value.GetString() ?? string.Empty;
+            var next = status == BlogPostStatus.Published
+              ? await PromoteBlogImageReferenceAsync(value, cancellationToken)
+              : await DemoteBlogImageReferenceAsync(value, cancellationToken);
+            writer.WriteStringValue(next);
+          }
+          else
+          {
+            await RewriteElementAsync(writer, property.Value, status, cancellationToken);
+          }
+        }
+        writer.WriteEndObject();
+        break;
+      case JsonValueKind.Array:
+        writer.WriteStartArray();
+        foreach (var item in element.EnumerateArray())
+        {
+          await RewriteElementAsync(writer, item, status, cancellationToken);
+        }
+        writer.WriteEndArray();
+        break;
+      default:
+        element.WriteTo(writer);
+        break;
+    }
+  }
+
+  private async Task<string> PromoteBlogImageReferenceAsync(string value, CancellationToken cancellationToken)
+  {
+    if (!TryGetPrivateBlogKey(value, out var privateKey)) return value;
+    var publicUrl = await storageService.CopyToPublicBlogAsync(privateKey, cancellationToken);
+    return publicUrl;
+  }
+
+  private async Task<string> DemoteBlogImageReferenceAsync(string value, CancellationToken cancellationToken)
+  {
+    if (TryGetPrivateBlogKey(value, out var privateKey)) return privateKey;
+    if (!TryGetPublicBlogKey(value, out var publicKey)) return value;
+    await storageService.DeleteAsync(publicKey, cancellationToken);
+    var fileName = publicKey[(publicKey.LastIndexOf('/') + 1)..];
+    return $"aodainhauyen/private/blog/{fileName}";
+  }
+
+  private static bool TryGetPrivateBlogKey(string value, out string objectKey)
+  {
+    objectKey = string.Empty;
+    var marker = "aodainhauyen/private/blog/";
+    var index = value.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+    if (index < 0) return false;
+    objectKey = value[index..].Split('?', '#')[0].Trim('/');
+    return true;
+  }
+
+  private static bool TryGetPublicBlogKey(string value, out string objectKey)
+  {
+    objectKey = string.Empty;
+    var marker = "aodainhauyen/public/blog/";
+    var index = value.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+    if (index < 0) return false;
+    objectKey = value[index..].Split('?', '#')[0].Trim('/');
+    return true;
+  }
+
+  private async Task<string?> ResolveFeaturedImageAsync(string? value, BlogPostStatus status, CancellationToken cancellationToken)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return null;
+    if (TryGetPrivateBlogKey(value, out var privateKey))
+    {
+      return await storageService.GeneratePresignedGetUrlAsync(privateKey, 86400, cancellationToken);
+    }
+
+    if (TryGetPublicBlogKey(value, out var publicKey))
+    {
+      return storageService.BuildCanonicalUrl(publicKey);
+    }
+
+    return value;
+  }
+
+  private async Task<IReadOnlyList<BlogBlockDto>> DeserializeBlocksAsync(string json, BlogPostStatus status, CancellationToken cancellationToken)
+  {
+    var normalized = status == BlogPostStatus.Published ? json : await ResolvePrivateImageRefsAsync(json, cancellationToken);
+    return DeserializeBlocks(normalized);
+  }
+
+  private async Task<string> ResolvePrivateImageRefsAsync(string rawContent, CancellationToken cancellationToken)
+  {
+    using var document = JsonDocument.Parse(rawContent);
+    using var stream = new MemoryStream();
+    await using (var writer = new Utf8JsonWriter(stream))
+    {
+      await RewritePrivateRefsForReadAsync(writer, document.RootElement, cancellationToken);
+    }
+
+    return Encoding.UTF8.GetString(stream.ToArray());
+  }
+
+  private async Task RewritePrivateRefsForReadAsync(Utf8JsonWriter writer, JsonElement element, CancellationToken cancellationToken)
+  {
+    switch (element.ValueKind)
+    {
+      case JsonValueKind.Object:
+        writer.WriteStartObject();
+        foreach (var property in element.EnumerateObject())
+        {
+          writer.WritePropertyName(property.Name);
+          if (property.Name is "src" && property.Value.ValueKind == JsonValueKind.String && TryGetPrivateBlogKey(property.Value.GetString() ?? string.Empty, out var privateKey))
+          {
+            writer.WriteStringValue(await storageService.GeneratePresignedGetUrlAsync(privateKey, 86400, cancellationToken));
+          }
+          else
+          {
+            await RewritePrivateRefsForReadAsync(writer, property.Value, cancellationToken);
+          }
+        }
+        writer.WriteEndObject();
+        break;
+      case JsonValueKind.Array:
+        writer.WriteStartArray();
+        foreach (var item in element.EnumerateArray())
+        {
+          await RewritePrivateRefsForReadAsync(writer, item, cancellationToken);
+        }
+        writer.WriteEndArray();
+        break;
+      default:
+        element.WriteTo(writer);
+        break;
+    }
   }
 
   private static void ValidateRequest(string title, string excerpt, JsonElement content, string? canonicalUrl)
@@ -299,12 +468,12 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository) : IB
     return number;
   }
 
-  private static BlogPostListItemDto MapListItem(BlogPost post) => new(
+  private async Task<BlogPostListItemDto> MapListItemAsync(BlogPost post, CancellationToken cancellationToken) => new(
     post.Id,
     post.Title,
     post.Slug,
     post.Excerpt,
-    post.FeaturedImage,
+    await ResolveFeaturedImageAsync(post.FeaturedImage, post.Status, cancellationToken),
     post.FeaturedImageWidth,
     post.FeaturedImageHeight,
     post.Template,
@@ -314,16 +483,16 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository) : IB
     post.PublishedAt,
     post.UpdatedAt);
 
-  private static BlogPostDto MapPost(BlogPost post) => new(
+  private async Task<BlogPostDto> MapPostAsync(BlogPost post, CancellationToken cancellationToken) => new(
     post.Id,
     post.Title,
     post.Slug,
     post.Excerpt,
-    post.FeaturedImage,
+    await ResolveFeaturedImageAsync(post.FeaturedImage, post.Status, cancellationToken),
     post.FeaturedImageWidth,
     post.FeaturedImageHeight,
     post.Template,
-    DeserializeBlocks(post.Content),
+    await DeserializeBlocksAsync(post.Content, post.Status, cancellationToken),
     DeserializeTags(post.Tags),
     post.AuthorId,
     post.AuthorNameOverride ?? post.Author?.FullName,

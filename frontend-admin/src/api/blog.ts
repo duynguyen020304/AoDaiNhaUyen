@@ -41,7 +41,9 @@ export function deleteBlogPost(id: string) {
 }
 
 export interface BlogImageUploadResponse {
+  imageId: string
   url: string
+  objectKey: string
   width: number | null
   height: number | null
 }

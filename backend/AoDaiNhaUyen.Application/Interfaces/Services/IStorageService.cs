@@ -68,6 +68,13 @@ public interface IStorageService
   Task<string> CopyToPublicAsync(string objectKey, CancellationToken ct = default);
 
   /// <summary>
+  /// Copy object from private prefix to public blog prefix (keep both).
+  /// Returns canonical URL of public object.
+  /// </summary>
+  Task<string> CopyToPublicBlogAsync(string objectKey, CancellationToken ct = default)
+    => CopyToPublicAsync(objectKey, ct);
+
+  /// <summary>
   /// Check whether S3 is properly configured (BucketName + Region/ServiceUrl).
   /// </summary>
   bool IsConfigured();
