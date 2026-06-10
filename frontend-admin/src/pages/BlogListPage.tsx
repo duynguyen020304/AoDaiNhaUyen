@@ -62,6 +62,7 @@ export function BlogListPage() {
             <TableRow className="bg-primary hover:bg-primary">
               <TableHead className="text-primary-foreground">Tiêu đề</TableHead>
               <TableHead className="text-primary-foreground">Template</TableHead>
+              <TableHead className="text-primary-foreground">Danh mục</TableHead>
               <TableHead className="text-primary-foreground">Trạng thái</TableHead>
               <TableHead className="text-primary-foreground">Tags</TableHead>
               <TableHead className="text-primary-foreground">Ngày xuất bản</TableHead>
@@ -70,13 +71,14 @@ export function BlogListPage() {
           </TableHeader>
           <TableBody>
             {loading && posts.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="py-12 text-center"><Loader2 className="mx-auto mb-2 size-6 animate-spin" />Đang tải...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="py-12 text-center"><Loader2 className="mx-auto mb-2 size-6 animate-spin" />Đang tải...</TableCell></TableRow>
             ) : posts.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="py-12 text-center text-muted-foreground"><FileText className="mx-auto mb-2 size-8 opacity-40" />Chưa có bài đăng</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="py-12 text-center text-muted-foreground"><FileText className="mx-auto mb-2 size-8 opacity-40" />Chưa có bài đăng</TableCell></TableRow>
             ) : posts.map((post) => (
               <TableRow key={post.id}>
                 <TableCell><div className="font-medium">{post.title}</div><div className="text-xs text-muted-foreground">/{post.slug}</div></TableCell>
                 <TableCell><Badge variant="outline">{post.template}</Badge></TableCell>
+                <TableCell>{post.category ? <Badge variant="outline">{post.category.name}</Badge> : <span className="text-xs text-muted-foreground">—</span>}</TableCell>
                 <TableCell><Badge>{statusLabel(post.status)}</Badge></TableCell>
                 <TableCell><div className="flex max-w-xs flex-wrap gap-1">{post.tags.slice(0, 3).map(t => <Badge key={t} variant="outline">{t}</Badge>)}</div></TableCell>
                 <TableCell>{formatDate(post.publishedAt)}</TableCell>

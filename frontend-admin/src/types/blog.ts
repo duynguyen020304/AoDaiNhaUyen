@@ -20,6 +20,15 @@ export type BlogBlock =
   | { type: 'code'; language: string; content: string }
   | { type: 'embed'; url: string; caption?: string }
 
+export interface BlogCategory {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  sortOrder: number
+  publishedPostCount: number
+}
+
 export interface BlogPostListItem {
   id: string
   title: string
@@ -30,6 +39,7 @@ export interface BlogPostListItem {
   featuredImageHeight: number | null
   template: BlogTemplate
   tags: string[]
+  category: BlogCategory | null
   authorName: string | null
   status: BlogStatus
   publishedAt: string | null
@@ -38,6 +48,7 @@ export interface BlogPostListItem {
 
 export interface BlogPost extends BlogPostListItem {
   content: BlogBlock[]
+  blogCategoryId: string | null
   authorId: string | null
   authorAvatarUrl: string | null
   authorBio: string | null
@@ -59,6 +70,7 @@ export interface BlogPostPayload {
   template: BlogTemplate
   content: BlogBlock[]
   tags: string[]
+  blogCategoryId?: string | null
   authorId?: string | null
   authorNameOverride?: string | null
   authorBio?: string | null
@@ -81,6 +93,7 @@ export const BlogPayloadSchema = z.object({
   template: z.enum(blogTemplates),
   content: z.array(z.looseObject({ type: z.string() })).min(1, 'Cần ít nhất 1 block nội dung'),
   tags: z.array(z.string().trim()).default([]),
+  blogCategoryId: z.string().uuid().nullable().optional(),
   authorId: z.string().uuid().nullable().optional(),
   authorNameOverride: z.string().trim().max(200).nullable().optional(),
   authorBio: z.string().trim().nullable().optional(),

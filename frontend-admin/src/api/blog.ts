@@ -1,5 +1,5 @@
 import { request, requestPaginated } from '@/api/client'
-import type { BlogPost, BlogPostListItem, BlogPostPayload, BlogStatus } from '@/types/blog'
+import type { BlogBlock, BlogCategory, BlogPost, BlogPostListItem, BlogPostPayload, BlogStatus } from '@/types/blog'
 
 export interface BlogListParams {
   status?: BlogStatus | ''
@@ -20,24 +20,58 @@ function qs(params: BlogListParams): string {
   return value ? `?${value}` : ''
 }
 
+interface RawBlogBlock {
+  type: string
+  data?: Record<string, unknown>
+}
+
+function normalizeBlogBlocks(blocks: RawBlogBlock[]): BlogBlock[] {
+  if (!Array.isArray(blocks)) return []
+  return blocks.map((block) => {
+    if (block && block.data && typeof block.data === 'object') {
+      return {
+        ...block,
+        ...block.data,
+      } as unknown as BlogBlock
+    }
+    return block as unknown as BlogBlock
+  })
+}
+
 export async function getBlogPosts(params: BlogListParams = {}) {
   return requestPaginated<BlogPostListItem[]>(`/api/v1/admin/blog${qs(params)}`)
 }
 
-export function getBlogPost(id: string) {
-  return request<BlogPost>(`/api/v1/admin/blog/${id}`)
+export async function getBlogPost(id: string) {
+  const post = await request<BlogPost>(`/api/v1/admin/blog/${id}`)
+  if (post && post.content) {
+    post.content = normalizeBlogBlocks(post.content)
+  }
+  return post
 }
 
-export function createBlogPost(data: BlogPostPayload) {
-  return request<BlogPost>('/api/v1/admin/blog', { method: 'POST', body: JSON.stringify(data) })
+export async function createBlogPost(data: BlogPostPayload) {
+  const post = await request<BlogPost>('/api/v1/admin/blog', { method: 'POST', body: JSON.stringify(data) })
+  if (post && post.content) {
+    post.content = normalizeBlogBlocks(post.content)
+  }
+  return post
 }
 
-export function updateBlogPost(id: string, data: BlogPostPayload) {
-  return request<BlogPost>(`/api/v1/admin/blog/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+export async function updateBlogPost(id: string, data: BlogPostPayload) {
+  const post = await request<BlogPost>(`/api/v1/admin/blog/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+  if (post && post.content) {
+    post.content = normalizeBlogBlocks(post.content)
+  }
+  return post
 }
 
 export function deleteBlogPost(id: string) {
   return request<void>(`/api/v1/admin/blog/${id}`, { method: 'DELETE' })
+}
+
+export async function getBlogCategories() {
+  return request<BlogCategory[]>('/api/v1/blog/categories')
 }
 
 export interface BlogImageUploadResponse {

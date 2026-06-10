@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Save } from 'lucide-react'
-import { uploadBlogImage } from '@/api/blog'
+import { getBlogCategories, uploadBlogImage } from '@/api/blog'
 import { useBlogStore } from '@/stores/blogStore'
-import { blogTemplates, type BlogBlock, type BlogPostPayload, type BlogStatus, type BlogTemplate } from '@/types/blog'
+import { blogTemplates, type BlogBlock, type BlogCategory, type BlogPostPayload, type BlogStatus, type BlogTemplate } from '@/types/blog'
 import { BlockEditor } from '@/components/blog/BlockEditor'
 import { BlogPreview } from '@/components/blog/BlogPreview'
 import { Button } from '@/components/ui/button'
@@ -49,6 +49,7 @@ export function BlogFormPage() {
   const [saving, setSaving] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [tagsInput, setTagsInput] = useState('')
+  const [blogCategories, setBlogCategories] = useState<BlogCategory[]>([])
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
   const [form, setForm] = useState<BlogPostPayload>({
     title: '',
@@ -71,6 +72,10 @@ export function BlogFormPage() {
   })
 
   useEffect(() => {
+    void getBlogCategories().then(setBlogCategories).catch(() => setBlogCategories([]))
+  }, [])
+
+  useEffect(() => {
     if (id) void fetchPost(id)
   }, [id, fetchPost])
 
@@ -87,6 +92,7 @@ export function BlogFormPage() {
       template: selectedPost.template,
       content: selectedPost.content,
       tags: selectedPost.tags,
+      blogCategoryId: selectedPost.blogCategoryId,
       authorId: selectedPost.authorId,
       authorNameOverride: selectedPost.authorName ?? '',
       authorBio: selectedPost.authorBio ?? '',
@@ -130,6 +136,7 @@ export function BlogFormPage() {
       status: nextStatus ?? form.status,
       slug: form.slug?.trim() || slugify(form.title),
       tags: splitTags(tagsInput),
+      blogCategoryId: form.blogCategoryId || null,
       featuredImage: form.featuredImage?.trim() || null,
       authorNameOverride: form.authorNameOverride?.trim() || null,
       authorBio: form.authorBio?.trim() || null,
@@ -239,6 +246,13 @@ export function BlogFormPage() {
               <div className="space-y-2">
                 <Label htmlFor="featuredImageHeight">Cao ảnh</Label>
                 <Input id="featuredImageHeight" type="number" value={form.featuredImageHeight ?? 630} onChange={(e) => patch({ featuredImageHeight: Number(e.target.value) || null })} />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="blogCategoryId">Danh mục bài viết</Label>
+                <Select id="blogCategoryId" value={form.blogCategoryId ?? ''} onChange={(e) => patch({ blogCategoryId: e.target.value || null })}>
+                  <option value="">Chưa phân loại</option>
+                  {blogCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                </Select>
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="tags">Tags</Label>
