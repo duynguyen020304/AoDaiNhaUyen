@@ -71,19 +71,8 @@
 .howto {
   max-width: 78ch;
   position: relative;
-  /* Line connector for timeline steps */
-  padding-left: 12px;
 }
-.howto::before {
-  content: "";
-  position: absolute;
-  top: 100px;
-  bottom: 80px;
-  left: 36px;
-  width: 2px;
-  border-left: 2px dashed rgba(114, 19, 17, 0.25);
-  z-index: 1;
-}
+
 
 /* ==========================================================================
    BLOCK ELEMENTS
@@ -716,11 +705,6 @@ figcaption {
   .productGrid {
     grid-template-columns: 1fr;
     gap: 16px;
-  }
-  .howto::before {
-    left: 26px;
-    top: 70px;
-    bottom: 60px;
   }
   .stepBadge {
     width: 38px;
