@@ -35,19 +35,22 @@ jobs:
           PUBLIC_ZALO_APP_ID=${{ secrets.HK1_ZALO_OAUTH_APP_ID }} \
           bun run build
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
-          aws-region: ${{ secrets.S3_REGION }}
-
       - name: Upload Frontend Artifact to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.S3_REGION }}
+          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
         run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << EOF
+          [default]
+          region = ${{ secrets.S3_REGION }}
+          s3 =
+            addressing_style = path
+          EOF
           tar -czf frontend-dist-hk1.tar.gz -C frontend/dist .
-          endpoint_args=()
-          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
-          aws "${endpoint_args[@]}" s3 cp frontend-dist-hk1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-hk1.tar.gz
+          aws s3 cp frontend-dist-hk1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-hk1.tar.gz
 
   # ==========================================
   # Build Frontend for US1
@@ -77,19 +80,22 @@ jobs:
           PUBLIC_ZALO_APP_ID=${{ secrets.US1_ZALO_OAUTH_APP_ID }} \
           bun run build
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
-          aws-region: ${{ secrets.S3_REGION }}
-
       - name: Upload Frontend Artifact to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.S3_REGION }}
+          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
         run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << EOF
+          [default]
+          region = ${{ secrets.S3_REGION }}
+          s3 =
+            addressing_style = path
+          EOF
           tar -czf frontend-dist-us1.tar.gz -C frontend/dist .
-          endpoint_args=()
-          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
-          aws "${endpoint_args[@]}" s3 cp frontend-dist-us1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-us1.tar.gz
+          aws s3 cp frontend-dist-us1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-us1.tar.gz
 
   # ==========================================
   # Build Backend (shared)
@@ -115,19 +121,22 @@ jobs:
           dotnet restore
           dotnet publish AoDaiNhaUyen.Api -c Release -o publish --no-restore
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
-          aws-region: ${{ secrets.S3_REGION }}
-
       - name: Upload Backend Artifact to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.S3_REGION }}
+          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
         run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << EOF
+          [default]
+          region = ${{ secrets.S3_REGION }}
+          s3 =
+            addressing_style = path
+          EOF
           tar -czf backend-publish.tar.gz -C backend/publish .
-          endpoint_args=()
-          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
-          aws "${endpoint_args[@]}" s3 cp backend-publish.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz
+          aws s3 cp backend-publish.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz
 
   # ==========================================
   # Build Admin Frontend for HK1
@@ -154,19 +163,22 @@ jobs:
           VITE_API_BASE_URL=${{ secrets.HK1_VITE_API_BASE_URL }} \
           bun run build
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
-          aws-region: ${{ secrets.S3_REGION }}
-
       - name: Upload Admin Frontend Artifact to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.S3_REGION }}
+          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
         run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << EOF
+          [default]
+          region = ${{ secrets.S3_REGION }}
+          s3 =
+            addressing_style = path
+          EOF
           tar -czf admin-dist-hk1.tar.gz -C frontend-admin/dist .
-          endpoint_args=()
-          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
-          aws "${endpoint_args[@]}" s3 cp admin-dist-hk1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-hk1.tar.gz
+          aws s3 cp admin-dist-hk1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-hk1.tar.gz
 
   # ==========================================
   # Build Admin Frontend for US1
@@ -193,19 +205,22 @@ jobs:
           VITE_API_BASE_URL=${{ secrets.US1_VITE_API_BASE_URL }} \
           bun run build
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
-          aws-region: ${{ secrets.S3_REGION }}
-
       - name: Upload Admin Frontend Artifact to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.S3_REGION }}
+          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
         run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << EOF
+          [default]
+          region = ${{ secrets.S3_REGION }}
+          s3 =
+            addressing_style = path
+          EOF
           tar -czf admin-dist-us1.tar.gz -C frontend-admin/dist .
-          endpoint_args=()
-          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
-          aws "${endpoint_args[@]}" s3 cp admin-dist-us1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-us1.tar.gz
+          aws s3 cp admin-dist-us1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-us1.tar.gz
 
   # ==========================================
   # Deploy to HK1 Server
@@ -231,35 +246,37 @@ jobs:
       # ------------------------------------------
       # Download Artifacts from S3
       # ------------------------------------------
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
-          aws-region: ${{ secrets.S3_REGION }}
+      - name: Configure S3 credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.S3_REGION }}
+          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
+        run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << EOF
+          [default]
+          region = ${{ secrets.S3_REGION }}
+          s3 =
+            addressing_style = path
+          EOF
 
       - name: Download Frontend Artifact from S3
         run: |
-          endpoint_args=()
-          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
           mkdir -p frontend/dist
-          aws "${endpoint_args[@]}" s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-hk1.tar.gz frontend-dist-hk1.tar.gz
+          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-hk1.tar.gz frontend-dist-hk1.tar.gz
           tar -xzf frontend-dist-hk1.tar.gz -C frontend/dist
 
       - name: Download Backend Publish from S3
         run: |
-          endpoint_args=()
-          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
           mkdir -p backend/publish
-          aws "${endpoint_args[@]}" s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz backend-publish.tar.gz
+          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz backend-publish.tar.gz
           tar -xzf backend-publish.tar.gz -C backend/publish
 
       - name: Download Admin Frontend Artifact from S3
         run: |
-          endpoint_args=()
-          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
           mkdir -p frontend-admin/dist
-          aws "${endpoint_args[@]}" s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-hk1.tar.gz admin-dist-hk1.tar.gz
+          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-hk1.tar.gz admin-dist-hk1.tar.gz
           tar -xzf admin-dist-hk1.tar.gz -C frontend-admin/dist
 
       # ------------------------------------------
@@ -630,35 +647,37 @@ jobs:
       # ------------------------------------------
       # Download Artifacts from S3
       # ------------------------------------------
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
-          aws-region: ${{ secrets.S3_REGION }}
+      - name: Configure S3 credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.S3_REGION }}
+          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
+        run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << EOF
+          [default]
+          region = ${{ secrets.S3_REGION }}
+          s3 =
+            addressing_style = path
+          EOF
 
       - name: Download Frontend Artifact from S3
         run: |
-          endpoint_args=()
-          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
           mkdir -p frontend/dist
-          aws "${endpoint_args[@]}" s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-us1.tar.gz frontend-dist-us1.tar.gz
+          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-us1.tar.gz frontend-dist-us1.tar.gz
           tar -xzf frontend-dist-us1.tar.gz -C frontend/dist
 
       - name: Download Backend Publish from S3
         run: |
-          endpoint_args=()
-          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
           mkdir -p backend/publish
-          aws "${endpoint_args[@]}" s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz backend-publish.tar.gz
+          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz backend-publish.tar.gz
           tar -xzf backend-publish.tar.gz -C backend/publish
 
       - name: Download Admin Frontend Artifact from S3
         run: |
-          endpoint_args=()
-          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
           mkdir -p frontend-admin/dist
-          aws "${endpoint_args[@]}" s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-us1.tar.gz admin-dist-us1.tar.gz
+          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-us1.tar.gz admin-dist-us1.tar.gz
           tar -xzf admin-dist-us1.tar.gz -C frontend-admin/dist
 
       # ------------------------------------------
