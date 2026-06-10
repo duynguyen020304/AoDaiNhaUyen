@@ -8,6 +8,7 @@ public interface IBlogPostRepository
   Task<(IReadOnlyList<BlogPost> Items, int TotalCount)> GetAllAsync(
     BlogPostStatus? status,
     string? tag,
+    string? categorySlug,
     string? search,
     int page,
     int pageSize,

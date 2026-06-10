@@ -12,6 +12,7 @@ public sealed record BlogPostListItemDto(
   int? FeaturedImageHeight,
   BlogPostTemplate Template,
   IReadOnlyList<string> Tags,
+  BlogCategoryDto? Category,
   string? AuthorName,
   BlogPostStatus Status,
   DateTime? PublishedAt,

@@ -13,6 +13,7 @@ namespace AoDaiNhaUyen.Api.Controllers;
 [ApiController]
 public sealed class BlogPostsController(
   IBlogPostService blogPostService,
+  IBlogCategoryService blogCategoryService,
   IImageUploadValidator imageUploadValidator,
   IStorageService storageService,
   IBlogImageVisibilityService blogImageVisibilityService,
@@ -21,13 +22,21 @@ public sealed class BlogPostsController(
   [HttpGet("api/v1/blog")]
   public async Task<IActionResult> GetPublic(
     [FromQuery] string? tag,
+    [FromQuery] string? category,
     [FromQuery] string? search,
     [FromQuery] int page = 1,
     [FromQuery] int pageSize = 12,
     CancellationToken cancellationToken = default)
   {
-    var result = await blogPostService.GetPostsAsync(BlogPostStatus.Published, tag, search, page, pageSize, false, cancellationToken);
+    var result = await blogPostService.GetPostsAsync(BlogPostStatus.Published, tag, category, search, page, pageSize, false, cancellationToken);
     return Ok(ApiResponseFactory.PaginatedSuccess(result.Items, result.Page, result.PageSize, result.TotalCount));
+  }
+
+  [HttpGet("api/v1/blog/categories")]
+  public async Task<IActionResult> GetCategories(CancellationToken cancellationToken)
+  {
+    var categories = await blogCategoryService.GetPublicAsync(cancellationToken);
+    return Ok(ApiResponseFactory.Success(categories));
   }
 
   [HttpGet("api/v1/blog/tags")]
@@ -61,12 +70,13 @@ public sealed class BlogPostsController(
   public async Task<IActionResult> GetAdmin(
     [FromQuery] BlogPostStatus? status,
     [FromQuery] string? tag,
+    [FromQuery] string? category,
     [FromQuery] string? search,
     [FromQuery] int page = 1,
     [FromQuery] int pageSize = 20,
     CancellationToken cancellationToken = default)
   {
-    var result = await blogPostService.GetPostsAsync(status, tag, search, page, pageSize, true, cancellationToken);
+    var result = await blogPostService.GetPostsAsync(status, tag, category, search, page, pageSize, true, cancellationToken);
     return Ok(ApiResponseFactory.PaginatedSuccess(result.Items, result.Page, result.PageSize, result.TotalCount));
   }
 

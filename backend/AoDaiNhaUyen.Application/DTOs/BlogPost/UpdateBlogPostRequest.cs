@@ -15,6 +15,7 @@ public sealed record UpdateBlogPostRequest
   public BlogPostTemplate Template { get; init; } = BlogPostTemplate.StandardArticle;
   public required JsonElement Content { get; init; }
   public IReadOnlyList<string> Tags { get; init; } = [];
+  public Guid? BlogCategoryId { get; init; }
   public Guid? AuthorId { get; init; }
   [MaxLength(200)] public string? AuthorNameOverride { get; init; }
   public string? AuthorBio { get; init; }

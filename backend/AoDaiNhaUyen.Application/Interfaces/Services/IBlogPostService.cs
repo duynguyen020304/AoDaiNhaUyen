@@ -6,7 +6,7 @@ namespace AoDaiNhaUyen.Application.Interfaces.Services;
 
 public interface IBlogPostService
 {
-  Task<PagedResult<BlogPostListItemDto>> GetPostsAsync(BlogPostStatus? status, string? tag, string? search, int page, int pageSize, bool includeDeleted = false, CancellationToken cancellationToken = default);
+  Task<PagedResult<BlogPostListItemDto>> GetPostsAsync(BlogPostStatus? status, string? tag, string? categorySlug, string? search, int page, int pageSize, bool includeDeleted = false, CancellationToken cancellationToken = default);
   Task<BlogPostDto?> GetBySlugAsync(string slug, bool includeDrafts = false, CancellationToken cancellationToken = default);
   Task<BlogPostDto?> GetByIdAsync(Guid id, bool includeDeleted = false, CancellationToken cancellationToken = default);
   Task<IReadOnlyList<BlogPostListItemDto>> GetRelatedAsync(string slug, int count, CancellationToken cancellationToken = default);

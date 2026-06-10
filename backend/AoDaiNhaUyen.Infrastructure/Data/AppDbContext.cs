@@ -52,6 +52,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<EmailSendLog> EmailSendLogs => Set<EmailSendLog>();
   public DbSet<Subscriber> Subscribers => Set<Subscriber>();
   public DbSet<MarketingConsent> MarketingConsents => Set<MarketingConsent>();
+  public DbSet<BlogCategory> BlogCategories => Set<BlogCategory>();
   public DbSet<BlogPost> BlogPosts => Set<BlogPost>();
   public DbSet<BlogImage> BlogImages => Set<BlogImage>();
   public DbSet<OrderPromoCostSnapshot> OrderPromoCostSnapshots => Set<OrderPromoCostSnapshot>();
@@ -836,6 +837,20 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasOne(x => x.PromoCode).WithMany().HasForeignKey(x => x.PromoCodeId).OnDelete(DeleteBehavior.SetNull);
     });
 
+    modelBuilder.Entity<BlogCategory>(builder =>
+    {
+      builder.ToTable("blog_categories");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.Slug).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.Description).HasMaxLength(500);
+      builder.Property(x => x.SortOrder).HasDefaultValue(0).IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.Slug).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_blog_categories_slug_unique");
+      builder.HasIndex(x => new { x.IsActive, x.SortOrder }).HasDatabaseName("idx_blog_categories_active_sort_order");
+    });
+
     modelBuilder.Entity<BlogPost>(builder =>
     {
       builder.ToTable("blog_posts");
@@ -858,8 +873,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => x.Slug).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_blog_posts_slug_unique");
       builder.HasIndex(x => new { x.Status, x.PublishedAt }).HasDatabaseName("idx_blog_posts_status_published_at");
       builder.HasIndex(x => x.AuthorId).HasDatabaseName("idx_blog_posts_author_id");
+      builder.HasIndex(x => x.BlogCategoryId).HasDatabaseName("idx_blog_posts_blog_category_id");
       builder.HasIndex(x => x.Tags).HasMethod("gin").HasDatabaseName("idx_blog_posts_tags_gin");
       builder.HasOne(x => x.Author).WithMany().HasForeignKey(x => x.AuthorId).OnDelete(DeleteBehavior.SetNull);
+      builder.HasOne(x => x.BlogCategory).WithMany(x => x.Posts).HasForeignKey(x => x.BlogCategoryId).OnDelete(DeleteBehavior.SetNull);
     });
 
 

@@ -11,6 +11,7 @@ public sealed class BlogPostRepository(AppDbContext dbContext) : IBlogPostReposi
   public async Task<(IReadOnlyList<BlogPost> Items, int TotalCount)> GetAllAsync(
     BlogPostStatus? status,
     string? tag,
+    string? categorySlug,
     string? search,
     int page,
     int pageSize,
@@ -28,6 +29,12 @@ public sealed class BlogPostRepository(AppDbContext dbContext) : IBlogPostReposi
     {
       var tagPattern = $"%\"{tag.Trim()}\"%";
       query = query.Where(p => EF.Functions.Like(p.Tags, tagPattern));
+    }
+
+    if (!string.IsNullOrWhiteSpace(categorySlug))
+    {
+      var normalizedCategorySlug = categorySlug.Trim();
+      query = query.Where(p => p.BlogCategory != null && p.BlogCategory.Slug == normalizedCategorySlug);
     }
 
     if (!string.IsNullOrWhiteSpace(search))
@@ -118,7 +125,7 @@ public sealed class BlogPostRepository(AppDbContext dbContext) : IBlogPostReposi
 
   private IQueryable<BlogPost> BaseQuery(bool includeDeleted)
   {
-    var query = dbContext.BlogPosts.AsNoTracking().Include(p => p.Author).AsQueryable();
+    var query = dbContext.BlogPosts.AsNoTracking().Include(p => p.Author).Include(p => p.BlogCategory).AsQueryable();
     return includeDeleted ? query.IgnoreQueryFilters() : query;
   }
 

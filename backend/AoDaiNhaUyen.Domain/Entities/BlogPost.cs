@@ -13,6 +13,8 @@ public sealed class BlogPost : BaseEntity
   public BlogPostTemplate Template { get; set; } = BlogPostTemplate.StandardArticle;
   public required string Content { get; set; }
   public required string Tags { get; set; }
+  public Guid? BlogCategoryId { get; set; }
+  public BlogCategory? BlogCategory { get; set; }
   public Guid? AuthorId { get; set; }
   public User? Author { get; set; }
   public string? AuthorNameOverride { get; set; }

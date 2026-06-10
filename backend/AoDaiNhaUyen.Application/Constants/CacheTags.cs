@@ -8,4 +8,5 @@ public static class CacheTags
   public const string Categories = "tag:categories";
   public const string Inventory = "tag:inventory";
   public const string Users = "tag:users";
+  public const string Blog = "tag:blog";
 }

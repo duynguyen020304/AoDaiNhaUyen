@@ -127,8 +127,10 @@ public static class ServiceRegistration
     services.AddScoped<IUserProfileRepository, UserProfileRepository>();
     services.AddScoped<ICommentRepository, CommentRepository>();
 
+    services.AddScoped<IBlogCategoryRepository, BlogCategoryRepository>();
     services.AddScoped<IBlogPostRepository, BlogPostRepository>();
     services.AddScoped<ICatalogService, CatalogService>();
+    services.AddScoped<IBlogCategoryService, BlogCategoryService>();
     services.AddScoped<IBlogPostService, BlogPostService>();
     services.AddScoped<ICommentService, CommentService>();
     services.AddScoped<IAdminProductService, AdminProductService>();

@@ -69,6 +69,7 @@ public sealed class CacheInvalidationService(
       cache.RemoveByTagAsync(CacheTags.Products, cancellationToken),
       cache.RemoveByTagAsync(CacheTags.Categories, cancellationToken),
       cache.RemoveByTagAsync(CacheTags.Inventory, cancellationToken),
-      cache.RemoveByTagAsync(CacheTags.Users, cancellationToken));
+      cache.RemoveByTagAsync(CacheTags.Users, cancellationToken),
+      cache.RemoveByTagAsync(CacheTags.Blog, cancellationToken));
   }
 }

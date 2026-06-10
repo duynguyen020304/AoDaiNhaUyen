@@ -3,8 +3,10 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using AoDaiNhaUyen.Application.Constants;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.BlogPost;
+using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Repositories;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Common;
@@ -12,7 +14,11 @@ using AoDaiNhaUyen.Domain.Entities;
 
 namespace AoDaiNhaUyen.Application.Services;
 
-public sealed class BlogPostService(IBlogPostRepository blogPostRepository, IStorageService storageService) : IBlogPostService
+public sealed class BlogPostService(
+  IBlogPostRepository blogPostRepository,
+  IBlogCategoryRepository blogCategoryRepository,
+  IStorageService storageService,
+  IFusionCacheService cache) : IBlogPostService
 {
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
   {
@@ -22,6 +28,7 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository, ISto
   public async Task<PagedResult<BlogPostListItemDto>> GetPostsAsync(
     BlogPostStatus? status,
     string? tag,
+    string? categorySlug,
     string? search,
     int page,
     int pageSize,
@@ -30,38 +37,78 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository, ISto
   {
     var validPage = page <= 0 ? 1 : page;
     var validPageSize = pageSize is <= 0 or > 50 ? 12 : pageSize;
-    var (items, totalCount) = await blogPostRepository.GetAllAsync(status, tag, search, validPage, validPageSize, includeDeleted, cancellationToken);
-    var mapped = await Task.WhenAll(items.Select(item => MapListItemAsync(item, cancellationToken)));
-    return new PagedResult<BlogPostListItemDto>(mapped.ToList(), totalCount, validPage, validPageSize);
+    var key = $"blog:list:status={status?.ToString() ?? "all"}:tag={NormalizeCachePart(tag)}:category={NormalizeCachePart(categorySlug)}:search={NormalizeCachePart(search)}:page={validPage}:pageSize={validPageSize}:deleted={includeDeleted}";
+    return await cache.GetOrSetAsync(
+      key,
+      async token =>
+      {
+        var (items, totalCount) = await blogPostRepository.GetAllAsync(status, tag, categorySlug, search, validPage, validPageSize, includeDeleted, token);
+        var mapped = await Task.WhenAll(items.Select(item => MapListItemAsync(item, token)));
+        return new PagedResult<BlogPostListItemDto>(mapped.ToList(), totalCount, validPage, validPageSize);
+      },
+      tags: [CacheTags.Blog],
+      duration: TimeSpan.FromMinutes(includeDeleted ? 2 : 10),
+      token: cancellationToken) ?? new PagedResult<BlogPostListItemDto>([], 0, validPage, validPageSize);
   }
 
   public async Task<BlogPostDto?> GetBySlugAsync(string slug, bool includeDrafts = false, CancellationToken cancellationToken = default)
   {
     if (string.IsNullOrWhiteSpace(slug)) return null;
-    var post = await blogPostRepository.GetBySlugAsync(slug.Trim(), includeDrafts, cancellationToken);
-    return post is null ? null : await MapPostAsync(post, cancellationToken);
+    var normalizedSlug = slug.Trim();
+    return await cache.GetOrSetAsync(
+      $"blog:detail:slug={NormalizeCachePart(normalizedSlug)}:drafts={includeDrafts}",
+      async token =>
+      {
+        var post = await blogPostRepository.GetBySlugAsync(normalizedSlug, includeDrafts, token);
+        return post is null ? null : await MapPostAsync(post, token);
+      },
+      tags: [CacheTags.Blog],
+      duration: TimeSpan.FromMinutes(includeDrafts ? 2 : 30),
+      token: cancellationToken);
   }
 
   public async Task<BlogPostDto?> GetByIdAsync(Guid id, bool includeDeleted = false, CancellationToken cancellationToken = default)
   {
-    var post = await blogPostRepository.GetByIdAsync(id, includeDeleted, cancellationToken);
-    return post is null ? null : await MapPostAsync(post, cancellationToken);
+    return await cache.GetOrSetAsync(
+      $"blog:detail:id={id}:deleted={includeDeleted}",
+      async token =>
+      {
+        var post = await blogPostRepository.GetByIdAsync(id, includeDeleted, token);
+        return post is null ? null : await MapPostAsync(post, token);
+      },
+      tags: [CacheTags.Blog],
+      duration: TimeSpan.FromMinutes(includeDeleted ? 2 : 30),
+      token: cancellationToken);
   }
 
   public async Task<IReadOnlyList<BlogPostListItemDto>> GetRelatedAsync(string slug, int count, CancellationToken cancellationToken = default)
   {
     if (string.IsNullOrWhiteSpace(slug)) return [];
-    var post = await blogPostRepository.GetBySlugAsync(slug.Trim(), false, cancellationToken);
-    if (post is null) return [];
-
+    var normalizedSlug = slug.Trim();
     var validCount = count is <= 0 or > 6 ? 3 : count;
-    var related = await blogPostRepository.GetRelatedAsync(post.Id, DeserializeTags(post.Tags), validCount, cancellationToken);
-    var mapped = await Task.WhenAll(related.Select(item => MapListItemAsync(item, cancellationToken)));
-    return mapped.ToList();
+    return await cache.GetOrSetAsync(
+      $"blog:related:slug={NormalizeCachePart(normalizedSlug)}:count={validCount}",
+      async token =>
+      {
+        var post = await blogPostRepository.GetBySlugAsync(normalizedSlug, false, token);
+        if (post is null) return [];
+
+        var related = await blogPostRepository.GetRelatedAsync(post.Id, DeserializeTags(post.Tags), validCount, token);
+        var mapped = await Task.WhenAll(related.Select(item => MapListItemAsync(item, token)));
+        return mapped.ToList();
+      },
+      tags: [CacheTags.Blog],
+      duration: TimeSpan.FromMinutes(20),
+      token: cancellationToken) ?? [];
   }
 
-  public Task<IReadOnlyList<string>> GetTagsAsync(CancellationToken cancellationToken = default)
-    => blogPostRepository.GetAllTagsAsync(cancellationToken);
+  public async Task<IReadOnlyList<string>> GetTagsAsync(CancellationToken cancellationToken = default)
+    => await cache.GetOrSetAsync(
+      "blog:tags:public",
+      blogPostRepository.GetAllTagsAsync,
+      tags: [CacheTags.Blog],
+      duration: TimeSpan.FromMinutes(30),
+      token: cancellationToken) ?? [];
 
   public async Task<BlogPostDto> CreateAsync(CreateBlogPostRequest request, CancellationToken cancellationToken = default)
   {
@@ -81,6 +128,7 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository, ISto
       Template = request.Template,
       Content = normalizedContent,
       Tags = JsonSerializer.Serialize(NormalizeTags(request.Tags), JsonOptions),
+      BlogCategoryId = await NormalizeBlogCategoryIdAsync(request.BlogCategoryId, cancellationToken),
       AuthorId = request.AuthorId,
       AuthorNameOverride = NormalizeOptional(request.AuthorNameOverride),
       AuthorBio = NormalizeOptional(request.AuthorBio),
@@ -96,6 +144,7 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository, ISto
     };
 
     await blogPostRepository.AddAsync(post, cancellationToken);
+    await cache.RemoveByTagAsync(CacheTags.Blog, cancellationToken);
     var created = await blogPostRepository.GetByIdAsync(post.Id, false, cancellationToken) ?? post;
     return await MapPostAsync(created, cancellationToken);
   }
@@ -118,6 +167,7 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository, ISto
     post.Template = request.Template;
     post.Content = normalizedContent;
     post.Tags = JsonSerializer.Serialize(NormalizeTags(request.Tags), JsonOptions);
+    post.BlogCategoryId = await NormalizeBlogCategoryIdAsync(request.BlogCategoryId, cancellationToken);
     post.AuthorId = request.AuthorId;
     post.AuthorNameOverride = NormalizeOptional(request.AuthorNameOverride);
     post.AuthorBio = NormalizeOptional(request.AuthorBio);
@@ -133,16 +183,20 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository, ISto
     post.DeletedAt = null;
 
     await blogPostRepository.UpdateAsync(post, cancellationToken);
+    await cache.RemoveByTagAsync(CacheTags.Blog, cancellationToken);
     var updated = await blogPostRepository.GetByIdAsync(post.Id, false, cancellationToken) ?? post;
     return await MapPostAsync(updated, cancellationToken);
   }
 
-  public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
-    => blogPostRepository.SoftDeleteAsync(id, cancellationToken);
+  public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+  {
+    await blogPostRepository.SoftDeleteAsync(id, cancellationToken);
+    await cache.RemoveByTagAsync(CacheTags.Blog, cancellationToken);
+  }
 
   public async Task<string> BuildBlogSitemapAsync(string siteBaseUrl, CancellationToken cancellationToken = default)
   {
-    var (items, _) = await blogPostRepository.GetAllAsync(BlogPostStatus.Published, null, null, 1, 50000, false, cancellationToken);
+    var (items, _) = await blogPostRepository.GetAllAsync(BlogPostStatus.Published, null, null, null, 1, 50000, false, cancellationToken);
     var baseUrl = siteBaseUrl.TrimEnd('/');
     var sb = new StringBuilder();
     sb.AppendLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -162,7 +216,7 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository, ISto
 
   public async Task<string> BuildLlmsTextAsync(string siteBaseUrl, CancellationToken cancellationToken = default)
   {
-    var (items, _) = await blogPostRepository.GetAllAsync(BlogPostStatus.Published, null, null, 1, 20, false, cancellationToken);
+    var (items, _) = await blogPostRepository.GetAllAsync(BlogPostStatus.Published, null, null, null, 1, 20, false, cancellationToken);
     var baseUrl = siteBaseUrl.TrimEnd('/');
     var sb = new StringBuilder();
     sb.AppendLine("# Áo Dài Nhà Uyên");
@@ -468,6 +522,19 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository, ISto
     return number;
   }
 
+  private async Task<Guid?> NormalizeBlogCategoryIdAsync(Guid? categoryId, CancellationToken cancellationToken)
+  {
+    if (categoryId is null) return null;
+    var category = await blogCategoryRepository.GetByIdAsync(categoryId.Value, cancellationToken);
+    if (category is null) throw new ArgumentException("Danh mục bài viết không hợp lệ.");
+    return category.Id;
+  }
+
+  private static BlogCategoryDto? MapCategory(BlogCategory? category)
+    => category is null
+      ? null
+      : new BlogCategoryDto(category.Id, category.Name, category.Slug, category.Description, category.SortOrder, 0);
+
   private async Task<BlogPostListItemDto> MapListItemAsync(BlogPost post, CancellationToken cancellationToken) => new(
     post.Id,
     post.Title,
@@ -478,6 +545,7 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository, ISto
     post.FeaturedImageHeight,
     post.Template,
     DeserializeTags(post.Tags),
+    MapCategory(post.BlogCategory),
     post.AuthorNameOverride ?? post.Author?.FullName,
     post.Status,
     post.PublishedAt,
@@ -494,6 +562,8 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository, ISto
     post.Template,
     await DeserializeBlocksAsync(post.Content, post.Status, cancellationToken),
     DeserializeTags(post.Tags),
+    MapCategory(post.BlogCategory),
+    post.BlogCategoryId,
     post.AuthorId,
     post.AuthorNameOverride ?? post.Author?.FullName,
     post.Author?.AvatarUrl,
@@ -528,6 +598,9 @@ public sealed class BlogPostService(IBlogPostRepository blogPostRepository, ISto
 
   private static IReadOnlyList<string> NormalizeTags(IEnumerable<string> tags)
     => tags.Select(t => t.Trim()).Where(t => !string.IsNullOrWhiteSpace(t)).Distinct(StringComparer.OrdinalIgnoreCase).Take(20).ToList();
+
+  private static string NormalizeCachePart(string? value)
+    => Uri.EscapeDataString(string.IsNullOrWhiteSpace(value) ? "none" : value.Trim().ToLowerInvariant());
 
   private static string? NormalizeOptional(string? value)
     => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

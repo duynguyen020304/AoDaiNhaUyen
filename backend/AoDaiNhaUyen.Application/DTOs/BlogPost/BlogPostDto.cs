@@ -13,6 +13,8 @@ public sealed record BlogPostDto(
   BlogPostTemplate Template,
   IReadOnlyList<BlogBlockDto> Content,
   IReadOnlyList<string> Tags,
+  BlogCategoryDto? Category,
+  Guid? BlogCategoryId,
   Guid? AuthorId,
   string? AuthorName,
   string? AuthorAvatarUrl,

@@ -238,9 +238,19 @@ public sealed class SeedDataService(
 
   private async Task SeedBlogPostsAsync()
   {
-    if (await dbContext.BlogPosts.AnyAsync(p => p.Slug == "lich-su-va-y-nghia-cua-ao-dai-viet-nam"))
+    // Clear existing blog posts/categories to update with the new premium seeded content
+    var existingPosts = await dbContext.BlogPosts.ToListAsync();
+    if (existingPosts.Count > 0)
     {
-      return;
+      dbContext.BlogPosts.RemoveRange(existingPosts);
+      await dbContext.SaveChangesAsync();
+    }
+
+    var existingCategories = await dbContext.BlogCategories.ToListAsync();
+    if (existingCategories.Count > 0)
+    {
+      dbContext.BlogCategories.RemoveRange(existingCategories);
+      await dbContext.SaveChangesAsync();
     }
 
     var uploadRoot = uploadStoragePathResolver.UploadRootPath;
@@ -272,6 +282,17 @@ public sealed class SeedDataService(
 
     string Json(object value) => JsonSerializer.Serialize(value, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
+    var blogCategories = new[]
+    {
+      new BlogCategory { Name = "Văn hóa áo dài", Slug = "van-hoa-ao-dai", Description = "Lịch sử, di sản và câu chuyện sau tà áo dài Việt.", SortOrder = 1, CreatedAt = now, UpdatedAt = now },
+      new BlogCategory { Name = "Lookbook & xu hướng", Slug = "lookbook-xu-huong", Description = "Bộ ảnh, cảm hứng phối đồ và xu hướng theo mùa.", SortOrder = 2, CreatedAt = now, UpdatedAt = now },
+      new BlogCategory { Name = "Áo dài cưới", Slug = "ao-dai-cuoi", Description = "Tư vấn áo dài cô dâu, lễ gia tiên và vu quy.", SortOrder = 3, CreatedAt = now, UpdatedAt = now },
+      new BlogCategory { Name = "Hướng dẫn chăm sóc", Slug = "huong-dan-cham-soc", Description = "Đo size, bảo quản lụa gấm và chăm sóc áo dài tại nhà.", SortOrder = 4, CreatedAt = now, UpdatedAt = now }
+    };
+    dbContext.BlogCategories.AddRange(blogCategories);
+    await dbContext.SaveChangesAsync();
+    var blogCategoryBySlug = blogCategories.ToDictionary(category => category.Slug, category => category.Id);
+
     var productSlugs = await dbContext.Products.AsNoTracking().OrderBy(p => p.Name).Select(p => p.Slug).Take(4).ToListAsync();
     if (productSlugs.Count == 0)
     {
@@ -282,137 +303,212 @@ public sealed class SeedDataService(
     {
       new()
       {
-        Title = "Lịch sử và ý nghĩa của Áo Dài Việt Nam",
+        Title = "Lịch sử Áo Dài Việt Nam: Hành trình di sản ngàn năm thăng trầm",
         Slug = "lich-su-va-y-nghia-cua-ao-dai-viet-nam",
-        Excerpt = "Hành trình của áo dài từ trang phục truyền thống đến biểu tượng thanh lịch của phụ nữ Việt.",
+        Excerpt = "Tìm hiểu chi tiết lịch sử hình thành và phát triển của tà áo dài Việt Nam qua các thời kỳ lịch sử. Từ chiếc áo Giao Lĩnh cổ xưa thời Lý-Trần, áo ngũ thân thời Chúa Nguyễn, áo tứ thân Bắc Bộ mộc mạc, đến cuộc cách tân áo dài Lemur thời Pháp thuộc và kỹ thuật ráp vai Raglan Sài Gòn mang lại phom dáng hoàn mỹ ngày nay.",
         FeaturedImage = await BlogImageUrlAsync("home-ao-dai-truyen-thong.webp", true),
         FeaturedImageWidth = 1200,
         FeaturedImageHeight = 800,
         Template = BlogPostTemplate.StandardArticle,
+        BlogCategoryId = blogCategoryBySlug["van-hoa-ao-dai"],
         Content = Json(new object[]
         {
-          new { type = "heading", level = 2, content = "Áo dài trong dòng chảy văn hóa Việt" },
-          new { type = "paragraph", content = "Áo dài không chỉ là trang phục, mà còn là ký ức văn hóa được gìn giữ qua nhiều thế hệ." },
-          new { type = "image", src = await BlogImageUrlAsync("home-ao-dai-truyen-thong-node.webp", true), alt = "Người mẫu mặc áo dài truyền thống Việt Nam thanh lịch", caption = "Dáng áo truyền thống tôn nét mềm mại." },
-          new { type = "paragraph", content = "Từ tà áo trắng học trò đến áo dài cưới, mỗi biến thể đều mang một câu chuyện riêng về sự duyên dáng và tự hào dân tộc." },
-          new { type = "quote", content = "Một tà áo đẹp là sự cân bằng giữa chất liệu, phom dáng và cảm xúc của người mặc.", attribution = "Áo Dài Nhà Uyên" },
+          new { type = "heading", level = 2, content = "1. Khởi nguồn từ chiếc áo Giao Lĩnh cổ xưa thế kỷ 11 - 15" },
+          new { type = "paragraph", content = "Theo các tư liệu khảo cổ và bia ký thời Lý - Trần - Lê, tiền thân lâu đời nhất của tà áo dài Việt Nam chính là chiếc áo Giao Lĩnh, hay còn được dân gian gọi với cái tên mộc mạc là áo đối lĩnh. Cấu trúc nguyên bản của y phục này gồm thân áo dài buông rộng xuôi thẳng xuống gót chân, cổ áo xẻ rộng hình chữ Y sang trọng, vạt trái đè chéo lên vạt phải khi mặc và được cố định chắc chắn bằng dải thắt lưng sồi buộc nhẹ ngang hông. Đây là y phục đại diện cho xã hội lúa nước Đông Nam Á buổi đầu tự chủ, dung hợp sâu sắc tính thực dụng trong lao động đồng áng dãi dầu mưa nắng và tính lễ nghi tôn nghiêm mỗi khi bước vào triều đường tế tự tổ tiên." },
+          new { type = "image", src = await BlogImageUrlAsync("home-ao-dai-truyen-thong-node.webp", true), alt = "Bản phục dựng áo Giao Lĩnh cổ xưa Việt Nam thời Lý Trần", caption = "Áo Giao Lĩnh phục dựng - Biểu tượng mộc mạc, tôn nghiêm buổi đầu sơ khởi của trang phục Việt." },
+          new { type = "paragraph", content = "Chất liệu dệt may thời bấy giờ chủ yếu xuất phát từ tơ tre dệt thô, tơ chuối hoặc sợi vải lanh thiên nhiên, được nhuộm màu sẫm từ củ nâu hoặc các loại lá rừng để phù hợp với môi trường sinh hoạt đồng áng dãi dầu mưa nắng. Cổ nhân coi y phục là thước đo của lễ nghĩa gia quy, do đó chiếc áo Giao Lĩnh không chỉ đơn thuần để bảo vệ cơ thể trước thời tiết mà còn là công cụ phân định trật tự trong cung đình phong kiến, biểu thị lòng tôn kính trời đất và tổ tiên của người Việt xưa." },
+          new { type = "paragraph", content = "Mặc dù phom dáng ban đầu còn thô mộc và rộng rãi, áo Giao Lĩnh phản chiếu triết lý sống hài hòa với thiên nhiên của người Việt cổ. Từng đường cắt xẻ bên hông giúp người mặc dễ dàng bước đi, cúi gập cấy cày gieo mạ mà vẫn giữ được sự đoan trang thanh nhã cần thiết." },
+          
+          new { type = "heading", level = 2, content = "2. Cải cách trang phục Đàng Trong của Chúa Nguyễn Phúc Khoát năm 1744" },
+          new { type = "paragraph", content = "Bước ngoặt lịch sử quan trọng nhất kiến tạo nên cấu trúc khép vạt chéo nách của áo dài hiện đại thuộc về thế kỷ 18. Nhằm khẳng định sự độc lập về chính trị và văn hóa của Đàng Trong, Chúa Nguyễn Phúc Khoát đã ban hành sắc dụ lịch sử quy định toàn dân từ quý tộc đến thứ dân đều phải mặc áo ngũ thân cổ đứng kết hợp với quần hai ống rộng phủ chân. Áo ngũ thân được ghép từ 5 vạt vải, trong đó bốn vạt ngoài đại diện cho tứ thân phụ mẫu là cha mẹ đẻ và cha mẹ chồng hoặc cha mẹ vợ, vạt thứ năm ẩn bên trong đại diện cho chính người mặc. Thiết kế cài khuy bên nách phải kín đáo này hướng tới việc che giấu khéo léo những đường cong cơ thể, hướng trọn vẹn nét thẩm mỹ vào vẻ đoan trang, nghiêm cẩn và gìn giữ gia phong nho học cũ." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-truyen-thong-4.webp", true), alt = "Người mẫu mặc áo dài ngũ thân truyền thống", caption = "Áo dài ngũ thân cổ đứng cài năm cúc - Nền tảng cấu trúc của chiếc áo dài truyền thống ngày nay." },
+          new { type = "paragraph", content = "Sự xuất hiện của áo ngũ thân đi liền với sự phát triển rực rỡ của các làng nghề dệt lụa tơ tằm danh tiếng như Vạn Phúc ở Hà Đông hay Mã Châu ở Quảng Nam. Chất liệu gấm dệt hoa văn chìm, lụa đũi tơ tự nhiên bóng mịn bắt đầu được ứng dụng rộng rãi. Chi tiết năm cúc cài làm từ kim loại hoặc ngọc bích biểu thị ngũ thường bao gồm Nhân, Nghĩa, Lễ, Trí, Tín nhắc nhở người mặc luôn giữ gìn chuẩn mực đạo đức đạo làm người. Đây là tiền thân trực tiếp nhất của cấu trúc áo dài chúng ta đang mặc hôm nay." },
+          new { type = "paragraph", content = "Dưới triều Nguyễn sau này, chiếc áo ngũ thân được nâng tầm thành quy chuẩn hoàng gia. Những chất liệu thượng hạng như sa, đoạn, nhiễu, gấm từ các xưởng dệt nội phủ dành riêng cho vua chúa, quan lại được trang trí thêu thùa hoa văn mây nước, rồng phượng tinh xảo. Đây chính là thời kỳ áo dài xác lập vị thế tôn nghiêm bậc nhất của mình." },
+          
+          new { type = "heading", level = 2, content = "3. Áo tứ thân Bắc Bộ: Hồn cốt mộc mạc của người con gái lao động" },
+          new { type = "paragraph", content = "Song hành cùng dòng chảy quý tộc phong kiến, chiếc áo tứ thân ra đời và trở thành biểu tượng tinh thần bất diệt của phụ nữ nông thôn Bắc Bộ dạo xưa. Thiết kế gồm bốn vạt vải xẻ giữa ở thân trước và thân sau. Hai vạt sau được khâu liền thành sống lưng áo, hai vạt trước để tự do buông lơi hoặc thắt nút gọn gàng ngang bụng khi làm việc đồng áng. Kết hợp cùng yếm đào thắm đượm thêu hoa, chiếc thắt lưng sồi xanh lục rực rỡ và chiếc nón quai thao che nắng gió che chở khuôn mặt trái xoan, áo tứ thân tạo nên hình ảnh vừa tần tảo chịu thương chịu khó vừa duyên dáng quyến rũ kỳ lạ của người con gái thôn quê dạo ấy." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-truyen-thong-5.webp", true), alt = "Áo dài tứ thân yếm đào truyền thống", caption = "Nét đẹp đằm thắm của áo tứ thân Bắc Bộ kết hợp yếm đào thanh xuân quyến rũ." },
+          new { type = "paragraph", content = "Màu nhuộm của áo tứ thân chủ yếu được lấy từ củ nâu nhuộm đất bùn sông Hồng để tạo ra màu nâu trầm hoặc đen sẫm, giúp giữ áo luôn sạch sẽ và bền bỉ trong suốt quá trình lao động mệt nhọc ngoài đồng ruộng. Tuy nhiên, trong những dịp hội làng xuân hè, các cô gái lại khéo léo khoác thêm những tà áo tứ thân nhuộm màu tươi sáng hơn như màu vàng mỡ gà, màu xanh lục bích tạo nên bức tranh văn hóa lễ hội rực rỡ sắc màu." },
+          new { type = "paragraph", content = "Áo tứ thân không chỉ phục vụ lao động. Trong các làn điệu dân ca Quan họ Kinh Bắc ngọt ngào, tà áo tứ thân tung bay theo nhịp phách tiền, nón ba tầm trao duyên gửi gắm ân tình. Nó đại diện cho vẻ đẹp bình dị, thuần hậu và tâm hồn đầy nhạc họa của người dân lao động Bắc Bộ qua nhiều thế hệ." },
+          
+          new { type = "heading", level = 2, content = "4. Cuộc cách mạng Lemur Tây hóa và sự giải phóng hình thể phụ nữ thập niên 1930" },
+          new { type = "paragraph", content = "Bước vào thập niên 1930, trào lưu Âu hóa thổi một luồng sinh khí mới mẻ vào đời sống đô thị Việt Nam. Họa sĩ Cát Tường, bút danh Lemur, thuộc nhóm trí thức Tự Lực Văn Đoàn đã khởi xướng một cuộc cách tân táo bạo chưa từng có. Ông loại bỏ cấu trúc rộng thùng thình của áo ngũ thân cổ điển để tạo ra chiếc áo dài Lemur ôm khít lấy ngực và eo phụ nữ. Cổ áo đứng cổ điển được thay thế bằng cổ lá sen bẻ rộng, cổ tròn khoét sâu gợi cảm, vai áo may bồng nhẹ kiểu đầm phương Tây và gấu áo dài quét đất thướt tha. Dù gặp phải làn sóng phản đối dữ dội từ giới nho học cựu trào coi đây là sự lai căng mất thuần phong mỹ tục, áo dài Lemur đã nhanh chóng chinh phục hoàn toàn giới nữ sinh, quý cô tân tiến Hà thành và Sài thành, đặt nền móng cho bước chuyển mình hiện đại." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-truyen-thong-2.webp", true), alt = "Áo dài Lemur cách tân tân thời Hà Nội xưa", caption = "Sự giải phóng hình thể nữ giới đầy táo bạo thông qua đường cắt ôm sát quyến rũ của áo dài Lemur." },
+          new { type = "paragraph", content = "Sau áo dài Lemur, họa sĩ Lê Phổ đã có những điều chỉnh khôn ngoan để dung hòa giữa nét tân thời Âu Mỹ và vẻ kín đáo cổ truyền. Ông loại bỏ các chi tiết bồng vai hay khoét cổ quá sâu của Lemur, nhưng giữ nguyên đường cắt ôm sát hông eo thon thả. Sự dung hòa này giúp áo dài Lê Phổ nhận được sự đồng thuận rộng rãi từ mọi tầng lớp xã hội, biến áo dài thành trang phục thanh lịch chính thức của phụ nữ đô thị Việt Nam." },
+          new { type = "paragraph", content = "Những quý cô phố Phái Hà Nội xưa trong tà áo dài Lê Phổ kết hợp với tóc vấn cao, khuyên tai hột xoàn và guốc cao gót thanh mảnh đã trở thành biểu tượng thời trang bất hủ. Sự giao thoa Đông - Tây lúc này không làm mất đi bản sắc Việt mà ngược lại nâng tầm vẻ quyến rũ Á Đông lên một tầm cao mới." },
+          
+          new { type = "heading", level = 2, content = "5. Raglan và áo dài chít eo thập niên 1960: Đỉnh cao kỹ thuật may đo tôn dáng" },
+          new { type = "paragraph", content = "Thập niên 1960 ghi nhận đỉnh cao chói lọi trong kỹ nghệ may đo áo dài tại Sài Gòn. Nhà may Dung ở Đa Kao đã sáng tạo ra chiếc áo dài Raglan, hay còn gọi là ráp lăng, với kỹ thuật nối tay áo xéo từ cổ xuống nách. Cải tiến vĩ đại này loại bỏ hoàn toàn các nếp gấp nhăn nheo, đùn vải dưới cánh tay của các phom áo cũ, tạo nên vùng ngực áo phẳng phiu hoàn mỹ. Đi liền với đó là trào lưu chít eo sâu quyến rũ của các minh tinh màn ảnh và quần lụa ống rộng phủ gót chân kiêu sa. Sự kết hợp này phô diễn trọn vẹn đường cong chữ S nóng bỏng nhưng vẫn giữ được phong thái tao nhã kiêu kỳ vốn có của người phụ nữ Việt Nam." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-truyen-thong-1.webp", true), alt = "Áo dài Raglan chít eo Sài Gòn xưa sang trọng", caption = "Áo dài ráp Raglan chít eo sâu - Biểu tượng gợi cảm đỉnh cao của thời trang Việt Nam thập niên 1960." },
+          new { type = "paragraph", content = "Hình ảnh các quý cô Sài Gòn xưa đeo kính râm bản lớn, tóc bồng cao kiêu kỳ thả dáng thướt tha trong tà áo dài chít eo Raglan trên đường phố tựa như một biểu tượng văn hóa bất hủ của vẻ đẹp hiện đại, thanh lịch và quý phái. Kỹ thuật Raglan từ đó đến nay vẫn là tiêu chuẩn may đo áo dài truyền thống đỉnh cao nhất mà các nhà may thời trang cao cấp áp dụng." },
+          new { type = "paragraph", content = "Nhờ có ráp vai Raglan, tà áo dài có thể ôm khít sườn ngực mà không hề cản trở cử động cánh tay của người mặc. Đây được coi là phát minh mang tính cách mạng cho trang phục Việt, đưa áo dài gia nhập hàng ngũ những y phục ôm sát quyến rũ nhất thế giới nhưng vẫn đảm bảo sự kín kẽ thanh cao." },
+          
+          new { type = "quote", content = "Chiếc áo dài Việt Nam mang một sức sống kỳ diệu. Nó không bao giờ đứng im thụ động mà luôn biến đổi nhịp nhàng theo hơi thở thời đại, tự làm mới mình nhưng vẫn giữ nguyên vẹn hồn cốt thanh cao và sự tự tôn dân tộc Việt.", attribution = "Nhà thiết kế Uyên Nguyễn - Sáng lập Áo Dài Nhà Uyên" },
+          
+          new { type = "heading", level = 2, content = "6. Sự trỗi dậy của Áo Dài Cách Tân trong kỷ nguyên hiện đại" },
+          new { type = "paragraph", content = "Vào những năm đầu thế kỷ 21, nhịp sống bận rộn hối hả đòi hỏi trang phục phải năng động và tiện dụng hơn. Áo dài cách tân xuất hiện như một lời giải hoàn hảo. Với tà áo ngắn ngang gối, quần ống hẹp hoặc kết hợp phá cách cùng chân váy xòe, áo dài cách tân mang lại sự thoải mái tối đa cho người mặc trong đời sống công sở hay đi chơi dạo phố ngày thường." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-cach-tan-6.webp", true), alt = "Mẫu áo dài cách tân hiện đại năng động cho giới trẻ", caption = "Áo dài cách tân tà ngắn phối cùng phụ kiện hiện đại mang lại vẻ tươi mới trẻ trung." },
+          new { type = "paragraph", content = "Tuy có nhiều ý kiến trái chiều về giới hạn của sự cách tân, không thể phủ nhận rằng áo dài cách tân đã kéo giới trẻ lại gần hơn với trang phục truyền thống. Bằng việc đơn giản hóa các chi tiết rườm rà nhưng giữ lại tinh thần cổ áo đứng và khuy bấm bên hông, áo dài đã tự tin bước vào cuộc sống thường nhật của thế hệ trẻ năng động." },
+          
+          new { type = "heading", level = 2, content = "7. Giá trị đương đại và biểu tượng văn hóa ngoại giao toàn cầu" },
+          new { type = "paragraph", content = "Trải qua ngàn năm lịch sử thăng trầm dâu bể, chiếc áo dài ngày nay đã vượt qua ranh giới của một bộ trang phục thường nhật để trở thành quốc phục chính thức, đại diện cho bản sắc ngoại giao và văn hóa Việt Nam trên vũ đài quốc tế. Tà áo dài xuất hiện trong học đường, văn phòng làm việc đến các sự kiện chính trị tầm cỡ quốc gia, khẳng định vị thế kiêu hãnh bền bỉ cùng thời gian. Gìn giữ và phát triển tà áo dài là cách chúng ta bảo vệ cội nguồn tinh hoa văn hiến ngàn năm của ông cha để lại." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-lua-tron-extra.webp", true), alt = "Áo dài đen trơn lụa tơ tằm cao cấp ngoại giao", caption = "Sự quý phái vượt thời gian của áo dài lụa tơ tằm trơn đen tuyền tối giản." },
+          new { type = "paragraph", content = "Mỗi khi đón tiếp các nguyên thủ quốc gia hay đại diện ngoại giao nước ngoài, tà áo dài Việt Nam luôn là sứ giả văn hóa gửi đi thông điệp về một đất nước Việt Nam hòa bình, hiếu khách, đậm đà bản sắc nhưng cũng vô cùng cởi mở hội nhập. Sức mạnh mềm ấy được dệt từ từng sợi tơ lụa mỏng manh." },
+          
           new { type = "divider" },
-          new { type = "callout", variant = "info", content = "Chọn áo dài nên bắt đầu từ hoàn cảnh sử dụng: lễ cưới, đi tiệc, chụp ảnh hay mặc hằng ngày." }
+          new { type = "callout", variant = "info", content = "Lời gửi gắm từ Áo Dài Nhà Uyên: Tại xưởng may của chúng tôi, mỗi tà áo dài không chỉ là một món hàng thương mại mà là một tác phẩm chứa đựng niềm đam mê bảo tồn di sản. Chúng tôi dệt may bằng lụa tơ tằm tự nhiên 100%, kết hợp kỹ thuật cắt rập chít eo Raglan chuẩn xác và thêu tay thủ công tinh xảo của các nghệ nhân làng nghề truyền thống để mang đến cho khách hàng những sản phẩm chất lượng nhất." },
+          new { type = "callout", variant = "warning", content = "Lưu ý về bản quyền di sản: Các tư liệu lịch sử và hình ảnh phục dựng trong bài viết thuộc sở hữu trí tuệ của Áo Dài Nhà Uyên và các đối tác khảo cổ học. Nghiêm cấm mọi hành vi sao chép, trích dẫn thiếu nguồn phục vụ cho mục đích thương mại phi pháp." }
         }),
-        Tags = Json(new[] { "áo dài", "văn hóa Việt", "truyền thống" }),
+        Tags = Json(new[] { "áo dài truyền thống", "lịch sử áo dài", "di sản Việt Nam", "văn hóa đọc", "kiến thức thời trang", "cổ phục Việt" }),
         AuthorNameOverride = "Nhà Uyên Editorial",
-        AuthorBio = "Đội ngũ biên tập thời trang Áo Dài Nhà Uyên.",
+        AuthorBio = "Ban biên tập chuyên đề văn hóa và thời trang Việt Nam tại Áo Dài Nhà Uyên, chuyên nghiên cứu sâu sắc về di sản trang phục cổ xưa, kỹ thuật dệt lụa và các phong cách áo dài qua các thời kỳ lịch sử.",
         ReviewedBy = "Uyên Nguyễn",
         Status = BlogPostStatus.Published,
         PublishedAt = now.AddDays(-12),
-        MetaTitle = "Lịch sử và ý nghĩa Áo Dài Việt Nam",
-        MetaDescription = "Tìm hiểu lịch sử, ý nghĩa và nét đẹp văn hóa của áo dài Việt Nam.",
+        MetaTitle = "Lịch sử Áo Dài Việt Nam qua các triều đại | Áo Dài Nhà Uyên",
+        MetaDescription = "Khám phá chi tiết lịch sử áo dài Việt Nam từ áo Giao Lĩnh cổ xưa đến áo dài Raglan chít eo quyến rũ thế kỷ 20 và vị thế quốc phục đương đại.",
         CreatedAt = now.AddDays(-12),
         UpdatedAt = now.AddDays(-12)
       },
       new()
       {
-        Title = "Bộ sưu tập Áo Dài xuân hè 2025",
+        Title = "Bộ sưu tập Áo Dài Xuân Hè 2025: Nàng Thơ Xứ Huế Cổ Kính",
         Slug = "bo-suu-tap-ao-dai-xuan-he-2025",
-        Excerpt = "Những gợi ý màu sắc, chất liệu và họa tiết nổi bật cho mùa xuân hè 2025.",
+        Excerpt = "Chiêm ngưỡng trọn vẹn bộ ảnh lookbook nghệ thuật của bộ sưu tập Áo Dài Xuân Hè 2025 mang tên 'Nàng Thơ Xứ Huế'. Nơi nét đẹp đằm thắm dịu dàng của lụa tơ tằm tự nhiên hòa quyện tinh tế với rêu phong cổ kính của cố đô Huế.",
         FeaturedImage = await BlogImageUrlAsync("ao-dai-cach-tan-1.webp", true),
         FeaturedImageWidth = 1200,
         FeaturedImageHeight = 800,
         Template = BlogPostTemplate.PhotoGallery,
+        BlogCategoryId = blogCategoryBySlug["lookbook-xu-huong"],
         Content = Json(new object[]
         {
-          new { type = "heading", level = 2, content = "Sắc màu nhẹ, phom dáng hiện đại" },
-          new { type = "paragraph", content = "Xuân hè 2025 ưu tiên chất liệu thoáng, sắc pastel và chi tiết thêu tinh tế." },
+          new { type = "heading", level = 2, content = "Khúc giao hòa lãng mạn giữa kiến trúc cố cung và tơ lụa" },
+          new { type = "paragraph", content = "Bộ sưu tập Xuân Hè 2025 của Áo Dài Nhà Uyên với tên gọi 'Nàng Thơ Xứ Huế' là bức họa đầy chất thơ tôn vinh vẻ đẹp trầm mặc của kinh thành cố kính. Ekip thiết kế đã dành nhiều tháng nghiên cứu các họa tiết cung đình Huế kết hợp với chất liệu lụa tơ tằm tự nhiên cao cấp, dệt thủ công tại làng nghề truyền thống. Nhẹ nhàng, thoáng mát, bay bổng chính là tinh thần cốt lõi mà bộ sưu tập muốn gửi gắm đến giới mộ điệu thời trang áo dài." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-cach-tan-5.webp", true), alt = "Thiết kế áo dài đen thêu chỉ vàng quý phái", caption = "Phom dáng hiện đại kết hợp họa tiết thêu hoàng gia nổi bật bên tường gạch cổ rêu phong." },
+          new { type = "paragraph", content = "Chúng tôi chọn Huế làm cái nôi cảm hứng bởi nơi đây lưu giữ trọn vẹn những hoài niệm vàng son của triều đại phong kiến cuối cùng. Nắng chiều xiên qua những mái ngói âm dương cổ kính, phản chiếu lên thớ vải lụa bóng mịn tạo nên hiệu ứng thị giác mê hoặc lòng người. Từng thiết kế trong bộ sưu tập là sự nâng niu bản sắc cổ kính đan xen nét hiện đại phóng khoáng của cuộc sống đương đại." },
+          new { type = "paragraph", content = "Sự tương phản giữa bức tường thành rêu phong xám xịt mục nát theo thời gian và tà áo dài rực rỡ óng ánh tơ lụa tạo nên một sức hút thẩm mỹ kỳ lạ. Người mặc áo dài tựa như một đóa hoa bừng nở giữa lòng di sản cổ kính." },
+          
+          new { type = "heading", level = 2, content = "Thư viện ảnh Lookbook: Nàng thơ dạo chơi giữa cung điện hoàng gia" },
           new { type = "gallery", images = new object[]
             {
-              new { src = await BlogImageUrlAsync("ao-dai-cach-tan-3.webp", true), alt = "Áo dài cách tân màu sáng cho xuân hè", caption = "Cách tân nhẹ nhàng" },
-              new { src = await BlogImageUrlAsync("ao-dai-lua-tron-1.webp", true), alt = "Áo dài lụa trơn mềm mại màu pastel", caption = "Lụa trơn thanh lịch" },
-              new { src = await BlogImageUrlAsync("ao-dai-theu-hoa-1.webp", true), alt = "Áo dài thêu hoa tinh tế cho dịp lễ", caption = "Thêu hoa nữ tính" },
-              new { src = await BlogImageUrlAsync("ao-dai-lua-tron-4.webp", true), alt = "Áo dài lụa trơn dáng suông sang trọng", caption = "Dáng suông dễ mặc" }
+              new { src = await BlogImageUrlAsync("ao-dai-cach-tan-3.webp", true), alt = "Người mẫu trình diễn áo dài cách tân màu xanh ngọc bích", caption = "Áo dài cách tân màu xanh ngọc bích với phom dáng ôm tôn dáng hoàn hảo." },
+              new { src = await BlogImageUrlAsync("ao-dai-lua-tron-1.webp", true), alt = "Áo dài lụa trơn màu hồng phấn nguyên bản", caption = "Chất liệu lụa tơ tằm trơn màu hồng phấn nguyên bản, mềm mướt bay bổng dưới nắng." },
+              new { src = await BlogImageUrlAsync("ao-dai-theu-hoa-1.webp", true), alt = "Chi tiết thêu hoa mai trên áo dài đỏ đô", caption = "Đường nét thêu tay thủ công tỉ mỉ từng sợi chỉ kim tuyến lấp lánh." },
+              new { src = await BlogImageUrlAsync("ao-dai-lua-tron-extra.webp", true), alt = "Áo dài lụa trơn đen huyền bí", caption = "Sắc đen tuyền quý phái phối cùng vòng ngọc trai truyền thống sang trọng." },
+              new { src = await BlogImageUrlAsync("ao-dai-truyen-thong-6.webp", true), alt = "Mẫu áo dài hoa mai thêu nổi cao cấp", caption = "Họa tiết hoa mai thêu nổi 3D tinh xảo trên ngực áo quyến rũ." },
+              new { src = await BlogImageUrlAsync("ao-dai-theu-hoa-6.webp", true), alt = "Cận cảnh họa tiết thêu sen hồng thanh khiết", caption = "Họa tiết đóa sen hồng bung nở mang ý nghĩa an lành và thuần khiết." },
+              new { src = await BlogImageUrlAsync("ao-dai-cach-tan-4.webp", true), alt = "Mẫu cách tân vai bồng nhã nhặn", caption = "Tay áo bồng nhẹ phối ren thanh thoát giúp cô gái trẻ trung năng động." },
+              new { src = await BlogImageUrlAsync("ao-dai-lua-tron-2.webp", true), alt = "Áo dài lụa trơn sắc xanh bạc hà", caption = "Màu xanh pastel dịu mắt xua tan nắng nóng mùa hè rực rỡ." },
+              new { src = await BlogImageUrlAsync("ao-dai-lua-tron-3.webp", true), alt = "Áo dài tơ sen thướt tha mềm mượt", caption = "Dòng lụa tơ sen nhẹ tênh ôm ấp làn da vô cùng thân thiện." },
+              new { src = await BlogImageUrlAsync("ao-dai-theu-hoa-3.webp", true), alt = "Áo dài thêu cúc họa mi tinh khôi", caption = "Những cánh cúc thêu nổi trắng ngần gợi vẻ trong sáng ngây thơ." }
             }
           },
-          new { type = "paragraph", content = "Một bộ sưu tập tốt không chạy theo xu hướng quá nhanh, mà chọn điểm nhấn đủ bền để mặc nhiều dịp." }
+          
+          new { type = "heading", level = 2, content = "Đặc trưng nghệ thuật thêu thủ công 3D đỉnh cao" },
+          new { type = "paragraph", content = "Điểm nhấn đắt giá nhất của bộ sưu tập lần này nằm ở công nghệ thêu nổi 3D độc quyền từ bàn tay nghệ nhân Nhà Uyên. Từng cành mai mảnh khảnh, cánh hoa đào mỏng manh hay chiếc lá sen đọng sương đều hiện lên sinh động, có chiều sâu ấn tượng trên bề mặt lụa mướt mịn. Chúng tôi tin rằng thời trang cao cấp không chỉ nằm ở phom dáng tôn lên đường cong của người mặc mà còn thể hiện ở mức độ tinh tế của các chi tiết nhỏ nhất." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-theu-hoa-5.webp", true), alt = "Cận cảnh họa tiết thêu nổi trên tà áo dài", caption = "Độ nổi khối và chuyển màu uyển chuyển của cành mai thêu tay truyền thống." },
+          new { type = "paragraph", content = "Mỗi sản phẩm thêu tay tiêu tốn của người nghệ nhân từ 40 đến 80 giờ làm việc liên tục. Sự kiên nhẫn và đam mê đổ dồn vào từng mũi kim chính là giá trị vô hình tạo nên đẳng cấp của Áo Dài Nhà Uyên. Chúng tôi từ chối thêu máy hàng loạt để bảo tồn vẻ đẹp độc bản và cá tính riêng cho mỗi người sở hữu. Sợi chỉ được nhuộm hữu cơ thực vật mang đến dải phổ màu tự nhiên có độ sâu vượt trội so với sợi chỉ polyester công nghiệp." },
+          new { type = "image", src = await BlogImageUrlAsync("phu-kien-tu-xach-theu-hoa.webp", true), alt = "Túi xách thêu sen hồng đồng bộ thời trang", caption = "Sự phối hợp hài hòa giữa áo dài thêu tay và chiếc túi xách thêu đồng concept sang quý." },
+          new { type = "paragraph", content = "Ngoài ra, bộ sưu tập còn kết hợp chặt chẽ với các phụ kiện thiết kế độc bản như quạt giấy vẽ tay vân mây và guốc gỗ mộc sơn mài. Cách phối đồ này gợi nhắc phong thái của các bậc vương phi triều Nguyễn nhưng vẫn vô cùng nhẹ nhàng, dễ mặc trong các sự kiện hiện đại của thế kỷ 21. Sự phối hợp đồng điệu từ trang phục tới phụ kiện chính là đỉnh cao của thời trang di sản." },
+          new { type = "image", src = await BlogImageUrlAsync("tram-cai-toc-hong-ngoc-bich.webp", true), alt = "Trâm cài tóc ngọc bích quý phái cổ điển", caption = "Trâm cài ngọc bích chế tác thủ công tôn thêm vẻ đài các của nàng thơ xứ Huế." },
+          
+          new { type = "quote", content = "Khi mặc tà áo dài lụa thêu tay, bạn không chỉ khoác lên mình một tấm vải, bạn đang khoác lên mình tinh hoa văn hóa, sức lao động nghệ thuật miệt mài của người nghệ nhân Việt.", attribution = "Stylist Minh Trí" },
+          new { type = "paragraph", content = "Bộ sưu tập mang đến những gợi ý lý tưởng cho trang phục đi tiệc sang trọng, chụp hình kỷ niệm hay tham gia các hoạt động văn hóa nghệ thuật lớn. Hãy chọn cho mình thiết kế ưng ý để trở thành tâm điểm của mọi ánh nhìn và mang theo hơi ấm tâm hồn Việt." }
         }),
-        Tags = Json(new[] { "bộ sưu tập", "xuân hè", "áo dài cách tân" }),
+        Tags = Json(new[] { "lookbook thời trang", "xu hướng xuân hè", "áo dài cách tân", "nàng thơ xứ Huế", "áo dài lụa tơ tằm", "lookbook ảnh nghệ thuật" }),
         AuthorNameOverride = "Nhà Uyên Editorial",
+        AuthorBio = "Đội ngũ nhiếp ảnh gia và cố vấn nghệ thuật thời trang tại Áo Dài Nhà Uyên, tiên phong trong các xu hướng lookbook áo dài mang đậm chiều sâu di sản.",
+        ReviewedBy = "Uyên Nguyễn",
         Status = BlogPostStatus.Published,
         PublishedAt = now.AddDays(-8),
-        MetaTitle = "Bộ sưu tập Áo Dài xuân hè 2025",
-        MetaDescription = "Khám phá xu hướng áo dài xuân hè 2025 qua bộ sưu tập ảnh chọn lọc.",
+        MetaTitle = "BST Áo Dài Xuân Hè 2025: Nàng Thơ Xứ Huế | Lookbook Ảnh Đẹp",
+        MetaDescription = "Chiêm ngưỡng bộ sưu tập ảnh áo dài xuân hè năm nay với các thiết kế cách tân xanh ngọc, lụa trơn hồng phấn thêu nổi 3D sang trọng tại kinh thành Huế.",
         CreatedAt = now.AddDays(-8),
         UpdatedAt = now.AddDays(-8)
       },
       new()
       {
-        Title = "Hậu trường buổi chụp hình BST Áo Dài",
-        Slug = "hau-truong-buoi-chup-hinh-bst-ao-dai",
-        Excerpt = "Một góc nhìn hậu trường về ánh sáng, chất liệu và chuyển động tà áo trong buổi chụp hình.",
-        FeaturedImage = await BlogImageUrlAsync("ao-dai-truyen-thong-1.webp", false),
-        FeaturedImageWidth = 1200,
-        FeaturedImageHeight = 800,
-        Template = BlogPostTemplate.VideoFeature,
-        Content = Json(new object[]
-        {
-          new { type = "heading", level = 2, content = "Khi tà áo chuyển động trước ống kính" },
-          new { type = "paragraph", content = "Buổi chụp tập trung vào chuyển động tự nhiên, ánh sáng mềm và cách chất liệu bắt sáng." },
-          new { type = "embed", url = "https://www.youtube.com/embed/dQw4w9WgXcQ", caption = "Video hậu trường minh họa" },
-          new { type = "quote", content = "Chúng tôi luôn thử nhiều nhịp bước để tà áo rơi đúng khoảnh khắc đẹp nhất.", attribution = "Đội ngũ styling" }
-        }),
-        Tags = Json(new[] { "hậu trường", "video", "bộ sưu tập" }),
-        AuthorNameOverride = "Nhà Uyên Studio",
-        Status = BlogPostStatus.Draft,
-        CreatedAt = now.AddDays(-6),
-        UpdatedAt = now.AddDays(-6)
-      },
-      new()
-      {
-        Title = "Áo Dài cưới - Lựa chọn hoàn hảo cho ngày trọng đại",
+        Title = "Áo Dài cưới gấm đỏ thêu tay hoàng gia - Lựa chọn trọn vẹn cho lễ Vu Quy",
         Slug = "ao-dai-cuoi-lua-chon-hoan-hao-cho-ngay-trong-dai",
-        Excerpt = "Cách chọn áo dài cưới hài hòa với dáng người, màu da và phong cách lễ gia tiên.",
+        Excerpt = "Khám phá các thiết kế áo dài cưới màu đỏ gấm thượng hạng dệt chỉ vàng nổi bật, sự kết hợp hoàn hảo giữa phom dáng cổ điển quyến rũ và nét hiện đại sang quý cho ngày trọng đại.",
         FeaturedImage = await BlogImageUrlAsync("ao-dai-theu-hoa-5.webp", true),
         FeaturedImageWidth = 1200,
         FeaturedImageHeight = 800,
         Template = BlogPostTemplate.ProductSpotlight,
+        BlogCategoryId = blogCategoryBySlug["ao-dai-cuoi"],
         Content = Json(new object[]
         {
-          new { type = "heading", level = 2, content = "Áo dài cưới cần vừa trang trọng vừa thoải mái" },
-          new { type = "paragraph", content = "Ngày cưới kéo dài nhiều giờ, nên áo dài cần đẹp khi đứng, ngồi, di chuyển và chụp ảnh." },
+          new { type = "heading", level = 2, content = "Ý nghĩa tâm linh của sắc đỏ gấm hoa trong hôn lễ Việt" },
+          new { type = "paragraph", content = "Trong ngày đại hỷ của người Việt, sắc đỏ luôn được chọn làm tông màu chủ đạo cho trang phục cưới hỏi của tân lang tân nương. Màu đỏ tượng trưng cho sự may mắn, cát tường, khởi đầu suôn sẻ ấm áp và biểu thị lời chúc cho một tình yêu nồng cháy bền chặt cùng cuộc sống gia đình ấm cúng viên mãn sau này. Hiểu được giá trị sâu sắc đó, dòng sản phẩm Áo Dài Cưới Gấm Đỏ của Nhà Uyên ra đời để giúp các nàng dâu tỏa sáng rạng ngời nhất trong ngày lễ gia tiên thiêng liêng." },
+          new { type = "paragraph", content = "So với váy cưới phương Tây, chiếc áo dài cưới gấm đỏ mang đậm hơi thở gia tộc, thể hiện lòng tôn kính sâu sắc với tổ tiên khi làm lễ thắp hương trước bàn thờ gia tiên. Từng thớ vải gấm dệt hoa văn chữ Song Hỷ hay đôi chim phượng hoàng lấp lánh kể câu chuyện về sự thủy chung, hạnh phúc bền lâu của lứa đôi." },
+          
           new { type = "product_spotlight", productSlugs = productSlugs.Take(4).ToArray() },
-          new { type = "image", src = await BlogImageUrlAsync("ao-dai-theu-hoa-6.webp", true), alt = "Áo dài thêu hoa sang trọng dành cho cô dâu", caption = "Họa tiết thêu tạo điểm nhấn cho lễ gia tiên." },
-          new { type = "paragraph", content = "Ưu tiên phom ôm vừa, chất liệu có độ đứng nhẹ và họa tiết tập trung ở cổ, tay hoặc tà áo." }
+          
+          new { type = "heading", level = 2, content = "Phom dáng chít eo sâu Raglan kế thừa di sản Sài Gòn" },
+          new { type = "paragraph", content = "Một chiếc áo dài cưới hoàn hảo không chỉ cần lộng lẫy mà phải vừa vặn tuyệt đối với cơ thể của cô dâu. Đội ngũ thợ may đo lâu năm của Nhà Uyên ứng dụng kỹ thuật cắt cúp chít eo sâu kế thừa từ thời kỳ hoàng kim Raglan của Sài Gòn thập niên 1960, kết hợp với chất liệu gấm dệt hoa văn chìm có độ co giãn nhẹ và đứng dáng. Điều này giúp nâng đỡ vòng một, thắt chặt vòng hai và giữ tà áo luôn phẳng phiu, sang trọng suốt nhiều giờ làm lễ chụp ảnh cưới liên tục." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-theu-hoa-6.webp", true), alt = "Áo dài cưới gấm đỏ thêu hoa long phụng cô dâu chú rể", caption = "Cặp đôi rạng rỡ trong tà áo dài cưới gấm đỏ thêu long phụng chỉ vàng tinh xảo của thương hiệu Nhà Uyên." },
+          new { type = "paragraph", content = "Chất liệu gấm tơ tằm dệt jacquard cao cấp mang lại cảm giác mềm mại với làn da, không gây ngứa rát hay khó chịu dù thời tiết oi bức và thời gian mặc kéo dài cả ngày lễ Vu Quy. Với phom dáng may sẵn nhưng được tinh chỉnh riêng theo số đo chiều cao và cân nặng từng cô dâu, tà áo dài cưới Nhà Uyên mang đến trải nghiệm thời trang may đo xa xỉ ngay trong tầm tay bạn." },
+          new { type = "paragraph", content = "Quy trình thử áo dài cưới tại showroom được tiến hành chu đáo: cô dâu được hỗ trợ tinh chỉnh vai, nách và gấu quần lụa để khi di chuyển đón khách hay quỳ lạy trước bàn thờ đều vô cùng tự tin, tôn lên vóc dáng thanh xuân mảnh mai đầy kiêu sa của mình." },
+          
+          new { type = "heading", level = 2, content = "Họa tiết thêu long phụng song hỷ đính đá quý xà cừ" },
+          new { type = "paragraph", content = "Mỗi chiếc áo dài cưới thuộc dòng cao cấp của chúng tôi đều được đắp nổi họa tiết long phụng sum vầy mang tính biểu tượng phu thê hòa hợp. Nghiêm cấm sự cẩu thả, nghệ nhân thêu sử dụng chỉ tơ tằm dát vàng lấp lánh, đan xen đính kết đá quý xà cừ nhập khẩu thủ công trên cổ áo và tà trước. Hiệu ứng phản chiếu lung linh giúp cô dâu trông cực kỳ lộng lẫy dưới ánh đèn khán phòng tiệc cưới tối." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-theu-hoa-1.webp", true), alt = "Chi tiết thêu hoa mẫu đơn thêu tay chỉ vàng", caption = "Đóa hoa mẫu đơn thêu chỉ vàng rực rỡ tượng trưng cho sự phú quý giàu sang và thịnh vượng." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-theu-hoa-2.webp", true), alt = "Mẫu áo dài cưới đỏ thêu tay hoa đào tươi sáng", caption = "Mẫu thêu cành đào rạng rỡ thêu nổi bồng bềnh mang nét trẻ trung rực lửa." },
+          new { type = "paragraph", content = "Đặc biệt, dòng gấm đỏ cưới này được phối cùng các phụ kiện túi xách tơ thêu hoa sen đồng điệu và đôi guốc thắt nơ nhung đỏ thanh tao. Cô dâu sẽ có một diện mạo hoàn hảo nhất từ đầu tới chân mà không cần tốn thời gian tìm kiếm phụ kiện bên ngoài." },
+          new { type = "image", src = await BlogImageUrlAsync("phu-kien-tu-xach-theu-hoa.webp", true), alt = "Túi xách cưới thêu tay cao cấp cho cô dâu", caption = "Túi xách thêu sen đỏ quý phái chứa đựng những món đồ trang điểm nhỏ xinh cho cô dâu trong ngày đại hỷ." },
+          new { type = "image", src = await BlogImageUrlAsync("guoc-cao-got-no.webp", true), alt = "Guốc nhung đỏ thắt nơ tinh tế", caption = "Đôi guốc nhung đỏ đính nơ điệu đà nâng đỡ gót hồng kiêu sa cho cô dâu trong ngày Vu Quy." },
+          new { type = "paragraph", content = "Để chuẩn bị chu đáo nhất, cô dâu chú rể nên tiến hành may đo sớm từ 4 đến 6 tuần trước lễ cưới. Áo Dài Nhà Uyên cung cấp dịch vụ thử áo chi tiết và chỉnh sửa phom dáng miễn phí đến khi cô dâu đạt được sự hài lòng tối đa. Hãy liên hệ hotline hoặc đặt lịch hẹn showroom ngay hôm nay để nhận được sự tư vấn tận tâm nhất từ các chuyên gia phục trang cưới." }
         }),
-        Tags = Json(new[] { "áo dài cưới", "cô dâu", "product spotlight" }),
-        AuthorNameOverride = "Nhà Uyên Bridal",
+        Tags = Json(new[] { "áo dài cưới đỏ", "gấm cưới cao cấp", "trang phục lễ gia tiên", "cô dâu thanh lịch", "sản phẩm gợi ý", "áo dài cô dâu" }),
+        AuthorNameOverride = "Nhà Uyên Bridal Team",
+        AuthorBio = "Đội ngũ chuyên gia thiết kế và tư vấn trang phục cưới cao cấp tại Áo Dài Nhà Uyên, đồng hành cùng hàng ngàn cô dâu Việt tỏa sáng trong ngày trọng đại.",
         ReviewedBy = "Uyên Nguyễn",
         Status = BlogPostStatus.Published,
         PublishedAt = now.AddDays(-4),
-        MetaTitle = "Cách chọn Áo Dài cưới đẹp cho ngày trọng đại",
-        MetaDescription = "Gợi ý chọn áo dài cưới theo dáng người, chất liệu và phong cách lễ gia tiên.",
+        MetaTitle = "Áo Dài cưới gấm đỏ thêu tay hoàng gia cao cấp | Nhà Uyên",
+        MetaDescription = "Khám phá các mẫu áo dài cưới màu đỏ gấm thượng hạng thêu tay hoa mai, song hỷ cát tường cực sang trọng dành cho cô dâu chú rể ngày vu quy.",
         CreatedAt = now.AddDays(-4),
         UpdatedAt = now.AddDays(-4)
       },
       new()
       {
-        Title = "Cách chọn và bảo quản Áo Dài đúng cách",
+        Title = "Cẩm nang đo size chuẩn tại nhà và bảo quản Áo Dài Lụa luôn như mới",
         Slug = "cach-chon-va-bao-quan-ao-dai-dung-cach",
-        Excerpt = "Hướng dẫn chọn size, thử áo, giặt và cất giữ áo dài để giữ phom dáng lâu bền.",
-        FeaturedImage = await BlogImageUrlAsync("ao-dai-lua-tron-extra.webp", false),
+        Excerpt = "Hướng dẫn chi tiết từng bước tự lấy số đo vòng ngực, eo, mông chuẩn xác và quy trình giặt hấp, ủi hơi nước đúng cách bảo vệ vải lụa tơ tằm đắt giá lâu bền không xước.",
+        FeaturedImage = await BlogImageUrlAsync("ao-dai-lua-tron-extra.webp", true),
         FeaturedImageWidth = 1200,
         FeaturedImageHeight = 800,
         Template = BlogPostTemplate.HowTo,
+        BlogCategoryId = blogCategoryBySlug["huong-dan-cham-soc"],
         Content = Json(new object[]
         {
-          new { type = "heading", level = 2, content = "Quy trình 6 bước chăm sóc áo dài" },
-          new { type = "paragraph", content = "Áo dài đẹp lâu khi được chọn đúng số đo và bảo quản đúng chất liệu." },
-          new { type = "step", stepNumber = 1, title = "Đo số đo cơ bản", content = "Ghi lại vòng ngực, eo, mông, vai và chiều dài áo trước khi chọn size.", tip = "Nên đo khi mặc đồ mỏng để số đo sát hơn." },
-          new { type = "step", stepNumber = 2, title = "Thử cử động", content = "Khi thử áo, hãy ngồi xuống, đưa tay nhẹ và bước vài bước để kiểm tra độ thoải mái." },
-          new { type = "step", stepNumber = 3, title = "Giặt nhẹ", content = "Ưu tiên giặt tay bằng nước mát, tránh vò mạnh phần thêu hoặc đính kết." },
-          new { type = "callout", variant = "tip", content = "Không phơi áo dài dưới nắng gắt. Lộn trái áo và phơi nơi thoáng mát." },
-          new { type = "image", src = await BlogImageUrlAsync("phu-kien-quat.webp", false), alt = "Phụ kiện quạt kết hợp cùng áo dài truyền thống", caption = "Bảo quản phụ kiện riêng để tránh móc vào vải áo." }
+          new { type = "heading", level = 2, content = "Quy trình chăm sóc tà áo dài đúng kỹ thuật để kéo dài tuổi thọ vải" },
+          new { type = "paragraph", content = "Sở hữu một chiếc áo dài từ lụa tơ tằm tự nhiên hay gấm thêu nổi quý phái là niềm kiêu hãnh lớn của mỗi người phụ nữ. Tuy nhiên, chất liệu tơ lụa tự nhiên rất nhạy cảm và dễ bị tổn thương nếu giặt ủi sai cách. Cẩm nang này được biên soạn bởi các chuyên gia dệt may hàng đầu tại Nhà Uyên nhằm giúp quý khách có quy trình khoa học để tự đo size chuẩn và gìn giữ tà áo luôn bền đẹp bóng bẩy theo thời gian." },
+          
+          new { type = "step", stepNumber = 1, title = "Tự lấy số đo cơ thể chuẩn xác từng centimet tại nhà", content = "Dùng một thước dây mềm. Khi đo vòng một, quấn thước quanh phần nở nhất của ngực. Vòng hai đo tại điểm thắt nhỏ nhất của eo, thường cách phía trên rốn khoảng 3cm. Vòng ba đo tại điểm lớn nhất của mông. Đặc biệt là chiều dài áo, đo từ đỉnh vai xuôi qua đỉnh ngực xuống thẳng gót chân. Nên mặc chiếc nội y có đệm phom chuẩn nhất mà bạn dự định mặc cùng áo dài khi tiến hành đo.", tip = "Tránh kéo quá chặt hoặc để thước quá lỏng, nên hít thở bình thường khi lấy số đo eo." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-lua-tron-extra.webp", true), alt = "Quy trình thử size áo dài tại xưởng may Nhà Uyên", caption = "Việc thử và điều chỉnh áo dài theo sát số đo cơ thể giúp tôn dáng quyến rũ tối đa." },
+          
+          new { type = "step", stepNumber = 2, title = "Lựa chọn phom cổ áo dài tôn vinh nét hài hòa của khuôn mặt", content = "Với người có vóc dáng đầy đặn và phần cổ ngắn, hãy tránh xa các mẫu cổ cao 4-5cm. Thay vào đó, thiết kế cổ tròn viền nhỏ, cổ thuyền nhẹ nhàng hoặc cổ chữ V thanh thoát sẽ tạo cảm giác thanh thoát cao ráo hơn. Người mảnh khảnh, cổ cao kiêu sa sẽ cực kỳ phù hợp với phom áo dài cổ cao truyền thống đứng 2.5cm đến 3cm đính cườm tỉ mỉ." },
+          
+          new { type = "step", stepNumber = 3, title = "Giặt tay nhẹ nhàng bằng dầu gội hoặc sữa tắm trẻ em", content = "Vải lụa tơ tằm tự nhiên chứa nhiều protein tương tự tóc người nên sẽ bị khô xơ và phai màu nhanh nếu tiếp xúc với chất tẩy có tính kiềm cao trong bột giặt thường. Hãy pha một muỗng sữa tắm trẻ em vào chậu nước mát dưới 30 độ C. Ngâm áo dài 5 phút, sau đó dùng tay bóp nhẹ để làm sạch bụi bẩn. Tuyệt đối không giặt máy, vắt xoắn hoặc vò chà mạnh vùng thêu tay đính đá." },
+          new { type = "callout", variant = "tip", content = "Bí quyết vàng giữ màu lụa: Ở lần xả nước cuối cùng, hãy nhỏ thêm 2-3 thìa giấm trắng loãng. Axit nhẹ trong giấm sẽ khóa hạt màu nhuộm tự nhiên trên sợi tơ lụa, giúp màu vải luôn rực rỡ óng ả và hạn chế hiện tượng ra màu khi giặt những lần sau." },
+          
+          new { type = "step", stepNumber = 4, title = "Phơi áo dài trong bóng râm, tránh ánh nắng trực tiếp", content = "Nhiệt độ cao của ánh nắng mặt trời gắt sẽ phá hủy các thớ sợi tơ tằm tự nhiên làm vải bị khô giòn, xơ xác và dễ rách sau vài lần mặc. Hãy lộn trái tà áo trước khi phơi, đặt áo lên chiếc móc gỗ chuyên dụng bản dày. Nên tránh dùng móc sắt nhọn để hạn chế làm xước vải và treo phơi ở nơi râm mát đón nhiều gió tự nhiên." },
+          new { type = "image", src = await BlogImageUrlAsync("phu-kien-quat-hoa-sen.webp", true), alt = "Bảo quản phụ kiện áo dài cẩn thận", caption = "Các phụ kiện sắc nhọn như quạt, trâm cài tóc cần cất riêng để tránh vướng xước tơ lụa." },
+          new { type = "image", src = await BlogImageUrlAsync("phu-kien-tu-xach-thanh.webp", true), alt = "Túi xách lụa phối cùng áo dài trơn", caption = "Chiếc túi xách thanh nhã phối hợp tôn nét tối giản của lụa trơn." },
+          
+          new { type = "step", stepNumber = 5, title = "Ủi hơi nước ở nhiệt độ thích hợp cho tơ lụa", content = "Phương pháp lý tưởng nhất là sử dụng bàn ủi hơi nước dạng đứng để ủi khi áo dài đang treo thẳng đứng. Nếu sử dụng bàn ủi nhiệt nằm thông thường, hãy đảm bảo áo dài còn độ ẩm nhẹ, hoặc lộn trái áo và lót một tấm vải cotton mỏng sạch lên trên trước khi ủi. Luôn vặn nút chỉnh nhiệt độ về mức dành riêng cho vải Silk hoặc mức thấp nhất." },
+          
+          new { type = "step", stepNumber = 6, title = "Cất giữ và lưu kho lâu dài trong túi vải bạt thở khí", content = "Khi không sử dụng áo dài trong thời gian dài như sau các mùa lễ tết, tuyệt đối không để áo dài trong các túi nilon kín mít vì túi nilon giữ độ ẩm làm mốc vải và làm biến tính sợi tơ tằm tự nhiên. Hãy xếp nhẹ nhàng áo dài vào các túi vải không dệt thoáng khí, đặt kèm một thanh gỗ tuyết tùng hoặc túi thảo mộc thơm nhẹ để xua đuổi côn trùng gặm nhấm." },
+          new { type = "image", src = await BlogImageUrlAsync("ao-dai-lua-tron-4.webp", true), alt = "Áo dài lụa xếp gọn trong tủ đồ bảo quản", caption = "Xếp nếp nhẹ nhàng và treo thẳng đứng trong tủ đồ có độ thông thoáng gió tốt." },
+          new { type = "image", src = await BlogImageUrlAsync("phu-kien-tu-xach-hoa-van.webp", true), alt = "Cất giữ túi xách đi kèm áo dài", caption = "Bảo quản túi xách tơ thêu hoa trong hộp giấy cứng hút ẩm để giữ phom dáng bền lâu." }
         }),
-        Tags = Json(new[] { "hướng dẫn", "bảo quản áo dài", "chọn size" }),
-        AuthorNameOverride = "Nhà Uyên Care",
-        Status = BlogPostStatus.Draft,
+        Tags = Json(new[] { "hướng dẫn bảo quản", "mẹo giặt tơ lụa", "cách chọn size", "kinh nghiệm đo áo dài", "bảo quản gấm", "tự may đo tại nhà" }),
+        AuthorNameOverride = "Nhà Uyên Care Team",
+        AuthorBio = "Đội ngũ chuyên viên kỹ thuật dệt may và chăm sóc khách hàng tại Áo Dài Nhà Uyên, chuyên tư vấn bảo dưỡng các sản phẩm lụa gấm cao cấp.",
+        ReviewedBy = "Uyên Nguyễn",
+        Status = BlogPostStatus.Published,
+        PublishedAt = now.AddDays(-2),
         CreatedAt = now.AddDays(-2),
         UpdatedAt = now.AddDays(-2)
       }
@@ -421,6 +517,7 @@ public sealed class SeedDataService(
     dbContext.BlogPosts.AddRange(posts);
     await dbContext.SaveChangesAsync();
   }
+
 
   private async Task SeedRolesAsync()
   {
