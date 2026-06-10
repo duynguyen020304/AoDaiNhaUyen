@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { PictureImg } from '../PictureImg/PictureImg';
 import { useProductSpotlight } from '../../hooks/blog/useProductSpotlight';
@@ -68,24 +68,11 @@ function Block({
       );
     case 'gallery':
       return (
-        <div className={`${styles.gallery} ${template === 'PhotoGallery' ? styles.asymmetricGallery : ''}`}>
-          {block.images.map((img, idx) => (
-            <figure
-              key={img.src}
-              className={`${styles.galleryItem} ${template === 'PhotoGallery' ? styles[`galleryItem_${idx % 3}`] : ''}`}
-              onClick={() => onOpenLightbox({ src: img.src, alt: img.alt, caption: img.caption })}
-            >
-              <PictureImg
-                src={img.src}
-                alt={img.alt}
-                width={img.widthPx ?? 800}
-                height={img.heightPx ?? 600}
-                className={styles.image}
-              />
-              {img.caption ? <figcaption>{img.caption}</figcaption> : null}
-            </figure>
-          ))}
-        </div>
+        <GalleryCarousel
+          images={block.images}
+          template={template}
+          onOpenLightbox={onOpenLightbox}
+        />
       );
     case 'video':
       return (
@@ -214,5 +201,91 @@ function ProductSpotlight({ slugs, template }: { slugs: string[]; template: Blog
         })}
       </div>
     </aside>
+  );
+}
+
+function GalleryCarousel({
+  images,
+  template: _template,
+  onOpenLightbox,
+}: {
+  images: { src: string; alt: string; caption?: string; widthPx?: number; heightPx?: number }[];
+  template: BlogTemplate;
+  onOpenLightbox: (img: { src: string; alt: string; caption?: string }) => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const total = images.length;
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const idx = Math.round(el.scrollLeft / el.offsetWidth);
+    setActiveIdx(Math.min(idx, total - 1));
+  }, [total]);
+
+  const scrollTo = useCallback((idx: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ left: el.offsetWidth * idx, behavior: 'smooth' });
+  }, []);
+
+  return (
+    <div className={styles.carouselWrapper}>
+      <div
+        ref={scrollRef}
+        className={styles.carousel}
+        onScroll={handleScroll}
+      >
+        {images.map((img) => (
+          <figure
+            key={img.src}
+            className={styles.carouselSlide}
+            onClick={() => onOpenLightbox({ src: img.src, alt: img.alt, caption: img.caption })}
+          >
+            <PictureImg
+              src={img.src}
+              alt={img.alt}
+              width={img.widthPx ?? 800}
+              height={img.heightPx ?? 600}
+              className={styles.carouselImage}
+            />
+            {img.caption ? <figcaption className={styles.carouselCaption}>{img.caption}</figcaption> : null}
+          </figure>
+        ))}
+      </div>
+
+      {/* Navigation arrows */}
+      {total > 1 && (
+        <>
+          <button
+            className={`${styles.carouselArrow} ${styles.carouselArrowPrev}`}
+            onClick={() => scrollTo(Math.max(0, activeIdx - 1))}
+            disabled={activeIdx === 0}
+            aria-label="Ảnh trước"
+          >‹</button>
+          <button
+            className={`${styles.carouselArrow} ${styles.carouselArrowNext}`}
+            onClick={() => scrollTo(Math.min(total - 1, activeIdx + 1))}
+            disabled={activeIdx === total - 1}
+            aria-label="Ảnh sau"
+          >›</button>
+        </>
+      )}
+
+      {/* Dot indicators */}
+      {total > 1 && (
+        <div className={styles.carouselDots}>
+          {images.map((_img, idx) => (
+            <button
+              key={idx}
+              className={`${styles.carouselDot} ${idx === activeIdx ? styles.carouselDotActive : ''}`}
+              onClick={() => scrollTo(idx)}
+              aria-label={`Xem ảnh ${idx + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

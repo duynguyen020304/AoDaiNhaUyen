@@ -178,9 +178,9 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
                       })
                     : null}
                   {isBlog && blogCategories.length > 0 ? (
-                    <div className={styles.blogMegaMenu}>
+                    <>
                       <a
-                        className={`${styles.blogFeaturedLink} ${currentBlogCategory === null ? styles.dropdownActive : ''}`}
+                        className={`${styles.dropdownLink} ${currentBlogCategory === null ? styles.dropdownActive : ''}`}
                         href="/blog/"
                         onClick={(event) => {
                           event.preventDefault();
@@ -188,30 +188,26 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
                           navigate('/blog/');
                         }}
                       >
-                        <span>Tất cả bài viết</span>
-                        <small>Lookbook, tư vấn và văn hóa áo dài</small>
+                        Tất cả bài viết
                       </a>
-                      <div className={styles.blogGroups}>
-                        {blogCategories.map((blogCategory) => {
-                          const target = `/blog/?category=${encodeURIComponent(blogCategory.slug)}`;
-                          return (
-                            <a
-                              key={blogCategory.slug}
-                              className={`${styles.blogGroupLink} ${currentBlogCategory === blogCategory.slug ? styles.dropdownActive : ''}`}
-                              href={target}
-                              onClick={(event) => {
-                                event.preventDefault();
-                                setOpenDropdown(null);
-                                navigate(target);
-                              }}
-                            >
-                              <strong>{blogCategory.name}</strong>
-                              <small>{blogCategory.description ?? `${blogCategory.publishedPostCount} bài viết`}</small>
-                            </a>
-                          );
-                        })}
-                      </div>
-                    </div>
+                      {blogCategories.map((blogCategory) => {
+                        const target = `/blog/?category=${encodeURIComponent(blogCategory.slug)}`;
+                        return (
+                          <a
+                            key={blogCategory.slug}
+                            className={`${styles.dropdownLink} ${currentBlogCategory === blogCategory.slug ? styles.dropdownActive : ''}`}
+                            href={target}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              setOpenDropdown(null);
+                              navigate(target);
+                            }}
+                          >
+                            {blogCategory.name}
+                          </a>
+                        );
+                      })}
+                    </>
                   ) : null}
                 </div>
               ) : null}
