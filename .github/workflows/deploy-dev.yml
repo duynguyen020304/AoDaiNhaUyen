@@ -13,6 +13,9 @@ jobs:
   build-frontend-hk1:
     runs-on: ubuntu-latest
 
+    env:
+      S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,18 +35,28 @@ jobs:
           PUBLIC_ZALO_APP_ID=${{ secrets.HK1_ZALO_OAUTH_APP_ID }} \
           bun run build
 
-      - name: Upload Frontend Artifact
-        uses: actions/upload-artifact@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          name: frontend-dist-hk1
-          path: frontend/dist
-          retention-days: 1
+          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
+          aws-region: ${{ secrets.S3_REGION }}
+
+      - name: Upload Frontend Artifact to S3
+        run: |
+          tar -czf frontend-dist-hk1.tar.gz -C frontend/dist .
+          endpoint_args=()
+          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
+          aws "${endpoint_args[@]}" s3 cp frontend-dist-hk1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-hk1.tar.gz
 
   # ==========================================
   # Build Frontend for US1
   # ==========================================
   build-frontend-us1:
     runs-on: ubuntu-latest
+
+    env:
+      S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
 
     steps:
       - name: Checkout code
@@ -64,18 +77,28 @@ jobs:
           PUBLIC_ZALO_APP_ID=${{ secrets.US1_ZALO_OAUTH_APP_ID }} \
           bun run build
 
-      - name: Upload Frontend Artifact
-        uses: actions/upload-artifact@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          name: frontend-dist-us1
-          path: frontend/dist
-          retention-days: 1
+          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
+          aws-region: ${{ secrets.S3_REGION }}
+
+      - name: Upload Frontend Artifact to S3
+        run: |
+          tar -czf frontend-dist-us1.tar.gz -C frontend/dist .
+          endpoint_args=()
+          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
+          aws "${endpoint_args[@]}" s3 cp frontend-dist-us1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-us1.tar.gz
 
   # ==========================================
   # Build Backend (shared)
   # ==========================================
   build-backend:
     runs-on: ubuntu-latest
+
+    env:
+      S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
 
     steps:
       - name: Checkout code
@@ -92,18 +115,28 @@ jobs:
           dotnet restore
           dotnet publish AoDaiNhaUyen.Api -c Release -o publish --no-restore
 
-      - name: Upload Backend Artifact
-        uses: actions/upload-artifact@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          name: backend-publish
-          path: backend/publish
-          retention-days: 1
+          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
+          aws-region: ${{ secrets.S3_REGION }}
+
+      - name: Upload Backend Artifact to S3
+        run: |
+          tar -czf backend-publish.tar.gz -C backend/publish .
+          endpoint_args=()
+          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
+          aws "${endpoint_args[@]}" s3 cp backend-publish.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz
 
   # ==========================================
   # Build Admin Frontend for HK1
   # ==========================================
   build-admin-hk1:
     runs-on: ubuntu-latest
+
+    env:
+      S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
 
     steps:
       - name: Checkout code
@@ -121,18 +154,28 @@ jobs:
           VITE_API_BASE_URL=${{ secrets.HK1_VITE_API_BASE_URL }} \
           bun run build
 
-      - name: Upload Admin Frontend Artifact
-        uses: actions/upload-artifact@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          name: admin-dist-hk1
-          path: frontend-admin/dist
-          retention-days: 1
+          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
+          aws-region: ${{ secrets.S3_REGION }}
+
+      - name: Upload Admin Frontend Artifact to S3
+        run: |
+          tar -czf admin-dist-hk1.tar.gz -C frontend-admin/dist .
+          endpoint_args=()
+          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
+          aws "${endpoint_args[@]}" s3 cp admin-dist-hk1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-hk1.tar.gz
 
   # ==========================================
   # Build Admin Frontend for US1
   # ==========================================
   build-admin-us1:
     runs-on: ubuntu-latest
+
+    env:
+      S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
 
     steps:
       - name: Checkout code
@@ -150,12 +193,19 @@ jobs:
           VITE_API_BASE_URL=${{ secrets.US1_VITE_API_BASE_URL }} \
           bun run build
 
-      - name: Upload Admin Frontend Artifact
-        uses: actions/upload-artifact@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          name: admin-dist-us1
-          path: frontend-admin/dist
-          retention-days: 1
+          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
+          aws-region: ${{ secrets.S3_REGION }}
+
+      - name: Upload Admin Frontend Artifact to S3
+        run: |
+          tar -czf admin-dist-us1.tar.gz -C frontend-admin/dist .
+          endpoint_args=()
+          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
+          aws "${endpoint_args[@]}" s3 cp admin-dist-us1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-us1.tar.gz
 
   # ==========================================
   # Deploy to HK1 Server
@@ -168,6 +218,7 @@ jobs:
     env:
       SERVER_NAME: "HK1"
       SSH_ALIAS: "aodai-hk1"
+      S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
       ENABLE_CLOUDFLARE_TUNNEL: ${{ secrets.HK1_ENABLE_CLOUDFLARE_TUNNEL || '' }}
       RAW_CLOUDFLARE_TUNNEL_HOST: ${{ secrets.HK1_CLOUDFLARE_TUNNEL_HOST || '' }}
       DEPLOY_HOST: ${{ secrets.HK1_PRODUCTION_SERVER_HOST }}
@@ -178,25 +229,38 @@ jobs:
 
     steps:
       # ------------------------------------------
-      # Download Artifacts
+      # Download Artifacts from S3
       # ------------------------------------------
-      - name: Download Frontend Artifact
-        uses: actions/download-artifact@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          name: frontend-dist-hk1
-          path: frontend/dist
+          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
+          aws-region: ${{ secrets.S3_REGION }}
 
-      - name: Download Backend Publish
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-publish
-          path: backend/publish
+      - name: Download Frontend Artifact from S3
+        run: |
+          endpoint_args=()
+          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
+          mkdir -p frontend/dist
+          aws "${endpoint_args[@]}" s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-hk1.tar.gz frontend-dist-hk1.tar.gz
+          tar -xzf frontend-dist-hk1.tar.gz -C frontend/dist
 
-      - name: Download Admin Frontend Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: admin-dist-hk1
-          path: frontend-admin/dist
+      - name: Download Backend Publish from S3
+        run: |
+          endpoint_args=()
+          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
+          mkdir -p backend/publish
+          aws "${endpoint_args[@]}" s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz backend-publish.tar.gz
+          tar -xzf backend-publish.tar.gz -C backend/publish
+
+      - name: Download Admin Frontend Artifact from S3
+        run: |
+          endpoint_args=()
+          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
+          mkdir -p frontend-admin/dist
+          aws "${endpoint_args[@]}" s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-hk1.tar.gz admin-dist-hk1.tar.gz
+          tar -xzf admin-dist-hk1.tar.gz -C frontend-admin/dist
 
       # ------------------------------------------
       # Resolve SSH transport & prepare client tools
@@ -422,12 +486,12 @@ jobs:
           export GoogleCloud__TimeoutSeconds='${{ secrets.HK1_GCLOUD_TIMEOUT_SECONDS }}'
           export CacheSettings__Version='${{ secrets.HK1_CACHE_SETTINGS_VERSION }}'
           export FrontendOrigins='${{ secrets.HK1_FRONTEND_ORIGINS }}'
-          export S3Storage__BucketName='${{ secrets.HK1_S3_BUCKET_NAME }}'
-          export S3Storage__Region='${{ secrets.HK1_S3_REGION }}'
-          export S3Storage__AccessKey='${{ secrets.HK1_S3_ACCESS_KEY }}'
-          export S3Storage__SecretKey='${{ secrets.HK1_S3_SECRET_KEY }}'
-          export S3Storage__ServiceUrl='${{ secrets.HK1_S3_SERVICE_URL }}'
-          export S3Storage__UsePathStyle='${{ secrets.HK1_S3_USE_PATH_STYLE }}'
+          export S3Storage__BucketName='${{ secrets.S3_BUCKET_NAME }}'
+          export S3Storage__Region='${{ secrets.S3_REGION }}'
+          export S3Storage__AccessKey='${{ secrets.S3_ACCESS_KEY }}'
+          export S3Storage__SecretKey='${{ secrets.S3_SECRET_KEY }}'
+          export S3Storage__ServiceUrl='${{ secrets.S3_SERVICE_URL }}'
+          export S3Storage__UsePathStyle='${{ secrets.S3_USE_PATH_STYLE }}'
           export AdminSeed__Email='${{ secrets.HK1_ADMIN_SEED_EMAIL }}'
           export AdminSeed__Password='${{ secrets.HK1_ADMIN_SEED_PASSWORD }}'
           EOF
@@ -553,6 +617,7 @@ jobs:
     env:
       SERVER_NAME: "US1"
       SSH_ALIAS: "aodai-us1"
+      S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
       ENABLE_CLOUDFLARE_TUNNEL: ${{ secrets.US1_ENABLE_CLOUDFLARE_TUNNEL || '' }}
       RAW_CLOUDFLARE_TUNNEL_HOST: ${{ secrets.US1_CLOUDFLARE_TUNNEL_HOST || '' }}
       DEPLOY_HOST: ${{ secrets.US1_PRODUCTION_SERVER_HOST }}
@@ -563,25 +628,38 @@ jobs:
 
     steps:
       # ------------------------------------------
-      # Download Artifacts
+      # Download Artifacts from S3
       # ------------------------------------------
-      - name: Download Frontend Artifact
-        uses: actions/download-artifact@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          name: frontend-dist-us1
-          path: frontend/dist
+          aws-access-key-id: ${{ secrets.S3_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.S3_SECRET_KEY }}
+          aws-region: ${{ secrets.S3_REGION }}
 
-      - name: Download Backend Publish
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-publish
-          path: backend/publish
+      - name: Download Frontend Artifact from S3
+        run: |
+          endpoint_args=()
+          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
+          mkdir -p frontend/dist
+          aws "${endpoint_args[@]}" s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-us1.tar.gz frontend-dist-us1.tar.gz
+          tar -xzf frontend-dist-us1.tar.gz -C frontend/dist
 
-      - name: Download Admin Frontend Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: admin-dist-us1
-          path: frontend-admin/dist
+      - name: Download Backend Publish from S3
+        run: |
+          endpoint_args=()
+          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
+          mkdir -p backend/publish
+          aws "${endpoint_args[@]}" s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz backend-publish.tar.gz
+          tar -xzf backend-publish.tar.gz -C backend/publish
+
+      - name: Download Admin Frontend Artifact from S3
+        run: |
+          endpoint_args=()
+          if [ -n "${{ secrets.S3_SERVICE_URL }}" ]; then endpoint_args+=(--endpoint-url "${{ secrets.S3_SERVICE_URL }}"); fi
+          mkdir -p frontend-admin/dist
+          aws "${endpoint_args[@]}" s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-us1.tar.gz admin-dist-us1.tar.gz
+          tar -xzf admin-dist-us1.tar.gz -C frontend-admin/dist
 
       # ------------------------------------------
       # Resolve SSH transport & prepare client tools
@@ -808,12 +886,12 @@ jobs:
           export GoogleCloud__TimeoutSeconds='${{ secrets.US1_GCLOUD_TIMEOUT_SECONDS }}'
           export CacheSettings__Version='${{ secrets.US1_CACHE_SETTINGS_VERSION }}'
           export FrontendOrigins='${{ secrets.US1_FRONTEND_ORIGINS }}'
-          export S3Storage__BucketName='${{ secrets.US1_S3_BUCKET_NAME }}'
-          export S3Storage__Region='${{ secrets.US1_S3_REGION }}'
-          export S3Storage__AccessKey='${{ secrets.US1_S3_ACCESS_KEY }}'
-          export S3Storage__SecretKey='${{ secrets.US1_S3_SECRET_KEY }}'
-          export S3Storage__ServiceUrl='${{ secrets.US1_S3_SERVICE_URL }}'
-          export S3Storage__UsePathStyle='${{ secrets.US1_S3_USE_PATH_STYLE }}'
+          export S3Storage__BucketName='${{ secrets.S3_BUCKET_NAME }}'
+          export S3Storage__Region='${{ secrets.S3_REGION }}'
+          export S3Storage__AccessKey='${{ secrets.S3_ACCESS_KEY }}'
+          export S3Storage__SecretKey='${{ secrets.S3_SECRET_KEY }}'
+          export S3Storage__ServiceUrl='${{ secrets.S3_SERVICE_URL }}'
+          export S3Storage__UsePathStyle='${{ secrets.S3_USE_PATH_STYLE }}'
           export AdminSeed__Email='${{ secrets.US1_ADMIN_SEED_EMAIL }}'
           export AdminSeed__Password='${{ secrets.US1_ADMIN_SEED_PASSWORD }}'
           EOF
