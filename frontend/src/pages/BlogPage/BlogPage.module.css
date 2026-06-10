@@ -136,6 +136,61 @@
   box-shadow: 0 4px 12px rgba(79, 13, 12, 0.15);
 }
 
+.categoryFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 28px;
+  padding: 10px;
+  border: 1px solid rgba(114, 19, 17, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 14px 34px rgba(68, 17, 17, 0.05);
+  backdrop-filter: blur(12px);
+}
+
+.categoryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
+}
+
+.categoryButton small {
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(114, 19, 17, 0.08);
+  color: var(--burgundy);
+  font-size: 0.75rem;
+  line-height: 22px;
+  text-align: center;
+}
+
+.categoryButton:hover,
+.categoryButton:focus-visible,
+.categoryButtonActive {
+  border-color: rgba(114, 19, 17, 0.16);
+  background: var(--wine);
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(79, 13, 12, 0.14);
+}
+
+.categoryButton:hover small,
+.categoryButton:focus-visible small,
+.categoryButtonActive small {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -241,6 +296,17 @@
     grid-template-columns: 1fr;
     gap: 20px;
   }
+  .categoryFilters {
+    border-radius: 18px;
+    padding: 8px;
+  }
+
+  .categoryButton {
+    min-height: 38px;
+    padding: 7px 12px;
+    font-size: 0.86rem;
+  }
+
   .filtersWrapper {
     border-radius: 20px;
     padding: 6px;

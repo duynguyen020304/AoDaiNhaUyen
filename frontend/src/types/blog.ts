@@ -13,6 +13,7 @@ export type BlogBlock =
   | { type: 'callout'; variant: 'info' | 'warning' | 'tip'; content: string }
   | { type: 'code'; language: string; content: string }
   | { type: 'embed'; url: string; caption?: string };
-export interface BlogPostListItem { id: string; title: string; slug: string; excerpt: string; featuredImage: string | null; featuredImageWidth: number | null; featuredImageHeight: number | null; template: BlogTemplate; tags: string[]; authorName: string | null; status: BlogStatus; publishedAt: string | null; updatedAt: string }
-export interface BlogPost extends BlogPostListItem { content: BlogBlock[]; authorId: string | null; authorAvatarUrl: string | null; authorBio: string | null; reviewedBy: string | null; informationGain: string | null; metaTitle: string | null; metaDescription: string | null; canonicalUrl: string | null; createdAt: string }
-export interface BlogListParams { tag?: string; search?: string; page?: number; pageSize?: number }
+export interface BlogCategory { id: string; name: string; slug: string; description: string | null; sortOrder: number; publishedPostCount: number }
+export interface BlogPostListItem { id: string; title: string; slug: string; excerpt: string; featuredImage: string | null; featuredImageWidth: number | null; featuredImageHeight: number | null; template: BlogTemplate; tags: string[]; category: BlogCategory | null; authorName: string | null; status: BlogStatus; publishedAt: string | null; updatedAt: string }
+export interface BlogPost extends BlogPostListItem { content: BlogBlock[]; blogCategoryId: string | null; authorId: string | null; authorAvatarUrl: string | null; authorBio: string | null; reviewedBy: string | null; informationGain: string | null; metaTitle: string | null; metaDescription: string | null; canonicalUrl: string | null; createdAt: string }
+export interface BlogListParams { tag?: string; category?: string; search?: string; page?: number; pageSize?: number }

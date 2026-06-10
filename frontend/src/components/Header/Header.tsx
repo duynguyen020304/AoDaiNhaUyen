@@ -7,7 +7,7 @@ import type { HeaderCategory } from '../../types/catalog';
 import { useAuth } from '../../auth/useAuth';
 import { useCartQuery } from '../../hooks/cart/useCartQueries';
 import { useHeaderCategoriesQuery } from '../../hooks/catalog/useCatalogQueries';
-import { useBlogTags } from '../../hooks/blog/useBlogQueries';
+import { useBlogCategories } from '../../hooks/blog/useBlogQueries';
 
 interface NavLinkConfig {
   label: string;
@@ -62,7 +62,7 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
   const navigate = useNavigate();
   const { status, user, logout } = useAuth();
   const categoriesQuery = useHeaderCategoriesQuery();
-  const blogTagsQuery = useBlogTags();
+  const blogCategoriesQuery = useBlogCategories();
   const cartQuery = useCartQuery(status === 'authenticated');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const categories = categoriesQuery.data && categoriesQuery.data.length > 0
@@ -122,9 +122,9 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
               ? categoriesBySlug.get('phu-kien')
               : undefined;
           const isBlog = link.to === '/blog/';
-          const blogTags = blogTagsQuery.data ?? [];
-          const hasDropdown = category !== undefined || (isBlog && blogTags.length > 0);
-          const currentBlogTag = isBlog ? new URLSearchParams(location.search).get('tag') : null;
+          const blogCategories = blogCategoriesQuery.data ?? [];
+          const hasDropdown = category !== undefined || (isBlog && blogCategories.length > 0);
+          const currentBlogCategory = isBlog ? new URLSearchParams(location.search).get('category') : null;
           const isCategoryActive = category?.children.some((child) => child.slug === activeCategory) ?? false;
           const isActive = location.pathname === link.matchPath || location.pathname.startsWith(`${link.matchPath}/`) || isCategoryActive;
           return (
@@ -177,25 +177,42 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
                         );
                       })
                     : null}
-                  {isBlog && blogTags.length > 0
-                    ? blogTags.map((tag) => {
-                        const target = `/blog/?tag=${encodeURIComponent(tag)}`;
-                        return (
-                          <a
-                            key={tag}
-                            className={`${styles.dropdownLink} ${currentBlogTag === tag ? styles.dropdownActive : ''}`}
-                            href={target}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              setOpenDropdown(null);
-                              navigate(target);
-                            }}
-                          >
-                            {tag}
-                          </a>
-                        );
-                      })
-                    : null}
+                  {isBlog && blogCategories.length > 0 ? (
+                    <div className={styles.blogMegaMenu}>
+                      <a
+                        className={`${styles.blogFeaturedLink} ${currentBlogCategory === null ? styles.dropdownActive : ''}`}
+                        href="/blog/"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setOpenDropdown(null);
+                          navigate('/blog/');
+                        }}
+                      >
+                        <span>Tất cả bài viết</span>
+                        <small>Lookbook, tư vấn và văn hóa áo dài</small>
+                      </a>
+                      <div className={styles.blogGroups}>
+                        {blogCategories.map((blogCategory) => {
+                          const target = `/blog/?category=${encodeURIComponent(blogCategory.slug)}`;
+                          return (
+                            <a
+                              key={blogCategory.slug}
+                              className={`${styles.blogGroupLink} ${currentBlogCategory === blogCategory.slug ? styles.dropdownActive : ''}`}
+                              href={target}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                setOpenDropdown(null);
+                                navigate(target);
+                              }}
+                            >
+                              <strong>{blogCategory.name}</strong>
+                              <small>{blogCategory.description ?? `${blogCategory.publishedPostCount} bài viết`}</small>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </motion.div>

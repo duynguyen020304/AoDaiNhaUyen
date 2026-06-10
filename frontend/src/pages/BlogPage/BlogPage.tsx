@@ -10,8 +10,10 @@ const SITE = 'https://aodainhauyen.io.vn';
 export default function BlogPage() {
   const [sp, setSp] = useSearchParams();
   const tag = sp.get('tag') ?? undefined;
+  const category = sp.get('category') ?? undefined;
   const page = Number(sp.get('page') ?? '1');
-  const posts = useBlogList({ tag, page, pageSize: 9 });
+  const posts = useBlogList({ tag, category, page, pageSize: 9 });
+
   const title = 'Bài Viết Áo Dài, Cưới, Văn Hóa | Áo Dài Nhà Uyên';
   const description = 'Khám phá bí quyết chọn áo dài cưới, bảo quản áo dài và cảm hứng thời trang Việt từ Áo Dài Nhà Uyên.';
   const items = posts.data?.data ?? [];
@@ -47,6 +49,8 @@ export default function BlogPage() {
             <p>Chưa có bài viết phù hợp với chủ đề này.</p>
           </div>
         )}
+
+
 
         {!posts.isLoading && items.length > 0 && (
           <motion.section 
