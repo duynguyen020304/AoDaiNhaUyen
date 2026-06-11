@@ -29,7 +29,7 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -101,7 +101,7 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -173,7 +173,7 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -241,7 +241,7 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -310,7 +310,7 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -383,7 +383,7 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -831,7 +831,7 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
