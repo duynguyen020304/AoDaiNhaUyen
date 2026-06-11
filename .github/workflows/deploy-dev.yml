@@ -28,7 +28,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
-            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
+            --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -101,7 +101,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
-            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
+            --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -174,7 +174,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
-            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
+            --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -243,7 +243,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
-            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
+            --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -313,7 +313,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
-            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
+            --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -387,7 +387,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
-            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
+            --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -848,7 +848,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
-            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
+            --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
