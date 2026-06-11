@@ -20,6 +20,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Fetch secrets from Infisical
+        shell: bash
+        env:
+          INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
+          curl -fsS \
+            -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
+            -o /tmp/infisical-secrets.json
+          jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
+          while IFS=$'\t' read -r key value; do
+            if [ -n "$value" ]; then
+              echo "::add-mask::$value"
+            fi
+            {
+              echo "${key}<<__INFISICAL_${key}__"
+              echo "$value"
+              echo "__INFISICAL_${key}__"
+            } >> "$GITHUB_ENV"
+          done
+          echo "Secrets fetched: $(jq '.secrets | length' /tmp/infisical-secrets.json)"
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
@@ -29,28 +53,27 @@ jobs:
         run: |
           cd frontend
           bun install
-          PUBLIC_BACKEND_DOMAIN=${{ secrets.HK1_PUBLIC_BACKEND_DOMAIN }} \
-          VITE_API_BASE_URL=${{ secrets.HK1_VITE_API_BASE_URL }} \
-          PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.HK1_PUBLIC_GOOGLE_CLIENT_ID }} \
-          PUBLIC_ZALO_APP_ID=${{ secrets.HK1_ZALO_OAUTH_APP_ID }} \
+          PUBLIC_BACKEND_DOMAIN="$HK1_PUBLIC_BACKEND_DOMAIN" \
+          VITE_API_BASE_URL="$HK1_VITE_API_BASE_URL" \
+          PUBLIC_GOOGLE_CLIENT_ID="$HK1_PUBLIC_GOOGLE_CLIENT_ID" \
+          PUBLIC_ZALO_APP_ID="$HK1_ZALO_OAUTH_APP_ID" \
           bun run build
 
       - name: Upload Frontend Artifact to S3
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
-          AWS_REGION: ${{ secrets.S3_REGION }}
-          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
         run: |
           mkdir -p ~/.aws
           cat > ~/.aws/config << EOF
           [default]
-          region = ${{ secrets.S3_REGION }}
+          region = $S3_REGION
           s3 =
             addressing_style = path
           EOF
           tar -czf frontend-dist-hk1.tar.gz -C frontend/dist .
-          aws s3 cp frontend-dist-hk1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-hk1.tar.gz
+          AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" \
+          AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" \
+          AWS_REGION="$S3_REGION" \
+          AWS_ENDPOINT_URL="$S3_SERVICE_URL" \
+          aws s3 cp frontend-dist-hk1.tar.gz "s3://$S3_BUCKET_NAME/$S3_ARTIFACT_PREFIX/frontend-dist-hk1.tar.gz"
 
   # ==========================================
   # Build Frontend for US1
@@ -65,6 +88,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Fetch secrets from Infisical
+        shell: bash
+        env:
+          INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
+          curl -fsS \
+            -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
+            -o /tmp/infisical-secrets.json
+          jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
+          while IFS=$'\t' read -r key value; do
+            if [ -n "$value" ]; then
+              echo "::add-mask::$value"
+            fi
+            {
+              echo "${key}<<__INFISICAL_${key}__"
+              echo "$value"
+              echo "__INFISICAL_${key}__"
+            } >> "$GITHUB_ENV"
+          done
+          echo "Secrets fetched: $(jq '.secrets | length' /tmp/infisical-secrets.json)"
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
@@ -74,28 +121,27 @@ jobs:
         run: |
           cd frontend
           bun install
-          PUBLIC_BACKEND_DOMAIN=${{ secrets.US1_PUBLIC_BACKEND_DOMAIN }} \
-          VITE_API_BASE_URL=${{ secrets.US1_VITE_API_BASE_URL }} \
-          PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.US1_PUBLIC_GOOGLE_CLIENT_ID }} \
-          PUBLIC_ZALO_APP_ID=${{ secrets.US1_ZALO_OAUTH_APP_ID }} \
+          PUBLIC_BACKEND_DOMAIN="$US1_PUBLIC_BACKEND_DOMAIN" \
+          VITE_API_BASE_URL="$US1_VITE_API_BASE_URL" \
+          PUBLIC_GOOGLE_CLIENT_ID="$US1_PUBLIC_GOOGLE_CLIENT_ID" \
+          PUBLIC_ZALO_APP_ID="$US1_ZALO_OAUTH_APP_ID" \
           bun run build
 
       - name: Upload Frontend Artifact to S3
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
-          AWS_REGION: ${{ secrets.S3_REGION }}
-          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
         run: |
           mkdir -p ~/.aws
           cat > ~/.aws/config << EOF
           [default]
-          region = ${{ secrets.S3_REGION }}
+          region = $S3_REGION
           s3 =
             addressing_style = path
           EOF
           tar -czf frontend-dist-us1.tar.gz -C frontend/dist .
-          aws s3 cp frontend-dist-us1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-us1.tar.gz
+          AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" \
+          AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" \
+          AWS_REGION="$S3_REGION" \
+          AWS_ENDPOINT_URL="$S3_SERVICE_URL" \
+          aws s3 cp frontend-dist-us1.tar.gz "s3://$S3_BUCKET_NAME/$S3_ARTIFACT_PREFIX/frontend-dist-us1.tar.gz"
 
   # ==========================================
   # Build Backend (shared)
@@ -110,6 +156,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Fetch secrets from Infisical
+        shell: bash
+        env:
+          INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
+          curl -fsS \
+            -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
+            -o /tmp/infisical-secrets.json
+          jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
+          while IFS=$'\t' read -r key value; do
+            if [ -n "$value" ]; then
+              echo "::add-mask::$value"
+            fi
+            {
+              echo "${key}<<__INFISICAL_${key}__"
+              echo "$value"
+              echo "__INFISICAL_${key}__"
+            } >> "$GITHUB_ENV"
+          done
+          echo "Secrets fetched: $(jq '.secrets | length' /tmp/infisical-secrets.json)"
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -122,21 +192,20 @@ jobs:
           dotnet publish AoDaiNhaUyen.Api -c Release -o publish --no-restore
 
       - name: Upload Backend Artifact to S3
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
-          AWS_REGION: ${{ secrets.S3_REGION }}
-          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
         run: |
           mkdir -p ~/.aws
           cat > ~/.aws/config << EOF
           [default]
-          region = ${{ secrets.S3_REGION }}
+          region = $S3_REGION
           s3 =
             addressing_style = path
           EOF
           tar -czf backend-publish.tar.gz -C backend/publish .
-          aws s3 cp backend-publish.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz
+          AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" \
+          AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" \
+          AWS_REGION="$S3_REGION" \
+          AWS_ENDPOINT_URL="$S3_SERVICE_URL" \
+          aws s3 cp backend-publish.tar.gz "s3://$S3_BUCKET_NAME/$S3_ARTIFACT_PREFIX/backend-publish.tar.gz"
 
   # ==========================================
   # Build Admin Frontend for HK1
@@ -151,6 +220,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Fetch secrets from Infisical
+        shell: bash
+        env:
+          INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
+          curl -fsS \
+            -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
+            -o /tmp/infisical-secrets.json
+          jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
+          while IFS=$'\t' read -r key value; do
+            if [ -n "$value" ]; then
+              echo "::add-mask::$value"
+            fi
+            {
+              echo "${key}<<__INFISICAL_${key}__"
+              echo "$value"
+              echo "__INFISICAL_${key}__"
+            } >> "$GITHUB_ENV"
+          done
+          echo "Secrets fetched: $(jq '.secrets | length' /tmp/infisical-secrets.json)"
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
@@ -160,25 +253,24 @@ jobs:
         run: |
           cd frontend-admin
           bun install
-          VITE_API_BASE_URL=${{ secrets.HK1_VITE_API_BASE_URL }} \
+          VITE_API_BASE_URL="$HK1_VITE_API_BASE_URL" \
           bun run build
 
       - name: Upload Admin Frontend Artifact to S3
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
-          AWS_REGION: ${{ secrets.S3_REGION }}
-          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
         run: |
           mkdir -p ~/.aws
           cat > ~/.aws/config << EOF
           [default]
-          region = ${{ secrets.S3_REGION }}
+          region = $S3_REGION
           s3 =
             addressing_style = path
           EOF
           tar -czf admin-dist-hk1.tar.gz -C frontend-admin/dist .
-          aws s3 cp admin-dist-hk1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-hk1.tar.gz
+          AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" \
+          AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" \
+          AWS_REGION="$S3_REGION" \
+          AWS_ENDPOINT_URL="$S3_SERVICE_URL" \
+          aws s3 cp admin-dist-hk1.tar.gz "s3://$S3_BUCKET_NAME/$S3_ARTIFACT_PREFIX/admin-dist-hk1.tar.gz"
 
   # ==========================================
   # Build Admin Frontend for US1
@@ -193,6 +285,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Fetch secrets from Infisical
+        shell: bash
+        env:
+          INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
+          curl -fsS \
+            -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
+            -o /tmp/infisical-secrets.json
+          jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
+          while IFS=$'\t' read -r key value; do
+            if [ -n "$value" ]; then
+              echo "::add-mask::$value"
+            fi
+            {
+              echo "${key}<<__INFISICAL_${key}__"
+              echo "$value"
+              echo "__INFISICAL_${key}__"
+            } >> "$GITHUB_ENV"
+          done
+          echo "Secrets fetched: $(jq '.secrets | length' /tmp/infisical-secrets.json)"
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
@@ -202,25 +318,24 @@ jobs:
         run: |
           cd frontend-admin
           bun install
-          VITE_API_BASE_URL=${{ secrets.US1_VITE_API_BASE_URL }} \
+          VITE_API_BASE_URL="$US1_VITE_API_BASE_URL" \
           bun run build
 
       - name: Upload Admin Frontend Artifact to S3
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
-          AWS_REGION: ${{ secrets.S3_REGION }}
-          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
         run: |
           mkdir -p ~/.aws
           cat > ~/.aws/config << EOF
           [default]
-          region = ${{ secrets.S3_REGION }}
+          region = $S3_REGION
           s3 =
             addressing_style = path
           EOF
           tar -czf admin-dist-us1.tar.gz -C frontend-admin/dist .
-          aws s3 cp admin-dist-us1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-us1.tar.gz
+          AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" \
+          AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" \
+          AWS_REGION="$S3_REGION" \
+          AWS_ENDPOINT_URL="$S3_SERVICE_URL" \
+          aws s3 cp admin-dist-us1.tar.gz "s3://$S3_BUCKET_NAME/$S3_ARTIFACT_PREFIX/admin-dist-us1.tar.gz"
 
   # ==========================================
   # Deploy to HK1 Server
@@ -234,19 +349,35 @@ jobs:
       SERVER_NAME: "HK1"
       SSH_ALIAS: "aodai-hk1"
       S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
-      AWS_REGION: ${{ secrets.S3_REGION }}
-      AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
-      ENABLE_CLOUDFLARE_TUNNEL: ${{ secrets.HK1_ENABLE_CLOUDFLARE_TUNNEL || '' }}
-      RAW_CLOUDFLARE_TUNNEL_HOST: ${{ secrets.HK1_CLOUDFLARE_TUNNEL_HOST || '' }}
-      DEPLOY_HOST: ${{ secrets.HK1_PRODUCTION_SERVER_HOST }}
-      DEPLOY_PORT: ${{ secrets.HK1_PRODUCTION_SERVER_PORT }}
-      DEPLOY_USER: ${{ secrets.HK1_PRODUCTION_SERVER_USER }}
-      CF_ACCESS_CLIENT_ID: ${{ secrets.HK1_CF_ACCESS_CLIENT_ID }}
-      CF_ACCESS_CLIENT_SECRET: ${{ secrets.HK1_CF_ACCESS_CLIENT_SECRET }}
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Fetch secrets from Infisical
+        shell: bash
+        env:
+          INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
+          curl -fsS \
+            -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
+            -o /tmp/infisical-secrets.json
+          jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
+          while IFS=$'\t' read -r key value; do
+            if [ -n "$value" ]; then
+              echo "::add-mask::$value"
+            fi
+            {
+              echo "${key}<<__INFISICAL_${key}__"
+              echo "$value"
+              echo "__INFISICAL_${key}__"
+            } >> "$GITHUB_ENV"
+          done
+          echo "Secrets fetched: $(jq '.secrets | length' /tmp/infisical-secrets.json)"
+
       # ------------------------------------------
       # Download Artifacts from S3
       # ------------------------------------------
@@ -255,7 +386,7 @@ jobs:
           mkdir -p ~/.aws
           cat > ~/.aws/config << EOF
           [default]
-          region = ${{ secrets.S3_REGION }}
+          region = $S3_REGION
           s3 =
             addressing_style = path
           EOF
@@ -263,19 +394,31 @@ jobs:
       - name: Download Frontend Artifact from S3
         run: |
           mkdir -p frontend/dist
-          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-hk1.tar.gz frontend-dist-hk1.tar.gz
+          AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" \
+          AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" \
+          AWS_REGION="$S3_REGION" \
+          AWS_ENDPOINT_URL="$S3_SERVICE_URL" \
+          aws s3 cp "s3://$S3_BUCKET_NAME/$S3_ARTIFACT_PREFIX/frontend-dist-hk1.tar.gz" frontend-dist-hk1.tar.gz
           tar -xzf frontend-dist-hk1.tar.gz -C frontend/dist
 
       - name: Download Backend Publish from S3
         run: |
           mkdir -p backend/publish
-          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz backend-publish.tar.gz
+          AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" \
+          AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" \
+          AWS_REGION="$S3_REGION" \
+          AWS_ENDPOINT_URL="$S3_SERVICE_URL" \
+          aws s3 cp "s3://$S3_BUCKET_NAME/$S3_ARTIFACT_PREFIX/backend-publish.tar.gz" backend-publish.tar.gz
           tar -xzf backend-publish.tar.gz -C backend/publish
 
       - name: Download Admin Frontend Artifact from S3
         run: |
           mkdir -p frontend-admin/dist
-          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-hk1.tar.gz admin-dist-hk1.tar.gz
+          AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" \
+          AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" \
+          AWS_REGION="$S3_REGION" \
+          AWS_ENDPOINT_URL="$S3_SERVICE_URL" \
+          aws s3 cp "s3://$S3_BUCKET_NAME/$S3_ARTIFACT_PREFIX/admin-dist-hk1.tar.gz" admin-dist-hk1.tar.gz
           tar -xzf admin-dist-hk1.tar.gz -C frontend-admin/dist
 
       # ------------------------------------------
@@ -431,6 +574,59 @@ jobs:
           rsync -avzr --delete -e "ssh -F $SSH_CONFIG_FILE" backend/publish/ ${SSH_ALIAS}:/tmp/aodai-backend-deploy
 
       # ------------------------------------------
+      # Prepare runtime environment files
+      # ------------------------------------------
+      - name: Generate runtime-env.sh for HK1
+        shell: bash
+        run: |
+          cat > /tmp/runtime-env-hk1.sh << RUNTIMEEOF
+          export ASPNETCORE_ENVIRONMENT='Production'
+          export ASPNETCORE_URLS='http://localhost:${HK1_BACKEND_PORT}'
+          export ConnectionStrings__DefaultConnection='${HK1_POSTGRESQL_CONNECTION_STRING}'
+          export RunMigrationsAndSeedOnStartup='${HK1_RUN_MIGRATIONS_AND_SEED_ON_STARTUP}'
+          export JwtSettings__SecretKey='${HK1_JWT_SECRET_KEY}'
+          export GoogleOAuth__ClientId='${HK1_GOOGLE_OAUTH_CLIENT_ID}'
+          export GoogleOAuth__ClientSecret='${HK1_GOOGLE_OAUTH_CLIENT_SECRET}'
+          export GoogleOAuth__RedirectUri='${HK1_GOOGLE_OAUTH_REDIRECT_URI}'
+          export ZaloOAuth__AppId='${HK1_ZALO_OAUTH_APP_ID}'
+          export ZaloOAuth__SecretKey='${HK1_ZALO_OAUTH_SECRET_KEY}'
+          export ZaloOAuth__RedirectUri='${HK1_ZALO_OAUTH_REDIRECT_URI}'
+          export EmailSettings__SmtpHost='${HK1_EMAIL_SMTP_HOST}'
+          export EmailSettings__SmtpPort='${HK1_EMAIL_SMTP_PORT}'
+          export EmailSettings__SmtpUsername='${HK1_EMAIL_SMTP_USERNAME}'
+          export EmailSettings__SmtpPassword='${HK1_EMAIL_SMTP_PASSWORD}'
+          export EmailSettings__EnableSsl='${HK1_EMAIL_ENABLE_SSL}'
+          export EmailSettings__FromEmail='${HK1_EMAIL_FROM_EMAIL}'
+          export EmailSettings__FromName='${HK1_EMAIL_FROM_NAME}'
+          export EmailSettings__ApiBaseUrl='${HK1_EMAIL_API_BASE_URL}'
+          export EmailSettings__FrontendBaseUrl='${HK1_EMAIL_FRONTEND_BASE_URL}'
+          export GoogleCloud__ProjectId='${HK1_GCLOUD_PROJECT_ID}'
+          export GoogleCloud__ApiKey='${HK1_GCLOUD_API_KEY}'
+          export GoogleCloud__Location='${HK1_GCLOUD_LOCATION}'
+          export GoogleCloud__VirtualTryOnModel='${HK1_GCLOUD_MODEL}'
+          export GoogleCloud__StylistTextModel='${HK1_GCLOUD_STYLIST_TEXT_MODEL}'
+          export GoogleCloud__TimeoutSeconds='${HK1_GCLOUD_TIMEOUT_SECONDS}'
+          export CacheSettings__Version='${HK1_CACHE_SETTINGS_VERSION}'
+          export FrontendOrigins='${HK1_FRONTEND_ORIGINS}'
+          export S3Storage__BucketName='${S3_BUCKET_NAME}'
+          export S3Storage__Region='${S3_REGION}'
+          export S3Storage__AccessKey='${S3_ACCESS_KEY}'
+          export S3Storage__SecretKey='${S3_SECRET_KEY}'
+          export S3Storage__ServiceUrl='${S3_SERVICE_URL}'
+          export S3Storage__UsePathStyle='${S3_USE_PATH_STYLE}'
+          export AdminSeed__Email='${HK1_ADMIN_SEED_EMAIL}'
+          export AdminSeed__Password='${HK1_ADMIN_SEED_PASSWORD}'
+          RUNTIMEEOF
+          chmod 600 /tmp/runtime-env-hk1.sh
+
+      - name: Deploy Runtime Env to Server
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+          rsync -avz -e "ssh -F $SSH_CONFIG_FILE" /tmp/runtime-env-hk1.sh ${SSH_ALIAS}:/tmp/runtime-env.sh
+
+      # ------------------------------------------
       # Finalize Deployment & Restart Services
       # ------------------------------------------
       - name: Finalize Deployment via SSH
@@ -470,47 +666,10 @@ jobs:
           mkdir -p /root/AoDaiNhaUyen/backend
 
           # ==========================================
-          # 3. Create Backend Runtime Environment
+          # 3. Install runtime-env.sh
           # ==========================================
-          echo "[${SERVER_NAME}] Writing backend runtime-env.sh..."
-          cat > /root/AoDaiNhaUyen/backend/runtime-env.sh << 'EOF'
-          export ASPNETCORE_ENVIRONMENT='Production'
-          export ASPNETCORE_URLS='http://localhost:${{ secrets.HK1_BACKEND_PORT }}'
-          export ConnectionStrings__DefaultConnection='${{ secrets.HK1_POSTGRESQL_CONNECTION_STRING }}'
-          export RunMigrationsAndSeedOnStartup='${{ secrets.HK1_RUN_MIGRATIONS_AND_SEED_ON_STARTUP }}'
-          export JwtSettings__SecretKey='${{ secrets.HK1_JWT_SECRET_KEY }}'
-          export GoogleOAuth__ClientId='${{ secrets.HK1_GOOGLE_OAUTH_CLIENT_ID }}'
-          export GoogleOAuth__ClientSecret='${{ secrets.HK1_GOOGLE_OAUTH_CLIENT_SECRET }}'
-          export GoogleOAuth__RedirectUri='${{ secrets.HK1_GOOGLE_OAUTH_REDIRECT_URI }}'
-          export ZaloOAuth__AppId='${{ secrets.HK1_ZALO_OAUTH_APP_ID }}'
-          export ZaloOAuth__SecretKey='${{ secrets.HK1_ZALO_OAUTH_SECRET_KEY }}'
-          export ZaloOAuth__RedirectUri='${{ secrets.HK1_ZALO_OAUTH_REDIRECT_URI }}'
-          export EmailSettings__SmtpHost='${{ secrets.HK1_EMAIL_SMTP_HOST }}'
-          export EmailSettings__SmtpPort='${{ secrets.HK1_EMAIL_SMTP_PORT }}'
-          export EmailSettings__SmtpUsername='${{ secrets.HK1_EMAIL_SMTP_USERNAME }}'
-          export EmailSettings__SmtpPassword='${{ secrets.HK1_EMAIL_SMTP_PASSWORD }}'
-          export EmailSettings__EnableSsl='${{ secrets.HK1_EMAIL_ENABLE_SSL }}'
-          export EmailSettings__FromEmail='${{ secrets.HK1_EMAIL_FROM_EMAIL }}'
-          export EmailSettings__FromName='${{ secrets.HK1_EMAIL_FROM_NAME }}'
-          export EmailSettings__ApiBaseUrl='${{ secrets.HK1_EMAIL_API_BASE_URL }}'
-          export EmailSettings__FrontendBaseUrl='${{ secrets.HK1_EMAIL_FRONTEND_BASE_URL }}'
-          export GoogleCloud__ProjectId='${{ secrets.HK1_GCLOUD_PROJECT_ID }}'
-          export GoogleCloud__ApiKey='${{ secrets.HK1_GCLOUD_API_KEY }}'
-          export GoogleCloud__Location='${{ secrets.HK1_GCLOUD_LOCATION }}'
-          export GoogleCloud__VirtualTryOnModel='${{ secrets.HK1_GCLOUD_MODEL }}'
-          export GoogleCloud__StylistTextModel='${{ secrets.HK1_GCLOUD_STYLIST_TEXT_MODEL }}'
-          export GoogleCloud__TimeoutSeconds='${{ secrets.HK1_GCLOUD_TIMEOUT_SECONDS }}'
-          export CacheSettings__Version='${{ secrets.HK1_CACHE_SETTINGS_VERSION }}'
-          export FrontendOrigins='${{ secrets.HK1_FRONTEND_ORIGINS }}'
-          export S3Storage__BucketName='${{ secrets.S3_BUCKET_NAME }}'
-          export S3Storage__Region='${{ secrets.S3_REGION }}'
-          export S3Storage__AccessKey='${{ secrets.S3_ACCESS_KEY }}'
-          export S3Storage__SecretKey='${{ secrets.S3_SECRET_KEY }}'
-          export S3Storage__ServiceUrl='${{ secrets.S3_SERVICE_URL }}'
-          export S3Storage__UsePathStyle='${{ secrets.S3_USE_PATH_STYLE }}'
-          export AdminSeed__Email='${{ secrets.HK1_ADMIN_SEED_EMAIL }}'
-          export AdminSeed__Password='${{ secrets.HK1_ADMIN_SEED_PASSWORD }}'
-          EOF
+          echo "[${SERVER_NAME}] Installing runtime-env.sh..."
+          cp /tmp/runtime-env.sh /root/AoDaiNhaUyen/backend/runtime-env.sh
           chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
 
           # ==========================================
@@ -579,18 +738,18 @@ jobs:
           EOF
           chmod +x /root/AoDaiNhaUyen/backend/start.sh
 
-          cat > /root/AoDaiNhaUyen/frontend/start.sh << EOF
+          cat > /root/AoDaiNhaUyen/frontend/start.sh << 'STARTEOF'
           #!/bin/bash
           cd /root/AoDaiNhaUyen/frontend/dist
-          /root/.bun/bin/serve -s -l ${{ secrets.HK1_FRONTEND_PORT }} .
-          EOF
+          /root/.bun/bin/serve -s -l 3100 .
+          STARTEOF
           chmod +x /root/AoDaiNhaUyen/frontend/start.sh
 
-          cat > /root/AoDaiNhaUyen/frontend-admin/start.sh << EOF
+          cat > /root/AoDaiNhaUyen/frontend-admin/start.sh << 'STARTEOF'
           #!/bin/bash
           cd /root/AoDaiNhaUyen/frontend-admin/dist
-          /root/.bun/bin/serve -s -l ${{ secrets.HK1_ADMIN_FRONTEND_PORT }} .
-          EOF
+          /root/.bun/bin/serve -s -l 3101 .
+          STARTEOF
           chmod +x /root/AoDaiNhaUyen/frontend-admin/start.sh
 
           # ==========================================
@@ -634,19 +793,35 @@ jobs:
       SERVER_NAME: "US1"
       SSH_ALIAS: "aodai-us1"
       S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
-      AWS_REGION: ${{ secrets.S3_REGION }}
-      AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
-      ENABLE_CLOUDFLARE_TUNNEL: ${{ secrets.US1_ENABLE_CLOUDFLARE_TUNNEL || '' }}
-      RAW_CLOUDFLARE_TUNNEL_HOST: ${{ secrets.US1_CLOUDFLARE_TUNNEL_HOST || '' }}
-      DEPLOY_HOST: ${{ secrets.US1_PRODUCTION_SERVER_HOST }}
-      DEPLOY_PORT: ${{ secrets.US1_PRODUCTION_SERVER_PORT }}
-      DEPLOY_USER: ${{ secrets.US1_PRODUCTION_SERVER_USER }}
-      CF_ACCESS_CLIENT_ID: ${{ secrets.US1_CF_ACCESS_CLIENT_ID }}
-      CF_ACCESS_CLIENT_SECRET: ${{ secrets.US1_CF_ACCESS_CLIENT_SECRET }}
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Fetch secrets from Infisical
+        shell: bash
+        env:
+          INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
+          curl -fsS \
+            -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
+            -o /tmp/infisical-secrets.json
+          jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
+          while IFS=$'\t' read -r key value; do
+            if [ -n "$value" ]; then
+              echo "::add-mask::$value"
+            fi
+            {
+              echo "${key}<<__INFISICAL_${key}__"
+              echo "$value"
+              echo "__INFISICAL_${key}__"
+            } >> "$GITHUB_ENV"
+          done
+          echo "Secrets fetched: $(jq '.secrets | length' /tmp/infisical-secrets.json)"
+
       # ------------------------------------------
       # Download Artifacts from S3
       # ------------------------------------------
@@ -655,7 +830,7 @@ jobs:
           mkdir -p ~/.aws
           cat > ~/.aws/config << EOF
           [default]
-          region = ${{ secrets.S3_REGION }}
+          region = $S3_REGION
           s3 =
             addressing_style = path
           EOF
@@ -663,19 +838,31 @@ jobs:
       - name: Download Frontend Artifact from S3
         run: |
           mkdir -p frontend/dist
-          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-us1.tar.gz frontend-dist-us1.tar.gz
+          AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" \
+          AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" \
+          AWS_REGION="$S3_REGION" \
+          AWS_ENDPOINT_URL="$S3_SERVICE_URL" \
+          aws s3 cp "s3://$S3_BUCKET_NAME/$S3_ARTIFACT_PREFIX/frontend-dist-us1.tar.gz" frontend-dist-us1.tar.gz
           tar -xzf frontend-dist-us1.tar.gz -C frontend/dist
 
       - name: Download Backend Publish from S3
         run: |
           mkdir -p backend/publish
-          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz backend-publish.tar.gz
+          AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" \
+          AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" \
+          AWS_REGION="$S3_REGION" \
+          AWS_ENDPOINT_URL="$S3_SERVICE_URL" \
+          aws s3 cp "s3://$S3_BUCKET_NAME/$S3_ARTIFACT_PREFIX/backend-publish.tar.gz" backend-publish.tar.gz
           tar -xzf backend-publish.tar.gz -C backend/publish
 
       - name: Download Admin Frontend Artifact from S3
         run: |
           mkdir -p frontend-admin/dist
-          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/admin-dist-us1.tar.gz admin-dist-us1.tar.gz
+          AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" \
+          AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" \
+          AWS_REGION="$S3_REGION" \
+          AWS_ENDPOINT_URL="$S3_SERVICE_URL" \
+          aws s3 cp "s3://$S3_BUCKET_NAME/$S3_ARTIFACT_PREFIX/admin-dist-us1.tar.gz" admin-dist-us1.tar.gz
           tar -xzf admin-dist-us1.tar.gz -C frontend-admin/dist
 
       # ------------------------------------------
@@ -831,6 +1018,59 @@ jobs:
           rsync -avzr --delete -e "ssh -F $SSH_CONFIG_FILE" backend/publish/ ${SSH_ALIAS}:/tmp/aodai-backend-deploy
 
       # ------------------------------------------
+      # Prepare runtime environment files
+      # ------------------------------------------
+      - name: Generate runtime-env.sh for US1
+        shell: bash
+        run: |
+          cat > /tmp/runtime-env-us1.sh << RUNTIMEEOF
+          export ASPNETCORE_ENVIRONMENT='Production'
+          export ASPNETCORE_URLS='http://localhost:${US1_BACKEND_PORT}'
+          export ConnectionStrings__DefaultConnection='${US1_POSTGRESQL_CONNECTION_STRING}'
+          export RunMigrationsAndSeedOnStartup='${US1_RUN_MIGRATIONS_AND_SEED_ON_STARTUP}'
+          export JwtSettings__SecretKey='${US1_JWT_SECRET_KEY}'
+          export GoogleOAuth__ClientId='${US1_GOOGLE_OAUTH_CLIENT_ID}'
+          export GoogleOAuth__ClientSecret='${US1_GOOGLE_OAUTH_CLIENT_SECRET}'
+          export GoogleOAuth__RedirectUri='${US1_GOOGLE_OAUTH_REDIRECT_URI}'
+          export ZaloOAuth__AppId='${US1_ZALO_OAUTH_APP_ID}'
+          export ZaloOAuth__SecretKey='${US1_ZALO_OAUTH_SECRET_KEY}'
+          export ZaloOAuth__RedirectUri='${US1_ZALO_OAUTH_REDIRECT_URI}'
+          export EmailSettings__SmtpHost='${US1_EMAIL_SMTP_HOST}'
+          export EmailSettings__SmtpPort='${US1_EMAIL_SMTP_PORT}'
+          export EmailSettings__SmtpUsername='${US1_EMAIL_SMTP_USERNAME}'
+          export EmailSettings__SmtpPassword='${US1_EMAIL_SMTP_PASSWORD}'
+          export EmailSettings__EnableSsl='${US1_EMAIL_ENABLE_SSL}'
+          export EmailSettings__FromEmail='${US1_EMAIL_FROM_EMAIL}'
+          export EmailSettings__FromName='${US1_EMAIL_FROM_NAME}'
+          export EmailSettings__ApiBaseUrl='${US1_EMAIL_API_BASE_URL}'
+          export EmailSettings__FrontendBaseUrl='${US1_EMAIL_FRONTEND_BASE_URL}'
+          export GoogleCloud__ProjectId='${US1_GCLOUD_PROJECT_ID}'
+          export GoogleCloud__ApiKey='${US1_GCLOUD_API_KEY}'
+          export GoogleCloud__Location='${US1_GCLOUD_LOCATION}'
+          export GoogleCloud__VirtualTryOnModel='${US1_GCLOUD_MODEL}'
+          export GoogleCloud__StylistTextModel='${US1_GCLOUD_STYLIST_TEXT_MODEL}'
+          export GoogleCloud__TimeoutSeconds='${US1_GCLOUD_TIMEOUT_SECONDS}'
+          export CacheSettings__Version='${US1_CACHE_SETTINGS_VERSION}'
+          export FrontendOrigins='${US1_FRONTEND_ORIGINS}'
+          export S3Storage__BucketName='${S3_BUCKET_NAME}'
+          export S3Storage__Region='${S3_REGION}'
+          export S3Storage__AccessKey='${S3_ACCESS_KEY}'
+          export S3Storage__SecretKey='${S3_SECRET_KEY}'
+          export S3Storage__ServiceUrl='${S3_SERVICE_URL}'
+          export S3Storage__UsePathStyle='${S3_USE_PATH_STYLE}'
+          export AdminSeed__Email='${US1_ADMIN_SEED_EMAIL}'
+          export AdminSeed__Password='${US1_ADMIN_SEED_PASSWORD}'
+          RUNTIMEEOF
+          chmod 600 /tmp/runtime-env-us1.sh
+
+      - name: Deploy Runtime Env to Server
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_CONFIG_FILE="$HOME/.ssh/config"
+          rsync -avz -e "ssh -F $SSH_CONFIG_FILE" /tmp/runtime-env-us1.sh ${SSH_ALIAS}:/tmp/runtime-env.sh
+
+      # ------------------------------------------
       # Finalize Deployment & Restart Services
       # ------------------------------------------
       - name: Finalize Deployment via SSH
@@ -871,47 +1111,10 @@ jobs:
           mkdir -p /root/AoDaiNhaUyen/backend
 
           # ==========================================
-          # 3. Create Backend Runtime Environment
+          # 3. Install runtime-env.sh
           # ==========================================
-          echo "[${SERVER_NAME}] Writing backend runtime-env.sh..."
-          cat > /root/AoDaiNhaUyen/backend/runtime-env.sh << 'EOF'
-          export ASPNETCORE_ENVIRONMENT='Production'
-          export ASPNETCORE_URLS='http://localhost:${{ secrets.US1_BACKEND_PORT }}'
-          export ConnectionStrings__DefaultConnection='${{ secrets.US1_POSTGRESQL_CONNECTION_STRING }}'
-          export RunMigrationsAndSeedOnStartup='${{ secrets.US1_RUN_MIGRATIONS_AND_SEED_ON_STARTUP }}'
-          export JwtSettings__SecretKey='${{ secrets.US1_JWT_SECRET_KEY }}'
-          export GoogleOAuth__ClientId='${{ secrets.US1_GOOGLE_OAUTH_CLIENT_ID }}'
-          export GoogleOAuth__ClientSecret='${{ secrets.US1_GOOGLE_OAUTH_CLIENT_SECRET }}'
-          export GoogleOAuth__RedirectUri='${{ secrets.US1_GOOGLE_OAUTH_REDIRECT_URI }}'
-          export ZaloOAuth__AppId='${{ secrets.US1_ZALO_OAUTH_APP_ID }}'
-          export ZaloOAuth__SecretKey='${{ secrets.US1_ZALO_OAUTH_SECRET_KEY }}'
-          export ZaloOAuth__RedirectUri='${{ secrets.US1_ZALO_OAUTH_REDIRECT_URI }}'
-          export EmailSettings__SmtpHost='${{ secrets.US1_EMAIL_SMTP_HOST }}'
-          export EmailSettings__SmtpPort='${{ secrets.US1_EMAIL_SMTP_PORT }}'
-          export EmailSettings__SmtpUsername='${{ secrets.US1_EMAIL_SMTP_USERNAME }}'
-          export EmailSettings__SmtpPassword='${{ secrets.US1_EMAIL_SMTP_PASSWORD }}'
-          export EmailSettings__EnableSsl='${{ secrets.US1_EMAIL_ENABLE_SSL }}'
-          export EmailSettings__FromEmail='${{ secrets.US1_EMAIL_FROM_EMAIL }}'
-          export EmailSettings__FromName='${{ secrets.US1_EMAIL_FROM_NAME }}'
-          export EmailSettings__ApiBaseUrl='${{ secrets.US1_EMAIL_API_BASE_URL }}'
-          export EmailSettings__FrontendBaseUrl='${{ secrets.US1_EMAIL_FRONTEND_BASE_URL }}'
-          export GoogleCloud__ProjectId='${{ secrets.US1_GCLOUD_PROJECT_ID }}'
-          export GoogleCloud__ApiKey='${{ secrets.US1_GCLOUD_API_KEY }}'
-          export GoogleCloud__Location='${{ secrets.US1_GCLOUD_LOCATION }}'
-          export GoogleCloud__VirtualTryOnModel='${{ secrets.US1_GCLOUD_MODEL }}'
-          export GoogleCloud__StylistTextModel='${{ secrets.US1_GCLOUD_STYLIST_TEXT_MODEL }}'
-          export GoogleCloud__TimeoutSeconds='${{ secrets.US1_GCLOUD_TIMEOUT_SECONDS }}'
-          export CacheSettings__Version='${{ secrets.US1_CACHE_SETTINGS_VERSION }}'
-          export FrontendOrigins='${{ secrets.US1_FRONTEND_ORIGINS }}'
-          export S3Storage__BucketName='${{ secrets.S3_BUCKET_NAME }}'
-          export S3Storage__Region='${{ secrets.S3_REGION }}'
-          export S3Storage__AccessKey='${{ secrets.S3_ACCESS_KEY }}'
-          export S3Storage__SecretKey='${{ secrets.S3_SECRET_KEY }}'
-          export S3Storage__ServiceUrl='${{ secrets.S3_SERVICE_URL }}'
-          export S3Storage__UsePathStyle='${{ secrets.S3_USE_PATH_STYLE }}'
-          export AdminSeed__Email='${{ secrets.US1_ADMIN_SEED_EMAIL }}'
-          export AdminSeed__Password='${{ secrets.US1_ADMIN_SEED_PASSWORD }}'
-          EOF
+          echo "[${SERVER_NAME}] Installing runtime-env.sh..."
+          cp /tmp/runtime-env.sh /root/AoDaiNhaUyen/backend/runtime-env.sh
           chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
 
           # ==========================================
@@ -980,18 +1183,18 @@ jobs:
           EOF
           chmod +x /root/AoDaiNhaUyen/backend/start.sh
 
-          cat > /root/AoDaiNhaUyen/frontend/start.sh << EOF
+          cat > /root/AoDaiNhaUyen/frontend/start.sh << 'STARTEOF'
           #!/bin/bash
           cd /root/AoDaiNhaUyen/frontend/dist
-          /root/.bun/bin/serve -s -l ${{ secrets.US1_FRONTEND_PORT }} .
-          EOF
+          /root/.bun/bin/serve -s -l 3100 .
+          STARTEOF
           chmod +x /root/AoDaiNhaUyen/frontend/start.sh
 
-          cat > /root/AoDaiNhaUyen/frontend-admin/start.sh << EOF
+          cat > /root/AoDaiNhaUyen/frontend-admin/start.sh << 'STARTEOF'
           #!/bin/bash
           cd /root/AoDaiNhaUyen/frontend-admin/dist
-          /root/.bun/bin/serve -s -l ${{ secrets.US1_ADMIN_FRONTEND_PORT }} .
-          EOF
+          /root/.bun/bin/serve -s -l 3101 .
+          STARTEOF
           chmod +x /root/AoDaiNhaUyen/frontend-admin/start.sh
 
           # ==========================================
