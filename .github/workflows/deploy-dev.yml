@@ -27,10 +27,14 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
-          curl -fsS \
+          HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
-            -o /tmp/infisical-secrets.json
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
+            cat /tmp/infisical-secrets.json
+            exit 1
+          fi
           jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
           while IFS=$'\t' read -r key value; do
             if [ -n "$value" ]; then
@@ -95,10 +99,14 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
-          curl -fsS \
+          HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
-            -o /tmp/infisical-secrets.json
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
+            cat /tmp/infisical-secrets.json
+            exit 1
+          fi
           jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
           while IFS=$'\t' read -r key value; do
             if [ -n "$value" ]; then
@@ -163,10 +171,14 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
-          curl -fsS \
+          HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
-            -o /tmp/infisical-secrets.json
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
+            cat /tmp/infisical-secrets.json
+            exit 1
+          fi
           jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
           while IFS=$'\t' read -r key value; do
             if [ -n "$value" ]; then
@@ -227,10 +239,14 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
-          curl -fsS \
+          HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
-            -o /tmp/infisical-secrets.json
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
+            cat /tmp/infisical-secrets.json
+            exit 1
+          fi
           jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
           while IFS=$'\t' read -r key value; do
             if [ -n "$value" ]; then
@@ -292,10 +308,14 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
-          curl -fsS \
+          HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
-            -o /tmp/infisical-secrets.json
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
+            cat /tmp/infisical-secrets.json
+            exit 1
+          fi
           jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
           while IFS=$'\t' read -r key value; do
             if [ -n "$value" ]; then
@@ -361,10 +381,14 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
-          curl -fsS \
+          HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
-            -o /tmp/infisical-secrets.json
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
+            cat /tmp/infisical-secrets.json
+            exit 1
+          fi
           jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
           while IFS=$'\t' read -r key value; do
             if [ -n "$value" ]; then
@@ -805,10 +829,14 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
-          curl -fsS \
+          HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/" \
-            -o /tmp/infisical-secrets.json
+            "https://infisical.shiphard.studio/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
+            cat /tmp/infisical-secrets.json
+            exit 1
+          fi
           jq -r '.secrets[] | [.secretKey, .secretValue // ""] | @tsv' /tmp/infisical-secrets.json |
           while IFS=$'\t' read -r key value; do
             if [ -n "$value" ]; then
