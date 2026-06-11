@@ -28,6 +28,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
+            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -100,6 +101,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
+            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -172,6 +174,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
+            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -240,6 +243,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
+            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -309,6 +313,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
+            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -382,6 +387,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
+            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -401,6 +407,18 @@ jobs:
             } >> "$GITHUB_ENV"
           done
           echo "Secrets fetched: $(jq '.secrets | length' /tmp/infisical-secrets.json)"
+
+      - name: Map HK1 secrets to deploy variables
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "ENABLE_CLOUDFLARE_TUNNEL=${HK1_ENABLE_CLOUDFLARE_TUNNEL}" >> "$GITHUB_ENV"
+          echo "RAW_CLOUDFLARE_TUNNEL_HOST=${HK1_CLOUDFLARE_TUNNEL_HOST:-}" >> "$GITHUB_ENV"
+          echo "DEPLOY_HOST=${HK1_PRODUCTION_SERVER_HOST}" >> "$GITHUB_ENV"
+          echo "DEPLOY_PORT=${HK1_PRODUCTION_SERVER_PORT}" >> "$GITHUB_ENV"
+          echo "DEPLOY_USER=${HK1_PRODUCTION_SERVER_USER}" >> "$GITHUB_ENV"
+          echo "CF_ACCESS_CLIENT_ID=${HK1_CF_ACCESS_CLIENT_ID:-}" >> "$GITHUB_ENV"
+          echo "CF_ACCESS_CLIENT_SECRET=${HK1_CF_ACCESS_CLIENT_SECRET:-}" >> "$GITHUB_ENV"
 
       # ------------------------------------------
       # Download Artifacts from S3
@@ -830,6 +848,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
+            --connect-timeout 10 --max-time 30 --retry 3 --retry-delay 5 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
             "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
           if [ "$HTTP_CODE" -ne 200 ]; then
@@ -849,6 +868,18 @@ jobs:
             } >> "$GITHUB_ENV"
           done
           echo "Secrets fetched: $(jq '.secrets | length' /tmp/infisical-secrets.json)"
+
+      - name: Map US1 secrets to deploy variables
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "ENABLE_CLOUDFLARE_TUNNEL=${US1_ENABLE_CLOUDFLARE_TUNNEL}" >> "$GITHUB_ENV"
+          echo "RAW_CLOUDFLARE_TUNNEL_HOST=${US1_CLOUDFLARE_TUNNEL_HOST:-}" >> "$GITHUB_ENV"
+          echo "DEPLOY_HOST=${US1_PRODUCTION_SERVER_HOST}" >> "$GITHUB_ENV"
+          echo "DEPLOY_PORT=${US1_PRODUCTION_SERVER_PORT}" >> "$GITHUB_ENV"
+          echo "DEPLOY_USER=${US1_PRODUCTION_SERVER_USER}" >> "$GITHUB_ENV"
+          echo "CF_ACCESS_CLIENT_ID=${US1_CF_ACCESS_CLIENT_ID:-}" >> "$GITHUB_ENV"
+          echo "CF_ACCESS_CLIENT_SECRET=${US1_CF_ACCESS_CLIENT_SECRET:-}" >> "$GITHUB_ENV"
 
       # ------------------------------------------
       # Download Artifacts from S3
