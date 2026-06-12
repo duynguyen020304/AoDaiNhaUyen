@@ -13,6 +13,9 @@ jobs:
   build-frontend-hk1:
     runs-on: ubuntu-latest
 
+    env:
+      S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,18 +35,31 @@ jobs:
           PUBLIC_ZALO_APP_ID=${{ secrets.HK1_ZALO_OAUTH_APP_ID }} \
           bun run build
 
-      - name: Upload Frontend Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist-hk1
-          path: frontend/dist
-          retention-days: 1
+      - name: Upload Frontend Artifact to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.S3_REGION }}
+          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
+        run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << EOF
+          [default]
+          region = ${{ secrets.S3_REGION }}
+          s3 =
+            addressing_style = path
+          EOF
+          tar -czf frontend-dist-hk1.tar.gz -C frontend/dist .
+          aws s3 cp frontend-dist-hk1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-hk1.tar.gz
 
   # ==========================================
   # Build Frontend for US1
   # ==========================================
   build-frontend-us1:
     runs-on: ubuntu-latest
+
+    env:
+      S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
 
     steps:
       - name: Checkout code
@@ -64,18 +80,31 @@ jobs:
           PUBLIC_ZALO_APP_ID=${{ secrets.US1_ZALO_OAUTH_APP_ID }} \
           bun run build
 
-      - name: Upload Frontend Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist-us1
-          path: frontend/dist
-          retention-days: 1
+      - name: Upload Frontend Artifact to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.S3_REGION }}
+          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
+        run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << EOF
+          [default]
+          region = ${{ secrets.S3_REGION }}
+          s3 =
+            addressing_style = path
+          EOF
+          tar -czf frontend-dist-us1.tar.gz -C frontend/dist .
+          aws s3 cp frontend-dist-us1.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-us1.tar.gz
 
   # ==========================================
   # Build Backend (shared)
   # ==========================================
   build-backend:
     runs-on: ubuntu-latest
+
+    env:
+      S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
 
     steps:
       - name: Checkout code
@@ -92,12 +121,22 @@ jobs:
           dotnet restore
           dotnet publish AoDaiNhaUyen.Api -c Release -o publish --no-restore
 
-      - name: Upload Backend Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-publish
-          path: backend/publish
-          retention-days: 1
+      - name: Upload Backend Artifact to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+          AWS_REGION: ${{ secrets.S3_REGION }}
+          AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
+        run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << EOF
+          [default]
+          region = ${{ secrets.S3_REGION }}
+          s3 =
+            addressing_style = path
+          EOF
+          tar -czf backend-publish.tar.gz -C backend/publish .
+          aws s3 cp backend-publish.tar.gz s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz
 
   # ==========================================
   # Deploy to HK1 Server
@@ -110,6 +149,11 @@ jobs:
     env:
       SERVER_NAME: "HK1"
       SSH_ALIAS: "aodai-hk1"
+      S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+      AWS_REGION: ${{ secrets.S3_REGION }}
+      AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
       ENABLE_CLOUDFLARE_TUNNEL: ${{ secrets.HK1_ENABLE_CLOUDFLARE_TUNNEL || '' }}
       RAW_CLOUDFLARE_TUNNEL_HOST: ${{ secrets.HK1_CLOUDFLARE_TUNNEL_HOST || '' }}
       DEPLOY_HOST: ${{ secrets.HK1_PRODUCTION_SERVER_HOST }}
@@ -120,19 +164,29 @@ jobs:
 
     steps:
       # ------------------------------------------
-      # Download Artifacts
+      # Download Artifacts from S3
       # ------------------------------------------
-      - name: Download Frontend Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist-hk1
-          path: frontend/dist
+      - name: Configure S3 path-style addressing
+        run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << EOF
+          [default]
+          region = ${{ secrets.S3_REGION }}
+          s3 =
+            addressing_style = path
+          EOF
 
-      - name: Download Backend Publish
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-publish
-          path: backend/publish
+      - name: Download Frontend Artifact from S3
+        run: |
+          mkdir -p frontend/dist
+          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-hk1.tar.gz frontend-dist-hk1.tar.gz
+          tar -xzf frontend-dist-hk1.tar.gz -C frontend/dist
+
+      - name: Download Backend Publish from S3
+        run: |
+          mkdir -p backend/publish
+          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz backend-publish.tar.gz
+          tar -xzf backend-publish.tar.gz -C backend/publish
 
       # ------------------------------------------
       # Resolve SSH transport & prepare client tools
@@ -451,6 +505,11 @@ jobs:
     env:
       SERVER_NAME: "US1"
       SSH_ALIAS: "aodai-us1"
+      S3_ARTIFACT_PREFIX: artifacts/${{ github.event.repository.name }}/${{ github.ref_name }}/${{ github.sha }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+      AWS_REGION: ${{ secrets.S3_REGION }}
+      AWS_ENDPOINT_URL: ${{ secrets.S3_SERVICE_URL }}
       ENABLE_CLOUDFLARE_TUNNEL: ${{ secrets.US1_ENABLE_CLOUDFLARE_TUNNEL || '' }}
       RAW_CLOUDFLARE_TUNNEL_HOST: ${{ secrets.US1_CLOUDFLARE_TUNNEL_HOST || '' }}
       DEPLOY_HOST: ${{ secrets.US1_PRODUCTION_SERVER_HOST }}
@@ -461,19 +520,29 @@ jobs:
 
     steps:
       # ------------------------------------------
-      # Download Artifacts
+      # Download Artifacts from S3
       # ------------------------------------------
-      - name: Download Frontend Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist-us1
-          path: frontend/dist
+      - name: Configure S3 path-style addressing
+        run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/config << EOF
+          [default]
+          region = ${{ secrets.S3_REGION }}
+          s3 =
+            addressing_style = path
+          EOF
 
-      - name: Download Backend Publish
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-publish
-          path: backend/publish
+      - name: Download Frontend Artifact from S3
+        run: |
+          mkdir -p frontend/dist
+          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/frontend-dist-us1.tar.gz frontend-dist-us1.tar.gz
+          tar -xzf frontend-dist-us1.tar.gz -C frontend/dist
+
+      - name: Download Backend Publish from S3
+        run: |
+          mkdir -p backend/publish
+          aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/${{ env.S3_ARTIFACT_PREFIX }}/backend-publish.tar.gz backend-publish.tar.gz
+          tar -xzf backend-publish.tar.gz -C backend/publish
 
       # ------------------------------------------
       # Resolve SSH transport & prepare client tools
