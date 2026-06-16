@@ -16,6 +16,7 @@ using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
 using Microsoft.Extensions.FileProviders;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
+using AoDaiNhaUyen.Api.Hermes;
 using AoDaiNhaUyen.Api.Responses;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -184,6 +185,7 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddOpenApi();
 builder.Services.AddSingleton<IUploadStoragePathResolver>(
   _ => new UploadStoragePathResolver(Path.Combine(builder.Environment.ContentRootPath, "upload")));
+builder.Services.AddSingleton<HermesAdminApiDescriptionRegistry>();
 builder.Services.AddBackendServices(builder.Configuration);
 
 var app = builder.Build();
@@ -224,6 +226,7 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseMiddleware<SensitiveResponseCacheMiddleware>();
 app.UseAuthentication();
 app.UseRateLimiter();
+app.UseMiddleware<HermesApiDescriptionMiddleware>();
 app.UseAuthorization();
 app.Use(async (context, next) =>
 {

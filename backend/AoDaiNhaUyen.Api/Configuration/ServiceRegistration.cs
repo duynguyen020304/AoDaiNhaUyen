@@ -1,5 +1,6 @@
 using Amazon;
 using Amazon.S3;
+using AoDaiNhaUyen.Api.Authentication;
 using System.Security.Claims;
 using System.Text;
 using AoDaiNhaUyen.Application.Interfaces;
@@ -13,6 +14,7 @@ using AoDaiNhaUyen.Infrastructure.Data;
 using AoDaiNhaUyen.Infrastructure.Repositories;
 using AoDaiNhaUyen.Infrastructure.Services;
 using AoDaiNhaUyen.Api.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -70,6 +72,7 @@ public static class ServiceRegistration
         settings => Uri.TryCreate(settings.RedirectUri, UriKind.Absolute, out _),
         "ZaloOAuth:RedirectUri must be a valid absolute URI.")
       .ValidateOnStart();
+    services.Configure<HermesAdminAuthOptions>(configuration.GetSection(HermesAdminAuthOptions.SectionName));
     services.Configure<CookieSettings>(configuration.GetSection("CookieSettings"));
 
     var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
@@ -111,11 +114,17 @@ public static class ServiceRegistration
             return Task.CompletedTask;
           }
         };
-      });
+      })
+      .AddScheme<AuthenticationSchemeOptions, HermesAdminApiKeyAuthenticationHandler>(
+        HermesAdminAuthOptions.SchemeName,
+        options => { });
 
     services.AddAuthorizationBuilder()
       .AddPolicy("RequireAdminRole", policy =>
-        policy.RequireRole(RoleNames.Admin))
+      {
+        policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, HermesAdminAuthOptions.SchemeName);
+        policy.RequireRole(RoleNames.Admin);
+      })
       .AddPolicy("RequireCustomerRole", policy =>
         policy.RequireRole(RoleNames.Customer))
       .AddPolicy("RequireAdminOrCustomer", policy =>
