@@ -10,6 +10,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useEmailMarketingStore } from "@/stores/emailMarketingStore";
+import { useFeedback } from "@/components/ui/feedbackContext";
+import type { EmailJobListItem } from "@/types/admin";
 
 export function EmailQueuePage() {
   const {
@@ -22,10 +24,58 @@ export function EmailQueuePage() {
     retryJob,
     cancelJob,
   } = useEmailMarketingStore();
+  const { confirm, toast } = useFeedback();
   const [status, setStatus] = useState("");
   useEffect(() => {
     fetchJobs(status).catch(() => {});
   }, [fetchJobs, status]);
+  async function handleRetry(job: EmailJobListItem) {
+    if (job.status === "sent") {
+      toast("Email đã gửi không thể gửi lại.", "error");
+      return;
+    }
+    if (job.status === "sending") {
+      toast("Email đang gửi, chưa thể gửi lại.", "error");
+      return;
+    }
+    if (!job.toEmail) {
+      toast("Job thiếu email nhận.", "error");
+      return;
+    }
+    const ok = await confirm({
+      title: "Gửi lại email?",
+      message: `Đưa job ${job.toEmail} về hàng đợi gửi lại.`,
+      confirmText: "Gửi lại",
+    });
+    if (!ok) return;
+    await retryJob(job.id);
+    toast("Đã đưa email vào hàng đợi gửi lại.", "success");
+  }
+
+  async function handleCancel(job: EmailJobListItem) {
+    if (job.status === "sent") {
+      toast("Email đã gửi không thể hủy.", "error");
+      return;
+    }
+    if (job.status === "sending") {
+      toast("Email đang gửi, không thể hủy an toàn.", "error");
+      return;
+    }
+    if (job.status === "cancelled") {
+      toast("Email này đã bị hủy.", "error");
+      return;
+    }
+    const ok = await confirm({
+      title: "Hủy email?",
+      message: `Hủy job gửi tới ${job.toEmail}.`,
+      confirmText: "Hủy job",
+      destructive: true,
+    });
+    if (!ok) return;
+    await cancelJob(job.id);
+    toast("Đã hủy email trong hàng đợi.", "success");
+  }
+
   return (
     <div className="space-y-4">
       <div>
@@ -39,18 +89,24 @@ export function EmailQueuePage() {
           {error}
         </div>
       )}
-      <select
-        className="h-9 rounded-md border bg-white px-3 text-sm"
-        value={status}
-        onChange={(e) => setStatus(e.target.value)}
-      >
-        <option value="">Tất cả</option>
-        <option value="queued">Queued</option>
-        <option value="sending">Sending</option>
-        <option value="sent">Sent</option>
-        <option value="dead">Dead</option>
-        <option value="cancelled">Cancelled</option>
-      </select>
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          className="h-9 rounded-md border bg-white px-3 text-sm"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="">Tất cả</option>
+          <option value="queued">Queued</option>
+          <option value="sending">Sending</option>
+          <option value="sent">Sent</option>
+          <option value="dead">Dead</option>
+          <option value="failed">Failed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <span className="text-xs text-gray-500">
+          Trạng thái hiện có: queued, sending, sent, dead, failed, cancelled (6).
+        </span>
+      </div>
       <div className="rounded-lg border bg-white">
         <Table>
           <TableHeader>
@@ -100,14 +156,16 @@ export function EmailQueuePage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => retryJob(j.id)}
+                      disabled={j.status === "sent" || j.status === "sending"}
+                      onClick={() => void handleRetry(j)}
                     >
                       Gửi lại
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => cancelJob(j.id)}
+                      disabled={j.status === "sent" || j.status === "sending" || j.status === "cancelled"}
+                      onClick={() => void handleCancel(j)}
                     >
                       Hủy
                     </Button>

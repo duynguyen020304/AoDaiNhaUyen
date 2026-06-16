@@ -15,12 +15,14 @@ interface AccountPageProps {
   activeView: AccountView;
   onClose: () => void;
   onViewChange: (view: AccountView) => void;
+  variant?: 'modal' | 'page';
 }
 
 export default function AccountPage({
   activeView,
   onClose,
   onViewChange,
+  variant = 'modal',
 }: AccountPageProps) {
   const { user, logout } = useAuth();
   const { openAuthModal } = useAuthModal();
@@ -59,27 +61,29 @@ export default function AccountPage({
   const content = {
     profile: <AccountInfo onEdit={() => onViewChange('profile/edit')} />,
     'profile/edit': <AccountEditForm onSaved={() => onViewChange('profile')} />,
-    orders: <OrderList />,
+    orders: <OrderList onRequestClose={variant === 'modal' ? onClose : undefined} />,
     addresses: <AddressList />,
     images: <ImageHistory />,
   }[activeView];
 
   return (
-    <section className={styles.page} onMouseDown={handleBackdropMouseDown}>
+    <section className={variant === 'page' ? styles.accountPage : styles.page} onMouseDown={variant === 'modal' ? handleBackdropMouseDown : undefined}>
       <div
-        className={styles.dialog}
-        role="dialog"
-        aria-modal="true"
+        className={variant === 'page' ? styles.pageShell : styles.dialog}
+        role={variant === 'modal' ? 'dialog' : undefined}
+        aria-modal={variant === 'modal' ? 'true' : undefined}
         aria-label="Thông tin tài khoản"
       >
-        <button
-          className={styles.closeButton}
-          type="button"
-          onClick={handleClose}
-          aria-label="Đóng"
-        >
-          ✕
-        </button>
+        {variant === 'modal' ? (
+          <button
+            className={styles.closeButton}
+            type="button"
+            onClick={handleClose}
+            aria-label="Đóng"
+          >
+            ✕
+          </button>
+        ) : null}
         <div className={styles.layout}>
           <AccountSidebar
             user={user}

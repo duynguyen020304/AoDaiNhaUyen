@@ -6,17 +6,46 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: transparent;
+  background: rgba(16, 24, 40, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.accountPage {
+  min-height: 100dvh;
+  padding: 112px 24px 80px;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(114, 19, 17, 0.08), transparent 45%),
+    radial-gradient(circle at 90% 80%, rgba(255, 212, 0, 0.04), transparent 45%),
+    #fafafa;
+}
+
+.dialog,
+.pageShell {
+  position: relative;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid rgba(114, 19, 17, 0.08);
 }
 
 .dialog {
-  position: relative;
-  width: min(1100px, 100%);
-  height: min(720px, calc(100vh - 48px));
-  overflow: hidden;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  width: min(1200px, 100%);
+  height: min(780px, calc(100vh - 48px));
+  border-radius: 24px;
+  box-shadow:
+    0 20px 50px -12px rgba(114, 19, 17, 0.15),
+    0 0 1px 1px rgba(114, 19, 17, 0.05);
+  animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pageShell {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  border-radius: 32px;
+  box-shadow:
+    0 30px 70px -15px rgba(114, 19, 17, 0.1),
+    0 0 1px 1px rgba(114, 19, 17, 0.05);
 }
 
 .layout {
@@ -27,35 +56,64 @@
 
 .content {
   flex: 1;
-  padding: 50px 40px;
+  padding: 48px 56px;
   overflow-y: auto;
   min-width: 0;
+  background: #ffffff;
+}
+
+.pageShell .layout {
+  min-height: 720px;
+}
+
+.pageShell .content {
+  padding: 56px 64px;
 }
 
 .closeButton {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: none;
+  top: 24px;
+  right: 24px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(114, 19, 17, 0.1);
+  background: #ffffff;
   cursor: pointer;
-  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 10;
-  color: #99a1af;
-  font-size: 18px;
-  line-height: 24px;
-  text-align: center;
+  color: #721311;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .closeButton:hover {
-  color: #000;
+  background: #721311;
+  color: #ffffff;
+  border-color: #721311;
+  transform: scale(1.05);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 @media (max-width: 768px) {
   .page {
     padding: 0;
+  }
+
+  .accountPage {
+    padding: 88px 16px 48px;
   }
 
   .dialog {
@@ -64,11 +122,20 @@
     border-radius: 0;
   }
 
+  .pageShell {
+    border-radius: 24px;
+  }
+
   .layout {
     flex-direction: column;
   }
 
-  .content {
+  .pageShell .layout {
+    min-height: auto;
+  }
+
+  .content,
+  .pageShell .content {
     padding: 32px 20px;
   }
 }
