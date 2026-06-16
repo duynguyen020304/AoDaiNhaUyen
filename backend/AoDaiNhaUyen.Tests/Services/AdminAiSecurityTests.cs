@@ -3,6 +3,8 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.Admin;
+using AoDaiNhaUyen.Application.DTOs.BlogPost;
+
 using AoDaiNhaUyen.Application.DTOs.Dashboard;
 using AoDaiNhaUyen.Application.DTOs.Order;
 using AoDaiNhaUyen.Application.Interfaces.Services;
@@ -252,6 +254,7 @@ public sealed class AdminAiSecurityTests
       new FakeInventoryService(),
       new FakeReviewService(),
       new FakePromoService(),
+      new FakeBlogAiDraftService(),
       autoMode ?? new AutoModeStore(),
       NullLogger<AdminAgentService>.Instance,
       new PendingActionStore(),
@@ -488,5 +491,30 @@ public sealed class AdminAiSecurityTests
     public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
     public Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
     public Task<bool> ToggleActiveAsync(Guid id, bool isActive, CancellationToken cancellationToken = default) => Task.FromResult(true);
+  }
+
+  private sealed class FakeBlogAiDraftService : IBlogAiDraftService
+  {
+    public Task<GeneratedBlogDraftResponse> GenerateDraftAsync(
+      GenerateBlogDraftRequest request,
+      CancellationToken cancellationToken = default)
+    {
+      return Task.FromResult(new GeneratedBlogDraftResponse(
+        request.Topic,
+        "fake-draft",
+        "Fake draft excerpt",
+        request.Template,
+        JsonSerializer.SerializeToElement(Array.Empty<object>()),
+        [],
+        request.Topic,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        request.CategoryId,
+        ["Fake draft for testing"]));
+    }
   }
 }

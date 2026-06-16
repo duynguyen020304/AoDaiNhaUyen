@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Save } from 'lucide-react'
 import { getBlogCategories, uploadBlogImage } from '@/api/blog'
 import { useBlogStore } from '@/stores/blogStore'
-import { blogTemplates, type BlogBlock, type BlogCategory, type BlogPostPayload, type BlogStatus, type BlogTemplate } from '@/types/blog'
+import { AI_BLOG_DRAFT_STORAGE_KEY, BlogPayloadSchema, blogTemplates, type AiBlogDraft, type BlogBlock, type BlogCategory, type BlogPostPayload, type BlogStatus, type BlogTemplate } from '@/types/blog'
 import { BlockEditor } from '@/components/blog/BlockEditor'
 import { BlogPreview } from '@/components/blog/BlogPreview'
 import { Button } from '@/components/ui/button'
@@ -41,6 +41,27 @@ function splitTags(value: string) {
   return value.split(',').map((tag) => tag.trim()).filter(Boolean)
 }
 
+function buildAiQualityWarnings(draft: AiBlogDraft, payload: BlogPostPayload) {
+  const warnings = [...(draft.qualityWarnings ?? [])]
+  const headings = payload.content.filter((block) => block.type === 'heading')
+  const h2Count = headings.filter((block) => block.type === 'heading' && block.level === 2).length
+  const paragraphCount = payload.content.filter((block) => block.type === 'paragraph').length
+  const hasPlaceholder = JSON.stringify(payload.content).toLowerCase().includes('placeholder')
+  const imageWithoutAlt = payload.content.some((block) => block.type === 'image' && !block.alt.trim())
+
+  if (!payload.title.trim()) warnings.push('Thiếu tiêu đề.')
+  if ((payload.metaTitle?.length ?? 0) > 200) warnings.push('Meta title vượt 200 ký tự.')
+  if ((payload.metaDescription?.length ?? 0) > 500) warnings.push('Meta description vượt 500 ký tự.')
+  if (h2Count < 1) warnings.push('Nên có ít nhất 1 heading H2.')
+  if (paragraphCount < 2) warnings.push('Nên có nhiều đoạn văn hơn cho bài chuẩn/dài.')
+  if (!payload.informationGain?.trim()) warnings.push('Nên bổ sung giá trị độc đáo.')
+  if (!payload.authorNameOverride?.trim() || !payload.reviewedBy?.trim()) warnings.push('Nên bổ sung tác giả/người kiểm duyệt.')
+  if (hasPlaceholder) warnings.push('Còn placeholder cần thay thế.')
+  if (imageWithoutAlt) warnings.push('Ảnh cần alt text.')
+
+  return Array.from(new Set(warnings))
+}
+
 export function BlogFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -71,9 +92,54 @@ export function BlogFormPage() {
     informationGain: '',
   })
 
+  const [aiDraftWarnings, setAiDraftWarnings] = useState<string[]>([])
+  const [aiDraftNotice, setAiDraftNotice] = useState<string | null>(null)
+
   useEffect(() => {
     void getBlogCategories().then(setBlogCategories).catch(() => setBlogCategories([]))
   }, [])
+
+  useEffect(() => {
+    if (isEdit) return
+    const raw = sessionStorage.getItem(AI_BLOG_DRAFT_STORAGE_KEY)
+    if (!raw) return
+
+    try {
+      const draft = JSON.parse(raw) as AiBlogDraft
+      const payload: BlogPostPayload = {
+        title: draft.title,
+        slug: draft.slug || slugify(draft.title),
+        excerpt: draft.excerpt,
+        featuredImage: '',
+        featuredImageWidth: 1200,
+        featuredImageHeight: 630,
+        template: draft.template || 'StandardArticle',
+        content: Array.isArray(draft.content) && draft.content.length > 0 ? draft.content : initialBlocks,
+        tags: Array.isArray(draft.tags) ? draft.tags : [],
+        blogCategoryId: draft.blogCategoryId || null,
+        authorNameOverride: draft.authorNameOverride || '',
+        authorBio: draft.authorBio || '',
+        reviewedBy: draft.reviewedBy || '',
+        informationGain: draft.informationGain || '',
+        status: 'Draft',
+        metaTitle: draft.metaTitle || '',
+        metaDescription: draft.metaDescription || '',
+        canonicalUrl: draft.canonicalUrl || '',
+      }
+      const parsed = BlogPayloadSchema.safeParse(payload)
+      if (!parsed.success) throw new Error(parsed.error.issues.map((issue) => issue.message).join(', '))
+
+      setForm(payload)
+      setTagsInput(payload.tags.join(', '))
+      setAiDraftWarnings(buildAiQualityWarnings(draft, payload))
+      setAiDraftNotice('Bản nháp được tạo bởi AI. Vui lòng kiểm tra trước khi xuất bản.')
+      sessionStorage.removeItem(AI_BLOG_DRAFT_STORAGE_KEY)
+    } catch (err) {
+      setAiDraftNotice('Không thể nhập bản nháp AI. Dữ liệu không hợp lệ.')
+      console.error('Failed to parse AI blog draft', err)
+      sessionStorage.removeItem(AI_BLOG_DRAFT_STORAGE_KEY)
+    }
+  }, [isEdit])
 
   useEffect(() => {
     if (id) void fetchPost(id)
@@ -202,6 +268,17 @@ export function BlogFormPage() {
           Xem trước bài viết
         </button>
       </div>
+
+      {aiDraftNotice && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="font-semibold">{aiDraftNotice}</div>
+          {aiDraftWarnings.length > 0 && (
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              {aiDraftWarnings.map((warning) => <li key={warning}>{warning}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
 
       {error && <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{error}</div>}
 

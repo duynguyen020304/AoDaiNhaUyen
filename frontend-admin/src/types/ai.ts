@@ -17,6 +17,8 @@ export interface AiMessage {
   createdAt: string
 }
 
+import type { AiBlogDraft } from './blog'
+
 export interface AiToolResultMeta {
   page?: number
   pageSize?: number
@@ -32,6 +34,7 @@ export interface AiToolCall {
   result?: string
   riskLevel?: string
   meta?: AiToolResultMeta
+  blogDraft?: AiBlogDraft
 }
 
 export interface AiPendingAction {

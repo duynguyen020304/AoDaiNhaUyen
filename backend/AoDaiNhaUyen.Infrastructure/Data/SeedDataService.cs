@@ -291,7 +291,12 @@ public sealed class SeedDataService(
     };
     dbContext.BlogCategories.AddRange(blogCategories);
     await dbContext.SaveChangesAsync();
-    var blogCategoryBySlug = blogCategories.ToDictionary(category => category.Slug, category => category.Id);
+
+    var blogCategorySlugs = blogCategories.Select(category => category.Slug).ToArray();
+    var blogCategoryBySlug = await dbContext.BlogCategories
+      .AsNoTracking()
+      .Where(category => blogCategorySlugs.Contains(category.Slug))
+      .ToDictionaryAsync(category => category.Slug, category => category.Id);
 
     var productSlugs = await dbContext.Products.AsNoTracking().OrderBy(p => p.Name).Select(p => p.Slug).Take(4).ToListAsync();
     if (productSlugs.Count == 0)

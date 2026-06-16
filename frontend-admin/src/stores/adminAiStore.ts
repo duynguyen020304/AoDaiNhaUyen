@@ -11,6 +11,7 @@ import type {
   AiToolCall,
   AiToolResultMeta,
 } from '@/types/ai'
+import { AI_BLOG_DRAFT_STORAGE_KEY, type AiBlogDraft } from '@/types/blog'
 import { request } from '@/api/client'
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5043'
@@ -43,12 +44,44 @@ function parseToolResultMeta(raw?: string): AiToolResultMeta | undefined {
   }
 }
 
+function parseBlogDraftPayload(raw?: string): AiBlogDraft | undefined {
+  if (!raw) return undefined
+
+  try {
+    const parsed = JSON.parse(raw)
+    const data = parsed?.data ?? parsed?.result?.data ?? parsed?.result ?? parsed
+    const draft = data?.kind === 'blog_draft' ? data.draft : data?.draft
+    if (!draft || typeof draft.title !== 'string' || !Array.isArray(draft.content)) return undefined
+    return draft as AiBlogDraft
+  } catch (err) {
+    logAiWarn('Không đọc được bản nháp blog từ AI', err)
+    return undefined
+  }
+}
+
+function persistBlogDraftHandoff(draft: AiBlogDraft) {
+  try {
+    sessionStorage.setItem(AI_BLOG_DRAFT_STORAGE_KEY, JSON.stringify(draft))
+  } catch (err) {
+    logAiWarn('Không lưu được bản nháp blog AI', err)
+  }
+}
+
 function makeToolCall(toolName: string, input: string): AiToolCall {
   return {
     toolName,
     input,
-    result: input,
-    meta: parseToolResultMeta(input),
+  }
+}
+
+function applyToolResult(toolCall: AiToolCall, result: string): AiToolCall {
+  const blogDraft = toolCall.toolName === 'generate_blog_draft' ? parseBlogDraftPayload(result) : undefined
+
+  return {
+    ...toolCall,
+    result,
+    meta: parseToolResultMeta(result),
+    blogDraft,
   }
 }
 
@@ -83,7 +116,9 @@ function parseToolCalls(message: AdminConversationMessage): AiMessage['toolCalls
   if (!message.toolCallsJson) return undefined
   try {
     const parsed = JSON.parse(message.toolCallsJson) as { name?: string; callId?: string }
-    return [makeToolCall(parsed.name || parsed.callId || 'unknown', message.content)]
+    const toolName = parsed.name || parsed.callId || 'unknown'
+    const base = makeToolCall(toolName, '')
+    return [{ ...base, result: message.content, meta: parseToolResultMeta(message.content), blogDraft: toolName === 'generate_blog_draft' ? parseBlogDraftPayload(message.content) : undefined }]
   } catch (err) {
     logAiWarn('Không đọc được metadata tool call', err)
     return undefined
@@ -253,6 +288,19 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                   m.id === assistantMsg.id ? { ...m, toolCalls: [...toolCalls] } : m,
                 ),
               }))
+            } else if (chunk.type === 'tool_result') {
+              const toolName = chunk.toolName || chunk.toolCallId || 'unknown'
+              const existingIdx = toolCalls.findLastIndex((tc) => tc.toolName === toolName && !tc.result)
+              const existing = existingIdx >= 0 ? toolCalls[existingIdx] : undefined
+              const resolved = existing ? applyToolResult(existing, chunk.content) : { ...makeToolCall(toolName, chunk.content), result: chunk.content, meta: parseToolResultMeta(chunk.content) }
+              if (existingIdx >= 0) toolCalls[existingIdx] = resolved
+              else toolCalls.push(resolved)
+              if (resolved.blogDraft) persistBlogDraftHandoff(resolved.blogDraft)
+              set((s) => ({
+                messages: s.messages.map((m) =>
+                  m.id === assistantMsg.id ? { ...m, toolCalls: [...toolCalls] } : m,
+                ),
+              }))
             } else if (chunk.type === 'confirmation') {
               const pending: AiPendingAction = {
                 actionId: chunk.toolCallId || genId(),
@@ -384,6 +432,19 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                 chunk.toolName || chunk.toolCallId || 'unknown',
                 chunk.content,
               ))
+              set((s) => ({
+                messages: s.messages.map((m) =>
+                  m.id === assistantMsg.id ? { ...m, toolCalls: [...toolCalls] } : m,
+                ),
+              }))
+            } else if (chunk.type === 'tool_result') {
+              const toolName = chunk.toolName || chunk.toolCallId || 'unknown'
+              const existingIdx = toolCalls.findLastIndex((tc) => tc.toolName === toolName && !tc.result)
+              const existing = existingIdx >= 0 ? toolCalls[existingIdx] : undefined
+              const resolved = existing ? applyToolResult(existing, chunk.content) : { ...makeToolCall(toolName, chunk.content), result: chunk.content, meta: parseToolResultMeta(chunk.content) }
+              if (existingIdx >= 0) toolCalls[existingIdx] = resolved
+              else toolCalls.push(resolved)
+              if (resolved.blogDraft) persistBlogDraftHandoff(resolved.blogDraft)
               set((s) => ({
                 messages: s.messages.map((m) =>
                   m.id === assistantMsg.id ? { ...m, toolCalls: [...toolCalls] } : m,

@@ -95,7 +95,7 @@ BẢO MẬT / RIÊNG TƯ:
     var payload = new GeminiStreamRequest(
       new GeminiContent("system", [GeminiPart.FromText(GetSystemPrompt(tools))]),
       contents,
-      new GeminiGenerationConfig(0.7m, 0.9m, 32, 1024),
+      new GeminiGenerationConfig(0.7m, 0.9m, 32, _config.AdminMaxOutputTokens),
       toolDeclarations.Count > 0
         ? [new GeminiTool(toolDeclarations)]
         : null,
@@ -376,7 +376,7 @@ internal sealed record GeminiGenerationConfig(
   [property: JsonPropertyName("temperature")] decimal Temperature,
   [property: JsonPropertyName("topP")] decimal TopP,
   [property: JsonPropertyName("topK")] int TopK,
-  [property: JsonPropertyName("maxOutputTokens")] int MaxOutputTokens);
+  [property: JsonPropertyName("maxOutputTokens"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? MaxOutputTokens);
 
 internal sealed record GeminiSafetySetting(
   [property: JsonPropertyName("category")] string Category,

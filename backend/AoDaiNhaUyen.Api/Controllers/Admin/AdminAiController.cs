@@ -4,6 +4,7 @@ using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AoDaiNhaUyen.Api.Controllers.Admin;
 
@@ -17,6 +18,7 @@ public sealed class AdminAiController(
   ILogger<AdminAiController> logger) : ControllerBase
 {
   /// <summary>Stream an AI chat conversation with tool-calling via SSE.</summary>
+  [EnableRateLimiting("ai")]
   [HttpPost("chat")]
   public async Task StreamChat(
     AdminAiChatRequest request,

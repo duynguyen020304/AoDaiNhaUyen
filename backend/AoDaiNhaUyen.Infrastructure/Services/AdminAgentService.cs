@@ -2,6 +2,7 @@ using System.Text.Encodings.Web;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs.Admin;
+using AoDaiNhaUyen.Application.DTOs.BlogPost;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Common;
 using AoDaiNhaUyen.Domain.Entities;
@@ -22,6 +23,7 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IAdminInventoryService _inventory;
   private readonly IAdminReviewService _reviews;
   private readonly IAdminPromoService _promos;
+  private readonly IBlogAiDraftService _blogAiDrafts;
   private readonly IAutoModeStore _autoMode;
   private readonly ILogger<AdminAgentService> _logger;
 
@@ -46,6 +48,7 @@ public sealed class AdminAgentService : IAdminAgentService
     IAdminInventoryService inventory,
     IAdminReviewService reviews,
     IAdminPromoService promos,
+    IBlogAiDraftService blogAiDrafts,
     IAutoModeStore autoMode,
     ILogger<AdminAgentService> logger,
     IPendingActionStore pendingStore,
@@ -63,6 +66,7 @@ public sealed class AdminAgentService : IAdminAgentService
     _inventory = inventory;
     _reviews = reviews;
     _promos = promos;
+    _blogAiDrafts = blogAiDrafts;
     _autoMode = autoMode;
     _logger = logger;
     _pendingStore = pendingStore;
@@ -217,6 +221,18 @@ public sealed class AdminAgentService : IAdminAgentService
 
     T("list_promo_codes", "Liệt kê tất cả mã khuyến mãi.", P()),
 
+    // Blog content
+    T("generate_blog_draft", "Tạo bản nháp blog tiếng Việt dạng JSON BlogBlock[] kèm SEO/E-E-A-T để admin mở trong trình soạn. Không tự xuất bản.",
+      P(
+        ("topic", O("string", "Chủ đề bài viết, bắt buộc")),
+        ("targetKeyword", O("string", "Từ khóa SEO chính (tùy chọn)")),
+        ("audience", O("string", "Độc giả mục tiêu (tùy chọn)")),
+        ("tone", O("string", "Giọng văn: trang nhã, tư vấn, chuyên sâu...")),
+        ("template", O("string", "StandardArticle, PhotoGallery, VideoFeature, ProductSpotlight, HowTo")),
+        ("length", O("string", "short, standard, long")),
+        ("includeFaq", O("boolean", "Có thêm FAQ hay không")),
+        ("notes", O("string", "Ghi chú bổ sung từ admin")))),
+
     // Autonomy Mode
     T("toggle_autonomy", "Bật/tắt chế độ tự động cho AI. Khi bật, các hành động Medium risk được tự động thực hiện.",
       P(("enabled", O("boolean", "true để bật, false để tắt")))),
@@ -325,6 +341,8 @@ public sealed class AdminAgentService : IAdminAgentService
             yield return new LlmChunk("done", "", null, null);
             yield break; // Stop until user confirms
           }
+
+          yield return new LlmChunk("tool_result", toolResult.Content, chunk.ToolName, chunk.ToolCallId);
 
           // Replay native Gemini tool call + function response in history.
           var toolCall = new AdminLlmMessage(AdminLlmRole.ToolCall, chunk.Content, chunk.ToolName, chunk.ToolCallId, ThoughtSignature: chunk.ThoughtSignature);
@@ -749,6 +767,9 @@ public sealed class AdminAgentService : IAdminAgentService
         // Purchase Note + Daily Report
         "create_purchase_note" => CreatePurchaseNote(args),
         "generate_daily_report" => await GenerateDailyReport(ct),
+
+        // Blog content
+        "generate_blog_draft" => await GenerateBlogDraft(args, ct),
 
         // Autonomy Mode
         "toggle_autonomy" => ToggleAutonomy(adminUserId, args),
@@ -1409,6 +1430,41 @@ TỔNG QUAN:
 
   // --- Phase 3: Intelligence tools ---
 
+  private async Task<string> GenerateBlogDraft(JsonElement args, CancellationToken ct)
+  {
+    var topic = RequiredString(args, "topic", 500);
+    var templateRaw = GetOptionalString(args, "template", 80);
+    var template = Enum.TryParse<BlogPostTemplate>(templateRaw, true, out var parsedTemplate)
+      ? parsedTemplate
+      : BlogPostTemplate.StandardArticle;
+
+    var request = new GenerateBlogDraftRequest
+    {
+      Topic = topic,
+      TargetKeyword = GetOptionalString(args, "targetKeyword", 200),
+      Audience = GetOptionalString(args, "audience", 200),
+      Tone = GetOptionalString(args, "tone", 100),
+      Template = template,
+      Length = OptionalEnum(args, "length", "short", "standard", "long") ?? "standard",
+      IncludeFaq = GetBoolArg(args, "includeFaq", true),
+      Notes = GetOptionalString(args, "notes", 2000)
+    };
+
+    var draft = await _blogAiDrafts.GenerateDraftAsync(request, ct);
+    return SerializeToolResult(
+      new
+      {
+        kind = "blog_draft",
+        draft,
+        handoffKey = "admin-blog-ai-draft",
+        guidance = "Admin cần mở trong trình soạn, kiểm duyệt, rồi tự lưu/xuất bản."
+      },
+      "read",
+      false,
+      code: "blog_draft_generated",
+      message: "Đã tạo bản nháp blog AI.");
+  }
+
   private async Task<string> GenerateProductDescription(JsonElement args, CancellationToken ct)
   {
     var id = RequiredGuid(args, "productId");
@@ -1535,6 +1591,13 @@ TOP 5 SẢN PHẨM:";
   }
 
   private static decimal ClampDecimal(decimal value, decimal min, decimal max) => Math.Min(Math.Max(value, min), max);
+
+  private static bool GetBoolArg(JsonElement args, string name, bool defaultValue)
+  {
+    if (args.TryGetProperty(name, out var el) && el.ValueKind is JsonValueKind.True or JsonValueKind.False)
+      return el.GetBoolean();
+    return defaultValue;
+  }
 
   private static int GetIntArg(JsonElement args, string name, int defaultValue)
   {

@@ -69,6 +69,7 @@ public sealed class SafetyGate : ISafetyGate
     ["reply_to_comment"] = (RiskLevel.Medium, true),
     ["list_promo_codes"] = (RiskLevel.Read, false),
     ["create_promo_code"] = (RiskLevel.High, true),
+    ["generate_blog_draft"] = (RiskLevel.Read, false),
     ["create_purchase_note"] = (RiskLevel.Low, false),
     ["generate_daily_report"] = (RiskLevel.Read, false),
     ["toggle_autonomy"] = (RiskLevel.High, true),

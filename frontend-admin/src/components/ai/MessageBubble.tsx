@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Bot, User, Terminal, Check, X, AlertTriangle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ChevronDown, ChevronUp, Bot, User, Terminal, Check, X, AlertTriangle, FileText } from 'lucide-react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { AiMessage, AiToolCall } from '@/types/ai'
+import { AI_BLOG_DRAFT_STORAGE_KEY } from '@/types/blog'
 import { ConfirmCard } from './ConfirmCard'
 
 function toolLabel(name: string): string {
@@ -47,8 +49,24 @@ function parseToolMeta(toolCall: AiToolCall) {
   }
 }
 
+function countBlogWords(toolCall: AiToolCall) {
+  return toolCall.blogDraft?.content.reduce((total, block) => {
+    if ('content' in block && typeof block.content === 'string') {
+      return total + block.content.trim().split(/\s+/).filter(Boolean).length
+    }
+    return total
+  }, 0) ?? 0
+}
+
+function openBlogDraftEditor(toolCall: AiToolCall, navigate: (to: string) => void) {
+  if (!toolCall.blogDraft) return
+  sessionStorage.setItem(AI_BLOG_DRAFT_STORAGE_KEY, JSON.stringify(toolCall.blogDraft))
+  navigate('/admin/blog/new')
+}
+
 function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
   const [expanded, setExpanded] = useState(false)
+  const navigate = useNavigate()
   const label = toolLabel(toolCall.toolName)
 
   const meta = parseToolMeta(toolCall)
@@ -71,6 +89,38 @@ function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
         </span>
         {expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
       </button>
+      {toolCall.blogDraft && (
+        <div className="mt-2 rounded-xl border border-wine/15 bg-white p-3 text-sm text-gray-700 shadow-sm">
+          <div className="flex items-start gap-2">
+            <FileText className="mt-0.5 size-4 text-wine shrink-0" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div>
+                <div className="font-semibold text-gray-900 line-clamp-2">{toolCall.blogDraft.title}</div>
+                <p className="mt-1 text-xs leading-relaxed text-gray-600 line-clamp-3">{toolCall.blogDraft.excerpt}</p>
+              </div>
+              <div className="flex flex-wrap gap-1 text-[11px] text-gray-600">
+                <span className="rounded-full bg-gray-100 px-2 py-0.5">{toolCall.blogDraft.content.length} block</span>
+                <span className="rounded-full bg-gray-100 px-2 py-0.5">~{countBlogWords(toolCall)} từ</span>
+                {toolCall.blogDraft.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="rounded-full bg-wine/5 px-2 py-0.5 text-wine">{tag}</span>
+                ))}
+              </div>
+              {toolCall.blogDraft.qualityWarnings && toolCall.blogDraft.qualityWarnings.length > 0 && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-800">
+                  {toolCall.blogDraft.qualityWarnings.slice(0, 2).join(' • ')}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => openBlogDraftEditor(toolCall, navigate)}
+                className="inline-flex items-center justify-center rounded-lg bg-wine px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-wine/90 active:scale-95"
+              >
+                Mở trong trình soạn
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {hasMore && (
         <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-800">
           Còn trang khác → dữ liệu hiện tại chưa đầy đủ

@@ -207,6 +207,7 @@ public static class ServiceRegistration
     services.AddSingleton<IAutoModeStore, AutoModeStore>();
     services.AddSingleton<IPendingActionStore, PendingActionStore>();
     services.AddSingleton<IConversationStore, ConversationStore>();
+    services.AddScoped<IBlogAiDraftService, BlogAiDraftService>();
     services.AddScoped<IAdminAgentService, AdminAgentService>();
     services.AddHttpClient<IAdminLlmProvider, VertexAiAdminProvider>(httpClient =>
     {

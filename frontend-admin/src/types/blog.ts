@@ -60,6 +60,26 @@ export interface BlogPost extends BlogPostListItem {
   createdAt: string
 }
 
+export interface AiBlogDraft {
+  title: string
+  slug?: string | null
+  excerpt: string
+  template: BlogTemplate
+  content: BlogBlock[]
+  tags: string[]
+  blogCategoryId?: string | null
+  metaTitle?: string | null
+  metaDescription?: string | null
+  canonicalUrl?: string | null
+  authorNameOverride?: string | null
+  authorBio?: string | null
+  reviewedBy?: string | null
+  informationGain?: string | null
+  qualityWarnings?: string[]
+}
+
+export const AI_BLOG_DRAFT_STORAGE_KEY = 'admin-blog-ai-draft'
+
 export interface BlogPostPayload {
   title: string
   slug?: string | null
