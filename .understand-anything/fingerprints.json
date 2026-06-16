@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "gitCommitHash": "e1a658b6770473fc720b3f82e3eaf58f5892f3c8",
-  "generatedAt": "2026-06-16T07:41:59.847Z",
+  "gitCommitHash": "50381c8def20bedb321679a0465bff72544aa851",
+  "generatedAt": "2026-06-16T13:52:09.215Z",
   "files": {
     ".github/AGENTS.md": {
       "filePath": ".github/AGENTS.md",
@@ -33,6 +33,16 @@
       "totalLines": 1287,
       "hasStructuralAnalysis": true
     },
+    ".understand-anything/.understandignore": {
+      "filePath": ".understand-anything/.understandignore",
+      "contentHash": "d677fc12c5c8ed441d1f10660a7a5ce7fd47ef1d35e39d1d9f753cd1b4f3bdfc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 23,
+      "hasStructuralAnalysis": false
+    },
     ".understand-anything/config.json": {
       "filePath": ".understand-anything/config.json",
       "contentHash": "20179ec253b2fdc4c809fb23adcd504d4a3534c98cacc996933d6f2f818946be",
@@ -45,37 +55,37 @@
     },
     ".understand-anything/fingerprints.json": {
       "filePath": ".understand-anything/fingerprints.json",
-      "contentHash": "a4051cc5356d04af12bc20fab0f3a266ee4488f4a5f65af0a619dec667ee8c3a",
+      "contentHash": "578d0bfb010faf88fd3f1f2713cf005c59fd6c1eebcce4a734476a661d4d4027",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 6,
+      "totalLines": 45882,
       "hasStructuralAnalysis": true
     },
     ".understand-anything/intermediate/scan-result.json": {
       "filePath": ".understand-anything/intermediate/scan-result.json",
-      "contentHash": "8f2d469e63bac8c4f5e27f58062c845105ae73686fe479f934bad1131ba7858c",
+      "contentHash": "052bc5e5ef622380c8a4c860790d4155ff742c2b0fd6b91657776aab7603a7d3",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 5058,
+      "totalLines": 5123,
       "hasStructuralAnalysis": true
     },
     ".understand-anything/knowledge-graph.json": {
       "filePath": ".understand-anything/knowledge-graph.json",
-      "contentHash": "485a0d6efd2e51068317d0525677c45c1be8554d1c7f2c6a3b32ea6670c45c96",
+      "contentHash": "19e353780369669004fe5eda2834dd172da82c109aa8a337a520e1d74fedcf4c",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 21895,
+      "totalLines": 21994,
       "hasStructuralAnalysis": true
     },
     ".understand-anything/meta.json": {
       "filePath": ".understand-anything/meta.json",
-      "contentHash": "7d362f4b7db92369b635a160128c7e2f0a260ff74732ece1c8e72f166c906331",
+      "contentHash": "d2ba2d244a90dcaad65e72e06b875cfeec0cf39db47665312589c08b2ddc6273",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -85,12 +95,12 @@
     },
     "AGENTS.md": {
       "filePath": "AGENTS.md",
-      "contentHash": "a4396ca7a0a67f8b09052dd29f2b0dd0d8b6b458b5aaa0ae0c3f2819ece91fde",
+      "contentHash": "8f2f96a7ad5544d1f9061c2aebdcf74f37f464a7177038f66e024bf19c52fe83",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 69,
+      "totalLines": 75,
       "hasStructuralAnalysis": true
     },
     "AI_On_VHE_Startup_Challenge.md": {
@@ -105,23 +115,53 @@
     },
     "backend/AGENTS.md": {
       "filePath": "backend/AGENTS.md",
-      "contentHash": "d9f49d71f64f19aad6617b4e70d1aef1a49c6eec9cc18c5b22109919a88f1f90",
+      "contentHash": "d50b0b8b48d8a114a05ac548845197a9b1ff8812cb12c038c33f3e3433cdd2a7",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 53,
+      "totalLines": 64,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Api/.env.example": {
+      "filePath": "backend/AoDaiNhaUyen.Api/.env.example",
+      "contentHash": "3c82318d102dfaf9cc5b48e6931d7bb018993da90b26c879a0e33c7e4d3d5973",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 79,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/AGENTS.md": {
       "filePath": "backend/AoDaiNhaUyen.Api/AGENTS.md",
-      "contentHash": "0e1404e0bd28ee790bdcea73663ca05e5533773f7b54c53546a02255678b0a70",
+      "contentHash": "22afe911796759d156e7c41005598b17623621631f921e736e97bb042c3bc531",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 88,
+      "totalLines": 58,
       "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.csproj": {
+      "filePath": "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.csproj",
+      "contentHash": "24d73d686218800a1b7ea25f7450c657bc817cc40f5d0e17ce174a36a4ac126d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 40,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.http": {
+      "filePath": "backend/AoDaiNhaUyen.Api/AoDaiNhaUyen.Api.http",
+      "contentHash": "8076d45a0a56d627e1738a2e2095388ce0570731f29f02d39f1ac0b1c04f61d8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 7,
+      "hasStructuralAnalysis": false
     },
     "backend/AoDaiNhaUyen.Api/appsettings.Development.json": {
       "filePath": "backend/AoDaiNhaUyen.Api/appsettings.Development.json",
@@ -135,17 +175,132 @@
     },
     "backend/AoDaiNhaUyen.Api/appsettings.json": {
       "filePath": "backend/AoDaiNhaUyen.Api/appsettings.json",
-      "contentHash": "9576cab6cdb5e01304b7570c5b27303099be0269c40c87272d658357c267d4cc",
+      "contentHash": "cfc20ffc903a4f4b49fc0e4f2186e26063dab2ac17a8a9f39d6bd9ce08361853",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 104,
+      "totalLines": 103,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Api/Authentication/HermesAdminApiKeyAuthenticationHandler.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Api/Authentication/HermesAdminApiKeyAuthenticationHandler.cs",
+      "contentHash": "7a3d1adf217140674fd6229002d926844f3dcf1b36f00711bc06a23d8d06ef81",
+      "functions": [
+        {
+          "name": "HandleAuthenticateAsync",
+          "params": [],
+          "returnType": "Task<AuthenticateResult>",
+          "exported": false,
+          "lineCount": 33
+        },
+        {
+          "name": "FixedTimeEquals",
+          "params": [
+            "providedKey",
+            "configuredKey"
+          ],
+          "returnType": "bool",
+          "exported": false,
+          "lineCount": 7
+        }
+      ],
+      "classes": [
+        {
+          "name": "HermesAdminApiKeyAuthenticationHandler",
+          "methods": [
+            "HandleAuthenticateAsync",
+            "FixedTimeEquals"
+          ],
+          "properties": [
+            "HermesAgentUserId"
+          ],
+          "exported": true,
+          "lineCount": 51
+        }
+      ],
+      "imports": [
+        {
+          "source": "System.Security.Claims",
+          "specifiers": [
+            "Claims"
+          ]
+        },
+        {
+          "source": "System.Security.Cryptography",
+          "specifiers": [
+            "Cryptography"
+          ]
+        },
+        {
+          "source": "System.Text",
+          "specifiers": [
+            "Text"
+          ]
+        },
+        {
+          "source": "System.Text.Encodings.Web",
+          "specifiers": [
+            "Web"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Domain.Constants",
+          "specifiers": [
+            "Constants"
+          ]
+        },
+        {
+          "source": "Microsoft.AspNetCore.Authentication",
+          "specifiers": [
+            "Authentication"
+          ]
+        },
+        {
+          "source": "Microsoft.Extensions.Options",
+          "specifiers": [
+            "Options"
+          ]
+        }
+      ],
+      "exports": [
+        "HermesAdminApiKeyAuthenticationHandler"
+      ],
+      "totalLines": 62,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Api/Authentication/HermesAdminAuthOptions.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Api/Authentication/HermesAdminAuthOptions.cs",
+      "contentHash": "6be5fc204d7837c83c3bc67281bb007b5d310bb045b35a22971c653709aff924",
+      "functions": [],
+      "classes": [
+        {
+          "name": "HermesAdminAuthOptions",
+          "methods": [],
+          "properties": [
+            "SectionName",
+            "SchemeName",
+            "HeaderName",
+            "AdminApiKey"
+          ],
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "imports": [],
+      "exports": [
+        "SectionName",
+        "SchemeName",
+        "HeaderName",
+        "AdminApiKey",
+        "HermesAdminAuthOptions"
+      ],
+      "totalLines": 11,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/Configuration/ServiceRegistration.cs": {
       "filePath": "backend/AoDaiNhaUyen.Api/Configuration/ServiceRegistration.cs",
-      "contentHash": "b964d2d895190cb1eff367b715f6711c046df55fbffc7c6a72157fc3dbc72c39",
+      "contentHash": "8dcb386179c87d1b9df550c15a6fc3df4bafb97845a2e1102be23bb552ba5ba8",
       "functions": [
         {
           "name": "AddBackendServices",
@@ -155,7 +310,7 @@
           ],
           "returnType": "IServiceCollection",
           "exported": true,
-          "lineCount": 247
+          "lineCount": 257
         },
         {
           "name": "ValidateJwtSettings",
@@ -177,7 +332,7 @@
           ],
           "properties": [],
           "exported": true,
-          "lineCount": 287
+          "lineCount": 297
         }
       ],
       "imports": [
@@ -191,6 +346,12 @@
           "source": "Amazon.S3",
           "specifiers": [
             "S3"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Api.Authentication",
+          "specifiers": [
+            "Authentication"
           ]
         },
         {
@@ -272,6 +433,12 @@
           ]
         },
         {
+          "source": "Microsoft.AspNetCore.Authentication",
+          "specifiers": [
+            "Authentication"
+          ]
+        },
+        {
           "source": "Microsoft.AspNetCore.Authentication.JwtBearer",
           "specifiers": [
             "JwtBearer"
@@ -306,7 +473,7 @@
         "AddBackendServices",
         "ServiceRegistration"
       ],
-      "totalLines": 311,
+      "totalLines": 323,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminAiController.cs": {
@@ -751,6 +918,156 @@
         "AdminDashboardController"
       ],
       "totalLines": 81,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminHermesController.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminHermesController.cs",
+      "contentHash": "94a501f8058fbc0a3ec6a07fb64cdc82a5604d3b5db25531e66ff4c2ff6906c8",
+      "functions": [
+        {
+          "name": "GetStatus",
+          "params": [
+            "cancellationToken"
+          ],
+          "returnType": "Task<ActionResult<ApiResponse<HermesStatusResponse>>>",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "ListRuns",
+          "params": [
+            "cancellationToken"
+          ],
+          "returnType": "Task<ActionResult<ApiResponse<IReadOnlyList<HermesRunSummaryResponse>>>>",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "StreamChat",
+          "params": [
+            "request",
+            "cancellationToken"
+          ],
+          "returnType": "Task",
+          "exported": true,
+          "lineCount": 45
+        },
+        {
+          "name": "Heartbeat",
+          "params": [
+            "request",
+            "cancellationToken"
+          ],
+          "returnType": "Task<ActionResult<ApiResponse<object?>>>",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "WriteChunkAsync",
+          "params": [
+            "chunk",
+            "cancellationToken"
+          ],
+          "returnType": "Task",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "ValidateChatRequest",
+          "params": [
+            "request"
+          ],
+          "returnType": "string?",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "ValidateHeartbeatRequest",
+          "params": [
+            "request"
+          ],
+          "returnType": "string?",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "GetAdminUserId",
+          "params": [],
+          "returnType": "Guid?",
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [
+        {
+          "name": "AdminHermesController",
+          "methods": [
+            "GetStatus",
+            "ListRuns",
+            "StreamChat",
+            "Heartbeat",
+            "WriteChunkAsync",
+            "ValidateChatRequest",
+            "ValidateHeartbeatRequest",
+            "GetAdminUserId"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 113
+        }
+      ],
+      "imports": [
+        {
+          "source": "System.Text.Json",
+          "specifiers": [
+            "Json"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Api.Responses",
+          "specifiers": [
+            "Responses"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs.Admin",
+          "specifiers": [
+            "Admin"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Api.Authentication",
+          "specifiers": [
+            "Authentication"
+          ]
+        },
+        {
+          "source": "Microsoft.AspNetCore.Authorization",
+          "specifiers": [
+            "Authorization"
+          ]
+        },
+        {
+          "source": "Microsoft.AspNetCore.Mvc",
+          "specifiers": [
+            "Mvc"
+          ]
+        }
+      ],
+      "exports": [
+        "GetStatus",
+        "ListRuns",
+        "StreamChat",
+        "Heartbeat",
+        "AdminHermesController"
+      ],
+      "totalLines": 125,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminInventoryController.cs": {
@@ -2121,12 +2438,12 @@
     },
     "backend/AoDaiNhaUyen.Api/Controllers/AGENTS.md": {
       "filePath": "backend/AoDaiNhaUyen.Api/Controllers/AGENTS.md",
-      "contentHash": "c548f69d69476820c9adf0bd2444b5c76ccdc6d5155b399622ca6d11267c7046",
+      "contentHash": "5d495af61d65bda6ed8ae5f5201fe5dfa631bc04e35afc9a465c7a3f3218ad2b",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 33,
+      "totalLines": 56,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/Controllers/AiTryOnController.cs": {
@@ -4333,6 +4650,334 @@
       "totalLines": 98,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Api/Hermes/HermesAdminApiDescription.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Api/Hermes/HermesAdminApiDescription.cs",
+      "contentHash": "c30cd05a42e8231cfde5557d1ea23c068ff4683ff4915138aa54b89be97b63f2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 33,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Api/Hermes/HermesAdminApiDescriptionRegistry.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Api/Hermes/HermesAdminApiDescriptionRegistry.cs",
+      "contentHash": "2db92a97f97448bf2fc02c700435e11e924161493363c5696e09ab739e4e0168",
+      "functions": [
+        {
+          "name": "Find",
+          "params": [
+            "method",
+            "path"
+          ],
+          "returnType": "HermesAdminApiDescription?",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "KnownRoutes",
+          "params": [],
+          "returnType": "IReadOnlyList<string>",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "IsMatch",
+          "params": [
+            "route",
+            "path"
+          ],
+          "returnType": "bool",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "BuildDescriptions",
+          "params": [],
+          "returnType": "IReadOnlyList<HermesAdminApiDescription>",
+          "exported": false,
+          "lineCount": 114
+        },
+        {
+          "name": "Get",
+          "params": [
+            "route",
+            "purpose",
+            "dataShape",
+            "path",
+            "query"
+          ],
+          "returnType": "HermesAdminApiDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "Post",
+          "params": [
+            "route",
+            "purpose",
+            "dataShape",
+            "body",
+            "path",
+            "notes"
+          ],
+          "returnType": "HermesAdminApiDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "Put",
+          "params": [
+            "route",
+            "purpose",
+            "dataShape",
+            "body",
+            "path"
+          ],
+          "returnType": "HermesAdminApiDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "Patch",
+          "params": [
+            "route",
+            "purpose",
+            "dataShape",
+            "body",
+            "path"
+          ],
+          "returnType": "HermesAdminApiDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "Delete",
+          "params": [
+            "route",
+            "purpose",
+            "dataShape",
+            "path"
+          ],
+          "returnType": "HermesAdminApiDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "Desc",
+          "params": [
+            "method",
+            "route",
+            "purpose",
+            "dataShape",
+            "body",
+            "path",
+            "query",
+            "notes"
+          ],
+          "returnType": "HermesAdminApiDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "Id",
+          "params": [
+            "name",
+            "description"
+          ],
+          "returnType": "HermesParamDescription",
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "Param",
+          "params": [
+            "name",
+            "type",
+            "required",
+            "description"
+          ],
+          "returnType": "HermesParamDescription",
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "Field",
+          "params": [
+            "name",
+            "type",
+            "required",
+            "description"
+          ],
+          "returnType": "KeyValuePair<string, HermesFieldDescription>",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "Body",
+          "params": [
+            "fields",
+            "example"
+          ],
+          "returnType": "HermesBodyDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "MultipartBody",
+          "params": [
+            "fieldName",
+            "description"
+          ],
+          "returnType": "HermesBodyDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "AdminChatBody",
+          "params": [],
+          "returnType": "HermesBodyDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "CategoryBody",
+          "params": [
+            "create"
+          ],
+          "returnType": "HermesBodyDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "EmailTemplateBody",
+          "params": [
+            "create"
+          ],
+          "returnType": "HermesBodyDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "ProductBody",
+          "params": [
+            "create"
+          ],
+          "returnType": "HermesBodyDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "PromoCreateBody",
+          "params": [],
+          "returnType": "HermesBodyDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "PromoUpdateBody",
+          "params": [],
+          "returnType": "HermesBodyDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "RoleBody",
+          "params": [
+            "create"
+          ],
+          "returnType": "HermesBodyDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "ToolRiskBody",
+          "params": [],
+          "returnType": "HermesBodyDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "UserCreateBody",
+          "params": [],
+          "returnType": "HermesBodyDescription",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "UserUpdateBody",
+          "params": [],
+          "returnType": "HermesBodyDescription",
+          "exported": false,
+          "lineCount": 2
+        }
+      ],
+      "classes": [
+        {
+          "name": "HermesAdminApiDescriptionRegistry",
+          "methods": [
+            "Find",
+            "KnownRoutes",
+            "IsMatch",
+            "BuildDescriptions",
+            "Get",
+            "Post",
+            "Put",
+            "Patch",
+            "Delete",
+            "Desc",
+            "Id",
+            "Param",
+            "Field",
+            "Body",
+            "MultipartBody",
+            "AdminChatBody",
+            "CategoryBody",
+            "EmailTemplateBody",
+            "ProductBody",
+            "PromoCreateBody",
+            "PromoUpdateBody",
+            "RoleBody",
+            "ToolRiskBody",
+            "UserCreateBody",
+            "UserUpdateBody"
+          ],
+          "properties": [
+            "Envelope",
+            "DefaultNotes",
+            "MultipartNotes",
+            "_descriptions"
+          ],
+          "exported": true,
+          "lineCount": 218
+        }
+      ],
+      "imports": [
+        {
+          "source": "System.Text.RegularExpressions",
+          "specifiers": [
+            "RegularExpressions"
+          ]
+        }
+      ],
+      "exports": [
+        "Find",
+        "KnownRoutes",
+        "HermesAdminApiDescriptionRegistry"
+      ],
+      "totalLines": 223,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Api/HttpTests/AdminProducts.http": {
+      "filePath": "backend/AoDaiNhaUyen.Api/HttpTests/AdminProducts.http",
+      "contentHash": "8cb289da16bc89f007bc00676b9820b4fcbe75ae57a012d4bd8f4e60a82209ac",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 52,
+      "hasStructuralAnalysis": false
+    },
     "backend/AoDaiNhaUyen.Api/Middleware/ExceptionHandlingMiddleware.cs": {
       "filePath": "backend/AoDaiNhaUyen.Api/Middleware/ExceptionHandlingMiddleware.cs",
       "contentHash": "e3f98876d3e8b7f936017ca5321e8d35dfc28e88e108d20d387368c79cdc732b",
@@ -4385,6 +5030,75 @@
       "totalLines": 33,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Api/Middleware/HermesApiDescriptionMiddleware.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Api/Middleware/HermesApiDescriptionMiddleware.cs",
+      "contentHash": "2139459c26aebcef662e9dd353bd73e38241fd8e7f6bfebbdd8c957a68b389e8",
+      "functions": [
+        {
+          "name": "InvokeAsync",
+          "params": [
+            "context",
+            "registry"
+          ],
+          "returnType": "Task",
+          "exported": true,
+          "lineCount": 33
+        },
+        {
+          "name": "IsHermesDescriptionRequest",
+          "params": [
+            "context"
+          ],
+          "returnType": "bool",
+          "exported": false,
+          "lineCount": 3
+        }
+      ],
+      "classes": [
+        {
+          "name": "HermesApiDescriptionMiddleware",
+          "methods": [
+            "InvokeAsync",
+            "IsHermesDescriptionRequest"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 40
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Api.Authentication",
+          "specifiers": [
+            "Authentication"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Api.Hermes",
+          "specifiers": [
+            "Hermes"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Api.Responses",
+          "specifiers": [
+            "Responses"
+          ]
+        },
+        {
+          "source": "Microsoft.AspNetCore.Authentication",
+          "specifiers": [
+            "Authentication"
+          ]
+        }
+      ],
+      "exports": [
+        "InvokeAsync",
+        "HermesApiDescriptionMiddleware"
+      ],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Api/Middleware/SensitiveResponseCacheMiddleware.cs": {
       "filePath": "backend/AoDaiNhaUyen.Api/Middleware/SensitiveResponseCacheMiddleware.cs",
       "contentHash": "2f301e4d32f26744f1ddb1701e5658cf335ff8c8888f8cf0cc10e73be268448a",
@@ -4432,7 +5146,7 @@
     },
     "backend/AoDaiNhaUyen.Api/Program.cs": {
       "filePath": "backend/AoDaiNhaUyen.Api/Program.cs",
-      "contentHash": "a05cd8a786cb9d6518b9b7cfdc38d8420ce5f4e702bb20977ff3a88e2c0b8708",
+      "contentHash": "9ec2ccc6b2030bb638fe85db7fb69af790cc65099d652d6fd06e23cf752b0eff",
       "functions": [],
       "classes": [],
       "imports": [
@@ -4545,6 +5259,12 @@
           ]
         },
         {
+          "source": "AoDaiNhaUyen.Api.Hermes",
+          "specifiers": [
+            "Hermes"
+          ]
+        },
+        {
           "source": "AoDaiNhaUyen.Api.Responses",
           "specifiers": [
             "Responses"
@@ -4558,7 +5278,7 @@
         }
       ],
       "exports": [],
-      "totalLines": 313,
+      "totalLines": 316,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Api/Properties/launchSettings.json": {
@@ -4728,15 +5448,525 @@
       "totalLines": 51,
       "hasStructuralAnalysis": true
     },
-    "backend/AoDaiNhaUyen.Application/AGENTS.md": {
-      "filePath": "backend/AoDaiNhaUyen.Application/AGENTS.md",
-      "contentHash": "b2645d4249237d4e970e0c94d5e2ba993521dd668c417d8086bbdc02e84714e4",
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-1.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-1.webp",
+      "contentHash": "8de0ed5dc7520bcd0312976cb76eeb2fc3d44d795e93e7682fcc603fcc29ff58",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 114,
+      "totalLines": 1883,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-3.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-3.webp",
+      "contentHash": "791a5efed68a6b54dc09e8d66a290ddf6ff15318ced749f7cdd9deb3427d146e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 501,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-4.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-4.webp",
+      "contentHash": "b662acc96b3377ad14915b23ae22c58211e00c5875e0330ebab8872d14bfb7e7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2006,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-5.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-5.webp",
+      "contentHash": "88762792036195e95f16cbe704f430d7a2e838b10d57038eefb264eaaad33f90",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 200,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-6.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-cach-tan-6.webp",
+      "contentHash": "2c1d445903238ba29fad47158cb08aaeb3f6291da197a207091e71bc38720108",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 478,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-1.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-1.webp",
+      "contentHash": "21cdf1f6e8605bfea3bb0d2401df41e13f459101bbfa87ddaf724dec6aa4afc3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 49,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-2.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-2.webp",
+      "contentHash": "d2c15b98c7444c99672cb34a302e6082b861727e04b4b53be7ea1f1138a2255a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 722,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-3.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-3.webp",
+      "contentHash": "a0f80abd186ac97b2723d974dda3d8f87736245b63a62a9268950c1da1df50e5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 197,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-4.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-4.webp",
+      "contentHash": "1ca31cb32bf3c23d6a499b90bc4837cdeaa9848a491461b8f222d0fc2d384bb3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 528,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-5.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-5.webp",
+      "contentHash": "10a7679132f545756ded7a9d6a14cda714b0842ac8636cf9bb0dec0e3a515755",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 121,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-6.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-6.webp",
+      "contentHash": "26ce79b6bda8074e6ab891b752d54ace82c6e83f9102b74dea660e62ab9ca1ab",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 870,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-extra.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-lua-tron-extra.webp",
+      "contentHash": "60e3169d844c1c42df4beb12f843b5a72256515e38dc75c9c1e76d9150502892",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 713,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-1.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-1.webp",
+      "contentHash": "b9fc0bdd5045b2a8bec2e5559cb832c32eaf7b777da0e4e9306ba5737e4f4f07",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 499,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-2.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-2.webp",
+      "contentHash": "a37d1402773b14e91b98d067b509db0be6bba757822eea5b9bb417de2debff86",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 393,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-3.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-3.webp",
+      "contentHash": "1807387e7406e84a8ffd5a069568ab9b928ab1d4b34ec98002783e24aa896bea",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 544,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-5.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-5.webp",
+      "contentHash": "ec926070d0f74845afd771a7c33fd7a73c3a37f285d692b437476dd47dfa6cb3",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 188,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-6.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-theu-hoa-6.webp",
+      "contentHash": "1fb0bd9aad271d3e2612711feb257578cc31c8704f5ec28eaa90e81522a0b8e0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1056,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-1.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-1.webp",
+      "contentHash": "7bc6d57b77412038c1f036283f53bc1687211ee02468fad74528972c299d5342",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 665,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-2.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-2.webp",
+      "contentHash": "06cbd95778bf2ccef67c4b48acb4b52b384ea2464c3ed02e83910eb537937d1f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 859,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-4.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-4.webp",
+      "contentHash": "f1381be4dfa88e7a3c2075773eb90adef88aea066406c7f5ca60da92de34421d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1130,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-5.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-5.webp",
+      "contentHash": "4a3748c7cddd7bec623c580fccfbb6b28d801cce29aaec9aa0f37981bd08c329",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 662,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-6.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/ao-dai-truyen-thong-6.webp",
+      "contentHash": "aef5c34e45822c7b1ca0d9f278ae09a9c631151023cb3a389058e84cc0321284",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 951,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-buom-trang.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-buom-trang.webp",
+      "contentHash": "f9a39dae75c01dbc173f9ddeef8c336f479151f31f5494eb97cae321cf3ecaca",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 277,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa-cach-dieu.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa-cach-dieu.webp",
+      "contentHash": "62a20ebc10245c74da23acaf20bdfbf79b3e5322c4d582867a2dbd6c9a64784f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 360,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-hoa.webp",
+      "contentHash": "95a15542bc514685d8246847d291877a4b1215f68e291304904ab1c9d51639be",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 138,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-kieu-cao.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-kieu-cao.webp",
+      "contentHash": "7053b6f1a16242f8a5f48579006997858f97259d1010f18340395632603e5c47",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 467,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no-de-bang.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no-de-bang.webp",
+      "contentHash": "b36c110632353dc268585682281ff566433ec12cc031940af09614d7d718ed43",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 577,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/guoc-cao-got-no.webp",
+      "contentHash": "4260d5d4efdb3749f0d8af68be4fb2a22c44f836685ef9939e029d6f18866d18",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 438,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong-node.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong-node.webp",
+      "contentHash": "5dad482bbba00f309d26b293cd0ff23638a8610283b9d27a1a812c1a0e131cd9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 266,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/home-ao-dai-truyen-thong.webp",
+      "contentHash": "177afeea90360abec6e6e0326169119b62635896dbd08d353c2322b674570171",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1173,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-bau.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-bau.webp",
+      "contentHash": "fc65340ae610f3e36a70d592816247a9d8e3e415c125f19614f488761eebdc15",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 471,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-gap-tua-rua.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-gap-tua-rua.webp",
+      "contentHash": "787e2ba834cd2e677e327c1203238d4b56fe77470a04c8a15cc217371168f70f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 580,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-hoa-sen.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-hoa-sen.webp",
+      "contentHash": "1c5d1161bbd3fb109a18f7f13e56480eea623dd6690fa292a0a1d3199e71b898",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 735,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tre-gap.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tre-gap.webp",
+      "contentHash": "3e3e09330964d66f7d2dfdf418a19cc33c67529ca839177f0cd0582f2cf9e8aa",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 713,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tron.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-tron.webp",
+      "contentHash": "9c0afce6c4850d3a5862bc443e99f6ab1cef16c4ed76af0264b0cbbac23e7b1d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 89,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-van-may.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-quat-van-may.webp",
+      "contentHash": "d35b443f008ec9fb878279e9a03657fd899f4fdfb89208632e5a449bc84610ed",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1676,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-hoa-van.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-hoa-van.webp",
+      "contentHash": "f2b19f4069efec9fcb8abe3d03fb9f53a5291481f747f9e613e5630d8af41bb7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 203,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-kieu.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-kieu.webp",
+      "contentHash": "90c4064a3b48684aa30ac259b6ed63395084b51de0f61497acf6f96ed3a3d23f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 115,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-thanh.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-thanh.webp",
+      "contentHash": "f2b19f4069efec9fcb8abe3d03fb9f53a5291481f747f9e613e5630d8af41bb7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 203,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-theu-hoa.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-theu-hoa.webp",
+      "contentHash": "e0683957f101c06e83123fe2ed0c969ec651703af095947edce000ce7c89095b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 418,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-thuc.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-thuc.webp",
+      "contentHash": "d35b443f008ec9fb878279e9a03657fd899f4fdfb89208632e5a449bc84610ed",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1676,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-xan-oc.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/phu-kien-tu-xach-xan-oc.webp",
+      "contentHash": "60f1a9e74e4d645267bcc0b9b80bfa4c4c0c9d4bf5d3b89daf34af2fd8aa47f4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 415,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/tram-cai-hoa-don-2.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/tram-cai-hoa-don-2.webp",
+      "contentHash": "ef08cecb3ad16cb5a8c7b69b572c8dc3cbc3def47f73948a45512b56e8d55d28",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 164,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/tram-cai-hoa-don-sac.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/tram-cai-hoa-don-sac.webp",
+      "contentHash": "28b8f01f209b4db09b5d4d1c41f9315e573826886660dc8d01d3c9358a0bcedd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 261,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/tram-cai-hoa-don.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/tram-cai-hoa-don.webp",
+      "contentHash": "3900a258a19f527a5f78c415909b939729fce811f9245760211eb65c5f5beae5",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 103,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/tram-cai-toc-hong-ngoc-bich.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/tram-cai-toc-hong-ngoc-bich.webp",
+      "contentHash": "b1716f011561f8b4916e4f9af9a14e35f56134d4aa945171ac5c6bfd9419eb01",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 237,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/tram-cai-toc-vang-sac-dieu.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/tram-cai-toc-vang-sac-dieu.webp",
+      "contentHash": "43060ffdf6f14932e57c262c58d443c8ed3bccb6b914d04669daa9af603c57fe",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 170,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/tram-cai-toc-xanh-biec.webp": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/tram-cai-toc-xanh-biec.webp",
+      "contentHash": "cd53a2b6607c1d1bf0fd1e625870576d38a6fca77cb6496c0720accf2156f7ec",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 513,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/tryon-curated/accessories/.gitkeep": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/tryon-curated/accessories/.gitkeep",
+      "contentHash": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Api/upload/tryon-curated/garments/.gitkeep": {
+      "filePath": "backend/AoDaiNhaUyen.Api/upload/tryon-curated/garments/.gitkeep",
+      "contentHash": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Application/AGENTS.md": {
+      "filePath": "backend/AoDaiNhaUyen.Application/AGENTS.md",
+      "contentHash": "67263ad3aed187d375be0eba6201db62160c682a963370c23468200bf6ce6c83",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 56,
       "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/AoDaiNhaUyen.Application.csproj": {
+      "filePath": "backend/AoDaiNhaUyen.Application/AoDaiNhaUyen.Application.csproj",
+      "contentHash": "9f264a83300a4f1dad8d7115be8ed2e526be66b6eced81d75f98cec703af1d42",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 18,
+      "hasStructuralAnalysis": false
     },
     "backend/AoDaiNhaUyen.Application/Constants/CacheTags.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/Constants/CacheTags.cs",
@@ -4906,6 +6136,16 @@
       ],
       "exports": [],
       "totalLines": 22,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/DTOs/Admin/HermesAgentDtos.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/DTOs/Admin/HermesAgentDtos.cs",
+      "contentHash": "bb4df478be784856fcc5814fecc3303a0a771f70e8a6794efc83f2d272531077",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 44,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Application/DTOs/Admin/LlmAuditLogDTOs.cs": {
@@ -7631,6 +8871,38 @@
       "totalLines": 11,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Application/Interfaces/Services/IHermesAgentService.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IHermesAgentService.cs",
+      "contentHash": "2ce55f8faa051a10fd6564a999129e3005782f4129a770ea778ca1d735b47c90",
+      "functions": [],
+      "classes": [
+        {
+          "name": "IHermesAgentService",
+          "methods": [
+            "GetStatusAsync",
+            "RecordHeartbeatAsync",
+            "StreamChatAsync",
+            "ListRunsAsync"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "imports": [
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs.Admin",
+          "specifiers": [
+            "Admin"
+          ]
+        }
+      ],
+      "exports": [
+        "IHermesAgentService"
+      ],
+      "totalLines": 18,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Application/Interfaces/Services/IImageUploadValidator.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IImageUploadValidator.cs",
       "contentHash": "e078891dae58c7c09c7eeffbb966af01f2099c9e7e80ad5dd7fd4b456166e536",
@@ -8396,6 +9668,33 @@
       "totalLines": 12,
       "hasStructuralAnalysis": true
     },
+    "backend/AoDaiNhaUyen.Application/Options/AdminSeedOptions.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/Options/AdminSeedOptions.cs",
+      "contentHash": "8529f3daa5c236143703294e734e52d448ae85105c3f8857fbd9447f5a34a4f6",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AdminSeedOptions",
+          "methods": [],
+          "properties": [
+            "SectionName",
+            "Email",
+            "Password"
+          ],
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "imports": [],
+      "exports": [
+        "SectionName",
+        "Email",
+        "Password",
+        "AdminSeedOptions"
+      ],
+      "totalLines": 10,
+      "hasStructuralAnalysis": true
+    },
     "backend/AoDaiNhaUyen.Application/Options/AiTryOnConcurrencyOptions.cs": {
       "filePath": "backend/AoDaiNhaUyen.Application/Options/AiTryOnConcurrencyOptions.cs",
       "contentHash": "0edc50240780165a413dae91be088e7e7097c21d78811e372a37ed9d5749296d",
@@ -8563,6 +9862,35 @@
         "GoogleOAuthSettings"
       ],
       "totalLines": 16,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Application/Options/HermesAgentOptions.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Application/Options/HermesAgentOptions.cs",
+      "contentHash": "33648a8674e7b5904546e36b3a05779a9af77c7fdaef55fb7b9e163d665788df",
+      "functions": [],
+      "classes": [
+        {
+          "name": "HermesAgentOptions",
+          "methods": [],
+          "properties": [
+            "SectionName",
+            "ApiServerUrl",
+            "ApiServerKey",
+            "RunnerName"
+          ],
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "imports": [],
+      "exports": [
+        "SectionName",
+        "ApiServerUrl",
+        "ApiServerKey",
+        "RunnerName",
+        "HermesAgentOptions"
+      ],
+      "totalLines": 11,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Application/Options/ImageValidationOptions.cs": {
@@ -9790,13 +11118,23 @@
     },
     "backend/AoDaiNhaUyen.Domain/AGENTS.md": {
       "filePath": "backend/AoDaiNhaUyen.Domain/AGENTS.md",
-      "contentHash": "5c5786e01f19020189e8583bc3963f4fdc3a9254bcb7a0a4377faa83909fb9f9",
+      "contentHash": "3df618145fc4eb563b66c2a63e93974a5d831c392d952dc928efbc2638b3ae53",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 96,
+      "totalLines": 44,
       "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Domain/AoDaiNhaUyen.Domain.csproj": {
+      "filePath": "backend/AoDaiNhaUyen.Domain/AoDaiNhaUyen.Domain.csproj",
+      "contentHash": "61e3f2d043e37f0db4be1d8083dd31bebbfbb8fde2cf027327db2556c16bc385",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": false
     },
     "backend/AoDaiNhaUyen.Domain/Common/AdminAiActionType.cs": {
       "filePath": "backend/AoDaiNhaUyen.Domain/Common/AdminAiActionType.cs",
@@ -10008,12 +11346,12 @@
     },
     "backend/AoDaiNhaUyen.Domain/Entities/AGENTS.md": {
       "filePath": "backend/AoDaiNhaUyen.Domain/Entities/AGENTS.md",
-      "contentHash": "5828bbf3f5e562655c3bb4b5b8e1c358dedd28761bc6acfea6b2e00da0907057",
+      "contentHash": "2dc5d9cf3b2999dfe0f9cba64576cbf96c4dc39da61a3d4f06d179d4285a2edd",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 51,
+      "totalLines": 38,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Domain/Entities/BlogCategory.cs": {
@@ -12563,13 +13901,23 @@
     },
     "backend/AoDaiNhaUyen.Infrastructure/AGENTS.md": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/AGENTS.md",
-      "contentHash": "b87a5e751e026509a7f3ecd1c95c5150523555910117c12882fb2fc3a37f27dd",
+      "contentHash": "0bd93350e21fae17e6c1100a710fb005dca8a30e49af6b838828c3c1a16f883b",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 90,
+      "totalLines": 51,
       "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Infrastructure/AoDaiNhaUyen.Infrastructure.csproj": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/AoDaiNhaUyen.Infrastructure.csproj",
+      "contentHash": "9bc5a44d6d8a9d7e0cc6d9edf3ca4b1a45e36d7445c5cf4160f4476a68bf712e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 33,
+      "hasStructuralAnalysis": false
     },
     "backend/AoDaiNhaUyen.Infrastructure/Configuration/GoogleCloudOptions.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Configuration/GoogleCloudOptions.cs",
@@ -12612,7 +13960,7 @@
     },
     "backend/AoDaiNhaUyen.Infrastructure/Configuration/S3StorageSettings.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Configuration/S3StorageSettings.cs",
-      "contentHash": "bf7cd275af40a8f3bdfd57429b79f33b61f3f64d64a9ceae6d09386edd2786d5",
+      "contentHash": "5d2d581717e5854119cfbc25ff8fd28efa93bf5f82d0b0fb240311ccb0b5d102",
       "functions": [],
       "classes": [
         {
@@ -12625,11 +13973,10 @@
             "AccessKey",
             "SecretKey",
             "ServiceUrl",
-            "UsePathStyle",
-            "DefaultPresignedUrlExpirationInSeconds"
+            "UsePathStyle"
           ],
           "exported": true,
-          "lineCount": 12
+          "lineCount": 11
         }
       ],
       "imports": [],
@@ -12641,10 +13988,9 @@
         "SecretKey",
         "ServiceUrl",
         "UsePathStyle",
-        "DefaultPresignedUrlExpirationInSeconds",
         "S3StorageSettings"
       ],
-      "totalLines": 18,
+      "totalLines": 17,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Infrastructure/Data/AGENTS.md": {
@@ -15506,7 +16852,7 @@
     },
     "backend/AoDaiNhaUyen.Infrastructure/Data/SeedDataService.cs": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Data/SeedDataService.cs",
-      "contentHash": "d423a8541eab2daac067a634baf623135d4eb90deef208ecec078e01377a606e",
+      "contentHash": "6f326dcf31d79817c0b5995f4fafe37a01e36ca0003a2e070403e5adcae9c060",
       "functions": [
         {
           "name": "SeedAllAsync",
@@ -15818,7 +17164,7 @@
             "CuratedTryOnRoot"
           ],
           "exported": true,
-          "lineCount": 1611
+          "lineCount": 1612
         }
       ],
       "imports": [
@@ -15832,6 +17178,12 @@
           "source": "AoDaiNhaUyen.Application.Interfaces.Services",
           "specifiers": [
             "Services"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Options",
+          "specifiers": [
+            "Options"
           ]
         },
         {
@@ -15859,6 +17211,12 @@
           ]
         },
         {
+          "source": "Microsoft.Extensions.Options",
+          "specifiers": [
+            "Options"
+          ]
+        },
+        {
           "source": "System.Text.Json",
           "specifiers": [
             "Json"
@@ -15869,17 +17227,17 @@
         "SeedAllAsync",
         "SeedDataService"
       ],
-      "totalLines": 1622,
+      "totalLines": 1625,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Infrastructure/Repositories/AGENTS.md": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Repositories/AGENTS.md",
-      "contentHash": "a9f835211b53ad1fd921a8b3fb78ec297c43e2f7d9d65de02f6b1b9649f431bb",
+      "contentHash": "46cf46d5457c1a5d9f6c4ea33c2ed3442946d8c23637c6fc9558fea6a65afceb",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 23,
+      "totalLines": 27,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Infrastructure/Repositories/BlogCategoryRepository.cs": {
@@ -19733,12 +21091,12 @@
     },
     "backend/AoDaiNhaUyen.Infrastructure/Services/AGENTS.md": {
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/AGENTS.md",
-      "contentHash": "a7c808a997f329b8aecd381bc688cbf259fa9374b7d1c9326fcb3d158d8c7d2a",
+      "contentHash": "5a06f613cf2cc7773a6a64ed33a2d4b6545b3dd034995ac6a1c704db8fd25f2b",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 45,
+      "totalLines": 37,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Infrastructure/Services/AuthService.cs": {
@@ -22722,6 +24080,232 @@
         "GoogleOAuthService"
       ],
       "totalLines": 78,
+      "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Infrastructure/Services/HermesAgentService.cs": {
+      "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/HermesAgentService.cs",
+      "contentHash": "3b9b28c8bafef36af86a77b77b1368c7c4b33b6411e21890111a064219eea332",
+      "functions": [
+        {
+          "name": "GetStatusAsync",
+          "params": [
+            "cancellationToken"
+          ],
+          "returnType": "Task<HermesStatusResponse>",
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "RecordHeartbeatAsync",
+          "params": [
+            "request",
+            "cancellationToken"
+          ],
+          "returnType": "Task",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "StreamChatAsync",
+          "params": [
+            "request",
+            "adminUserId",
+            "cancellationToken"
+          ],
+          "returnType": "IAsyncEnumerable<HermesStreamChunk>",
+          "exported": true,
+          "lineCount": 67
+        },
+        {
+          "name": "ListRunsAsync",
+          "params": [
+            "cancellationToken"
+          ],
+          "returnType": "Task<IReadOnlyList<HermesRunSummaryResponse>>",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "CallHermesResponsesApiAsync",
+          "params": [
+            "request",
+            "cancellationToken"
+          ],
+          "returnType": "Task<HermesResponse?>",
+          "exported": false,
+          "lineCount": 31
+        },
+        {
+          "name": "BuildInstructions",
+          "params": [],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "IsApiConfigured",
+          "params": [],
+          "returnType": "bool",
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "ExtractToolEvents",
+          "params": [
+            "response"
+          ],
+          "returnType": "IEnumerable<HermesStreamChunk>",
+          "exported": false,
+          "lineCount": 22
+        },
+        {
+          "name": "ExtractAssistantText",
+          "params": [
+            "response"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 20
+        },
+        {
+          "name": "NormalizeStatus",
+          "params": [
+            "status"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "Truncate",
+          "params": [
+            "text",
+            "max"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "AddRun",
+          "params": [
+            "run"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "CompleteRun",
+          "params": [
+            "id",
+            "status",
+            "result",
+            "error"
+          ],
+          "returnType": "void",
+          "exported": false,
+          "lineCount": 11
+        }
+      ],
+      "classes": [
+        {
+          "name": "HermesAgentService",
+          "methods": [
+            "GetStatusAsync",
+            "RecordHeartbeatAsync",
+            "StreamChatAsync",
+            "ListRunsAsync",
+            "CallHermesResponsesApiAsync",
+            "BuildInstructions",
+            "IsApiConfigured",
+            "ExtractToolEvents",
+            "ExtractAssistantText",
+            "NormalizeStatus",
+            "Truncate",
+            "AddRun",
+            "CompleteRun"
+          ],
+          "properties": [
+            "JsonOptions",
+            "Runs",
+            "_lastHeartbeat",
+            "_options"
+          ],
+          "exported": true,
+          "lineCount": 273
+        }
+      ],
+      "imports": [
+        {
+          "source": "System.Collections.Concurrent",
+          "specifiers": [
+            "Concurrent"
+          ]
+        },
+        {
+          "source": "System.Net.Http.Headers",
+          "specifiers": [
+            "Headers"
+          ]
+        },
+        {
+          "source": "System.Runtime.CompilerServices",
+          "specifiers": [
+            "CompilerServices"
+          ]
+        },
+        {
+          "source": "System.Text",
+          "specifiers": [
+            "Text"
+          ]
+        },
+        {
+          "source": "System.Text.Json",
+          "specifiers": [
+            "Json"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.DTOs.Admin",
+          "specifiers": [
+            "Admin"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Interfaces.Services",
+          "specifiers": [
+            "Services"
+          ]
+        },
+        {
+          "source": "AoDaiNhaUyen.Application.Options",
+          "specifiers": [
+            "Options"
+          ]
+        },
+        {
+          "source": "Microsoft.Extensions.Logging",
+          "specifiers": [
+            "Logging"
+          ]
+        },
+        {
+          "source": "Microsoft.Extensions.Options",
+          "specifiers": [
+            "Options"
+          ]
+        }
+      ],
+      "exports": [
+        "GetStatusAsync",
+        "RecordHeartbeatAsync",
+        "StreamChatAsync",
+        "ListRunsAsync",
+        "HermesAgentService"
+      ],
+      "totalLines": 287,
       "hasStructuralAnalysis": true
     },
     "backend/AoDaiNhaUyen.Infrastructure/Services/ImageUploadValidator.cs": {
@@ -27376,15 +28960,35 @@
       "totalLines": 194,
       "hasStructuralAnalysis": true
     },
-    "backend/AoDaiNhaUyen.Tests/AGENTS.md": {
-      "filePath": "backend/AoDaiNhaUyen.Tests/AGENTS.md",
-      "contentHash": "9af887aa42a248fa9c9a51d490e89aaf249cc5a2697f29fa4f6530567dd70269",
+    "backend/AoDaiNhaUyen.slnx": {
+      "filePath": "backend/AoDaiNhaUyen.slnx",
+      "contentHash": "f47a0e010f056acbc3e041bf051a003bb46f34caf94806177203048d6443f8de",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 62,
+      "totalLines": 7,
+      "hasStructuralAnalysis": false
+    },
+    "backend/AoDaiNhaUyen.Tests/AGENTS.md": {
+      "filePath": "backend/AoDaiNhaUyen.Tests/AGENTS.md",
+      "contentHash": "8030f51dc1ccfe3300e0e42ccef47f56b26900f0f61203f5da7c6413e1458770",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 31,
       "hasStructuralAnalysis": true
+    },
+    "backend/AoDaiNhaUyen.Tests/AoDaiNhaUyen.Tests.csproj": {
+      "filePath": "backend/AoDaiNhaUyen.Tests/AoDaiNhaUyen.Tests.csproj",
+      "contentHash": "63b0058f71250fcb910d4d821ba6638c88e13a4760d8f7dbef3437798db3ac45",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 28,
+      "hasStructuralAnalysis": false
     },
     "backend/AoDaiNhaUyen.Tests/Configuration/GoogleOAuthSettingsValidationTests.cs": {
       "filePath": "backend/AoDaiNhaUyen.Tests/Configuration/GoogleOAuthSettingsValidationTests.cs",
@@ -31152,12 +32756,12 @@
     },
     "frontend-admin/AGENTS.md": {
       "filePath": "frontend-admin/AGENTS.md",
-      "contentHash": "24508ec4d7371cfa3016fd109de7b0652fb7ee39e2554759eeab8d8e5a0ce712",
+      "contentHash": "19d8f97f856ea84bb151a22f22fa01e5c9f4d94119175ff98ed6ca6e4988cad1",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 70,
+      "totalLines": 60,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/eslint.config.js": {
@@ -31240,12 +32844,12 @@
     },
     "frontend-admin/src/AGENTS.md": {
       "filePath": "frontend-admin/src/AGENTS.md",
-      "contentHash": "635788c4ccd9e97d211ef983c2efd6a1b9e65094a7580c38fa9b6ee95801a20a",
+      "contentHash": "040d97aff46b3a8ae6233ad2b80e1e1cf7cc9ce9e2c0f856963252ae382a1cce",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 44,
+      "totalLines": 42,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/api/admin.ts": {
@@ -31722,12 +33326,12 @@
     },
     "frontend-admin/src/api/AGENTS.md": {
       "filePath": "frontend-admin/src/api/AGENTS.md",
-      "contentHash": "38ddfeff92fa0c7344f6ae641c4c4de452426c946ebad0937b617b4771ea49b9",
+      "contentHash": "e6753afa17c05303713b8b1b11180e097d25e2a754f90b418c3f273c4af6b961",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 28,
+      "totalLines": 30,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/api/auth.ts": {
@@ -33335,13 +34939,13 @@
     },
     "frontend-admin/src/components/ai/AiChatSidebar.tsx": {
       "filePath": "frontend-admin/src/components/ai/AiChatSidebar.tsx",
-      "contentHash": "4b898f024f2e5d76d442a387fafc675fe047551dd5b7cc1ccb1531945139570e",
+      "contentHash": "2c411995e54918f570290f409d261a7bebeac008a215b3be27e2fdccaa0ea976",
       "functions": [
         {
           "name": "AiChatSidebar",
           "params": [],
           "exported": true,
-          "lineCount": 95
+          "lineCount": 103
         }
       ],
       "classes": [],
@@ -33380,12 +34984,18 @@
           "specifiers": [
             "Button"
           ]
+        },
+        {
+          "source": "./ChatModeSelector",
+          "specifiers": [
+            "ChatModeSelector"
+          ]
         }
       ],
       "exports": [
         "AiChatSidebar"
       ],
-      "totalLines": 102,
+      "totalLines": 111,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/components/ai/ChatHistorySidebar.tsx": {
@@ -33470,6 +35080,61 @@
       "totalLines": 40,
       "hasStructuralAnalysis": true
     },
+    "frontend-admin/src/components/ai/ChatModeSelector.tsx": {
+      "filePath": "frontend-admin/src/components/ai/ChatModeSelector.tsx",
+      "contentHash": "62d7397e9614ea783cd96f6db5e22cd39fe2ed15fb2d4c5ca7875d6e0ccf864b",
+      "functions": [
+        {
+          "name": "statusLabel",
+          "params": [
+            "status"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "statusClass",
+          "params": [
+            "status"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "ChatModeSelector",
+          "params": [],
+          "exported": true,
+          "lineCount": 25
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "Bot",
+            "RadioTower"
+          ]
+        },
+        {
+          "source": "@/stores/adminAiStore",
+          "specifiers": [
+            "useAdminAiStore"
+          ]
+        },
+        {
+          "source": "@/types/ai",
+          "specifiers": [
+            "AdminChatMode"
+          ]
+        }
+      ],
+      "exports": [
+        "ChatModeSelector"
+      ],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    },
     "frontend-admin/src/components/ai/ConfirmCard.tsx": {
       "filePath": "frontend-admin/src/components/ai/ConfirmCard.tsx",
       "contentHash": "2dce1d209216f0111212ad969bc3179cfb35467f3d80ee10d686ec0ca9008f4d",
@@ -33551,13 +35216,13 @@
     },
     "frontend-admin/src/components/ai/FullChatArea.tsx": {
       "filePath": "frontend-admin/src/components/ai/FullChatArea.tsx",
-      "contentHash": "13256ace87a41ab04e88cce766ee3fe71f5cc14a0ee958a287407962272e871c",
+      "contentHash": "aacc3741fdc9394e762de5741684aa0a2bef57f9296ede2aa53ae6041e01b615",
       "functions": [
         {
           "name": "FullChatArea",
           "params": [],
           "exported": true,
-          "lineCount": 60
+          "lineCount": 70
         }
       ],
       "classes": [],
@@ -33599,12 +35264,18 @@
           "specifiers": [
             "EmptyChat"
           ]
+        },
+        {
+          "source": "./ChatModeSelector",
+          "specifiers": [
+            "ChatModeSelector"
+          ]
         }
       ],
       "exports": [
         "FullChatArea"
       ],
-      "totalLines": 68,
+      "totalLines": 79,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/components/ai/MessageBubble.tsx": {
@@ -35159,12 +36830,12 @@
     },
     "frontend-admin/src/pages/AGENTS.md": {
       "filePath": "frontend-admin/src/pages/AGENTS.md",
-      "contentHash": "625e4ee0c842e33229e10534263a8739ca68389f9363a991c779db1c185c5ab2",
+      "contentHash": "0766bba7895e6442d74b439f194525aac5ea336afbafd91812aa8a80927aaaeb",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 33,
+      "totalLines": 34,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/pages/AiChatPage.tsx": {
@@ -37011,7 +38682,7 @@
     },
     "frontend-admin/src/stores/adminAiStore.ts": {
       "filePath": "frontend-admin/src/stores/adminAiStore.ts",
-      "contentHash": "305493459a4c6fd22556b9381f17325e1078c985bc4d02e482e58894c9047ead",
+      "contentHash": "e3d1f6de86f21894ad8855fae8d39e9e4e48ed9dcf679e5c1a1357a408f402f1",
       "functions": [
         {
           "name": "logAiWarn",
@@ -37155,7 +38826,9 @@
             "AdminConversationDetail",
             "AdminConversationMessage",
             "AiToolCall",
-            "AiToolResultMeta"
+            "AiToolResultMeta",
+            "AdminChatMode",
+            "HermesStatus"
           ]
         },
         {
@@ -37175,17 +38848,17 @@
       "exports": [
         "useAdminAiStore"
       ],
-      "totalLines": 617,
+      "totalLines": 641,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/stores/AGENTS.md": {
       "filePath": "frontend-admin/src/stores/AGENTS.md",
-      "contentHash": "3e5e9e5c2c55b623ef878a7c2660e93225e3eee6672c294513c398f5e0ac29d2",
+      "contentHash": "ee8c8400431cdb22fbda59e558836a5c0950052295c71c61b64915c64d80f992",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 31,
+      "totalLines": 28,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/stores/authStore.ts": {
@@ -37632,7 +39305,7 @@
     },
     "frontend-admin/src/types/ai.ts": {
       "filePath": "frontend-admin/src/types/ai.ts",
-      "contentHash": "3d39c4f810f059a942e3a975d7f2c1225b03a56e5e1d2baf8f85d632eded22a0",
+      "contentHash": "3401ee8a69d1f26b74ccf9902e2412d8d8499e7a3a0fab1d79542b3b7eaa8264",
       "functions": [],
       "classes": [],
       "imports": [
@@ -37644,7 +39317,7 @@
         }
       ],
       "exports": [],
-      "totalLines": 98,
+      "totalLines": 111,
       "hasStructuralAnalysis": true
     },
     "frontend-admin/src/types/api.ts": {
@@ -37774,9 +39447,19 @@
       "totalLines": 13,
       "hasStructuralAnalysis": true
     },
+    "frontend/.env.example": {
+      "filePath": "frontend/.env.example",
+      "contentHash": "3c897ec5a11aa5979981a3e56c0781eb6729796d75a271606932aa44d7c64681",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": true
+    },
     "frontend/AGENTS.md": {
       "filePath": "frontend/AGENTS.md",
-      "contentHash": "1a54cfba4b067b50008a9316960114d71d17e0a6fe7a32dba7446971bca3bf8a",
+      "contentHash": "275ee5c72520806861543ee63aef361b860105cb786733603317fd220f49bc1f",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -37887,6 +39570,16 @@
       "totalLines": 14,
       "hasStructuralAnalysis": true
     },
+    "frontend/public/_headers": {
+      "filePath": "frontend/public/_headers",
+      "contentHash": "a54c7d167e7f475425e19df753760910323e687c4f1540dc4cfe1910794cb6fd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": false
+    },
     "frontend/public/AGENTS.md": {
       "filePath": "frontend/public/AGENTS.md",
       "contentHash": "baca1805e0522935211a651d772c653d14b8a75a9353cc40f7bf031c467d0ba7",
@@ -37896,6 +39589,26 @@
       "exports": [],
       "totalLines": 45,
       "hasStructuralAnalysis": true
+    },
+    "frontend/public/assets/product-section/xanh 2.webp": {
+      "filePath": "frontend/public/assets/product-section/xanh 2.webp",
+      "contentHash": "410b6a0f165e4ab8bda2f67b31c6c7e636828cca5546460039abe4a11ed6e799",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 627,
+      "hasStructuralAnalysis": false
+    },
+    "frontend/public/robots.txt": {
+      "filePath": "frontend/public/robots.txt",
+      "contentHash": "914fef3e5794cd9d902acb098705858b98a273673faca289e8484195bf7d8337",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 20,
+      "hasStructuralAnalysis": false
     },
     "frontend/public/serve.json": {
       "filePath": "frontend/public/serve.json",
@@ -38145,6 +39858,16 @@
       "totalLines": 450,
       "hasStructuralAnalysis": true
     },
+    "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co": {
+      "filePath": "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co",
+      "contentHash": "bc26a148c5a1a9b1b2ed0be8ca250548f38858d9095db10941f94f222bf9ea26",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 13,
+      "hasStructuralAnalysis": false
+    },
     "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co.html": {
       "filePath": "frontend/public/zalo_verifierIDBlAf_0MmXPtUClsC0t6plbb3RNaq5hD3Co.html",
       "contentHash": "bc26a148c5a1a9b1b2ed0be8ca250548f38858d9095db10941f94f222bf9ea26",
@@ -38234,22 +39957,22 @@
     },
     "frontend/src/AGENTS.md": {
       "filePath": "frontend/src/AGENTS.md",
-      "contentHash": "0b497d78a66f6361e0913304979df85f4383973164649a55dfc54d75d849e222",
+      "contentHash": "9ecbd514494db41dd25304d97214f6a4e9e20d1cb73d80acf8ec443984054322",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 52,
+      "totalLines": 51,
       "hasStructuralAnalysis": true
     },
     "frontend/src/api/AGENTS.md": {
       "filePath": "frontend/src/api/AGENTS.md",
-      "contentHash": "8cc2870dc613badab73444127747410c6c4ac227835260e83ca3dd7264f6d458",
+      "contentHash": "7c70916d8fa9bafb008114a46ec96d3a56ff21a51816824a9e013dc6766d958a",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 39,
+      "totalLines": 33,
       "hasStructuralAnalysis": true
     },
     "frontend/src/api/aiTryon.ts": {
@@ -43043,12 +44766,12 @@
     },
     "frontend/src/pages/AGENTS.md": {
       "filePath": "frontend/src/pages/AGENTS.md",
-      "contentHash": "cafed836835421d5bbf9f51237da22035d66da2b73ed470736bd4754c1724e3f",
+      "contentHash": "c30bc0fa77e8da5b7ca9076604e8cd52a2d274fd0575e6df9383ddcf6952df4f",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 40,
+      "totalLines": 32,
       "hasStructuralAnalysis": true
     },
     "frontend/src/pages/AiTryonPage/AccessoryPanel.module.css": {

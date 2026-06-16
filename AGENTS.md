@@ -3,67 +3,72 @@
 # AoDaiNhaUyen
 
 ## Purpose
-Premium Vietnamese áo dài e-commerce platform. Full-stack app with ASP.NET Core 10 backend (clean architecture) + React 19 + TypeScript + Vite frontend. Features AI try-on, chat widget, cart/checkout, social auth (Google/Facebook/Zalo), product catalog management.
+Premium Vietnamese áo dài e-commerce platform. Full-stack app: ASP.NET Core 10 backend (clean architecture), React 19 customer SPA, React 19 admin SPA. Features product catalog, cart/checkout, AI try-on, AI stylist chat, Blog/SEO, email marketing, social auth (Google/Facebook/Zalo), admin catalog/order/user/role/media/AI controls.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `spec.md` | MVP spec: pages, routes, design system, component inventory |
-| `.gitignore` | Git ignore rules |
-| `AGENTS.md` | This file — AI-readable project docs |
+| `.gitignore` | Ignore rules for .NET, Node, env, agent/tool output |
+| `AGENTS.md` | Root agent guidance |
+| `.understand-anything/knowledge-graph.json` | Codebase knowledge graph if present |
 
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
 | `backend/` | ASP.NET Core 10 API with clean architecture (see `backend/AGENTS.md`) |
-| `frontend/` | React 19 + TypeScript + Vite SPA (see `frontend/AGENTS.md`) |
-| `.github/` | GitHub Actions CI/CD workflows (see `.github/AGENTS.md`) |
-| `public/` | Root static assets served at `/` (see `public/AGENTS.md`) |
-| `frontend-admin/` | React 19 + Tailwind v4 + Zustand admin panel — separate from customer frontend (see `frontend-admin/AGENTS.md`) |
+| `frontend/` | Customer React 19 + TypeScript + Vite SPA (see `frontend/AGENTS.md`) |
+| `frontend-admin/` | Admin React 19 + Tailwind v4 + Zustand SPA (see `frontend-admin/AGENTS.md`) |
+| `.github/` | GitHub Actions deploy workflow (see `.github/AGENTS.md`) |
+| `public/` | Root static login assets served at `/` (see `public/AGENTS.md`) |
 
-## For AI Agents
+## Code Map
+| Area | Where to look |
+|------|---------------|
+| API routes | `backend/AoDaiNhaUyen.Api/Controllers/` |
+| API DI/config | `backend/AoDaiNhaUyen.Api/Configuration/ServiceRegistration.cs`, `Program.cs` |
+| Domain schema | `backend/AoDaiNhaUyen.Domain/Entities/` |
+| EF config/migrations | `backend/AoDaiNhaUyen.Infrastructure/Data/` |
+| Backend business logic | `backend/AoDaiNhaUyen.Infrastructure/Services/` + `backend/AoDaiNhaUyen.Application/Services/` |
+| Customer routes | `frontend/src/App.tsx`, `frontend/src/pages/` |
+| Customer data hooks | `frontend/src/hooks/`, `frontend/src/lib/queryKeys.ts` |
+| Customer API clients | `frontend/src/api/` |
+| Admin routes | `frontend-admin/src/App.tsx`, `frontend-admin/src/pages/` |
+| Admin state | `frontend-admin/src/stores/` |
+| Admin API clients | `frontend-admin/src/api/` |
 
-### Working In This Directory
-- Monorepo: `backend/` (.NET) + `frontend/` (React) independent
-- Backend uses .NET 10 with clean architecture (Api → Application → Domain → Infrastructure)
-- Frontend uses Vite with bun as package manager; **never switch to npm if bun.lock exists**
-- All UI language Vietnamese; API messages Vietnamese
-- API responses use standard envelope: `{ success, message, data, errors, timestamp }`
-- Never return raw anonymous objects from controllers (no `Ok(new { data })`)
+## Project Conventions
+- UI language: Vietnamese. API messages: Vietnamese.
+- API envelope: `{ success, message, data, errors, timestamp }`; avoid `Ok(new { ... })` in controllers.
+- Backend dependency flow: Api -> Application + Infrastructure; Infrastructure -> Application + Domain; Domain standalone.
+- Customer frontend uses CSS Modules + PostCSS; admin uses Tailwind v4. Do not share UI code between them.
+- Use bun in both frontends; never switch to npm if `bun.lock` exists.
+- TypeScript/CSS indentation: 2 spaces.
+- Conventional commits: `feat(scope): description`.
 
-### Testing Requirements
-- Frontend/admin: `bun run lint` + `bun run build` + visual validation via Playwright MCP for UI changes
-- Backend: `dotnet test` from `backend/`
-- Persisted data/backend changes: validate with `psql` against PostgreSQL database
+## Commands
+| Area | Command |
+|------|---------|
+| Backend build | `cd backend && dotnet build` |
+| Backend tests | `cd backend/AoDaiNhaUyen.Tests && dotnet test` |
+| Customer lint/build | `cd frontend && bun run lint && bun run build` |
+| Customer SEO build | `cd frontend && bun run build:seo` |
+| Admin lint/build | `cd frontend-admin && bun run lint && bun run build` |
+| EF migration | `cd backend/AoDaiNhaUyen.Infrastructure && dotnet ef migrations add <Name> --startup-project ../AoDaiNhaUyen.Api` |
 
-### Common Patterns
-- Frontend components: PascalCase folders under `src/components/<Name>/`, paired with CSS Modules
-- Design tokens in `src/styles/variables.css` — never duplicate constants
-- Two-space indentation for TypeScript and CSS
-- Conventional Commit messages with optional scope: `feat(section): description`
-
-### Commit Guidelines
-- Short imperative messages, optional Conventional Commit scope
-- Only commit complete, validated work
-- Review diff before commit; avoid unrelated changes
-- Screenshots/recordings for visual PR changes
-
-### Gotchas
-- **Tests not in `.slnx`**: `dotnet test` from `backend/` root may miss `AoDaiNhaUyen.Tests/`. Run `dotnet test` from Tests project dir explicitly.
-- **Dual lockfiles in `frontend/`**: both `bun.lock` and `package-lock.json` exist — bun is canonical. Never run `npm install`.
-- **No `.editorconfig`**: backend C# formatting inconsistent (2-space/4-space mixed). No style enforcement.
-- **No frontend tests**: zero test files in `src/`. Visual validation via Playwright MCP is the only front-end QA gate.
-- **CI missing quality gates**: `deploy-dev.yml` doesn't run `dotnet test` or `bun run lint`.
-- **CORS overly permissive**: `AllowAnyHeader()` + `AllowAnyMethod()` in `Program.cs`. Review before production hardening.
-- **`spec.md` outdated**: references mock auth — backend fully exists now. Spec not maintained.
-- **`exceptionHandlingMiddleware`**: catches ALL exceptions → 500. No specific status code mapping beyond what controllers do manually.
+## Gotchas
+- `spec.md` is absent/outdated in current tree; trust source + AGENTS.md, not old spec references.
+- Backend test project is not in `AoDaiNhaUyen.slnx`; run tests from `backend/AoDaiNhaUyen.Tests/` explicitly.
+- No root `.editorconfig`; C# formatting is mixed.
+- No frontend test framework; validate UI changes with lint/build + browser/Playwright MCP.
+- CI deploy workflow does not run full quality gates before deploy.
+- CORS allows any header/method for configured origins and credentials; review before prod hardening.
+- `ExceptionHandlingMiddleware` catches unhandled exceptions as 500; controllers map many expected errors manually.
+- Root `public/` is separate from `frontend/public/`.
 
 ## Dependencies
-
-### External
-- **Backend**: ASP.NET Core 10, EF Core 10, JWT Bearer, MailKit, DotNetEnv
-- **Frontend**: React 19, react-router-dom 7, TanStack Query, framer-motion, Vite 8, TypeScript 6
-- **Database**: PostgreSQL
-- **CI/CD**: GitHub Actions with SSH/Cloudflare Tunnel deployment
+- Backend: ASP.NET Core 10, EF Core 10, Npgsql/PostgreSQL, JWT Bearer, MailKit, FusionCache/Redis, AWS S3-compatible storage, DotNetEnv, Google Vertex/Gemini.
+- Customer frontend: React 19, react-router-dom 7, TanStack Query + persist client, framer-motion, react-helmet-async, Vite 8, TypeScript 6.
+- Admin frontend: React 19, Tailwind v4, Zustand 5, TanStack Query, Recharts, Zod, React Markdown.
+- CI/CD: GitHub Actions, SSH/Cloudflare Tunnel, rsync, pm2/serve.
 
 <!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->

@@ -4,85 +4,54 @@
 # AoDaiNhaUyen.Api
 
 ## Purpose
-ASP.NET Core 10 web API host. Has controllers, middleware, response types, API-level services, app config. Entry point -- Program.cs bootstraps whole app.
+ASP.NET Core 10 API host. Owns `Program.cs`, HTTP controllers, API response envelope, middleware, auth/CORS/static-file pipeline, DI registration, `.env`/appsettings config.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `Program.cs` | App entry point: loads .env, configures CORS, static files, auth, DI container, seed-on-startup |
-| `AoDaiNhaUyen.Api.csproj` | Project file with NuGet refs |
+| `Program.cs` | Entry point: `.env`, CORS, middleware order, static files, auth, rate limiter, controllers, seed-on-startup |
+| `Configuration/ServiceRegistration.cs` | `AddBackendServices()`: DbContext, auth, options, repos, services, HttpClients |
+| `Responses/ApiResponseFactory.cs` | Standard success/failure/pagination response helpers |
+| `AoDaiNhaUyen.Api.http` | Basic HTTP smoke file |
 
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
-| `Configuration/` | Service registration extension method for DI (see below) |
-| `Controllers/` | API controllers -- thin, delegate to Application services (see `Controllers/AGENTS.md`) |
-| `Middleware/` | Global exception handling middleware |
-| `Responses/` | ApiResponse envelope types and factory |
-| `Services/` | API-host-level service implementations (SmtpEmailService) |
-| `upload/` | Static product images served at `/upload/` |
-| `upload/tryon-curated/` | Curated AI try-on garment/accessory images |
+| `Controllers/` | Customer + admin endpoints (see `Controllers/AGENTS.md`) |
+| `Middleware/` | Exception handling, cache headers, Hermes API description |
+| `Responses/` | API envelope records/factory/errors |
+| `Services/` | API-host services such as SMTP email |
+| `HttpTests/` | `.http` endpoint test files |
+| `upload/` | Legacy/static local assets; curated try-on files still resolved here |
 
-## Configuration
-| File | Description |
-|------|-------------|
-| `ServiceRegistration.cs` | `AddBackendServices()` extension: registers DbContext, JWT auth, all repositories, services, options with validation |
-
-### What ServiceRegistration.cs Configures
-- **Database**: Npgsql/PostgreSQL via connection string from config or env var `ConnectionStrings__DefaultConnection`
-- **Authentication**: JWT Bearer with cookie-based token extraction (OnMessageReceived reads from HttpOnly cookie)
-- **Options with validation**: JwtSettings, EmailSettings, GoogleOAuthSettings, FacebookOAuthSettings, CookieSettings (all validated on startup)
-- **Repositories**: CategoryRepository, CartRepository, ProductRepository, UserProfileRepository
-- **Services**: CatalogService, CartService, CheckoutService, UserService, AuthService, all OAuth services, AI try-on services, stylist chat services
-- **HttpClients**: VertexAiTryOnService, VertexAiStylistResponseComposer (with infinite timeout for long AI calls)
-
-## Controllers
-| Controller | Route | Description |
-|-----------|-------|-------------|
-| `AiTryOnController` | `api/v1/ai-tryon` | AI virtual try-on: catalog list and image generation via Vertex AI |
-| `AuthController` | `api/auth` | Full auth flow: register, login, Google/Facebook OAuth, email verification, password reset, refresh tokens |
-| `CategoriesController` | `api/v1/categories` | Category list (flat and header tree) |
-| `ChatController` | `api/v1/chat/threads` | AI stylist chat: thread management, messaging with attachments, in-chat try-on |
-| `CheckoutController` | `api/users/me/checkout` | Order placement (requires auth) |
-| `HealthController` | `health` | Health check endpoint |
-| `ProductsController` | `api/v1/products` | Product catalog: paginated list with filters, detail by slug |
-| `UserAddressController` | `api/users/me/addresses` | User address CRUD (requires auth) |
-| `UserCartController` | `api/users/me/cart` | Shopping cart operations (requires auth) |
-| `UserController` | `api/users/me` | User profile read/update (requires auth) |
-| `UserOrderController` | `api/users/me/orders` | User order history with pagination (requires auth) |
+## Controller Groups
+| Group | Controllers |
+|-------|-------------|
+| Customer catalog/content | `ProductsController`, `CategoriesController`, `BlogPostsController`, `MediaController` |
+| Customer commerce | `UserCartController`, `CheckoutController`, `UserOrderController`, `PromoController` |
+| Customer auth/account | `AuthController`, `UserController`, `UserAddressController` |
+| Customer AI/feedback | `AiTryOnController`, `ChatController`, `ReviewsController`, `CommentsController` |
+| Marketing/events | `MarketingController`, `EventsController` |
+| Admin CRUD/ops | `AdminProductsController`, `AdminCategoriesController`, `AdminOrdersController`, `AdminUsersController`, `AdminRolesController`, `AdminMediaController`, `AdminInventoryController`, `AdminPromosController` |
+| Admin AI/audit | `AdminAiController`, `AdminHermesController`, `AdminLlmLogsController`, `AdminToolRiskController`, `AdminDashboardController`, `AdminMarketingController` |
+| Infra | `HealthController`, `CacheController` |
 
 ## Middleware
 | File | Description |
 |------|-------------|
-| `ExceptionHandlingMiddleware.cs` | Catches all unhandled exceptions, logs them, returns 500 with `ApiResponseFactory.Failure("Co loi xay ra", ...)` |
+| `ExceptionHandlingMiddleware.cs` | Logs unhandled exceptions and returns Vietnamese 500 envelope |
+| `SensitiveResponseCacheMiddleware.cs` | Adds cache-control protection for sensitive responses |
+| `HermesApiDescriptionMiddleware.cs` | Exposes API description metadata for Hermes/admin agent integration |
 
-## Responses
-| File | Description |
-|------|-------------|
-| `ApiResponse.cs` | `ApiResponse<T>` and `PaginatedApiResponse<T>` record types -- standard JSON envelope |
-| `ApiResponseFactory.cs` | Static factory: `Success<T>()`, `PaginatedSuccess<T>()`, `Failure()` -- default Vietnamese success message "Lay du lieu thanh cong" |
-| `ApiError.cs` | `ApiError` record with Code and Message fields |
+## Pipeline Notes
+- Order in `Program.cs`: CORS -> exception middleware -> prod HSTS/HTTPS -> security headers -> static files -> sensitive-cache middleware -> auth -> rate limiter -> Hermes description -> authorization -> controllers.
+- CORS policy `Frontend` uses `FrontendOrigins`, allows credentials, any header, any method.
+- JWT bearer auth extracts token from HttpOnly cookie, not only `Authorization` header.
+- Static files expose local `upload/`; app also supports S3-compatible storage for uploaded media.
 
-## Services
-| File | Description |
-|------|-------------|
-| `SmtpEmailService.cs` | IEmailService implementation using MailKit/SMTP for verification and password reset emails |
-
-## For AI Agents
-### Working In This Directory
-- Controllers thin -- only handle HTTP concerns (parsing, validation, response shaping) and delegate all business logic to Application services
-- All responses use `ApiResponse<T>` or `PaginatedApiResponse<T>` envelope from `Responses/` via `ApiResponseFactory`
-- JWT auth configured in `Configuration/ServiceRegistration.cs` -- tokens read from HttpOnly cookies, not Authorization headers
-- CORS policy "Frontend" allows configured origins from `FrontendOrigins` config (defaults to localhost:5173 and production domains)
-- Static files served from `upload/` directory at `/upload` path
-- Error messages in controllers use Vietnamese (e.g., "Dang ky that bai", "Khong tim thay du lieu")
-- AuthController writes access_token (60min, path `/`) and refresh_token (30d, path `/api/auth`) as HttpOnly cookies
-- ChatController supports authenticated users and anonymous guests (via `stylist_guest` cookie)
-- AiTryOnController has 8MB per-image limit, max 3 accessory images, supports uploaded garment images and catalog product selection
-
-### Adding a New Controller
-1. Create in `Controllers/` with `[ApiController]` and `[Route("api/...")]`
-2. Inject Application-layer service interfaces via primary constructor
-3. Use `ApiResponseFactory.Success/Failure` for all responses
-4. Add `[Authorize]` for endpoints requiring authentication
-5. Register backing service in `Configuration/ServiceRegistration.cs`
+## Local Conventions
+- Controllers use primary constructor DI and stay thin.
+- Use `ApiResponseFactory.Success/Failure/PaginatedSuccess`; avoid raw anonymous objects.
+- New services/repos must be registered in `ServiceRegistration.cs`.
+- Auth cookies: access cookie path `/`; refresh cookie path `/api/auth`.
+- Image upload endpoints validate content type/size; GIF rejected for AI image flow.

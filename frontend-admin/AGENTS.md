@@ -1,69 +1,59 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-06-18 | Updated: 2026-06-18 -->
+<!-- Generated: 2026-06-18 | Updated: 2026-07-14 -->
 
 # frontend-admin
 
 ## Purpose
-React 19 + TypeScript 6 + Vite 8 admin panel SPA for Ao Dai Nha Uyen. Uses Tailwind CSS v4, Zustand 5 for state, hand-rolled shadcn-style UI primitives. Separate from customer-facing `frontend/` — different stack, port, and deployment target.
+React 19 + TypeScript 6 + Vite 8 admin SPA. Separate from customer `frontend/`. Uses Tailwind CSS v4, Zustand stores, TanStack Query, hand-rolled shadcn-style primitives, dashboards/charts, Blog CMS, email marketing, AI/Hermes/admin audit tooling.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `package.json` | Dependencies + scripts (bun package manager) |
-| `vite.config.ts` | Vite config with react + tailwindcss plugins, port 5174 |
-| `tsconfig.app.json` | TS config — `@/*` alias → `./src/*`, `noUnusedLocals: false` |
-| `eslint.config.js` | ESLint flat config |
+| `package.json` | Bun scripts/deps |
+| `vite.config.ts` | React + Tailwind plugins, `@/*` alias, port 5174 |
+| `tsconfig.app.json` | TS config; `@/*` alias; permissive unused settings; `erasableSyntaxOnly` |
+| `eslint.config.js` | Flat ESLint config |
+| `src/styles/globals.css` | Tailwind v4 theme/colors |
 
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
-| `src/` | Admin app source and local guidance (see `src/AGENTS.md`) |
-| `src/api/` | Fetch-based API client (same pattern as `frontend/`) |
-| `src/auth/` | AdminRoute (admin role gate) + GuestRoute |
-| `src/components/` | Admin components + hand-rolled shadcn-style primitives (see `src/components/AGENTS.md`) |
-| `src/pages/` | Route pages: dashboard, products, categories, users, roles, media, AI/risk (see `src/pages/AGENTS.md`) |
-| `src/stores/` | Zustand stores per domain (see `src/stores/AGENTS.md`) |
-| `src/styles/` | `globals.css` with Tailwind theme (burgundy/gold palette) |
-| `src/types/` | TypeScript domain types |
+| `src/` | Admin app source (see `src/AGENTS.md`) |
+| `src/api/` | Admin API clients |
+| `src/auth/` | `AdminRoute`, `GuestRoute` |
+| `src/components/` | Admin layout, tables/forms/modals, AI/blog/dashboard/log UI, primitives |
+| `src/pages/` | Admin route pages |
+| `src/stores/` | Zustand domain stores |
+| `src/styles/` | Tailwind global theme |
+| `src/types/` | Admin DTO/type definitions |
+| `src/lib/` | Shared helpers, query helpers, email preview/utils |
 
-## For AI Agents
-
-### Key Differences from `frontend/` (customer SPA)
+## Key Differences from Customer SPA
 | Aspect | frontend-admin | frontend |
-|--------|---------------|----------|
-| CSS | **Tailwind CSS v4** | CSS Modules + PostCSS |
-| State | **Zustand 5** (direct fetch in actions) | React Context (no Zustand) |
-| UI lib | Hand-rolled shadcn-style | Custom CSS Module components |
-| Port | **5174** | 5173 |
-| Tests | None | None |
-| framer-motion | No | Yes |
+|--------|----------------|----------|
+| Styling | Tailwind CSS v4 | CSS Modules + PostCSS |
+| State | Zustand + some TanStack Query | TanStack Query hooks + Context |
+| Port | 5174 | 5173 |
+| UI kit | Local shadcn-style primitives | Custom CSS Module components |
+| Features | Admin CRUD, Blog CMS, email marketing, AI governance | Customer shopping/content/AI try-on |
 
-### Working In This Directory
-- Use **bun**: `bun install`, `bun run dev`, `bun run build`, `bun run lint`
-- `bun run dev` starts on `localhost:5174`
-- All routes under `/admin/*` protected by `AdminRoute` (checks admin role)
-- `/login` protected by `GuestRoute` (redirects to `/admin/products` if authenticated admin)
-- API base URL: `VITE_API_BASE_URL` env var (defaults to `http://localhost:5043`)
-- Cookie-based auth (same backend, `credentials: 'include'`)
-- UI text in Vietnamese
-- 2-space indentation
-
-### Store Pattern
-- Zustand `create<State>((set, get) => ({...}))`
-- Each store manages own `loading`/`error` state
-- Mutations refetch list after success
-- Error messages in Vietnamese
-- MediaPage uses direct API calls (no dedicated store)
-
-### Commands
+## Commands
 | Command | Description |
 |---------|-------------|
-| `bun run dev` | Dev server on port 5174 |
-| `bun run build` | Type-check (`tsc -b`) + Vite production build |
-| `bun run lint` | ESLint check |
+| `bun run dev` | Dev server on localhost:5174 |
+| `bun run lint` | ESLint |
+| `bun run build` | `tsc -b` + Vite build |
+| `bun run preview` | Preview build |
 
-### Gotchas
-- No test framework configured
-- `noUnusedLocals: false` + `noUnusedParameters: false` — permissive TS
-- No shared UI components with customer `frontend/` — separate codebases
-- `tsconfig.app.json` uses `erasableSyntaxOnly: true` (no const enums, no namespaces with runtime code)
+## Local Conventions
+- Use `@/*` imports.
+- All `/admin/*` routes must be wrapped by `AdminRoute` + `AdminLayout`.
+- Cookie auth; shared API client uses `credentials: 'include'`.
+- Zustand stores own async state unless page intentionally uses TanStack Query/direct API.
+- Vietnamese admin labels/errors/confirmations.
+- Do not import from customer `frontend/`.
+
+## Dependencies
+- React 19, react-router-dom 7, Zustand 5, TanStack Query 5.
+- Tailwind v4, `@tailwindcss/vite`, class-variance-authority, clsx, tailwind-merge, tw-animate-css.
+- Recharts, lucide-react, Zod, react-markdown, remark-gfm.

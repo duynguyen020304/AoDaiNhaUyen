@@ -4,53 +4,52 @@
 # frontend
 
 ## Purpose
-React 19 + TypeScript + Vite SPA for Ao Dai Nha Uyen customer e-commerce. Uses react-router-dom v7 routing, TanStack Query for server state, framer-motion animations, CSS Modules with PostCSS styling. No Tailwind -- raw CSS via PostCSS (nested, autoprefixer, cssnano).
+Customer React 19 + TypeScript + Vite SPA for áo dài e-commerce. Uses react-router-dom v7, TanStack Query with persistence, framer-motion, react-helmet-async SEO, CSS Modules + PostCSS. No Tailwind here.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `package.json` | Dependencies + scripts (bun package manager) |
-| `vite.config.ts` | Vite build config with react plugin, PostCSS, envPrefix |
-| `tsconfig.json` | TypeScript config |
+| `package.json` | Scripts/dependencies; bun package manager |
+| `vite.config.ts` | React plugin, service-worker no-store middleware, env prefixes, build config |
+| `tsconfig.json` / `tsconfig.app.json` | TypeScript config |
 | `eslint.config.js` | ESLint flat config |
-| `postcss.config.js` | PostCSS with nested, autoprefixer, cssnano |
-| `index.html` | HTML entry point |
-| `.env.example` | Environment variable template |
-| `bun.lock` | Bun lockfile -- prefer bun over npm |
+| `postcss.config.js` | nested/autoprefixer/cssnano |
+| `index.html` | HTML entry |
+| `.env.example` | Env template |
+| `bun.lock` | Canonical lockfile |
 
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
-| `src/` | App source code (see `src/AGENTS.md`) |
-| `public/` | Static assets served at root (see `public/AGENTS.md`) |
+| `src/` | App source (see `src/AGENTS.md`) |
+| `public/` | Vite static assets (separate from root `public/`) |
+| `scripts/` | SEO/prerender helper scripts |
 
-## For AI Agents
-### Working In This Directory
-- Use **bun** package manager (bun.lock exists): `bun install`, `bun run dev`
-- `bun run dev` starts dev server on localhost:5173
-- `bun run build` runs TypeScript checks (`tsc -b`) then Vite production build
-- `bun run lint` runs ESLint flat config
-- CSS Modules (*.module.css) for component styling -- no Tailwind
-- Design tokens in `src/styles/variables.css` (burgundy, gold, cream palette)
-- All UI text in Vietnamese
-- Vite env prefix: `VITE_` and `PUBLIC_`
+## Commands
+| Command | Description |
+|---------|-------------|
+| `bun run dev` | Vite dev server on localhost:5173 |
+| `bun run lint` | ESLint |
+| `bun run build` | `tsc -b` + Vite prod build |
+| `bun run build:seo` | Build then run `scripts/pre-render.mjs` |
+| `bun run preview` | Preview built app |
 
-### Testing Requirements
-- No test framework configured yet
-- Validate with `bun run lint` + `bun run build`
-- Visual changes: validate in browser via Playwright MCP
+## Local Conventions
+- CSS Modules only for components/pages; use `src/styles/variables.css` tokens.
+- UI text Vietnamese.
+- API modules use shared fetch client; no axios.
+- Server state via TanStack Query hooks in `src/hooks/`; persisted query client in `src/lib/`.
+- SEO/head/meta via `react-helmet-async` and `components/Seo`.
+- Framer-motion variants live in `src/utils/motion.ts`.
 
-### Common Patterns
-- PascalCase component folders: `components/Header/Header.tsx` + `Header.module.css`
-- Pages in `pages/<Name>/<Name>.tsx`
-- API modules in `api/` with shared `client.ts` (fetch-based, not axios)
-- Types in `types/` per domain
-- TanStack Query helpers in `src/lib/queryClient.ts`, `queryKeys.ts`, `queryPersist.ts`
-- framer-motion for all animations (reusable variants in `utils/motion.ts`)
+## Gotchas
+- Both `bun.lock` and `package-lock.json` may exist; bun is canonical.
+- No test framework configured; validate with lint/build and visual/browser checks.
+- Customer frontend differs from admin: no Tailwind, no Zustand.
+- Service worker cache logic exists; avoid stale `/sw.js` behavior when touching PWA/cache code.
 
 ## Dependencies
-### External
-- React 19.2, react-dom 19.2, react-router-dom 7.14
-- framer-motion 12 (animations)
-- Vite 8, TypeScript 6, PostCSS 8, CSSNano 7
-- ESLint 9 with flat config
+- React 19, react-dom 19, react-router-dom 7.
+- TanStack Query v5 + query persist client.
+- framer-motion, react-helmet-async, FontAwesome.
+- Vite 8, TypeScript 6, PostCSS/CSSNano, ESLint flat config.

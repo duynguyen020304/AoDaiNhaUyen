@@ -1,52 +1,50 @@
 <!-- Parent: ../AGENTS.md -->
 <!-- Generated: 2026-04-19 | Updated: 2026-07-14 -->
 
-# src
+# frontend/src
 
 ## Purpose
-App source for Ao Dai Nha Uyen SPA. Has React components, pages, API modules, auth logic, types, utils, global styles.
+Customer SPA source: routes, components, API clients, auth contexts, TanStack Query hooks/cache, global styles, and utilities.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `main.tsx` | React entry: renders `<BrowserRouter>` with `<AuthProvider>` and `<ToastProvider>` around `<App>` |
-| `App.tsx` | Root component: defines routes, conditional Header/Footer, AccountPage modal overlay |
+| `main.tsx` | App bootstrap: PersistQueryClientProvider -> HelmetProvider -> BrowserRouter -> AuthProvider -> ToastProvider -> App; registers service worker |
+| `App.tsx` | Route tree, scroll restore, header/footer visibility, account modal routing |
 | `vite-env.d.ts` | Vite client types |
 
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
-| `api/` | Fetch API client modules for backend communication (see `api/AGENTS.md`) |
-| `auth/` | Auth context, protected route guard, useAuth hook (see `auth/AGENTS.md`) |
-| `components/` | Reusable UI components in PascalCase folders (see `components/AGENTS.md`) |
-| `pages/` | Route-level page components (see `pages/AGENTS.md`) |
-| `styles/` | Global CSS: variables/design tokens, reset, typography, texture, transitions (see `styles/AGENTS.md`) |
-| `types/` | TypeScript domain types (see `types/AGENTS.md`) |
-| `utils/` | Utils: motion variants, image conversion (see `utils/AGENTS.md`) |
+| `api/` | Fetch API modules (see `api/AGENTS.md`) |
+| `auth/` | Auth contexts/hooks/route guards |
+| `components/` | Reusable UI components |
+| `hooks/` | TanStack Query domain hooks for auth/blog/cart/catalog/media/user |
+| `lib/` | Query client, query keys, query persistence |
+| `pages/` | Route-level pages (see `pages/AGENTS.md`) |
+| `styles/` | Global CSS tokens/reset/typography/texture/transitions |
+| `types/` | Domain TypeScript types |
+| `utils/` | Mapping, motion, image conversion, service worker cache helpers |
 
-## For AI Agents
-### Routes (defined in App.tsx)
-| Path | Component | Notes |
-|------|-----------|-------|
-| `/` | `HomePage` | Landing page with hero, collection, product sections |
-| `/collection` | `CollectionPage` | Brand story and gallery |
-| `/ai-tryon` | `AiTryonPage` | AI virtual try-on feature |
-| `/products` | `ProductsPage` | Product catalog listing |
-| `/accessories` | `AccessoriesPage` | Accessories catalog |
-| `/cart` | `CartPage` | Shopping cart |
-| `/login` | `LoginPage` | Email/password + OAuth login |
-| `/reset-password` | `ResetPasswordPage` | Password reset flow |
-| `/auth/google/callback` | `AuthGoogleCallbackPage` | Google OAuth callback |
-| `/auth/zalo/callback` | `AuthZaloCallbackPage` | Zalo OAuth callback |
-| `/privacy-policy` | `PrivacyPolicyPage` | Privacy policy page |
-| `/data-deletion` | `DataDeletionPage` | Data deletion request page |
-| `/account/*` | Redirects to `HomePage` + AccountPage modal | Protected; redirects to `/login` if anonymous |
+## Route Map
+| Path | Component |
+|------|-----------|
+| `/` | `HomePage` |
+| `/collection` | `CollectionPage` |
+| `/products`, `/products/:slug` | `ProductsPage`, `ProductDetailPage` |
+| `/accessories` | `AccessoriesPage` |
+| `/blog`, `/blog/:slug` | `BlogPage`, `BlogDetailPage` |
+| `/ai-tryon` | `AiTryonPage` |
+| `/cart` | `CartPage` |
+| `/orders/:id` or detail route | `OrderDetailPage` |
+| `/login`, `/reset-password` | Auth pages |
+| `/auth/google/callback`, `/auth/zalo/callback` | OAuth callbacks |
+| `/privacy-policy`, `/data-deletion`, `/unsubscribe`, `*` | Policy/unsubscribe/404 |
+| `/account/*` | Protected account modal overlay |
 
-### Architecture Notes
-- **Auth**: `AuthProvider` in `auth/AuthContext.tsx` manages session state (`loading` | `authenticated` | `anonymous`). Use `useAuth()` hook.
-- **API client**: `api/client.ts` uses native `fetch` (not axios). Resolves regional API base URLs by hostname. Has `request<T>()` and `requestPaginated<T>()` helpers. All responses use `ApiEnvelope<T>` shape.
-- **Account page**: Modal overlay in `App.tsx`, not routed page. Auth-protected.
-- **Toast notifications**: `ToastProvider` wraps app; use `useToast()` hook.
-- **Header/Footer**: Hidden on login and OAuth callback pages.
-- **State management**: React Context only (auth + toast). No Redux/Zustand.
-- **Component structure**: PascalCase folders with component TSX + CSS Module pair.
+## Local Conventions
+- Use domain hooks (`src/hooks/*`) for query/mutation flows; keep raw API calls in `src/api/*`.
+- Query keys centralized in `src/lib/queryKeys.ts`.
+- API envelope types live in `src/types/api.ts`.
+- CSS Modules paired with PascalCase component/page folders.
+- Avoid admin imports; customer and admin apps are separate.

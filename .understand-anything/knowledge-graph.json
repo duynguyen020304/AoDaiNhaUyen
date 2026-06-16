@@ -16,8 +16,8 @@
       "ASP.NET Core"
     ],
     "description": "Premium Vietnamese áo dài e-commerce platform.",
-    "analyzedAt": "2026-06-11T15:00:37.472Z",
-    "gitCommitHash": "5a5d19965c1869a50101436f70f7c2629e5f607a"
+    "analyzedAt": "2026-06-16T13:52:04Z",
+    "gitCommitHash": "50381c8def20bedb321679a0465bff72544aa851"
   },
   "nodes": [
     {
@@ -13726,11 +13726,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "AGENTS.md",
-      "summary": "AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for AoDaiNhaUyen; covers Purpose, Key Files, Subdirectories, Code Map, Project Conventions, Commands.",
       "tags": [
-        "markdown",
+        "AGENTS.md",
+        "agent-guidance",
         "docs",
-        "AGENTS.md"
+        "documentation",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -13739,11 +13742,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "backend/AGENTS.md",
-      "summary": "backend/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for backend; covers Purpose, Key Files, Subdirectories, Code Map, Project Conventions, Commands.",
       "tags": [
-        "markdown",
+        "agent-guidance",
+        "backend",
         "docs",
-        "backend"
+        "documentation",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -14414,11 +14420,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "frontend-admin/AGENTS.md",
-      "summary": "frontend-admin/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for frontend-admin; covers Purpose, Key Files, Subdirectories, Key Differences from Customer SPA, Commands, Local Conventions.",
       "tags": [
-        "markdown",
+        "agent-guidance",
         "docs",
-        "frontend-admin"
+        "documentation",
+        "frontend-admin",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -14687,11 +14696,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "frontend/AGENTS.md",
-      "summary": "frontend/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for frontend; covers Purpose, Key Files, Subdirectories, Commands, Local Conventions, Gotchas.",
       "tags": [
-        "markdown",
+        "agent-guidance",
         "docs",
-        "frontend"
+        "documentation",
+        "frontend",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15129,11 +15141,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "backend/AoDaiNhaUyen.Api/AGENTS.md",
-      "summary": "backend/AoDaiNhaUyen.Api/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for AoDaiNhaUyen.Api; covers Purpose, Key Files, Subdirectories, Controller Groups, Middleware, Pipeline Notes.",
       "tags": [
-        "markdown",
+        "agent-guidance",
+        "backend",
         "docs",
-        "backend"
+        "documentation",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15155,11 +15170,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "backend/AoDaiNhaUyen.Api/Controllers/AGENTS.md",
-      "summary": "backend/AoDaiNhaUyen.Api/Controllers/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for Controllers; covers Purpose, Customer Controllers, Admin Controllers, Local Conventions.",
       "tags": [
-        "markdown",
+        "agent-guidance",
+        "backend",
         "docs",
-        "backend"
+        "documentation",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15181,11 +15199,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "backend/AoDaiNhaUyen.Application/AGENTS.md",
-      "summary": "backend/AoDaiNhaUyen.Application/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for AoDaiNhaUyen.Application; covers Purpose, Subdirectories, DTO Map, Interfaces Map, Options, Local Conventions.",
       "tags": [
-        "markdown",
+        "agent-guidance",
+        "backend",
         "docs",
-        "backend"
+        "documentation",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15220,11 +15241,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "backend/AoDaiNhaUyen.Domain/AGENTS.md",
-      "summary": "backend/AoDaiNhaUyen.Domain/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for AoDaiNhaUyen.Domain; covers Purpose, Subdirectories, Entity Groups, Seed Data, Local Conventions.",
       "tags": [
-        "markdown",
+        "agent-guidance",
+        "backend",
         "docs",
-        "backend"
+        "documentation",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15246,11 +15270,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "backend/AoDaiNhaUyen.Domain/Entities/AGENTS.md",
-      "summary": "backend/AoDaiNhaUyen.Domain/Entities/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for Entities; covers Purpose, Entity Map, Relationship Notes, Local Conventions.",
       "tags": [
-        "markdown",
+        "agent-guidance",
+        "backend",
         "docs",
-        "backend"
+        "documentation",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15259,11 +15286,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/AGENTS.md",
-      "summary": "backend/AoDaiNhaUyen.Infrastructure/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for AoDaiNhaUyen.Infrastructure; covers Purpose, Subdirectories, Data Map, Repository Map, Service Map, Local Conventions.",
       "tags": [
-        "markdown",
+        "agent-guidance",
+        "backend",
         "docs",
-        "backend"
+        "documentation",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15298,11 +15328,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Repositories/AGENTS.md",
-      "summary": "backend/AoDaiNhaUyen.Infrastructure/Repositories/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for Repositories; covers Purpose, Files, Local Conventions.",
       "tags": [
-        "markdown",
+        "agent-guidance",
+        "backend",
         "docs",
-        "backend"
+        "documentation",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15311,11 +15344,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "backend/AoDaiNhaUyen.Infrastructure/Services/AGENTS.md",
-      "summary": "backend/AoDaiNhaUyen.Infrastructure/Services/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for Services; covers Purpose, Service Groups, Hot Paths, Local Conventions.",
       "tags": [
-        "markdown",
+        "agent-guidance",
+        "backend",
         "docs",
-        "backend"
+        "documentation",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15324,11 +15360,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "backend/AoDaiNhaUyen.Tests/AGENTS.md",
-      "summary": "backend/AoDaiNhaUyen.Tests/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for AoDaiNhaUyen.Tests; covers Purpose, Test Areas, Common Patterns, Commands, Gotchas.",
       "tags": [
-        "markdown",
+        "agent-guidance",
+        "backend",
         "docs",
-        "backend"
+        "documentation",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15349,11 +15388,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "frontend/src/AGENTS.md",
-      "summary": "frontend/src/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for frontend/src; covers Purpose, Key Files, Subdirectories, Route Map, Local Conventions.",
       "tags": [
-        "markdown",
+        "agent-guidance",
         "docs",
-        "frontend"
+        "documentation",
+        "frontend",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15362,11 +15404,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "frontend/src/api/AGENTS.md",
-      "summary": "frontend/src/api/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for api; covers Purpose, Module Map, Local Conventions.",
       "tags": [
-        "markdown",
+        "agent-guidance",
         "docs",
-        "frontend"
+        "documentation",
+        "frontend",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15401,11 +15446,14 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "frontend/src/pages/AGENTS.md",
-      "summary": "frontend/src/pages/AGENTS.md (markdown, docs) in AoDaiNhaUyen monorepo.",
+      "summary": "Agent guidance for pages; covers Purpose, Page Map, Local Conventions.",
       "tags": [
-        "markdown",
+        "agent-guidance",
         "docs",
-        "frontend"
+        "documentation",
+        "frontend",
+        "markdown",
+        "updated"
       ],
       "complexity": "simple"
     },
@@ -15575,6 +15623,54 @@
         "markdown",
         "docs",
         "public"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:frontend-admin/src/AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "frontend-admin/src/AGENTS.md",
+      "summary": "Agent guidance for frontend-admin/src; covers Purpose, Key Files, Subdirectories, Route Areas, Local Conventions.",
+      "tags": [
+        "agent-guidance",
+        "documentation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:frontend-admin/src/api/AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "frontend-admin/src/api/AGENTS.md",
+      "summary": "Agent guidance for frontend-admin/src/api; covers Purpose, Module Map, Local Conventions.",
+      "tags": [
+        "agent-guidance",
+        "documentation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:frontend-admin/src/pages/AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "frontend-admin/src/pages/AGENTS.md",
+      "summary": "Agent guidance for frontend-admin/src/pages; covers Purpose, Page Map, Local Conventions.",
+      "tags": [
+        "agent-guidance",
+        "documentation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:frontend-admin/src/stores/AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "frontend-admin/src/stores/AGENTS.md",
+      "summary": "Agent guidance for frontend-admin/src/stores; covers Purpose, Store Map, Gotchas.",
+      "tags": [
+        "agent-guidance",
+        "documentation"
       ],
       "complexity": "simple"
     }
@@ -21710,7 +21806,11 @@
         "file:public/AGENTS.md",
         "document:README.md",
         "document:doc:.github/AGENTS.md",
-        "document:doc:.github/workflows/AGENTS.md"
+        "document:doc:.github/workflows/AGENTS.md",
+        "document:frontend-admin/src/AGENTS.md",
+        "document:frontend-admin/src/api/AGENTS.md",
+        "document:frontend-admin/src/pages/AGENTS.md",
+        "document:frontend-admin/src/stores/AGENTS.md"
       ]
     },
     {

@@ -4,59 +4,27 @@
 # AoDaiNhaUyen.Tests
 
 ## Purpose
-Backend unit + integration tests. Uses xUnit with EF Core InMemoryDatabase for service-level tests. Tests cover OAuth flows, auth service, intent classification, stylist chat, config validation.
+xUnit backend tests. Project is separate from `AoDaiNhaUyen.slnx`; run explicitly from this directory.
 
-## Key Files
-| File | Description |
-|------|-------------|
-| `AoDaiNhaUyen.Tests.csproj` | Project file -- references Api, Application, Infrastructure for testing |
+## Test Areas
+| Directory | Coverage |
+|-----------|----------|
+| `Configuration/` | OAuth/options/config validation |
+| `Controllers/` | Controller behavior such as chat endpoints |
+| `Services/` | Auth/OAuth, AI chat/try-on helpers, cache, email, S3/storage paths, promo cost, order attribution, admin AI security |
 
-## Subdirectories
-| Directory | Purpose |
-|-----------|---------|
-| `Configuration/` | Startup options validation tests |
-| `Services/` | Service implementation tests |
+## Common Patterns
+- Uses xUnit + `Microsoft.NET.Test.Sdk`.
+- Service tests often use inline private stub classes inside each test file.
+- EF-related tests use InMemoryDatabase where needed.
+- Tests focus service behavior and edge cases more than full HTTP integration.
 
-## Configuration Tests
-| File | Description |
-|------|-------------|
-| `GoogleOAuthSettingsValidationTests.cs` | Verifies `AddBackendServices` rejects empty GoogleOAuth:RedirectUri via OptionsValidationException |
-| `FacebookOAuthSettingsValidationTests.cs` | Verifies `AddBackendServices` rejects empty FacebookOAuth:RedirectUri via OptionsValidationException |
+## Commands
+- `dotnet test` from `backend/AoDaiNhaUyen.Tests/`
+- For whole backend build first: `cd .. && dotnet build`
 
-### Configuration Test Pattern
-- Uses `ConfigurationBuilder` with `AddInMemoryCollection` to build minimal valid config
-- Calls `ServiceRegistration.AddBackendServices()` to register all services
-- Builds ServiceProvider and accesses options to trigger validation
-- Asserts `OptionsValidationException` thrown with expected message fragment
-
-## Services Tests
-| File | Description |
-|------|-------------|
-| `GoogleOAuthServiceTests.cs` | Tests Google OAuth code exchange: user retrieval success + error handling with stub HTTP handler |
-| `FacebookOAuthServiceTests.cs` | Tests Facebook OAuth code exchange: success flow, bad request, user info failure |
-| `AuthServiceTests.cs` | Tests AuthService OAuth login flows: Google/Facebook exchange failures, missing email, unverified email |
-| `IntentClassifierTests.cs` | Tests intent classification: Vietnamese styling requests map to correct intent, scenario, color, budget |
-| `StylistChatServiceTests.cs` | Integration test: first chat turn persists thread memory with saved assistant message ID |
-| `ThreadMemoryServiceTests.cs` | Tests memory state management: ApplyUserTurn extracts facts from Vietnamese text, Persist/Read round-trips structured state |
-
-### Services Test Patterns
-- **OAuth tests**: Use `StubHttpMessageHandler` with pre-configured responses to mock HTTP calls
-- **AuthService tests**: Use stub implementations of all dependencies (IPasswordHasher, IJwtTokenService, IRefreshTokenService, IEmailService, OAuth services)
-- **IntentClassifier tests**: Test pure Vietnamese NLP -- keyword detection for scenarios, colors, materials, budget extraction
-- **StylistChatService tests**: Use InMemoryDatabase with stub collaborators to test message persistence + memory management
-- **ThreadMemoryService tests**: Test pure state transforms -- fact extraction + serialization round-trips
-
-### Test Dependencies
-- All service integration tests use `AppDbContext` with InMemoryDatabase provider
-- OAuth tests use `IHttpClientFactory` with stub implementations returning controlled HTTP responses
-- AuthService tests create stubs as private sealed classes within test file
-
-## For AI Agents
-### Working In This Directory
-- Run `dotnet test` from this directory or backend root
-- Tests use xUnit -- `[Fact]` for individual test cases
-- No shared test fixtures -- each test creates own isolated database/context
-- Stub collaborators defined as private sealed classes at bottom of each test file
-- When adding tests for new service, follow pattern: stub all dependencies, test one behavior per Fact
-- InMemoryDatabase used for integration tests -- no real PostgreSQL required
-- Vietnamese language testing important for intent classification + memory service tests
+## Gotchas
+- Running `dotnet test` against `backend/AoDaiNhaUyen.slnx` will not include this test project.
+- Keep fake secrets/config obviously fake; never copy real `.env` values.
+- Add tests near touched service/controller when changing auth, AI, storage, promo, email, cache, or order logic.
+- Prefer narrow service tests over broad setup-heavy integration tests unless HTTP/auth behavior matters.

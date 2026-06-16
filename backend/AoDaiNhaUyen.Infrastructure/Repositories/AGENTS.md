@@ -4,20 +4,23 @@
 # Repositories
 
 ## Purpose
-Repository implementations for data access. Each wraps EF Core queries against AppDbContext and implements matching interface from `AoDaiNhaUyen.Application/Interfaces/Repositories/`.
+EF Core data access implementations. Repositories wrap `AppDbContext` queries and return Domain entities or paged domain results; DTO mapping happens in services.
 
 ## Files
-| File | Interface | Description |
-|------|-----------|-------------|
-| `CategoryRepository.cs` | `ICategoryRepository` | Fetches active categories from database. Returns Category entities with navigation properties |
-| `ProductRepository.cs` | `IProductRepository` | Paged product listing with optional filters (categorySlug, productType, featured, size). Product detail lookup by slug with eager loading of variants, images, category |
-| `CartRepository.cs` | `ICartRepository` | Cart data access: gets cart by user ID with items and variant details. Handles add/update/remove operations and cart clearing |
-| `UserProfileRepository.cs` | `IUserProfileRepository` | User data access: gets user with addresses, orders, order items. Supports profile updates, address CRUD, order history queries |
+| File | Interface | Notes |
+|------|-----------|-------|
+| `CategoryRepository.cs` | `ICategoryRepository` | Active category queries/tree inputs |
+| `ProductRepository.cs` | `IProductRepository` | Product list/detail with filters and eager loading |
+| `CartRepository.cs` | `ICartRepository` | Cart/item reads and mutations |
+| `UserProfileRepository.cs` | `IUserProfileRepository` | Profile, addresses, orders, order items |
+| `BlogCategoryRepository.cs` | `IBlogCategoryRepository` | Blog category lookups |
+| `BlogPostRepository.cs` | `IBlogPostRepository` | Blog listing/detail/admin CRUD inputs |
+| `CommentRepository.cs` | `ICommentRepository` | Product comment persistence/queries |
 
-## For AI Agents
-### Working In This Directory
-- All repositories registered as scoped services in `AoDaiNhaUyen.Api/Configuration/ServiceRegistration.cs`
-- Repositories work directly with Domain entities -- no internal mapping to DTOs (happens in services)
-- Use EF Core Include/ThenInclude for eager loading of navigation properties
-- When adding new repository: create interface in `Application/Interfaces/Repositories/`, implement here, register in ServiceRegistration.cs
-- Repositories should only contain data access logic -- no business rules
+## Local Conventions
+- Keep business rules out; services decide behavior.
+- Use `Include`/`ThenInclude` only where caller needs graph data.
+- Prefer `AsNoTracking()` for read-only queries unless mutation follows.
+- Register new repos as scoped services in `ServiceRegistration.cs`.
+- For paged reads, return deterministic ordering before `Skip`/`Take`.
+- Keep PostgreSQL-specific query assumptions visible in tests or service callers.

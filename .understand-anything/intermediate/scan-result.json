@@ -34,13 +34,13 @@
     {
       "path": ".understand-anything/fingerprints.json",
       "language": "json",
-      "sizeLines": 5,
+      "sizeLines": 45881,
       "fileCategory": "config"
     },
     {
       "path": ".understand-anything/intermediate/scan-result.json",
       "language": "json",
-      "sizeLines": 3682,
+      "sizeLines": 5057,
       "fileCategory": "config"
     },
     {
@@ -52,19 +52,13 @@
     {
       "path": ".understand-anything/meta.json",
       "language": "json",
-      "sizeLines": 5,
+      "sizeLines": 6,
       "fileCategory": "config"
-    },
-    {
-      "path": ".understand-anything/tmp/scan-project.stderr",
-      "language": "stderr",
-      "sizeLines": 0,
-      "fileCategory": "code"
     },
     {
       "path": "AGENTS.md",
       "language": "markdown",
-      "sizeLines": 68,
+      "sizeLines": 74,
       "fileCategory": "docs"
     },
     {
@@ -76,19 +70,19 @@
     {
       "path": "backend/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 52,
+      "sizeLines": 63,
       "fileCategory": "docs"
     },
     {
       "path": "backend/AoDaiNhaUyen.Api/.env.example",
       "language": "config",
-      "sizeLines": 69,
+      "sizeLines": 78,
       "fileCategory": "config"
     },
     {
       "path": "backend/AoDaiNhaUyen.Api/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 87,
+      "sizeLines": 57,
       "fileCategory": "docs"
     },
     {
@@ -112,13 +106,25 @@
     {
       "path": "backend/AoDaiNhaUyen.Api/appsettings.json",
       "language": "json",
-      "sizeLines": 103,
+      "sizeLines": 102,
       "fileCategory": "config"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Authentication/HermesAdminApiKeyAuthenticationHandler.cs",
+      "language": "csharp",
+      "sizeLines": 61,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Authentication/HermesAdminAuthOptions.cs",
+      "language": "csharp",
+      "sizeLines": 10,
+      "fileCategory": "code"
     },
     {
       "path": "backend/AoDaiNhaUyen.Api/Configuration/ServiceRegistration.cs",
       "language": "csharp",
-      "sizeLines": 310,
+      "sizeLines": 322,
       "fileCategory": "code"
     },
     {
@@ -137,6 +143,12 @@
       "path": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminDashboardController.cs",
       "language": "csharp",
       "sizeLines": 80,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminHermesController.cs",
+      "language": "csharp",
+      "sizeLines": 124,
       "fileCategory": "code"
     },
     {
@@ -202,7 +214,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Api/Controllers/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 32,
+      "sizeLines": 55,
       "fileCategory": "docs"
     },
     {
@@ -320,6 +332,18 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Api/Hermes/HermesAdminApiDescription.cs",
+      "language": "csharp",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Api/Hermes/HermesAdminApiDescriptionRegistry.cs",
+      "language": "csharp",
+      "sizeLines": 222,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Api/HttpTests/AdminProducts.http",
       "language": "http",
       "sizeLines": 51,
@@ -332,6 +356,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Api/Middleware/HermesApiDescriptionMiddleware.cs",
+      "language": "csharp",
+      "sizeLines": 47,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Api/Middleware/SensitiveResponseCacheMiddleware.cs",
       "language": "csharp",
       "sizeLines": 44,
@@ -340,7 +370,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Api/Program.cs",
       "language": "csharp",
-      "sizeLines": 312,
+      "sizeLines": 315,
       "fileCategory": "code"
     },
     {
@@ -676,7 +706,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Application/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 113,
+      "sizeLines": 55,
       "fileCategory": "docs"
     },
     {
@@ -749,6 +779,12 @@
       "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/CreateUserRequest.cs",
       "language": "csharp",
       "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/DTOs/Admin/HermesAgentDtos.cs",
+      "language": "csharp",
+      "sizeLines": 43,
       "fileCategory": "code"
     },
     {
@@ -1532,6 +1568,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IHermesAgentService.cs",
+      "language": "csharp",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Application/Interfaces/Services/IImageUploadValidator.cs",
       "language": "csharp",
       "sizeLines": 12,
@@ -1682,6 +1724,12 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/AoDaiNhaUyen.Application/Options/AdminSeedOptions.cs",
+      "language": "csharp",
+      "sizeLines": 9,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/AoDaiNhaUyen.Application/Options/AiTryOnConcurrencyOptions.cs",
       "language": "csharp",
       "sizeLines": 11,
@@ -1709,6 +1757,12 @@
       "path": "backend/AoDaiNhaUyen.Application/Options/GoogleOAuthSettings.cs",
       "language": "csharp",
       "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Application/Options/HermesAgentOptions.cs",
+      "language": "csharp",
+      "sizeLines": 10,
       "fileCategory": "code"
     },
     {
@@ -1768,7 +1822,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Domain/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 95,
+      "sizeLines": 43,
       "fileCategory": "docs"
     },
     {
@@ -1834,7 +1888,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Domain/Entities/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 50,
+      "sizeLines": 37,
       "fileCategory": "docs"
     },
     {
@@ -2158,7 +2212,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Infrastructure/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 89,
+      "sizeLines": 50,
       "fileCategory": "docs"
     },
     {
@@ -2176,7 +2230,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Configuration/S3StorageSettings.cs",
       "language": "csharp",
-      "sizeLines": 17,
+      "sizeLines": 16,
       "fileCategory": "code"
     },
     {
@@ -2440,13 +2494,13 @@
     {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Data/SeedDataService.cs",
       "language": "csharp",
-      "sizeLines": 1621,
+      "sizeLines": 1624,
       "fileCategory": "code"
     },
     {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Repositories/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 22,
+      "sizeLines": 26,
       "fileCategory": "docs"
     },
     {
@@ -2578,7 +2632,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Infrastructure/Services/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 44,
+      "sizeLines": 36,
       "fileCategory": "docs"
     },
     {
@@ -2693,6 +2747,12 @@
       "path": "backend/AoDaiNhaUyen.Infrastructure/Services/GoogleOAuthService.cs",
       "language": "csharp",
       "sizeLines": 77,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/AoDaiNhaUyen.Infrastructure/Services/HermesAgentService.cs",
+      "language": "csharp",
+      "sizeLines": 286,
       "fileCategory": "code"
     },
     {
@@ -2872,7 +2932,7 @@
     {
       "path": "backend/AoDaiNhaUyen.Tests/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 61,
+      "sizeLines": 30,
       "fileCategory": "docs"
     },
     {
@@ -3058,7 +3118,7 @@
     {
       "path": "frontend-admin/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 69,
+      "sizeLines": 59,
       "fileCategory": "docs"
     },
     {
@@ -3088,7 +3148,7 @@
     {
       "path": "frontend-admin/src/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 43,
+      "sizeLines": 41,
       "fileCategory": "docs"
     },
     {
@@ -3100,7 +3160,7 @@
     {
       "path": "frontend-admin/src/api/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 27,
+      "sizeLines": 29,
       "fileCategory": "docs"
     },
     {
@@ -3226,7 +3286,7 @@
     {
       "path": "frontend-admin/src/components/ai/AiChatSidebar.tsx",
       "language": "typescript",
-      "sizeLines": 101,
+      "sizeLines": 110,
       "fileCategory": "code"
     },
     {
@@ -3239,6 +3299,12 @@
       "path": "frontend-admin/src/components/ai/ChatInput.tsx",
       "language": "typescript",
       "sizeLines": 39,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend-admin/src/components/ai/ChatModeSelector.tsx",
+      "language": "typescript",
+      "sizeLines": 47,
       "fileCategory": "code"
     },
     {
@@ -3256,7 +3322,7 @@
     {
       "path": "frontend-admin/src/components/ai/FullChatArea.tsx",
       "language": "typescript",
-      "sizeLines": 67,
+      "sizeLines": 78,
       "fileCategory": "code"
     },
     {
@@ -3448,7 +3514,7 @@
     {
       "path": "frontend-admin/src/pages/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 32,
+      "sizeLines": 33,
       "fileCategory": "docs"
     },
     {
@@ -3586,13 +3652,13 @@
     {
       "path": "frontend-admin/src/stores/adminAiStore.ts",
       "language": "typescript",
-      "sizeLines": 616,
+      "sizeLines": 640,
       "fileCategory": "code"
     },
     {
       "path": "frontend-admin/src/stores/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 30,
+      "sizeLines": 27,
       "fileCategory": "docs"
     },
     {
@@ -3670,7 +3736,7 @@
     {
       "path": "frontend-admin/src/types/ai.ts",
       "language": "typescript",
-      "sizeLines": 97,
+      "sizeLines": 110,
       "fileCategory": "code"
     },
     {
@@ -3820,13 +3886,13 @@
     {
       "path": "frontend/src/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 51,
+      "sizeLines": 50,
       "fileCategory": "docs"
     },
     {
       "path": "frontend/src/api/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 38,
+      "sizeLines": 32,
       "fileCategory": "docs"
     },
     {
@@ -4468,7 +4534,7 @@
     {
       "path": "frontend/src/pages/AGENTS.md",
       "language": "markdown",
-      "sizeLines": 39,
+      "sizeLines": 31,
       "fileCategory": "docs"
     },
     {
@@ -5024,15 +5090,15 @@
       "fileCategory": "docs"
     }
   ],
-  "totalFiles": 837,
+  "totalFiles": 848,
   "filteredByIgnore": 0,
   "estimatedComplexity": "very-large",
   "stats": {
-    "filesScanned": 837,
+    "filesScanned": 848,
     "byCategory": {
       "docs": 37,
       "infra": 2,
-      "code": 706,
+      "code": 717,
       "config": 24,
       "markup": 68
     },
@@ -5041,16 +5107,15 @@
       "yaml": 1,
       "unknown": 5,
       "json": 17,
-      "stderr": 1,
       "config": 2,
       "csproj": 5,
       "http": 2,
-      "csharp": 421,
+      "csharp": 432,
       "webp": 49,
       "slnx": 1,
       "javascript": 5,
       "html": 3,
-      "typescript": 222,
+      "typescript": 223,
       "css": 65,
       "txt": 1
     }

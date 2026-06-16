@@ -4,50 +4,60 @@
 # backend
 
 ## Purpose
-ASP.NET Core 10 REST API, clean architecture. Four projects: Api (presentation), Application (use cases/DTOs), Domain (entities), Infrastructure (data access/external services). Uses EF Core with PostgreSQL, JWT auth with Google/Facebook/Zalo OAuth, MailKit email, Google Vertex AI for virtual try-on + stylist chat.
+ASP.NET Core 10 REST API with clean architecture. Handles catalog, cart/checkout, auth (credentials + Google/Facebook/Zalo), AI try-on/chat, Blog CMS, reviews/comments, promos, email marketing, admin dashboards, Hermes admin agent, media/S3, and audit/risk controls.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `AoDaiNhaUyen.slnx` | Solution file linking all backend projects |
+| `AoDaiNhaUyen.slnx` | Solution file for Api/Application/Domain/Infrastructure only |
 
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
-| `AoDaiNhaUyen.Api/` | ASP.NET Core web API host -- controllers, middleware, config (see `AoDaiNhaUyen.Api/AGENTS.md`) |
-| `AoDaiNhaUyen.Application/` | Application layer -- DTOs, interfaces, services (see `AoDaiNhaUyen.Application/AGENTS.md`) |
-| `AoDaiNhaUyen.Domain/` | Domain layer -- entities, seed data (see `AoDaiNhaUyen.Domain/AGENTS.md`) |
-| `AoDaiNhaUyen.Infrastructure/` | Infrastructure layer -- EF Core, repositories, external services (see `AoDaiNhaUyen.Infrastructure/AGENTS.md`) |
-| `AoDaiNhaUyen.Tests/` | Unit + integration tests (see `AoDaiNhaUyen.Tests/AGENTS.md`) |
+| `AoDaiNhaUyen.Api/` | Web API host: Program.cs, DI, controllers, middleware, responses |
+| `AoDaiNhaUyen.Application/` | DTOs, interfaces, options, app services |
+| `AoDaiNhaUyen.Domain/` | Entities + seed data; no external deps |
+| `AoDaiNhaUyen.Infrastructure/` | EF Core, repos, external integrations, most services |
+| `AoDaiNhaUyen.Tests/` | xUnit tests; not included in `.slnx` |
 
-## For AI Agents
-### Working In This Directory
-- Clean architecture: Api -> Application -> Infrastructure; Domain standalone (no dependencies on other projects)
-- Dependency flow: Api references Application + Infrastructure; Infrastructure references Application + Domain; Application references Domain
-- Run `dotnet build` from here to compile all projects
-- Run `dotnet test` to execute tests
-- EF Core migrations: `dotnet ef migrations add <Name>` from Infrastructure project with `--startup-project ../AoDaiNhaUyen.Api`
-- All API responses use standard envelope: `{ success, message, data, errors, timestamp }`
-- .NET 10 with nullable reference types enabled
-- Column names in PostgreSQL use snake_case (configured in AppDbContext.OnModelCreating)
+## Code Map
+| Need | File/dir |
+|------|----------|
+| Routes | `AoDaiNhaUyen.Api/Controllers/` |
+| DI registrations | `AoDaiNhaUyen.Api/Configuration/ServiceRegistration.cs` |
+| Middleware order | `AoDaiNhaUyen.Api/Program.cs` |
+| Entity mappings | `AoDaiNhaUyen.Infrastructure/Data/AppDbContext.cs` |
+| Seed data | `AoDaiNhaUyen.Domain/SeedData/`, `Infrastructure/Data/SeedDataService.cs` |
+| Service contracts | `AoDaiNhaUyen.Application/Interfaces/Services/` |
+| Repository contracts | `AoDaiNhaUyen.Application/Interfaces/Repositories/` |
+| Service impls | `AoDaiNhaUyen.Infrastructure/Services/` |
+| Migrations | `AoDaiNhaUyen.Infrastructure/Data/Migrations/` |
 
-### Testing Requirements
-- Run `dotnet test` before committing
-- Tests use xUnit with InMemoryDatabase for service integration tests
-- Test stubs are inline private classes within each test file
+## Project Conventions
+- Dependency flow: Api -> Application + Infrastructure; Infrastructure -> Application + Domain; Application -> Domain; Domain standalone.
+- Controllers return `ApiResponse<T>` / `PaginatedApiResponse<T>` via `ApiResponseFactory`.
+- PostgreSQL table/column names use snake_case via `AppDbContext`.
+- Auth uses HttpOnly cookies: access token + refresh token; JWT bearer reads cookie in auth event.
+- Config options use Options pattern + validation: JWT, cookies, email, OAuth, GoogleCloud, S3, Hermes, FusionCache.
+- Repositories: catalog/cart/user profile/blog/comment data access only. Business logic lives in services.
 
-### Common Patterns
-- Repository pattern for data access (ICategoryRepository, IProductRepository, ICartRepository, IUserProfileRepository)
-- Service layer for business logic (AuthService, CartService, CheckoutService, CatalogService, etc.)
-- DTOs for request/response mapping
-- JWT Bearer auth with Google/Facebook/Zalo OAuth providers
-- Token stored in HttpOnly cookies (access_token + refresh_token)
-- Options pattern with ValidateDataAnnotations for config (JwtSettings, EmailSettings, GoogleOAuthSettings, FacebookOAuthSettings, CookieSettings)
+## Commands
+| Task | Command |
+|------|---------|
+| Build | `dotnet build` from `backend/` |
+| Tests | `dotnet test` from `backend/AoDaiNhaUyen.Tests/` |
+| Migration | `cd AoDaiNhaUyen.Infrastructure && dotnet ef migrations add <Name> --startup-project ../AoDaiNhaUyen.Api` |
+
+## Gotchas
+- `.slnx` omits `AoDaiNhaUyen.Tests`; `dotnet test` from `backend/` may skip tests.
+- `RunMigrationsAndSeedOnStartup` can migrate/seed DB on app start.
+- S3-compatible storage is primary for uploads/media; older `upload/` paths still exist for static/curated assets.
+- FusionCache may run L1-only if Redis is unavailable/config missing.
+- CORS policy uses configured frontend origins + credentials + allow-any header/method.
 
 ## Dependencies
-### External
-- ASP.NET Core 10, EF Core 10, Npgsql (PostgreSQL)
-- Microsoft.AspNetCore.Authentication.JwtBearer
-- MailKit (SMTP email)
-- DotNetEnv (.env loading)
-- Google Vertex AI (virtual try-on via Gemini, stylist chat via Gemini Flash Lite)
+- ASP.NET Core 10, EF Core 10, Npgsql/PostgreSQL.
+- JWT Bearer, MailKit, DotNetEnv.
+- FusionCache + optional Redis L2/backplane.
+- AWS S3-compatible storage.
+- Google Vertex/Gemini for try-on, image validation, stylist/admin AI.
