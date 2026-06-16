@@ -1,9 +1,11 @@
 using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Application.Options;
 using AoDaiNhaUyen.Domain.Common;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Domain.SeedData;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace AoDaiNhaUyen.Infrastructure.Data;
@@ -12,7 +14,8 @@ public sealed class SeedDataService(
   AppDbContext dbContext,
   IPasswordHasher passwordHasher,
   IUploadStoragePathResolver uploadStoragePathResolver,
-  IStorageService storageService) : ISeedDataService
+  IStorageService storageService,
+  IOptions<AdminSeedOptions> adminSeedOptions) : ISeedDataService
 {
   // ── Demo seed helper data ──────────────────────────
 
@@ -540,8 +543,8 @@ public sealed class SeedDataService(
 
   private async Task SeedAdminAsync()
   {
-    var adminEmail = Environment.GetEnvironmentVariable("AdminSeed__Email")?.Trim();
-    var adminPassword = Environment.GetEnvironmentVariable("AdminSeed__Password")?.Trim();
+    var adminEmail = adminSeedOptions.Value.Email?.Trim();
+    var adminPassword = adminSeedOptions.Value.Password?.Trim();
 
     if (string.IsNullOrEmpty(adminEmail) || string.IsNullOrEmpty(adminPassword))
       return;

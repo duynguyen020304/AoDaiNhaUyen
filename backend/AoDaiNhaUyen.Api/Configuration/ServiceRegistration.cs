@@ -72,7 +72,9 @@ public static class ServiceRegistration
         settings => Uri.TryCreate(settings.RedirectUri, UriKind.Absolute, out _),
         "ZaloOAuth:RedirectUri must be a valid absolute URI.")
       .ValidateOnStart();
+    services.Configure<HermesAgentOptions>(configuration.GetSection(HermesAgentOptions.SectionName));
     services.Configure<HermesAdminAuthOptions>(configuration.GetSection(HermesAdminAuthOptions.SectionName));
+    services.Configure<AdminSeedOptions>(configuration.GetSection(AdminSeedOptions.SectionName));
     services.Configure<CookieSettings>(configuration.GetSection("CookieSettings"));
 
     var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>() ?? new JwtSettings();
@@ -142,6 +144,7 @@ public static class ServiceRegistration
     services.AddScoped<IBlogCategoryService, BlogCategoryService>();
     services.AddScoped<IBlogPostService, BlogPostService>();
     services.AddScoped<ICommentService, CommentService>();
+    services.AddScoped<IHermesAgentService, HermesAgentService>();
     services.AddScoped<IAdminProductService, AdminProductService>();
     services.AddScoped<IAdminUserService, AdminUserService>();
     services.AddScoped<IAdminRoleService, AdminRoleService>();

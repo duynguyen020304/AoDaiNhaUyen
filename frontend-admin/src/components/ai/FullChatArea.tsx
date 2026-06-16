@@ -4,9 +4,10 @@ import { useAdminAiStore } from '@/stores/adminAiStore'
 import { MessageBubble } from './MessageBubble'
 import { ChatInput } from './ChatInput'
 import { EmptyChat } from './EmptyChat'
+import { ChatModeSelector } from './ChatModeSelector'
 
 export function FullChatArea() {
-  const { messages, isLoading, sendMessage } = useAdminAiStore()
+  const { messages, isLoading, sendMessage, chatMode } = useAdminAiStore()
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -32,6 +33,16 @@ export function FullChatArea() {
 
   return (
     <div className="flex flex-col h-full relative bg-white">
+      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">Trợ lý AI Admin</h2>
+          <p className="text-xs text-gray-500">
+            {chatMode === 'hermes' ? 'Hermes Agent tự động quản trị, có heartbeat.' : 'Chat AI admin mặc định.'}
+          </p>
+        </div>
+        <ChatModeSelector />
+      </div>
+
       {/* Messages or Empty State */}
       {hasMessages ? (
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-6 scroll-smooth">

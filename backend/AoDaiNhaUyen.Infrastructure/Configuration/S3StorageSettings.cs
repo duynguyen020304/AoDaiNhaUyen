@@ -13,5 +13,4 @@ public class S3StorageSettings
   public string? SecretKey { get; set; }
   public string? ServiceUrl { get; set; }
   public bool UsePathStyle { get; set; }
-  public int DefaultPresignedUrlExpirationInSeconds { get; set; } = 3600;
 }

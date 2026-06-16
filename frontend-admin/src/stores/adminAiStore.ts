@@ -10,6 +10,8 @@ import type {
   AdminConversationMessage,
   AiToolCall,
   AiToolResultMeta,
+  AdminChatMode,
+  HermesStatus,
 } from '@/types/ai'
 import { AI_BLOG_DRAFT_STORAGE_KEY, type AiBlogDraft } from '@/types/blog'
 import { request } from '@/api/client'
@@ -168,6 +170,8 @@ interface AdminAiState {
   conversationId: string | null
   pendingActions: AiPendingAction[]
   suggestions: AiSuggestion[]
+  chatMode: AdminChatMode
+  hermesStatus: HermesStatus | null
 
   // Chat history
   conversations: SavedConversation[]
@@ -180,6 +184,8 @@ interface AdminAiState {
   confirmAction: (actionId: string, approved: boolean) => Promise<boolean>
   continueAfterConfirm: (conversationId: string) => Promise<void>
   fetchSuggestions: () => Promise<void>
+  fetchHermesStatus: () => Promise<void>
+  setChatMode: (mode: AdminChatMode) => void
   clearConversation: () => void
 
   // Chat history actions
@@ -198,6 +204,8 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
   conversationId: null,
   pendingActions: [],
   suggestions: [],
+  chatMode: 'generic',
+  hermesStatus: null,
   conversations: loadConversations(),
   activeConversationId: null,
 
@@ -232,7 +240,8 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
     }))
 
     try {
-      const response = await fetch(`${API}/api/admin/ai/chat`, {
+      const endpoint = state.chatMode === 'hermes' ? '/api/admin/hermes/chat' : '/api/admin/ai/chat'
+      const response = await fetch(`${API}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -503,6 +512,21 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       logAiWarn('Không tải được gợi ý AI', err)
       set({ lastError: 'Không tải được gợi ý AI.' })
     }
+  },
+
+  fetchHermesStatus: async () => {
+    try {
+      const status = await request<HermesStatus>('/api/admin/hermes/status')
+      set({ hermesStatus: status })
+    } catch (err) {
+      logAiWarn('Không tải được trạng thái Hermes', err)
+      set({ hermesStatus: { status: 'offline', runnerName: 'aodai-admin-hermes', lastHeartbeatAt: null, model: null, gatewayStatus: null, activeJobs: 0, lastError: 'Không tải được trạng thái Hermes.', apiServerConfigured: false } })
+    }
+  },
+
+  setChatMode: (mode: AdminChatMode) => {
+    set({ chatMode: mode })
+    if (mode === 'hermes') void get().fetchHermesStatus()
   },
 
   clearConversation: () => {

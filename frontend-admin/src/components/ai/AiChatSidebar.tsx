@@ -3,6 +3,7 @@ import { Bot, X, Send, Loader2 } from 'lucide-react'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { MessageBubble } from './MessageBubble'
 import { Button } from '@/components/ui/button'
+import { ChatModeSelector } from './ChatModeSelector'
 
 export function AiChatSidebar() {
   const {
@@ -11,6 +12,7 @@ export function AiChatSidebar() {
     isLoading,
     toggle,
     sendMessage,
+    chatMode,
   } = useAdminAiStore()
 
   const [input, setInput] = useState('')
@@ -44,7 +46,10 @@ export function AiChatSidebar() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-wine text-white">
         <div className="flex items-center gap-2">
           <Bot className="size-5" />
-          <span className="font-semibold">Trợ lý AI Admin</span>
+          <div>
+            <span className="font-semibold">Trợ lý AI Admin</span>
+            <p className="text-xs text-white/70">{chatMode === 'hermes' ? 'Hermes Agent' : 'Generic Chat'}</p>
+          </div>
         </div>
         <button
           onClick={toggle}
@@ -53,6 +58,10 @@ export function AiChatSidebar() {
         >
           <X className="size-5" />
         </button>
+      </div>
+
+      <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+        <ChatModeSelector />
       </div>
 
       {/* Messages */}

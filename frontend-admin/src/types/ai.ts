@@ -1,4 +1,17 @@
 /** SSE chunk types from POST /api/admin/ai/chat */
+export type AdminChatMode = 'generic' | 'hermes'
+
+export interface HermesStatus {
+  status: 'running' | 'stale' | 'offline' | 'unknown' | string
+  runnerName: string
+  lastHeartbeatAt: string | null
+  model: string | null
+  gatewayStatus: string | null
+  activeJobs: number
+  lastError: string | null
+  apiServerConfigured: boolean
+}
+
 export interface AiLlmChunk {
   type: 'text' | 'tool_call' | 'tool_result' | 'confirmation' | 'conversation' | 'error' | 'done'
   content: string
