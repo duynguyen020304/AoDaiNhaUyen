@@ -3,5 +3,4 @@
   <Project Path="AoDaiNhaUyen.Application/AoDaiNhaUyen.Application.csproj" />
   <Project Path="AoDaiNhaUyen.Domain/AoDaiNhaUyen.Domain.csproj" />
   <Project Path="AoDaiNhaUyen.Infrastructure/AoDaiNhaUyen.Infrastructure.csproj" />
-  <Project Path="AoDaiNhaUyen.Mcp/AoDaiNhaUyen.Mcp.csproj" />
 </Solution>

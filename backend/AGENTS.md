@@ -18,7 +18,6 @@ ASP.NET Core 10 REST API, clean architecture. Four projects: Api (presentation),
 | `AoDaiNhaUyen.Application/` | Application layer -- DTOs, interfaces, services (see `AoDaiNhaUyen.Application/AGENTS.md`) |
 | `AoDaiNhaUyen.Domain/` | Domain layer -- entities, seed data (see `AoDaiNhaUyen.Domain/AGENTS.md`) |
 | `AoDaiNhaUyen.Infrastructure/` | Infrastructure layer -- EF Core, repositories, external services (see `AoDaiNhaUyen.Infrastructure/AGENTS.md`) |
-| `AoDaiNhaUyen.Mcp/` | Standalone MCP admin tool host (see `AoDaiNhaUyen.Mcp/AGENTS.md`) |
 | `AoDaiNhaUyen.Tests/` | Unit + integration tests (see `AoDaiNhaUyen.Tests/AGENTS.md`) |
 
 ## For AI Agents

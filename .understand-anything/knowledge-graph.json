@@ -14332,58 +14332,6 @@
       "complexity": "moderate"
     },
     {
-      "id": "config:backend/AoDaiNhaUyen.Mcp/AoDaiNhaUyen.Mcp.csproj",
-      "type": "config",
-      "name": "AoDaiNhaUyen.Mcp.csproj",
-      "filePath": "backend/AoDaiNhaUyen.Mcp/AoDaiNhaUyen.Mcp.csproj",
-      "summary": "backend/AoDaiNhaUyen.Mcp/AoDaiNhaUyen.Mcp.csproj (csproj, config) in AoDaiNhaUyen monorepo.",
-      "tags": [
-        "csproj",
-        "config",
-        "backend"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:backend/AoDaiNhaUyen.Mcp/Program.cs",
-      "type": "file",
-      "name": "Program.cs",
-      "filePath": "backend/AoDaiNhaUyen.Mcp/Program.cs",
-      "summary": "backend/AoDaiNhaUyen.Mcp/Program.cs (csharp, code) in AoDaiNhaUyen monorepo.",
-      "tags": [
-        "csharp",
-        "code",
-        "backend"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:backend/AoDaiNhaUyen.Mcp/Tools/AdminDashboardTools.cs",
-      "type": "file",
-      "name": "AdminDashboardTools.cs",
-      "filePath": "backend/AoDaiNhaUyen.Mcp/Tools/AdminDashboardTools.cs",
-      "summary": "backend/AoDaiNhaUyen.Mcp/Tools/AdminDashboardTools.cs (csharp, code) in AoDaiNhaUyen monorepo.",
-      "tags": [
-        "csharp",
-        "code",
-        "backend"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "file:backend/AoDaiNhaUyen.Mcp/Tools/AdminProductTools.cs",
-      "type": "file",
-      "name": "AdminProductTools.cs",
-      "filePath": "backend/AoDaiNhaUyen.Mcp/Tools/AdminProductTools.cs",
-      "summary": "backend/AoDaiNhaUyen.Mcp/Tools/AdminProductTools.cs (csharp, code) in AoDaiNhaUyen monorepo.",
-      "tags": [
-        "csharp",
-        "code",
-        "backend"
-      ],
-      "complexity": "moderate"
-    },
-    {
       "id": "config:backend/AoDaiNhaUyen.Tests/AoDaiNhaUyen.Tests.csproj",
       "type": "config",
       "name": "AoDaiNhaUyen.Tests.csproj",
@@ -21045,10 +20993,7 @@
         "file:backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminAiController.cs",
         "file:backend/AoDaiNhaUyen.Api/Controllers/Admin/AdminDashboardController.cs",
         "file:backend/AoDaiNhaUyen.Api/Controllers/CommentsController.cs",
-        "file:backend/AoDaiNhaUyen.Api/Controllers/ReviewsController.cs",
-        "file:backend/AoDaiNhaUyen.Mcp/Program.cs",
-        "file:backend/AoDaiNhaUyen.Mcp/Tools/AdminDashboardTools.cs",
-        "file:backend/AoDaiNhaUyen.Mcp/Tools/AdminProductTools.cs"
+        "file:backend/AoDaiNhaUyen.Api/Controllers/ReviewsController.cs"
       ]
     },
     {
@@ -21797,7 +21742,6 @@
         "config:backend/AoDaiNhaUyen.Api/appsettings.json",
         "config:backend/AoDaiNhaUyen.Application/AoDaiNhaUyen.Application.csproj",
         "config:backend/AoDaiNhaUyen.Infrastructure/AoDaiNhaUyen.Infrastructure.csproj",
-        "config:backend/AoDaiNhaUyen.Mcp/AoDaiNhaUyen.Mcp.csproj",
         "config:backend/AoDaiNhaUyen.Tests/AoDaiNhaUyen.Tests.csproj",
         "config:frontend-admin/package.json",
         "document:frontend/AGENTS.md",

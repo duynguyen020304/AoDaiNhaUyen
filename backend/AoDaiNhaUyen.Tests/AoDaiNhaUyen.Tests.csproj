@@ -22,7 +22,6 @@
     <ProjectReference Include="..\AoDaiNhaUyen.Api\AoDaiNhaUyen.Api.csproj" />
     <ProjectReference Include="..\AoDaiNhaUyen.Application\AoDaiNhaUyen.Application.csproj" />
     <ProjectReference Include="..\AoDaiNhaUyen.Infrastructure\AoDaiNhaUyen.Infrastructure.csproj" />
-    <ProjectReference Include="..\AoDaiNhaUyen.Mcp\AoDaiNhaUyen.Mcp.csproj" />
   </ItemGroup>
 
 </Project>
