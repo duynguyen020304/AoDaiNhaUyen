@@ -171,7 +171,7 @@ public sealed class AdminAiController(
     else store.Disable(adminUserId.Value);
 
     return Ok(ApiResponseFactory.Success<object?>(null,
-      request.Enabled ? "Đã bật chế độ tự động trong 30 phút." : "Đã tắt chế độ tự động."));
+      request.Enabled ? "Đã bật chế độ tự động." : "Đã tắt chế độ tự động."));
   }
 
   /// <summary>Get current auto mode status.</summary>

@@ -5,14 +5,13 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 
 /// <summary>
 /// In-memory per-admin store for AI autonomy mode.
-/// Entries expire quickly so medium-risk auto-approval cannot stay enabled forever.
+/// Enabled state is permanent until the admin explicitly disables it.
 /// High/Critical tools still require human confirmation.
 /// </summary>
 public sealed class AutoModeStore : IAutoModeStore
 {
-  private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(30);
   private readonly object _lock = new();
-  private readonly Dictionary<Guid, DateTime> _enabledUntilByAdmin = new();
+  private readonly HashSet<Guid> _enabledAdminIds = [];
 
   public bool IsAutoMode
   {
@@ -20,8 +19,7 @@ public sealed class AutoModeStore : IAutoModeStore
     {
       lock (_lock)
       {
-        PruneExpired(DateTime.UtcNow);
-        return _enabledUntilByAdmin.Count > 0;
+        return _enabledAdminIds.Count > 0;
       }
     }
   }
@@ -30,8 +28,7 @@ public sealed class AutoModeStore : IAutoModeStore
   {
     lock (_lock)
     {
-      PruneExpired(DateTime.UtcNow);
-      return _enabledUntilByAdmin.ContainsKey(adminUserId);
+      return _enabledAdminIds.Contains(adminUserId);
     }
   }
 
@@ -39,8 +36,7 @@ public sealed class AutoModeStore : IAutoModeStore
   {
     lock (_lock)
     {
-      PruneExpired(DateTime.UtcNow);
-      _enabledUntilByAdmin[adminUserId] = DateTime.UtcNow.Add(Ttl);
+      _enabledAdminIds.Add(adminUserId);
     }
   }
 
@@ -48,7 +44,7 @@ public sealed class AutoModeStore : IAutoModeStore
   {
     lock (_lock)
     {
-      _enabledUntilByAdmin.Remove(adminUserId);
+      _enabledAdminIds.Remove(adminUserId);
     }
   }
 
@@ -60,11 +56,5 @@ public sealed class AutoModeStore : IAutoModeStore
       return level <= RiskLevel.Medium;
 
     return false;
-  }
-
-  private void PruneExpired(DateTime now)
-  {
-    foreach (var adminId in _enabledUntilByAdmin.Where(pair => pair.Value <= now).Select(pair => pair.Key).ToList())
-      _enabledUntilByAdmin.Remove(adminId);
   }
 }

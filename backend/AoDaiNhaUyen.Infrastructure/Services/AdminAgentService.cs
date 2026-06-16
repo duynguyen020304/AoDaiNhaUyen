@@ -1321,7 +1321,7 @@ Chi tiết:
     _logger.LogInformation("[AdminAgent] Autonomy mode {State} by admin {AdminId}", enabled ? "ENABLED" : "DISABLED", adminUserId);
 
     return enabled
-      ? "🤖 Chế độ tự động đã BẬT trong 30 phút cho quản trị viên hiện tại. Các hành động Medium risk sẽ được tự động thực hiện. High/Critical vẫn cần xác nhận."
+      ? "🤖 Chế độ tự động đã BẬT cho quản trị viên hiện tại. Các hành động Medium risk sẽ được tự động thực hiện cho đến khi tắt. High/Critical vẫn cần xác nhận."
       : "🔒 Chế độ tự động đã TẮT cho quản trị viên hiện tại. Tất cả hành động Medium+ cần xác nhận thủ công.";
   }
 
@@ -1329,7 +1329,7 @@ Chi tiết:
   {
     var isOn = _autoMode.IsAutoModeEnabled(adminUserId);
     return isOn
-      ? "🤖 Chế độ tự động: ĐANG BẬT cho quản trị viên hiện tại\n- Read/Low/Medium: tự động duyệt\n- High/Critical: cần xác nhận\n- Tự hết hạn sau tối đa 30 phút"
+      ? "🤖 Chế độ tự động: ĐANG BẬT cho quản trị viên hiện tại\n- Read/Low/Medium: tự động duyệt\n- High/Critical: cần xác nhận\n- Duy trì cho đến khi tắt"
       : "🔒 Chế độ tự động: ĐANG TẮT\n- Read/Low: tự động duyệt\n- Medium/High/Critical: cần xác nhận";
   }
 
