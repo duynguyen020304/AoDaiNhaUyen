@@ -57,7 +57,7 @@ interface HeaderProps {
   onOpenAuth: () => void;
 }
 
-export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
+export default function Header({ onOpenAuth }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { status, user, logout } = useAuth();
@@ -221,7 +221,7 @@ export default function Header({ onOpenAccount, onOpenAuth }: HeaderProps) {
               href="/account/profile"
               onClick={(event) => {
                 event.preventDefault();
-                onOpenAccount();
+                navigate('/account/profile');
               }}
             >
               {user.fullName}

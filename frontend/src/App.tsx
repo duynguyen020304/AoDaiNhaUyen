@@ -15,6 +15,7 @@ import BlogPage from './pages/BlogPage/BlogPage';
 import BlogDetailPage from './pages/BlogDetailPage/BlogDetailPage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import AccountPage, { type AccountView } from './pages/AccountPage/AccountPage';
+import OrderDetailPage from './pages/OrderDetailPage/OrderDetailPage';
 import AuthGoogleCallbackPage from './pages/AuthGoogleCallbackPage/AuthGoogleCallbackPage';
 import AuthZaloCallbackPage from './pages/AuthZaloCallbackPage/AuthZaloCallbackPage';
 import UnsubscribePage from './pages/UnsubscribePage/UnsubscribePage';
@@ -49,6 +50,10 @@ function resolveAccountView(pathname: string): AccountView {
   }
 
   if (pathname.endsWith('/orders')) {
+    return 'orders';
+  }
+
+  if (/\/account\/orders\/[^/]+$/.test(pathname)) {
     return 'orders';
   }
 
@@ -102,7 +107,7 @@ export default function App() {
       return;
     }
 
-    if (location.pathname === '/login' || location.pathname === '/cart' || location.pathname.startsWith('/account')) {
+    if (location.pathname === '/login' || location.pathname === '/cart' || location.pathname === '/account' || location.pathname === '/account/' || location.pathname === '/account/orders') {
       navigate('/', { replace: true });
     }
   }, [location.pathname, navigate]);
@@ -110,27 +115,23 @@ export default function App() {
   const authModalContext = useMemo(() => ({ openAuthModal }), [openAuthModal]);
   const authModalFrom = (location.state as { from?: string } | null)?.from ?? '/';
   const cartAuthFrom = pathname === '/cart' && status === 'anonymous' ? '/cart' : null;
+  const isAccountOrderDetailPath = /^\/account\/orders\/[^/]+$/.test(pathname);
   const accountAuthFrom = pathname.startsWith('/account') && status === 'anonymous' ? pathname : null;
   const shouldShowAuthModal = isAuthModalOpen || pathname === '/login' || accountAuthFrom !== null || cartAuthFrom !== null;
 
   useEffect(() => {
-    if (!pathname.startsWith('/account')) {
+    if (!pathname.startsWith('/account') || isAccountOrderDetailPath) {
       return;
     }
 
-    if (status === 'loading') {
-      return;
-    }
-
-    if (status === 'anonymous') {
+    if (status === 'loading' || status === 'anonymous') {
       return;
     }
 
     queueMicrotask(() => {
-      openAccountModal(resolveAccountView(pathname));
-      navigate('/', { replace: true });
+      setAccountView(resolveAccountView(pathname));
     });
-  }, [navigate, pathname, status]);
+  }, [isAccountOrderDetailPath, navigate, pathname, status]);
 
   return (
     <AuthModalProvider value={authModalContext}>
@@ -154,10 +155,21 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/auth/google/callback" element={<AuthGoogleCallbackPage />} />
         <Route path="/auth/callback/zalo" element={<AuthZaloCallbackPage />} />
-        <Route path="/account/*" element={<HomePage />} />
+        <Route path="/account/orders/:orderId" element={status === 'anonymous' ? <HomePage /> : <OrderDetailPage />} />
+        <Route path="/account/*" element={status === 'anonymous' ? <HomePage /> : (
+          <AccountPage
+            activeView={accountView}
+            onClose={() => navigate('/')}
+            onViewChange={(view) => {
+              setAccountView(view);
+              navigate(`/account/${view}`);
+            }}
+            variant="page"
+          />
+        )} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-      {isAccountModalOpen ? (
+      {isAccountModalOpen && !pathname.startsWith('/account') ? (
         <AccountPage
           activeView={accountView}
           onClose={closeAccountModal}

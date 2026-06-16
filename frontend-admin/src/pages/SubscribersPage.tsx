@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useEmailMarketingStore } from "@/stores/emailMarketingStore";
+import { useFeedback } from "@/components/ui/feedbackContext";
 
 export function SubscribersPage() {
   const {
@@ -23,6 +24,7 @@ export function SubscribersPage() {
     unsubscribe,
     importSubscribers,
   } = useEmailMarketingStore();
+  const { confirm, toast } = useFeedback();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [emails, setEmails] = useState("");
@@ -30,14 +32,49 @@ export function SubscribersPage() {
     fetchSubscribers(search, status).catch(() => {});
   }, [fetchSubscribers, search, status]);
   async function handleImport() {
-    const list = emails
+    const rawList = emails
       .split(/[\n,;]+/)
-      .map((x) => x.trim())
+      .map((x) => x.trim().toLowerCase())
       .filter(Boolean);
-    if (!list.length) return;
+    if (!rawList.length) {
+      toast("Vui lòng nhập ít nhất một email.", "error");
+      return;
+    }
+    const list = [...new Set(rawList)];
+    const invalid = list.find((email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+    if (invalid) {
+      toast(`Email không hợp lệ: ${invalid}`, "error");
+      return;
+    }
+    if (list.length > 500) {
+      toast("Mỗi lần chỉ nhập tối đa 500 email.", "error");
+      return;
+    }
     await importSubscribers({ emails: list, source: "admin_import" });
     setEmails("");
+    toast("Đã nhập danh sách người đăng ký.", "success");
   }
+  async function handleUnsubscribe(id: string) {
+    const subscriber = subscribers.find((item) => item.id === id);
+    if (!subscriber) {
+      toast("Không tìm thấy người đăng ký.", "error");
+      return;
+    }
+    if (subscriber.status === "unsubscribed") {
+      toast("Người này đã hủy nhận email.", "error");
+      return;
+    }
+    const ok = await confirm({
+      title: "Hủy nhận email?",
+      message: "Người đăng ký này sẽ chuyển sang trạng thái unsubscribed.",
+      confirmText: "Hủy nhận",
+      destructive: true,
+    });
+    if (!ok) return;
+    await unsubscribe(id);
+    toast("Đã hủy nhận email.", "success");
+  }
+
   return (
     <div className="space-y-4">
       <div>
@@ -122,7 +159,7 @@ export function SubscribersPage() {
                       variant="outline"
                       size="sm"
                       disabled={s.status === "unsubscribed"}
-                      onClick={() => unsubscribe(s.id)}
+                      onClick={() => void handleUnsubscribe(s.id)}
                     >
                       Hủy nhận
                     </Button>

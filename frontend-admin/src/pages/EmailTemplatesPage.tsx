@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Eye, ExternalLink, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import {
 import { useEmailMarketingStore } from "@/stores/emailMarketingStore";
 import { EmailTemplateFormModal } from "@/components/admin/EmailTemplateFormModal";
 import { getEmailTemplate } from "@/api/emailMarketing";
+import { buildEmailPreviewDocument, openEmailPreviewInNewTab } from "@/lib/emailPreview";
+import { useFeedback } from "@/components/ui/feedbackContext";
 import type { EmailTemplateDetail, EmailTemplateListItem } from "@/types/admin";
 
 export function EmailTemplatesPage() {
@@ -27,8 +29,10 @@ export function EmailTemplatesPage() {
     deleteTemplate,
     restoreTemplate,
   } = useEmailMarketingStore();
+  const { confirm, toast } = useFeedback();
   const [search, setSearch] = useState("");
   const [edit, setEdit] = useState<EmailTemplateDetail | null>(null);
+  const [preview, setPreview] = useState<EmailTemplateDetail | null>(null);
   const [open, setOpen] = useState(false);
   useEffect(() => {
     fetchTemplates(search).catch(() => {});
@@ -36,6 +40,27 @@ export function EmailTemplatesPage() {
   async function openEditTemplate(template: EmailTemplateListItem) {
     setEdit(await getEmailTemplate(template.id));
     setOpen(true);
+  }
+
+  async function openPreviewTemplate(template: EmailTemplateListItem) {
+    setPreview(await getEmailTemplate(template.id));
+  }
+
+  async function handleDeleteTemplate(id: string) {
+    const ok = await confirm({
+      title: "Xóa mẫu email?",
+      message: "Mẫu email sẽ bị đánh dấu đã xóa và có thể khôi phục sau.",
+      confirmText: "Xóa",
+      destructive: true,
+    });
+    if (!ok) return;
+    await deleteTemplate(id);
+    toast("Đã xóa mẫu email.", "success");
+  }
+
+  async function handleRestoreTemplate(id: string) {
+    await restoreTemplate(id);
+    toast("Đã khôi phục mẫu email.", "success");
   }
 
   return (
@@ -115,6 +140,14 @@ export function EmailTemplatesPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => void openPreviewTemplate(t)}
+                    >
+                      <Eye className="size-4 mr-1" />
+                      Preview
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => void openEditTemplate(t)}
                     >
                       Sửa
@@ -123,7 +156,7 @@ export function EmailTemplatesPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => restoreTemplate(t.id)}
+                        onClick={() => void handleRestoreTemplate(t.id)}
                       >
                         <RotateCcw className="size-4" />
                       </Button>
@@ -131,7 +164,7 @@ export function EmailTemplatesPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => deleteTemplate(t.id)}
+                        onClick={() => void handleDeleteTemplate(t.id)}
                       >
                         <Trash2 className="size-4" />
                       </Button>
@@ -168,6 +201,47 @@ export function EmailTemplatesPage() {
         template={edit}
         onClose={() => setOpen(false)}
       />
+      {preview && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setPreview(null);
+          }}
+        >
+          <div className="relative h-[85vh] w-full max-w-5xl rounded-xl bg-white p-4 shadow-lg">
+            <div className="mb-3 flex items-center justify-between gap-3 pr-8">
+              <div>
+                <h2 className="text-lg font-semibold text-burgundy">Preview mẫu email</h2>
+                <p className="text-sm text-gray-600">{preview.subject}</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  const opened = openEmailPreviewInNewTab(preview.subject, preview.preheader, preview.htmlBody);
+                  toast(opened ? "Đã mở preview mẫu email." : "Trình duyệt chặn popup preview.", opened ? "success" : "error");
+                }}
+              >
+                <ExternalLink className="size-4 mr-2" />
+                Mở tab mới
+              </Button>
+            </div>
+            <button
+              className="absolute right-4 top-4 text-sm text-gray-500 hover:text-gray-900"
+              onClick={() => setPreview(null)}
+            >
+              Đóng
+            </button>
+            <iframe
+              title="Email preview"
+              className="h-[calc(85vh-92px)] w-full rounded-lg border"
+              srcDoc={buildEmailPreviewDocument(preview.subject, preview.preheader, preview.htmlBody)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

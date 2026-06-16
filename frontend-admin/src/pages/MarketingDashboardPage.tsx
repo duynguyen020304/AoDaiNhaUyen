@@ -1,18 +1,41 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Mail, Send, UsersRound, FileText } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Mail, UsersRound, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEmailMarketingStore } from "@/stores/emailMarketingStore";
+import { EmailTemplatesPage } from "@/pages/EmailTemplatesPage";
+import { SubscribersPage } from "@/pages/SubscribersPage";
+
+type MarketingTab = "templates" | "subscribers";
+
+const tabs: Array<{ id: MarketingTab; label: string; description: string }> = [
+  {
+    id: "templates",
+    label: "Mẫu email",
+    description: "Tạo và chỉnh nội dung HTML cho email.",
+  },
+  {
+    id: "subscribers",
+    label: "Người đăng ký",
+    description: "Theo dõi consent và trạng thái nhận email.",
+  },
+];
+
+function normalizeTab(value: string | null): MarketingTab {
+  return tabs.some((tab) => tab.id === value) ? (value as MarketingTab) : "templates";
+}
 
 export function MarketingDashboardPage() {
   const { stats, fetchStats, loading, error } = useEmailMarketingStore();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const activeTab = normalizeTab(searchParams.get("tab"));
   useEffect(() => {
     fetchStats().catch(() => {});
   }, [fetchStats]);
   const cards = [
     ["Tổng đăng ký", stats?.totalSubscribers ?? 0, UsersRound],
     ["Đang nhận tin", stats?.activeSubscribers ?? 0, Mail],
-    ["Email đã gửi hôm nay", stats?.sentJobsToday ?? 0, Send],
     ["Mẫu email", stats?.templateCount ?? 0, FileText],
   ] as const;
   return (
@@ -20,7 +43,7 @@ export function MarketingDashboardPage() {
       <div>
         <h1 className="text-2xl font-bold text-burgundy">Marketing email</h1>
         <p className="text-sm text-gray-600">
-          Quản lý mẫu email, người đăng ký và hàng đợi gửi.
+          Quản lý mẫu email và người đăng ký.
         </p>
       </div>
       {error && (
@@ -28,41 +51,62 @@ export function MarketingDashboardPage() {
           {error}
         </div>
       )}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map(([label, value, Icon]) => (
-          <Card key={label}>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium">{label}</CardTitle>
-              <Icon className="size-4 text-wine" />
+          <Card key={label} className="min-h-28">
+            <CardHeader className="flex flex-row items-start justify-between gap-3 p-5 pb-2">
+              <CardTitle className="text-sm font-semibold leading-5">{label}</CardTitle>
+              <span className="rounded-lg bg-burgundy/5 p-2 text-wine">
+                <Icon className="size-4" />
+              </span>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
+            <CardContent className="p-5 pt-2">
+              <div className="text-3xl font-bold leading-none">
                 {loading ? "..." : value}
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        <Link
-          className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          to="/admin/email-templates"
+      <div className="rounded-xl border bg-white p-2 shadow-sm">
+        <div
+          className="grid gap-2 md:grid-cols-2"
+          role="tablist"
+          aria-label="Chức năng marketing email"
         >
-          Mẫu email
-        </Link>
-        <Link
-          className="inline-flex h-9 items-center justify-center rounded-lg border border-input bg-white px-4 py-2 text-sm font-medium"
-          to="/admin/subscribers"
-        >
-          Người đăng ký
-        </Link>
-        <Link
-          className="inline-flex h-9 items-center justify-center rounded-lg border border-input bg-white px-4 py-2 text-sm font-medium"
-          to="/admin/email-queue"
-        >
-          Hàng đợi email
-        </Link>
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={`rounded-lg px-4 py-3 text-left transition ${
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+                onClick={() => navigate(`/admin/marketing?tab=${tab.id}`)}
+              >
+                <span className="block text-sm font-semibold">{tab.label}</span>
+                <span
+                  className={`mt-1 block text-xs ${
+                    isActive ? "text-primary-foreground/80" : "text-gray-500"
+                  }`}
+                >
+                  {tab.description}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
+
+      <section role="tabpanel" className="min-w-0">
+        {activeTab === "templates" && <EmailTemplatesPage />}
+        {activeTab === "subscribers" && <SubscribersPage />}
+      </section>
     </div>
   );
 }

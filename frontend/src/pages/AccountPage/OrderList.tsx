@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useOrdersQuery } from '../../hooks/user/useUserQueries';
 import { useCancelOrderMutation } from '../../hooks/user/useUserMutations';
 import { resolveAssetUrl } from '../../api/client';
@@ -63,7 +64,12 @@ function StatusStepper({ status }: { status: string }) {
   );
 }
 
-export default function OrderList() {
+interface OrderListProps {
+  onRequestClose?: () => void;
+}
+
+export default function OrderList({ onRequestClose }: OrderListProps) {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const ordersQuery = useOrdersQuery();
   const cancelOrderMutation = useCancelOrderMutation();
@@ -155,6 +161,16 @@ export default function OrderList() {
 
             <div className={styles.orderFooter}>
               <div className={styles.footerActions}>
+                <button
+                  className={styles.detailBtn}
+                  type="button"
+                  onClick={() => {
+                    navigate(`/account/orders/${order.id}`);
+                    onRequestClose?.();
+                  }}
+                >
+                  Xem chi tiết
+                </button>
                 {canCancel(order.orderStatus) && (
                   <button
                     className={styles.cancelBtn}

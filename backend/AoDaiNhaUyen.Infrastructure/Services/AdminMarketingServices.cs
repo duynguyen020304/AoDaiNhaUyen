@@ -216,7 +216,7 @@ public sealed class AdminEmailJobService(AppDbContext dbContext) : IAdminEmailJo
 
   public async Task<bool> RetryAsync(Guid id, CancellationToken cancellationToken = default)
   {
-    var job = await dbContext.EmailJobs.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    var job = await dbContext.EmailJobs.FirstOrDefaultAsync(x => x.Id == id && (x.Status == "queued" || x.Status == "dead" || x.Status == "failed" || x.Status == "cancelled"), cancellationToken);
     if (job is null) return false;
     job.Status = "queued";
     job.RetryCount = 0;
@@ -229,7 +229,7 @@ public sealed class AdminEmailJobService(AppDbContext dbContext) : IAdminEmailJo
 
   public async Task<bool> CancelAsync(Guid id, CancellationToken cancellationToken = default)
   {
-    var job = await dbContext.EmailJobs.FirstOrDefaultAsync(x => x.Id == id && (x.Status == "queued" || x.Status == "dead"), cancellationToken);
+    var job = await dbContext.EmailJobs.FirstOrDefaultAsync(x => x.Id == id && (x.Status == "queued" || x.Status == "dead" || x.Status == "failed"), cancellationToken);
     if (job is null) return false;
     job.Status = "cancelled";
     job.UpdatedAt = DateTime.UtcNow;

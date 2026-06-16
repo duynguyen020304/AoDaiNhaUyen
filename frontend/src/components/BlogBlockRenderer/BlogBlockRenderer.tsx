@@ -70,7 +70,6 @@ function Block({
       return (
         <GalleryCarousel
           images={block.images}
-          template={template}
           onOpenLightbox={onOpenLightbox}
         />
       );
@@ -206,11 +205,9 @@ function ProductSpotlight({ slugs, template }: { slugs: string[]; template: Blog
 
 function GalleryCarousel({
   images,
-  template: _template,
   onOpenLightbox,
 }: {
   images: { src: string; alt: string; caption?: string; widthPx?: number; heightPx?: number }[];
-  template: BlogTemplate;
   onOpenLightbox: (img: { src: string; alt: string; caption?: string }) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);

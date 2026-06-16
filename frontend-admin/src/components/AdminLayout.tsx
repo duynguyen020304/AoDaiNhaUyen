@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, FileSearch, Newspaper, Megaphone, Mail, Send, UsersRound } from 'lucide-react'
+import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, FileSearch, Newspaper, Megaphone, Send, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { Button } from '@/components/ui/button'
@@ -15,8 +15,6 @@ const NAV_ITEMS = [
   { to: '/admin/promos', icon: Tag, label: 'Mã giảm giá', end: false },
   { to: '/admin/blog', icon: Newspaper, label: 'Bài đăng', end: false },
   { to: '/admin/marketing', icon: Megaphone, label: 'Marketing', end: true },
-  { to: '/admin/email-templates', icon: Mail, label: 'Mẫu email', end: false },
-  { to: '/admin/subscribers', icon: UsersRound, label: 'Người đăng ký', end: false },
   { to: '/admin/email-queue', icon: Send, label: 'Hàng đợi email', end: false },
   { to: '/admin/users', icon: Users, label: 'Người dùng', end: false },
   { to: '/admin/roles', icon: Shield, label: 'Vai trò', end: false },
@@ -26,7 +24,7 @@ const NAV_ITEMS = [
   { to: '/admin/tools-risk', icon: Settings2, label: 'Cấu hình AI', end: false },
 ] as const
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({ onNavigate, collapsed = false, onToggle }: { onNavigate?: () => void; collapsed?: boolean; onToggle?: () => void }) {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
@@ -38,40 +36,65 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <>
-      <div className="p-6 border-b border-white/10">
-        <span className="text-gold font-bold text-lg">Nhã Uyên</span>
-        <div className="text-white/60 text-xs mt-0.5">Admin</div>
+      <div className={`flex items-center border-b border-white/10 ${collapsed ? 'justify-center p-4' : 'justify-between p-6'}`}>
+        <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
+          <img
+            src="/logo.svg"
+            alt="Nhã Uyên"
+            className={collapsed ? 'size-10 rounded-full bg-white/10 p-1' : 'size-11 rounded-xl bg-white/10 p-1.5'}
+          />
+          {!collapsed && (
+            <div>
+              <span className="text-gold font-bold text-lg leading-none">Nhã Uyên</span>
+              <div className="text-white/60 text-xs mt-0.5">Admin</div>
+            </div>
+          )}
+        </div>
+        {onToggle && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white/70 hover:bg-white/10 hover:text-white"
+            onClick={onToggle}
+            aria-label={collapsed ? 'Mở sidebar' : 'Đóng sidebar'}
+            title={collapsed ? 'Mở sidebar' : 'Đóng sidebar'}
+          >
+            {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+          </Button>
+        )}
       </div>
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className={`flex-1 space-y-1 overflow-y-auto ${collapsed ? 'p-3' : 'p-4'}`}>
         {NAV_ITEMS.map(({ to, icon: Icon, label, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
             onClick={onNavigate}
+            title={collapsed ? label : undefined}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive ? 'bg-wine/40 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`
+              `flex items-center rounded-lg text-sm transition-colors ${collapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2'} ${isActive ? 'bg-wine/40 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`
             }
           >
-            <Icon className="size-5" />
-            {label}
+            <Icon className="size-5 shrink-0" />
+            {!collapsed && label}
           </NavLink>
         ))}
       </nav>
-      <div className="p-4 border-t border-white/10">
-        {user && (
+      <div className={`border-t border-white/10 ${collapsed ? 'p-3' : 'p-4'}`}>
+        {user && !collapsed && (
           <div className="text-white/80 text-xs mb-3 truncate">
             {user.fullName}
           </div>
         )}
         <Button
           variant="ghost"
-          size="sm"
-          className="w-full justify-start text-white/70 hover:bg-white/10 hover:text-white"
+          size={collapsed ? 'icon' : 'sm'}
+          className={`${collapsed ? 'w-full' : 'w-full justify-start'} text-white/70 hover:bg-white/10 hover:text-white`}
           onClick={handleLogout}
+          title={collapsed ? 'Đăng xuất' : undefined}
         >
-          <LogOut className="size-4 mr-2" />
-          Đăng xuất
+          <LogOut className={collapsed ? 'size-4' : 'size-4 mr-2'} />
+          {!collapsed && 'Đăng xuất'}
         </Button>
       </div>
     </>
@@ -80,6 +103,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export function AdminSidebar() {
   const [open, setOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
     <>
@@ -103,8 +127,8 @@ export function AdminSidebar() {
       </Sheet>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex sticky top-0 w-64 min-h-dvh bg-burgundy text-white flex-col shrink-0">
-        <SidebarContent />
+      <aside className={`hidden lg:flex sticky top-0 h-dvh bg-burgundy text-white flex-col shrink-0 transition-[width] duration-200 ${collapsed ? 'w-20' : 'w-64'}`}>
+        <SidebarContent collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} />
       </aside>
     </>
   )
@@ -125,7 +149,7 @@ export function AdminLayout() {
   }, [isChatPage, isAiOpen, closeAi])
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex h-dvh overflow-hidden">
       <AdminSidebar />
       <main className="flex-1 bg-cream p-4 lg:p-6 overflow-y-auto pt-14 lg:pt-6">
         <Outlet />
