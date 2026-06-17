@@ -35,39 +35,46 @@ public sealed class AdminOrderService(
     return orders;
   }
 
-  public async Task<AdminOrderDetail?> GetOrderByIdAsync(Guid orderId, CancellationToken ct = default)
-  {
-    var order = await dbContext.Orders
+  public Task<AdminOrderDetail?> GetOrderByIdAsync(Guid orderId, CancellationToken ct = default) =>
+    ProjectOrderDetails(dbContext.Orders
       .AsNoTracking()
-      .Where(o => o.Id == orderId && !o.IsDeleted)
-      .Select(o => new AdminOrderDetail(
-        o.Id,
-        o.OrderCode,
-        o.User.FullName,
-        o.User.Email,
-        o.Province,
-        o.District,
-        o.Ward,
-        o.AddressLine,
-        o.Subtotal,
-        o.DiscountAmount,
-        o.ShippingFee,
-        o.TotalAmount,
-        o.OrderStatus,
-        o.Note,
-        o.CreatedAt,
-        o.Items.Select(i => new AdminOrderItemDetail(
-          i.ProductName,
-          i.Sku,
-          i.Size,
-          i.Color,
-          i.UnitPrice,
-          i.Quantity,
-          i.LineTotal)).ToList()))
-      .FirstOrDefaultAsync(ct);
+      .Where(o => o.Id == orderId && !o.IsDeleted))
+    .FirstOrDefaultAsync(ct);
 
-    return order;
+  public Task<AdminOrderDetail?> GetOrderByCodeAsync(string orderCode, CancellationToken ct = default)
+  {
+    var normalizedCode = orderCode.Trim();
+    return ProjectOrderDetails(dbContext.Orders
+        .AsNoTracking()
+        .Where(o => o.OrderCode == normalizedCode && !o.IsDeleted))
+      .FirstOrDefaultAsync(ct);
   }
+
+  private static IQueryable<AdminOrderDetail> ProjectOrderDetails(IQueryable<Domain.Entities.Order> query) =>
+    query.Select(o => new AdminOrderDetail(
+      o.Id,
+      o.OrderCode,
+      o.User.FullName,
+      o.User.Email,
+      o.Province,
+      o.District,
+      o.Ward,
+      o.AddressLine,
+      o.Subtotal,
+      o.DiscountAmount,
+      o.ShippingFee,
+      o.TotalAmount,
+      o.OrderStatus,
+      o.Note,
+      o.CreatedAt,
+      o.Items.Select(i => new AdminOrderItemDetail(
+        i.ProductName,
+        i.Sku,
+        i.Size,
+        i.Color,
+        i.UnitPrice,
+        i.Quantity,
+        i.LineTotal)).ToList()));
 
   public Task<OrderUpdateResult> UpdateStatusAsync(
     Guid orderId, string newStatus, CancellationToken ct = default)

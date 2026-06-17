@@ -22,6 +22,7 @@ import type {
   AdminPromoItem,
   CreatePromoRequest,
   UpdatePromoRequest,
+  AdminReviewItem,
 } from '@/types/admin'
 
 // ── Users ──
@@ -269,6 +270,42 @@ export async function deletePromo(id: string): Promise<void> {
 
 export async function restorePromo(id: string): Promise<void> {
   await request<void>(`/api/admin/promos/${id}/restore`, { method: 'PATCH' })
+}
+
+// ── Reviews ──
+
+export async function getReviews(params?: {
+  search?: string
+  rating?: number | 'all'
+  isVisible?: boolean | 'all'
+  page?: number
+  pageSize?: number
+}): Promise<PaginatedApiEnvelope<AdminReviewItem[]>> {
+  const qs = new URLSearchParams()
+  if (params?.search) qs.set('search', params.search)
+  if (params?.rating && params.rating !== 'all') qs.set('rating', String(params.rating))
+  if (params?.isVisible !== undefined && params.isVisible !== 'all') qs.set('isVisible', String(params.isVisible))
+  qs.set('page', String(params?.page ?? 1))
+  qs.set('pageSize', String(params?.pageSize ?? 20))
+  return requestPaginated<AdminReviewItem[]>(`/api/admin/reviews?${qs}`)
+}
+
+export async function setReviewVisibility(id: string, isVisible: boolean): Promise<void> {
+  await request<void>(`/api/admin/reviews/${id}/visibility`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isVisible }),
+  })
+}
+
+export async function deleteReview(id: string): Promise<void> {
+  await request<void>(`/api/admin/reviews/${id}`, { method: 'DELETE' })
+}
+
+export async function replyToReview(id: string, productId: string, content: string): Promise<void> {
+  await request<void>(`/api/admin/reviews/${id}/reply`, {
+    method: 'POST',
+    body: JSON.stringify({ productId, content }),
+  })
 }
 
 // ── Orders ──
