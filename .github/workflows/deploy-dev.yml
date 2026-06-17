@@ -775,6 +775,36 @@ jobs:
           cp /tmp/runtime-env.sh /root/AoDaiNhaUyen/backend/runtime-env.sh
           chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
 
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
+          if [ "${#JwtSettings__SecretKey}" -lt 64 ]; then
+            echo "[${SERVER_NAME}] Infisical JWT secret is weak or missing; using persistent server-generated fallback. Rotate Infisical key ASAP."
+            JWT_FALLBACK_FILE="/root/AoDaiNhaUyen/backend/.jwt-secret"
+            if [ ! -s "$JWT_FALLBACK_FILE" ]; then
+              umask 077
+              openssl rand -base64 96 | tr -d '\n' > "$JWT_FALLBACK_FILE"
+              chmod 600 "$JWT_FALLBACK_FILE"
+            fi
+            JWT_SECRET_VALUE=$(cat "$JWT_FALLBACK_FILE")
+            export JWT_SECRET_VALUE
+            python3 - <<'PY'
+import os
+from pathlib import Path
+p = Path('/root/AoDaiNhaUyen/backend/runtime-env.sh')
+secret = os.environ['JWT_SECRET_VALUE']
+lines = p.read_text().splitlines()
+for i, line in enumerate(lines):
+    if line.startswith('export JwtSettings__SecretKey='):
+        lines[i] = "export JwtSettings__SecretKey='" + secret.replace("'", "'\\''") + "'"
+        break
+else:
+    lines.append("export JwtSettings__SecretKey='" + secret.replace("'", "'\\''") + "'")
+p.write_text('\n'.join(lines) + '\n')
+PY
+            chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
+          fi
+
           # ==========================================
           # 4. Stop PM2 Processes
           # ==========================================
@@ -1277,6 +1307,36 @@ jobs:
           echo "[${SERVER_NAME}] Installing runtime-env.sh..."
           cp /tmp/runtime-env.sh /root/AoDaiNhaUyen/backend/runtime-env.sh
           chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
+
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
+          if [ "${#JwtSettings__SecretKey}" -lt 64 ]; then
+            echo "[${SERVER_NAME}] Infisical JWT secret is weak or missing; using persistent server-generated fallback. Rotate Infisical key ASAP."
+            JWT_FALLBACK_FILE="/root/AoDaiNhaUyen/backend/.jwt-secret"
+            if [ ! -s "$JWT_FALLBACK_FILE" ]; then
+              umask 077
+              openssl rand -base64 96 | tr -d '\n' > "$JWT_FALLBACK_FILE"
+              chmod 600 "$JWT_FALLBACK_FILE"
+            fi
+            JWT_SECRET_VALUE=$(cat "$JWT_FALLBACK_FILE")
+            export JWT_SECRET_VALUE
+            python3 - <<'PY'
+import os
+from pathlib import Path
+p = Path('/root/AoDaiNhaUyen/backend/runtime-env.sh')
+secret = os.environ['JWT_SECRET_VALUE']
+lines = p.read_text().splitlines()
+for i, line in enumerate(lines):
+    if line.startswith('export JwtSettings__SecretKey='):
+        lines[i] = "export JwtSettings__SecretKey='" + secret.replace("'", "'\\''") + "'"
+        break
+else:
+    lines.append("export JwtSettings__SecretKey='" + secret.replace("'", "'\\''") + "'")
+p.write_text('\n'.join(lines) + '\n')
+PY
+            chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
+          fi
 
           # ==========================================
           # 4. Stop PM2 Processes
