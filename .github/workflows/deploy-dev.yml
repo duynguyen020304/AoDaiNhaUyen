@@ -6,6 +6,12 @@ on:
     branches:
       - master
 
+env:
+  INFISICAL_API_URL: https://infisical.shiphard.studio
+  INFISICAL_PROJECT_ID: cd653fdf-37da-4872-a27c-4864d673b89a
+  INFISICAL_ENVIRONMENT_SLUG: staging
+  INFISICAL_SECRET_PATH: /
+
 jobs:
   # ==========================================
   # Build Frontend for HK1
@@ -26,11 +32,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?projectId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -99,11 +112,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?projectId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -172,11 +192,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?projectId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -241,11 +268,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?projectId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -311,11 +345,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?projectId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -385,11 +426,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?projectId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -783,7 +831,7 @@ jobs:
           cat > /root/AoDaiNhaUyen/frontend/start.sh << 'STARTEOF'
           #!/bin/bash
           cd /root/AoDaiNhaUyen/frontend/dist
-          /root/.bun/bin/serve -s -l 3100 .
+          /root/.bun/bin/serve -s -l 3000 .
           STARTEOF
           chmod +x /root/AoDaiNhaUyen/frontend/start.sh
 
@@ -846,11 +894,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?projectId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -1245,7 +1300,7 @@ jobs:
           cat > /root/AoDaiNhaUyen/frontend/start.sh << 'STARTEOF'
           #!/bin/bash
           cd /root/AoDaiNhaUyen/frontend/dist
-          /root/.bun/bin/serve -s -l 3100 .
+          /root/.bun/bin/serve -s -l 3000 .
           STARTEOF
           chmod +x /root/AoDaiNhaUyen/frontend/start.sh
 
