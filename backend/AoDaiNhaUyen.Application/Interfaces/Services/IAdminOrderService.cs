@@ -13,6 +13,9 @@ public interface IAdminOrderService
   /// <summary>Get order detail by ID.</summary>
   Task<AdminOrderDetail?> GetOrderByIdAsync(Guid orderId, CancellationToken ct = default);
 
+  /// <summary>Get order detail by public order code.</summary>
+  Task<AdminOrderDetail?> GetOrderByCodeAsync(string orderCode, CancellationToken ct = default);
+
   /// <summary>Update order status (delegates to IOrderService).</summary>
   Task<OrderUpdateResult> UpdateStatusAsync(Guid orderId, string newStatus, CancellationToken ct = default);
 

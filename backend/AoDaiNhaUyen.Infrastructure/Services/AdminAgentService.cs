@@ -166,8 +166,10 @@ public sealed class AdminAgentService : IAdminAgentService
         ("status", O("string", "Lọc theo trạng thái: pending, confirmed, processing, shipping, completed, cancelled. Mặc định: tất cả")),
         ("limit", O("integer", "Số lượng đơn hàng. Mặc định: 10; tăng limit nếu cần rà soát thêm")))),
 
-    T("get_order", "Xem chi tiết một đơn hàng.",
-      P(("orderId", O("string", "ID đơn hàng (GUID)")))),
+    T("get_order", "Xem chi tiết một đơn hàng. Chấp nhận orderId (GUID nội bộ) hoặc orderCode dạng AD-... mà admin nhìn thấy.",
+      P(
+        ("orderId", O("string", "ID đơn hàng (GUID nội bộ, nếu có)")),
+        ("orderCode", O("string", "Mã đơn hàng hiển thị dạng AD-...")))),
 
     T("confirm_order", "Xác nhận đơn hàng (pending → confirmed).",
       P(("orderId", O("string", "ID đơn hàng (GUID)")))),
@@ -744,7 +746,7 @@ public sealed class AdminAgentService : IAdminAgentService
 
         // Orders
         "list_orders" => await ListOrders(OptionalEnum(args, "status", "pending", "confirmed", "processing", "shipping", "completed", "cancelled"), ClampInt(GetIntArg(args, "limit", 10), 1, 50), ct),
-        "get_order" => await GetOrder(RequiredGuid(args, "orderId"), ct),
+        "get_order" => await GetOrder(args, ct),
         "confirm_order" => await UpdateOrderStatus(RequiredGuid(args, "orderId"), "confirmed", ct),
         "start_processing_order" => await UpdateOrderStatus(RequiredGuid(args, "orderId"), "processing", ct),
         "ship_order" => await ShipOrder(args, ct),
@@ -1173,25 +1175,44 @@ public sealed class AdminAgentService : IAdminAgentService
              $"- [{o.OrderCode}] {o.CustomerName ?? "Khách"} — {o.TotalAmount:N0}đ ({o.OrderStatus}) — {o.ItemCount} sản phẩm"));
   }
 
-  private async Task<string> GetOrder(Guid orderId, CancellationToken ct)
+  private async Task<string> GetOrder(JsonElement args, CancellationToken ct)
   {
-    var order = await _orders.GetOrderByIdAsync(orderId, ct);
-    if (order is null) return "❌ Không tìm thấy đơn hàng.";
+    var orderIdText = GetStrArg(args, "orderId");
+    var orderCode = GetStrArg(args, "orderCode");
 
-    var items = string.Join("\n", order.Items.Select(i =>
-      $"  - {i.ProductName} ({i.Size}/{i.Color}) x{i.Quantity} = {i.LineTotal:N0}đ"));
+    AdminOrderDetail? order = null;
+    if (!string.IsNullOrWhiteSpace(orderIdText) && Guid.TryParse(orderIdText, out var orderId))
+      order = await _orders.GetOrderByIdAsync(orderId, ct);
 
-    return $@"📋 Đơn hàng {order.OrderCode}
-Khách: {order.CustomerName} ({order.CustomerEmail})
-Địa chỉ: {order.AddressLine}, {order.Ward}, {order.District}, {order.Province}
-Trạng thái: {order.OrderStatus}
-Tạm tính: {order.Subtotal:N0}đ
-Giảm giá: {order.DiscountAmount:N0}đ
-Phí ship: {order.ShippingFee:N0}đ
-Tổng: {order.TotalAmount:N0}đ
-Ghi chú: {order.Note ?? "Không có"}
-Sản phẩm:
-{items}";
+    if (order is null && !string.IsNullOrWhiteSpace(orderCode))
+      order = await _orders.GetOrderByCodeAsync(orderCode, ct);
+
+    if (order is null)
+      return SerializeToolError(
+        string.IsNullOrWhiteSpace(orderCode)
+          ? "Không tìm thấy đơn hàng. Nếu admin nhập mã dạng AD-..., hãy gọi lại get_order với orderCode thay vì orderId."
+          : $"Không tìm thấy đơn hàng mã {orderCode.Trim()}.",
+        "order_not_found");
+
+    return SerializeToolResult(new
+    {
+      order.Id,
+      order.OrderCode,
+      order.CustomerName,
+      order.CustomerEmail,
+      order.Province,
+      order.District,
+      order.Ward,
+      order.AddressLine,
+      order.Subtotal,
+      order.DiscountAmount,
+      order.ShippingFee,
+      order.TotalAmount,
+      order.OrderStatus,
+      order.Note,
+      order.CreatedAt,
+      order.Items
+    }, "Read", false, message: $"Đã tìm thấy đơn hàng {order.OrderCode}.");
   }
 
   private async Task<string> UpdateOrderStatus(Guid orderId, string newStatus, CancellationToken ct)

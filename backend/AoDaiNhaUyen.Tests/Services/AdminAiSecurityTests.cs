@@ -455,6 +455,7 @@ public sealed class AdminAiSecurityTests
   {
     public Task<IReadOnlyList<AdminOrderListItem>> GetOrdersAsync(string? status, int limit, CancellationToken ct = default) => Task.FromResult((IReadOnlyList<AdminOrderListItem>)[]);
     public Task<AdminOrderDetail?> GetOrderByIdAsync(Guid orderId, CancellationToken ct = default) => Task.FromResult<AdminOrderDetail?>(null);
+    public Task<AdminOrderDetail?> GetOrderByCodeAsync(string orderCode, CancellationToken ct = default) => Task.FromResult<AdminOrderDetail?>(null);
     public Task<OrderUpdateResult> UpdateStatusAsync(Guid orderId, string newStatus, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, newStatus));
     public Task<OrderUpdateResult> CreateShipmentAsync(Guid orderId, string? carrier, string? trackingNumber, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "shipping"));
     public Task<OrderUpdateResult> CancelOrderAsync(Guid orderId, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "cancelled"));
@@ -469,6 +470,9 @@ public sealed class AdminAiSecurityTests
   private sealed class FakeReviewService : IAdminReviewService
   {
     public Task<IReadOnlyList<AdminReviewItem>> GetRecentReviewsAsync(int limit = 10, CancellationToken ct = default) => Task.FromResult((IReadOnlyList<AdminReviewItem>)[]);
+    public Task<AdminReviewListResult> GetReviewsAsync(AdminReviewListQuery query, CancellationToken ct = default) => Task.FromResult(new AdminReviewListResult([], 0));
+    public Task<AdminReviewActionResult> SetReviewVisibilityAsync(Guid id, bool isVisible, CancellationToken ct = default) => Task.FromResult(new AdminReviewActionResult(true, "OK"));
+    public Task<AdminReviewActionResult> DeleteReviewAsync(Guid id, CancellationToken ct = default) => Task.FromResult(new AdminReviewActionResult(true, "OK"));
     public Task<IReadOnlyList<AdminCommentItem>> GetRecentCommentsAsync(int limit = 10, CancellationToken ct = default) => Task.FromResult((IReadOnlyList<AdminCommentItem>)[]);
     public Task<AdminReplyResult> ReplyToCommentAsync(Guid adminUserId, Guid commentId, Guid productId, string content, CancellationToken ct = default) => Task.FromResult(new AdminReplyResult(true, "OK", Guid.NewGuid()));
   }

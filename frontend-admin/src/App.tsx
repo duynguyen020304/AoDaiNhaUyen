@@ -15,6 +15,7 @@ import { RolesPage } from '@/pages/RolesPage'
 import { MediaPage } from '@/pages/MediaPage'
 import { AiChatPage } from '@/pages/AiChatPage'
 import { OrdersPage } from '@/pages/OrdersPage'
+import { ReviewsPage } from '@/pages/ReviewsPage'
 import { ToolRiskPage } from '@/pages/ToolRiskPage'
 import { LlmLogsPage } from '@/pages/LlmLogsPage'
 import { PromosPage } from '@/pages/PromosPage'
@@ -71,6 +72,7 @@ export function App() {
             <Route path="roles" element={<RolesPage />} />
             <Route path="media" element={<MediaPage />} />
             <Route path="orders" element={<OrdersPage />} />
+            <Route path="reviews" element={<ReviewsPage />} />
             <Route path="ai-chat" element={<AiChatPage />} />
             <Route path="llm-logs" element={<LlmLogsPage />} />
             <Route path="tools-risk" element={<ToolRiskPage />} />

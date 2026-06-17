@@ -234,6 +234,31 @@ export interface TogglePromoStatusRequest {
   isActive: boolean
 }
 
+// ── Reviews ──
+
+export interface AdminReviewItem {
+  id: string
+  userId: string
+  userName: string | null
+  userEmail: string | null
+  productId: string
+  productName: string | null
+  rating: number
+  content: string
+  isVisible: boolean
+  replyCount: number
+  createdAt: string
+}
+
+export interface SetReviewVisibilityRequest {
+  isVisible: boolean
+}
+
+export interface ReplyToReviewRequest {
+  productId: string
+  content: string
+}
+
 // ── Orders ──
 
 export interface AdminOrderListItem {
