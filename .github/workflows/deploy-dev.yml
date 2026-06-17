@@ -787,22 +787,13 @@ jobs:
               chmod 600 "$JWT_FALLBACK_FILE"
             fi
             JWT_SECRET_VALUE=$(cat "$JWT_FALLBACK_FILE")
-            export JWT_SECRET_VALUE
-            python3 - <<'PY'
-import os
-from pathlib import Path
-p = Path('/root/AoDaiNhaUyen/backend/runtime-env.sh')
-secret = os.environ['JWT_SECRET_VALUE']
-lines = p.read_text().splitlines()
-for i, line in enumerate(lines):
-    if line.startswith('export JwtSettings__SecretKey='):
-        lines[i] = "export JwtSettings__SecretKey='" + secret.replace("'", "'\\''") + "'"
-        break
-else:
-    lines.append("export JwtSettings__SecretKey='" + secret.replace("'", "'\\''") + "'")
-p.write_text('\n'.join(lines) + '\n')
-PY
-            chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
+            ENV_FILE="/root/AoDaiNhaUyen/backend/runtime-env.sh"
+            if grep -q '^export JwtSettings__SecretKey=' "$ENV_FILE"; then
+              sed -i "/^export JwtSettings__SecretKey=/c\\export JwtSettings__SecretKey='${JWT_SECRET_VALUE}'" "$ENV_FILE"
+            else
+              echo "export JwtSettings__SecretKey='${JWT_SECRET_VALUE}'" >> "$ENV_FILE"
+            fi
+            chmod 600 "$ENV_FILE"
           fi
 
           # ==========================================
@@ -1320,22 +1311,13 @@ PY
               chmod 600 "$JWT_FALLBACK_FILE"
             fi
             JWT_SECRET_VALUE=$(cat "$JWT_FALLBACK_FILE")
-            export JWT_SECRET_VALUE
-            python3 - <<'PY'
-import os
-from pathlib import Path
-p = Path('/root/AoDaiNhaUyen/backend/runtime-env.sh')
-secret = os.environ['JWT_SECRET_VALUE']
-lines = p.read_text().splitlines()
-for i, line in enumerate(lines):
-    if line.startswith('export JwtSettings__SecretKey='):
-        lines[i] = "export JwtSettings__SecretKey='" + secret.replace("'", "'\\''") + "'"
-        break
-else:
-    lines.append("export JwtSettings__SecretKey='" + secret.replace("'", "'\\''") + "'")
-p.write_text('\n'.join(lines) + '\n')
-PY
-            chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
+            ENV_FILE="/root/AoDaiNhaUyen/backend/runtime-env.sh"
+            if grep -q '^export JwtSettings__SecretKey=' "$ENV_FILE"; then
+              sed -i "/^export JwtSettings__SecretKey=/c\\export JwtSettings__SecretKey='${JWT_SECRET_VALUE}'" "$ENV_FILE"
+            else
+              echo "export JwtSettings__SecretKey='${JWT_SECRET_VALUE}'" >> "$ENV_FILE"
+            fi
+            chmod 600 "$ENV_FILE"
           fi
 
           # ==========================================
