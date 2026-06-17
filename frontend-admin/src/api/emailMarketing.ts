@@ -8,7 +8,10 @@ import type {
   EmailTemplateListItem,
   ImportSubscribersRequest,
   ImportSubscribersResult,
+  MarketingCampaignSendResult,
+  MarketingContentOption,
   MarketingStats,
+  SendMarketingCampaignRequest,
   SubscriberDetail,
   SubscriberListItem,
   UpdateEmailTemplateRequest,
@@ -24,6 +27,13 @@ function qs(params: Record<string, string | number | boolean | undefined>) {
 
 export const getMarketingStats = () =>
   request<MarketingStats>("/api/admin/marketing/stats");
+export const getMarketingContentOptions = () =>
+  request<MarketingContentOption[]>("/api/admin/marketing/content-options");
+export const sendMarketingCampaign = (data: SendMarketingCampaignRequest) =>
+  request<MarketingCampaignSendResult>("/api/admin/marketing/campaigns/send", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 export const getEmailTemplates = (
   search = "",
   includeDeleted = false,

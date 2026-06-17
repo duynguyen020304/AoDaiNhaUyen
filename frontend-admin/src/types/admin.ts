@@ -284,3 +284,7 @@ export interface EmailJobListItem { id: string; toEmail: string; templateKey: st
 export interface SendLogRecord { status: string; sentAt: string | null; failedAt: string | null; errorMessage: string | null }
 export interface EmailJobDetail extends EmailJobListItem { payloadJson: string; logs: SendLogRecord[] }
 export interface MarketingStats { totalSubscribers: number; activeSubscribers: number; pendingSubscribers: number; unsubscribedSubscribers: number; queuedJobs: number; sentJobsToday: number; failedJobs: number; templateCount: number }
+export interface MarketingContentOption { id: string; type: 'promo' | 'blog' | 'product' | string; title: string; subtitle: string | null; url: string | null; badge: string | null; htmlSnippet: string }
+export interface MarketingCampaignAttachmentRequest { type: string; id?: string | null; title: string; url?: string | null; description?: string | null; code?: string | null }
+export interface SendMarketingCampaignRequest { recipientMode: 'all_active' | 'selected' | 'manual'; subscriberIds?: string[]; manualEmails?: string[]; templateKey: string; subject: string; preheader?: string | null; intro?: string | null; bodyHtml?: string | null; ctaLabel?: string | null; ctaUrl?: string | null; attachments?: MarketingCampaignAttachmentRequest[]; scheduledAt?: string | null }
+export interface MarketingCampaignSendResult { queued: number; skipped: number; skippedEmails: string[] }

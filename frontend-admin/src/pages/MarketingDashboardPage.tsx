@@ -4,11 +4,17 @@ import { Mail, UsersRound, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEmailMarketingStore } from "@/stores/emailMarketingStore";
 import { EmailTemplatesPage } from "@/pages/EmailTemplatesPage";
+import { MarketingSendPage } from "@/pages/MarketingSendPage";
 import { SubscribersPage } from "@/pages/SubscribersPage";
 
-type MarketingTab = "templates" | "subscribers";
+type MarketingTab = "send" | "templates" | "subscribers";
 
 const tabs: Array<{ id: MarketingTab; label: string; description: string }> = [
+  {
+    id: "send",
+    label: "Gửi chiến dịch",
+    description: "Chọn người nhận, template và nội dung đính kèm.",
+  },
   {
     id: "templates",
     label: "Mẫu email",
@@ -22,7 +28,7 @@ const tabs: Array<{ id: MarketingTab; label: string; description: string }> = [
 ];
 
 function normalizeTab(value: string | null): MarketingTab {
-  return tabs.some((tab) => tab.id === value) ? (value as MarketingTab) : "templates";
+  return tabs.some((tab) => tab.id === value) ? (value as MarketingTab) : "send";
 }
 
 export function MarketingDashboardPage() {
@@ -70,7 +76,7 @@ export function MarketingDashboardPage() {
       </div>
       <div className="rounded-xl border bg-white p-2 shadow-sm">
         <div
-          className="grid gap-2 md:grid-cols-2"
+          className="grid gap-2 md:grid-cols-3"
           role="tablist"
           aria-label="Chức năng marketing email"
         >
@@ -104,6 +110,7 @@ export function MarketingDashboardPage() {
       </div>
 
       <section role="tabpanel" className="min-w-0">
+        {activeTab === "send" && <MarketingSendPage />}
         {activeTab === "templates" && <EmailTemplatesPage />}
         {activeTab === "subscribers" && <SubscribersPage />}
       </section>

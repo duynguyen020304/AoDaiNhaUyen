@@ -1,9 +1,13 @@
 using System.Security.Cryptography;
+using System.Text;
+using System.Text.Encodings.Web;
 using AoDaiNhaUyen.Application.DTOs.Admin;
+using AoDaiNhaUyen.Application.Options;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
@@ -253,4 +257,237 @@ public sealed class AdminMarketingStatsService(AppDbContext dbContext) : IAdminM
     var templateCount = await dbContext.EmailTemplates.CountAsync(x => !x.IsDeleted, cancellationToken);
     return new MarketingStats(totalSubscribers, activeSubscribers, pendingSubscribers, unsubscribedSubscribers, queuedJobs, sentJobsToday, failedJobs, templateCount);
   }
+}
+
+public sealed class AdminMarketingCampaignService(AppDbContext dbContext, IOptions<EmailSettings> emailSettings) : IAdminMarketingCampaignService
+{
+  private const int MaxRecipients = 5000;
+  private const int MaxAttachments = 12;
+  private readonly EmailSettings emailSettings = emailSettings.Value;
+
+  public async Task<IReadOnlyList<MarketingContentOption>> GetContentOptionsAsync(CancellationToken cancellationToken = default)
+  {
+    var now = DateTime.UtcNow;
+    var promos = await dbContext.PromoCodes.AsNoTracking()
+      .Where(x => x.IsActive && !x.IsDeleted && x.StartDate <= now && x.EndDate > now)
+      .OrderByDescending(x => x.CreatedAt)
+      .Take(20)
+      .Select(x => new { x.Id, x.Code, x.DiscountType, x.DiscountValue, x.MinOrderAmount, x.EndDate, x.FreeShipping })
+      .ToListAsync(cancellationToken);
+
+    var blogs = await dbContext.BlogPosts.AsNoTracking()
+      .Where(x => x.IsActive && !x.IsDeleted && x.Status == AoDaiNhaUyen.Domain.Common.BlogPostStatus.Published)
+      .OrderByDescending(x => x.PublishedAt ?? x.UpdatedAt)
+      .Take(20)
+      .Select(x => new { x.Id, x.Title, x.Slug, x.Excerpt, x.PublishedAt })
+      .ToListAsync(cancellationToken);
+
+    var products = await dbContext.Products.AsNoTracking()
+      .Where(x => x.IsActive && !x.IsDeleted && x.IsPublic && x.Status == "active")
+      .OrderByDescending(x => x.IsFeatured)
+      .ThenByDescending(x => x.UpdatedAt)
+      .Take(20)
+      .Select(x => new { x.Id, x.Name, x.Slug, x.ShortDescription, x.ProductType })
+      .ToListAsync(cancellationToken);
+
+    var result = new List<MarketingContentOption>();
+    result.AddRange(promos.Select(x =>
+    {
+      var discount = x.DiscountType == "percentage" ? $"Giảm {x.DiscountValue:0}%" : $"Giảm {x.DiscountValue:0,0}đ";
+      var subtitle = x.FreeShipping ? $"{discount} + freeship" : discount;
+      var url = BuildFrontendUrl("/products");
+      return new MarketingContentOption(x.Id, "promo", x.Code, subtitle, url, $"HSD {x.EndDate:dd/MM/yyyy}", PromoHtml(x.Code, subtitle, x.MinOrderAmount, url));
+    }));
+    result.AddRange(blogs.Select(x =>
+    {
+      var url = BuildFrontendUrl($"/blog/{x.Slug}/");
+      return new MarketingContentOption(x.Id, "blog", x.Title, x.Excerpt, url, x.PublishedAt?.ToString("dd/MM/yyyy"), LinkHtml("Bài viết mới", x.Title, x.Excerpt, url));
+    }));
+    result.AddRange(products.Select(x =>
+    {
+      var url = BuildFrontendUrl($"/product/{x.Slug}");
+      return new MarketingContentOption(x.Id, "product", x.Name, x.ShortDescription, url, x.ProductType, LinkHtml("Sản phẩm nổi bật", x.Name, x.ShortDescription, url));
+    }));
+
+    return result;
+  }
+
+  public async Task<MarketingCampaignSendResult> QueueCampaignAsync(SendMarketingCampaignRequest request, CancellationToken cancellationToken = default)
+  {
+    ValidateCampaign(request);
+    var templateKey = request.TemplateKey.Trim();
+    var templateExists = await dbContext.EmailTemplates.AnyAsync(x => x.Key == templateKey && x.IsActive && !x.IsDeleted, cancellationToken);
+    if (!templateExists) throw new InvalidOperationException("Mẫu email chưa hoạt động hoặc không tồn tại.");
+
+    var recipients = await ResolveRecipientsAsync(request, cancellationToken);
+    if (recipients.Count == 0) throw new ArgumentException("Không có người nhận hợp lệ.");
+    if (recipients.Count > MaxRecipients) throw new ArgumentException($"Chỉ được gửi tối đa {MaxRecipients} email mỗi chiến dịch.");
+
+    var scheduledAt = request.ScheduledAt?.ToUniversalTime() ?? DateTime.UtcNow;
+    var attachments = NormalizeAttachments(request.Attachments);
+    var attachmentsHtml = BuildAttachmentsHtml(attachments);
+    var bodyHtml = BuildBodyHtml(request, attachmentsHtml);
+    var queued = 0;
+    var skippedEmails = new List<string>();
+
+    foreach (var recipient in recipients)
+    {
+      if (!IsEmailLike(recipient.Email))
+      {
+        skippedEmails.Add(recipient.Email);
+        continue;
+      }
+
+      dbContext.EmailJobs.Add(new EmailJob
+      {
+        Id = Guid.NewGuid(),
+        ToEmail = recipient.Email,
+        TemplateKey = templateKey,
+        PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
+        {
+          subject = request.Subject.Trim(),
+          preheader = Normalize(request.Preheader),
+          heading = request.Subject.Trim(),
+          intro = Normalize(request.Intro),
+          body = BuildPlainBody(request, attachments),
+          bodyHtml,
+          attachmentsHtml,
+          ctaLabel = Normalize(request.CtaLabel),
+          ctaText = Normalize(request.CtaLabel) ?? "Xem chi tiết",
+          ctaUrl = Normalize(request.CtaUrl) ?? BuildFrontendUrl("/products"),
+          expiryDate = attachments.Where(x => x.Type == "promo").Select(x => x.Description).FirstOrDefault() ?? "khi chương trình kết thúc",
+          unsubscribeUrl = recipient.UnsubscribeToken is null ? null : BuildFrontendUrl($"/unsubscribe?token={Uri.EscapeDataString(recipient.UnsubscribeToken)}"),
+          sentAt = DateTime.UtcNow.ToString("O")
+        }),
+        Status = "queued",
+        ScheduledAt = scheduledAt,
+        CreatedAt = DateTime.UtcNow,
+        UpdatedAt = DateTime.UtcNow
+      });
+      queued++;
+    }
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return new MarketingCampaignSendResult(queued, skippedEmails.Count, skippedEmails);
+  }
+
+  private async Task<List<CampaignRecipient>> ResolveRecipientsAsync(SendMarketingCampaignRequest request, CancellationToken cancellationToken)
+  {
+    var mode = request.RecipientMode.Trim().ToLowerInvariant();
+    if (mode == "all_active")
+    {
+      return await dbContext.Subscribers.AsNoTracking()
+        .Where(x => !x.IsDeleted && x.Status == "active")
+        .OrderByDescending(x => x.SubscribedAt ?? x.CreatedAt)
+        .Select(x => new CampaignRecipient(x.Email.ToLower(), x.UnsubscribeToken))
+        .ToListAsync(cancellationToken);
+    }
+
+    if (mode == "selected")
+    {
+      var ids = (request.SubscriberIds ?? Array.Empty<Guid>()).Distinct().ToList();
+      if (ids.Count == 0) throw new ArgumentException("Vui lòng chọn ít nhất một người nhận.");
+      return await dbContext.Subscribers.AsNoTracking()
+        .Where(x => ids.Contains(x.Id) && !x.IsDeleted && x.Status == "active")
+        .Select(x => new CampaignRecipient(x.Email.ToLower(), x.UnsubscribeToken))
+        .ToListAsync(cancellationToken);
+    }
+
+    var emails = (request.ManualEmails ?? Array.Empty<string>())
+      .Select(x => x.Trim().ToLowerInvariant())
+      .Where(x => !string.IsNullOrWhiteSpace(x))
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .ToList();
+    if (emails.Count == 0) throw new ArgumentException("Vui lòng nhập ít nhất một email.");
+    return emails.Select(x => new CampaignRecipient(x, null)).ToList();
+  }
+
+  private static void ValidateCampaign(SendMarketingCampaignRequest request)
+  {
+    var mode = request.RecipientMode?.Trim().ToLowerInvariant();
+    if (mode is not ("all_active" or "selected" or "manual")) throw new ArgumentException("Kiểu người nhận không hợp lệ.");
+    if (string.IsNullOrWhiteSpace(request.TemplateKey) || request.TemplateKey.Length > 120) throw new ArgumentException("Vui lòng chọn mẫu email.");
+    if (string.IsNullOrWhiteSpace(request.Subject) || request.Subject.Length > 255) throw new ArgumentException("Tiêu đề email không hợp lệ.");
+    if ((request.Attachments?.Count ?? 0) > MaxAttachments) throw new ArgumentException($"Chỉ được đính kèm tối đa {MaxAttachments} nội dung.");
+    if (request.ScheduledAt.HasValue && request.ScheduledAt.Value.ToUniversalTime() < DateTime.UtcNow.AddMinutes(-5)) throw new ArgumentException("Thời gian gửi không được nằm trong quá khứ.");
+  }
+
+  private static IReadOnlyList<MarketingCampaignAttachmentRequest> NormalizeAttachments(IReadOnlyList<MarketingCampaignAttachmentRequest>? attachments)
+  {
+    return (attachments ?? Array.Empty<MarketingCampaignAttachmentRequest>())
+      .Where(x => !string.IsNullOrWhiteSpace(x.Title))
+      .Take(MaxAttachments)
+      .ToList();
+  }
+
+  private static string BuildPlainBody(SendMarketingCampaignRequest request, IReadOnlyList<MarketingCampaignAttachmentRequest> attachments)
+  {
+    var parts = new List<string>();
+    if (!string.IsNullOrWhiteSpace(request.Intro)) parts.Add(request.Intro.Trim());
+    if (!string.IsNullOrWhiteSpace(request.BodyHtml)) parts.Add(System.Text.RegularExpressions.Regex.Replace(request.BodyHtml, "<.*?>", string.Empty).Trim());
+    parts.AddRange(attachments.Select(x => $"{x.Title}: {x.Description ?? x.Url ?? string.Empty}"));
+    return string.Join("\n\n", parts.Where(x => !string.IsNullOrWhiteSpace(x)));
+  }
+
+  private static string BuildBodyHtml(SendMarketingCampaignRequest request, string attachmentsHtml)
+  {
+    var builder = new StringBuilder();
+    var intro = Normalize(request.Intro);
+    if (intro is not null) builder.Append("<p>").Append(HtmlEncoder.Default.Encode(intro)).Append("</p>");
+    if (!string.IsNullOrWhiteSpace(request.BodyHtml)) builder.Append(request.BodyHtml.Trim());
+    if (!string.IsNullOrWhiteSpace(attachmentsHtml)) builder.Append(attachmentsHtml);
+    var ctaUrl = Normalize(request.CtaUrl);
+    var ctaLabel = Normalize(request.CtaLabel) ?? "Xem chi tiết";
+    if (ctaUrl is not null)
+    {
+      builder.Append("<p style=\"margin:24px 0\"><a href=\"")
+        .Append(HtmlEncoder.Default.Encode(ctaUrl))
+        .Append("\" style=\"display:inline-block;background:#7f1d1d;color:#fff;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:700\">")
+        .Append(HtmlEncoder.Default.Encode(ctaLabel))
+        .Append("</a></p>");
+    }
+    return builder.ToString();
+  }
+
+  private static string BuildAttachmentsHtml(IReadOnlyList<MarketingCampaignAttachmentRequest> attachments)
+  {
+    if (attachments.Count == 0) return string.Empty;
+    var builder = new StringBuilder("<div style=\"margin-top:24px\">");
+    foreach (var item in attachments)
+    {
+      var typeLabel = item.Type switch { "promo" => "Khuyến mãi", "blog" => "Bài viết", "product" => "Sản phẩm", _ => "Thông báo" };
+      builder.Append("<div style=\"border:1px solid #ead7d7;border-radius:16px;padding:16px;margin:12px 0;background:#fffaf7\">")
+        .Append("<div style=\"font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#9f6b2f;font-weight:700\">")
+        .Append(HtmlEncoder.Default.Encode(typeLabel))
+        .Append("</div><h3 style=\"margin:6px 0 8px;color:#7f1d1d\">")
+        .Append(HtmlEncoder.Default.Encode(item.Title.Trim()))
+        .Append("</h3>");
+      if (!string.IsNullOrWhiteSpace(item.Code)) builder.Append("<p><strong>Mã: ").Append(HtmlEncoder.Default.Encode(item.Code.Trim())).Append("</strong></p>");
+      if (!string.IsNullOrWhiteSpace(item.Description)) builder.Append("<p>").Append(HtmlEncoder.Default.Encode(item.Description.Trim())).Append("</p>");
+      if (!string.IsNullOrWhiteSpace(item.Url)) builder.Append("<p><a href=\"").Append(HtmlEncoder.Default.Encode(item.Url.Trim())).Append("\">Xem chi tiết</a></p>");
+      builder.Append("</div>");
+    }
+    return builder.Append("</div>").ToString();
+  }
+
+  private string BuildFrontendUrl(string path)
+  {
+    var baseUrl = emailSettings.FrontendBaseUrl.TrimEnd('/');
+    return $"{baseUrl}/{path.TrimStart('/')}";
+  }
+
+  private static string PromoHtml(string code, string subtitle, decimal minOrderAmount, string url)
+  {
+    var minOrder = minOrderAmount > 0 ? $" cho đơn từ {minOrderAmount:0,0}đ" : string.Empty;
+    return LinkHtml("Khuyến mãi", code, $"{subtitle}{minOrder}", url);
+  }
+
+  private static string LinkHtml(string label, string title, string? description, string url)
+  {
+    return $"<div><strong>{HtmlEncoder.Default.Encode(label)}:</strong> <a href=\"{HtmlEncoder.Default.Encode(url)}\">{HtmlEncoder.Default.Encode(title)}</a><p>{HtmlEncoder.Default.Encode(description ?? string.Empty)}</p></div>";
+  }
+
+  private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+  private static bool IsEmailLike(string value) => value.Length <= 150 && value.Contains('@') && value.Contains('.');
+  private sealed record CampaignRecipient(string Email, string? UnsubscribeToken);
 }

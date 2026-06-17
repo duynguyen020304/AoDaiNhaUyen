@@ -169,11 +169,35 @@ public sealed class AdminEmailJobsController(IAdminEmailJobService service) : Co
 [ApiController]
 [Route("api/admin/marketing")]
 [Authorize(Policy = "RequireAdminRole")]
-public sealed class AdminMarketingController(IAdminMarketingStatsService service) : ControllerBase
+public sealed class AdminMarketingController(IAdminMarketingStatsService statsService, IAdminMarketingCampaignService campaignService) : ControllerBase
 {
   [HttpGet("stats")]
   public async Task<IActionResult> GetStats(CancellationToken cancellationToken = default)
   {
-    return Ok(ApiResponseFactory.Success(await service.GetStatsAsync(cancellationToken), "Lấy thống kê marketing thành công."));
+    return Ok(ApiResponseFactory.Success(await statsService.GetStatsAsync(cancellationToken), "Lấy thống kê marketing thành công."));
+  }
+
+  [HttpGet("content-options")]
+  public async Task<IActionResult> GetContentOptions(CancellationToken cancellationToken = default)
+  {
+    return Ok(ApiResponseFactory.Success(await campaignService.GetContentOptionsAsync(cancellationToken), "Lấy nội dung đính kèm thành công."));
+  }
+
+  [HttpPost("campaigns/send")]
+  public async Task<IActionResult> SendCampaign(SendMarketingCampaignRequest request, CancellationToken cancellationToken = default)
+  {
+    try
+    {
+      var result = await campaignService.QueueCampaignAsync(request, cancellationToken);
+      return Ok(ApiResponseFactory.Success(result, "Đã đưa email marketing vào hàng đợi gửi."));
+    }
+    catch (ArgumentException ex)
+    {
+      return BadRequest(ApiResponseFactory.Failure("Dữ liệu gửi email không hợp lệ.", "validation_error", ex.Message));
+    }
+    catch (InvalidOperationException ex)
+    {
+      return Conflict(ApiResponseFactory.Failure("Không thể gửi email marketing.", "conflict", ex.Message));
+    }
   }
 }

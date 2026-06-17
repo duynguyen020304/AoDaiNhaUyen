@@ -165,6 +165,7 @@ public static class ServiceRegistration
     services.AddScoped<IAdminSubscriberService, AdminSubscriberService>();
     services.AddScoped<IAdminEmailJobService, AdminEmailJobService>();
     services.AddScoped<IAdminMarketingStatsService, AdminMarketingStatsService>();
+    services.AddScoped<IAdminMarketingCampaignService, AdminMarketingCampaignService>();
     services.AddScoped<IOrderService, OrderService>();
     services.AddScoped<IUserService, UserService>();
     services.AddScoped<ISeedDataService, SeedDataService>();

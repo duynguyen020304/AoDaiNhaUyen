@@ -32,3 +32,9 @@ public interface IAdminMarketingStatsService
 {
   Task<MarketingStats> GetStatsAsync(CancellationToken cancellationToken = default);
 }
+
+public interface IAdminMarketingCampaignService
+{
+  Task<IReadOnlyList<MarketingContentOption>> GetContentOptionsAsync(CancellationToken cancellationToken = default);
+  Task<MarketingCampaignSendResult> QueueCampaignAsync(SendMarketingCampaignRequest request, CancellationToken cancellationToken = default);
+}
