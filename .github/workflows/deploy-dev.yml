@@ -75,6 +75,7 @@ jobs:
           VITE_API_BASE_URL="$HK1_VITE_API_BASE_URL" \
           PUBLIC_GOOGLE_CLIENT_ID="$HK1_PUBLIC_GOOGLE_CLIENT_ID" \
           PUBLIC_ZALO_APP_ID="$HK1_ZALO_OAUTH_APP_ID" \
+          PUBLIC_FACEBOOK_CLIENT_ID="${HK1_PUBLIC_FACEBOOK_CLIENT_ID:-}" \
           bun run build
 
       - name: Upload Frontend Artifact to S3
@@ -155,6 +156,7 @@ jobs:
           VITE_API_BASE_URL="$US1_VITE_API_BASE_URL" \
           PUBLIC_GOOGLE_CLIENT_ID="$US1_PUBLIC_GOOGLE_CLIENT_ID" \
           PUBLIC_ZALO_APP_ID="$US1_ZALO_OAUTH_APP_ID" \
+          PUBLIC_FACEBOOK_CLIENT_ID="${US1_PUBLIC_FACEBOOK_CLIENT_ID:-}" \
           bun run build
 
       - name: Upload Frontend Artifact to S3
@@ -675,6 +677,13 @@ jobs:
           export ConnectionStrings__DefaultConnection='${HK1_POSTGRESQL_CONNECTION_STRING}'
           export RunMigrationsAndSeedOnStartup='${HK1_RUN_MIGRATIONS_AND_SEED_ON_STARTUP}'
           export JwtSettings__SecretKey='${HK1_JWT_SECRET_KEY}'
+          export JwtSettings__Issuer='${HK1_JWT_ISSUER:-AoDaiNhaUyen.Api}'
+          export JwtSettings__Audience='${HK1_JWT_AUDIENCE:-AoDaiNhaUyen.Frontend}'
+          export JwtSettings__ExpiryMinutes='${HK1_JWT_EXPIRY_MINUTES:-60}'
+          export JwtSettings__RefreshTokenExpiryDays='${HK1_JWT_REFRESH_TOKEN_EXPIRY_DAYS:-30}'
+          export CookieSettings__AccessTokenCookieName='${HK1_COOKIE_ACCESS_TOKEN_COOKIE_NAME:-access_token}'
+          export CookieSettings__RefreshTokenCookieName='${HK1_COOKIE_REFRESH_TOKEN_COOKIE_NAME:-refresh_token}'
+          export ConnectionStrings__Redis='${HK1_REDIS_CONNECTION_STRING:-}'
           export GoogleOAuth__ClientId='${HK1_GOOGLE_OAUTH_CLIENT_ID}'
           export GoogleOAuth__ClientSecret='${HK1_GOOGLE_OAUTH_CLIENT_SECRET}'
           export GoogleOAuth__RedirectUri='${HK1_GOOGLE_OAUTH_REDIRECT_URI}'
@@ -704,6 +713,10 @@ jobs:
           export S3Storage__SecretKey='${S3_SECRET_KEY}'
           export S3Storage__ServiceUrl='${S3_SERVICE_URL}'
           export S3Storage__UsePathStyle='${S3_USE_PATH_STYLE}'
+          export Hermes__AdminApiKey='${HK1_HERMES_ADMIN_API_KEY:-}'
+          export Hermes__ApiServerUrl='${HK1_HERMES_API_SERVER_URL:-http://127.0.0.1:8642}'
+          export Hermes__ApiServerKey='${HK1_HERMES_API_SERVER_KEY:-}'
+          export Hermes__RunnerName='${HK1_HERMES_RUNNER_NAME:-aodai-admin-hermes}'
           export AdminSeed__Email='${HK1_ADMIN_SEED_EMAIL}'
           export AdminSeed__Password='${HK1_ADMIN_SEED_PASSWORD}'
           RUNTIMEEOF
@@ -1143,6 +1156,13 @@ jobs:
           export ConnectionStrings__DefaultConnection='${US1_POSTGRESQL_CONNECTION_STRING}'
           export RunMigrationsAndSeedOnStartup='${US1_RUN_MIGRATIONS_AND_SEED_ON_STARTUP}'
           export JwtSettings__SecretKey='${US1_JWT_SECRET_KEY}'
+          export JwtSettings__Issuer='${US1_JWT_ISSUER:-AoDaiNhaUyen.Api}'
+          export JwtSettings__Audience='${US1_JWT_AUDIENCE:-AoDaiNhaUyen.Frontend}'
+          export JwtSettings__ExpiryMinutes='${US1_JWT_EXPIRY_MINUTES:-60}'
+          export JwtSettings__RefreshTokenExpiryDays='${US1_JWT_REFRESH_TOKEN_EXPIRY_DAYS:-30}'
+          export CookieSettings__AccessTokenCookieName='${US1_COOKIE_ACCESS_TOKEN_COOKIE_NAME:-access_token}'
+          export CookieSettings__RefreshTokenCookieName='${US1_COOKIE_REFRESH_TOKEN_COOKIE_NAME:-refresh_token}'
+          export ConnectionStrings__Redis='${US1_REDIS_CONNECTION_STRING:-}'
           export GoogleOAuth__ClientId='${US1_GOOGLE_OAUTH_CLIENT_ID}'
           export GoogleOAuth__ClientSecret='${US1_GOOGLE_OAUTH_CLIENT_SECRET}'
           export GoogleOAuth__RedirectUri='${US1_GOOGLE_OAUTH_REDIRECT_URI}'
@@ -1172,6 +1192,10 @@ jobs:
           export S3Storage__SecretKey='${S3_SECRET_KEY}'
           export S3Storage__ServiceUrl='${S3_SERVICE_URL}'
           export S3Storage__UsePathStyle='${S3_USE_PATH_STYLE}'
+          export Hermes__AdminApiKey='${US1_HERMES_ADMIN_API_KEY:-}'
+          export Hermes__ApiServerUrl='${US1_HERMES_API_SERVER_URL:-http://127.0.0.1:8642}'
+          export Hermes__ApiServerKey='${US1_HERMES_API_SERVER_KEY:-}'
+          export Hermes__RunnerName='${US1_HERMES_RUNNER_NAME:-aodai-admin-hermes}'
           export AdminSeed__Email='${US1_ADMIN_SEED_EMAIL}'
           export AdminSeed__Password='${US1_ADMIN_SEED_PASSWORD}'
           RUNTIMEEOF
