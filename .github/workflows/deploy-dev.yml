@@ -870,7 +870,30 @@ jobs:
           /root/.bun/bin/pm2 save
 
           # ==========================================
-          # 9. Cleanup
+          # 9. Verify backend health
+          # ==========================================
+          echo "[${SERVER_NAME}] Verifying backend health..."
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
+          HEALTH_URL="${ASPNETCORE_URLS%/}/health"
+          for attempt in 1 2 3 4 5 6; do
+            if curl -fsS --max-time 10 "$HEALTH_URL" >/dev/null; then
+              echo "[${SERVER_NAME}] Backend health OK: $HEALTH_URL"
+              break
+            fi
+            echo "[${SERVER_NAME}] Backend health not ready (attempt $attempt/6)"
+            sleep 10
+          done
+          if ! curl -fsS --max-time 10 "$HEALTH_URL" >/dev/null; then
+            echo "[${SERVER_NAME}] ERROR: backend health check failed: $HEALTH_URL"
+            /root/.bun/bin/pm2 status || true
+            /root/.bun/bin/pm2 logs aodai-api --lines 120 --nostream || true
+            exit 1
+          fi
+
+          # ==========================================
+          # 10. Cleanup
           # ==========================================
           echo "[${SERVER_NAME}] Cleaning up old backups..."
           cd /root/AoDaiNhaUyen/frontend
@@ -1350,7 +1373,30 @@ jobs:
           /root/.bun/bin/pm2 save
 
           # ==========================================
-          # 9. Cleanup
+          # 9. Verify backend health
+          # ==========================================
+          echo "[${SERVER_NAME}] Verifying backend health..."
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
+          HEALTH_URL="${ASPNETCORE_URLS%/}/health"
+          for attempt in 1 2 3 4 5 6; do
+            if curl -fsS --max-time 10 "$HEALTH_URL" >/dev/null; then
+              echo "[${SERVER_NAME}] Backend health OK: $HEALTH_URL"
+              break
+            fi
+            echo "[${SERVER_NAME}] Backend health not ready (attempt $attempt/6)"
+            sleep 10
+          done
+          if ! curl -fsS --max-time 10 "$HEALTH_URL" >/dev/null; then
+            echo "[${SERVER_NAME}] ERROR: backend health check failed: $HEALTH_URL"
+            /root/.bun/bin/pm2 status || true
+            /root/.bun/bin/pm2 logs aodai-api --lines 120 --nostream || true
+            exit 1
+          fi
+
+          # ==========================================
+          # 10. Cleanup
           # ==========================================
           echo "[${SERVER_NAME}] Cleaning up old backups..."
           cd /root/AoDaiNhaUyen/frontend
