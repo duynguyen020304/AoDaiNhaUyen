@@ -16,3 +16,20 @@ public sealed record EmailJobDetail(Guid Id, string ToEmail, string TemplateKey,
 public sealed record SendLogRecord(string Status, DateTime? SentAt, DateTime? FailedAt, string? ErrorMessage);
 
 public sealed record MarketingStats(int TotalSubscribers, int ActiveSubscribers, int PendingSubscribers, int UnsubscribedSubscribers, int QueuedJobs, int SentJobsToday, int FailedJobs, int TemplateCount);
+
+public sealed record MarketingContentOption(Guid Id, string Type, string Title, string? Subtitle, string? Url, string? Badge, string HtmlSnippet);
+public sealed record MarketingCampaignAttachmentRequest(string Type, Guid? Id, string Title, string? Url, string? Description, string? Code);
+public sealed record SendMarketingCampaignRequest(
+  string RecipientMode,
+  IReadOnlyList<Guid>? SubscriberIds,
+  IReadOnlyList<string>? ManualEmails,
+  string TemplateKey,
+  string Subject,
+  string? Preheader,
+  string? Intro,
+  string? BodyHtml,
+  string? CtaLabel,
+  string? CtaUrl,
+  IReadOnlyList<MarketingCampaignAttachmentRequest>? Attachments,
+  DateTime? ScheduledAt);
+public sealed record MarketingCampaignSendResult(int Queued, int Skipped, IReadOnlyList<string> SkippedEmails);

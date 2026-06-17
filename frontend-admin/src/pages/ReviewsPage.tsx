@@ -73,6 +73,7 @@ export function ReviewsPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetching data on filter change
     void fetchReviews(1)
   }, [search, rating, visibleFilter])
 
