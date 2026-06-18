@@ -11,7 +11,7 @@ public sealed class HermesOutboxOptions
   public int PollIntervalSeconds { get; init; } = 10;
   public int MaxAttempts { get; init; } = 5;
   public int LockTimeoutMinutes { get; init; } = 10;
-  public int MaxPayloadBytes { get; init; } = 20_000;
+  public int MaxPayloadBytes { get; init; } = 0;
   public decimal HighValueOrderThreshold { get; init; } = 5_000_000m;
   public int LowStockThreshold { get; init; } = 3;
   public string EventPath { get; init; } = "/v1/responses";

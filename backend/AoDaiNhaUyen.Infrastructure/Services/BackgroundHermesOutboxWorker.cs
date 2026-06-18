@@ -72,6 +72,25 @@ public sealed class BackgroundHermesOutboxWorker(
         batchSize)
       .ToListAsync(cancellationToken);
 
+    if (claimedIds.Count > 0)
+    {
+      var now = DateTimeOffset.UtcNow;
+      dbContext.HermesAgentTraceSteps.AddRange(claimedIds.Select(id => new Domain.Entities.HermesAgentTraceStep
+      {
+        Id = Guid.NewGuid(),
+        EventOutboxId = id,
+        Kind = "claimed",
+        Title = "Worker đã claim event",
+        Summary = $"Runner {runner} đã claim event từ outbox để xử lý.",
+        Status = "success",
+        StartedAt = now,
+        CompletedAt = now,
+        CreatedAt = now.UtcDateTime,
+        UpdatedAt = now.UtcDateTime
+      }));
+      await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     foreach (var id in claimedIds)
     {
       var item = await dbContext.HermesEventOutbox.FirstAsync(x => x.Id == id, cancellationToken);
@@ -82,20 +101,24 @@ public sealed class BackgroundHermesOutboxWorker(
   private async Task RequeueStaleProcessingAsync(AppDbContext dbContext, CancellationToken cancellationToken)
   {
     var staleBefore = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(Math.Max(1, _options.LockTimeoutMinutes)));
+    var retryAt = DateTimeOffset.UtcNow.AddMinutes(1);
 
     await dbContext.HermesEventOutbox
-      .Where(x => x.Status == "processing" && x.LockedAt < staleBefore && x.Attempts < x.MaxAttempts)
+      .Where(x => x.Status == "processing" && x.LockedAt < staleBefore && x.Attempts < x.MaxAttempts - 1)
       .ExecuteUpdateAsync(setters => setters
         .SetProperty(x => x.Status, "failed")
+        .SetProperty(x => x.Attempts, x => x.Attempts + 1)
+        .SetProperty(x => x.ScheduledAt, retryAt)
         .SetProperty(x => x.LockedAt, (DateTimeOffset?)null)
         .SetProperty(x => x.LockedBy, (string?)null)
         .SetProperty(x => x.LastError, "Hermes worker recovered stale processing event.")
         .SetProperty(x => x.UpdatedAt, DateTime.UtcNow), cancellationToken);
 
     await dbContext.HermesEventOutbox
-      .Where(x => x.Status == "processing" && x.LockedAt < staleBefore && x.Attempts >= x.MaxAttempts)
+      .Where(x => x.Status == "processing" && x.LockedAt < staleBefore && x.Attempts >= x.MaxAttempts - 1)
       .ExecuteUpdateAsync(setters => setters
         .SetProperty(x => x.Status, "dead")
+        .SetProperty(x => x.Attempts, x => x.Attempts + 1)
         .SetProperty(x => x.LockedAt, (DateTimeOffset?)null)
         .SetProperty(x => x.LockedBy, (string?)null)
         .SetProperty(x => x.LastError, "Hermes worker marked stale event dead.")
@@ -123,7 +146,7 @@ public sealed class BackgroundHermesOutboxWorker(
     {
       item.Attempts += 1;
       item.Status = item.Attempts >= item.MaxAttempts ? "dead" : "failed";
-      item.LastError = Truncate(ex.Message, 1000);
+      item.LastError = NormalizeOptionalText(ex.Message);
       item.ScheduledAt = DateTimeOffset.UtcNow.AddMinutes(Math.Min(Math.Pow(2, item.Attempts), 60));
       item.ProcessedAt = item.Status == "dead" ? DateTimeOffset.UtcNow : null;
       item.LockedAt = null;
@@ -134,6 +157,9 @@ public sealed class BackgroundHermesOutboxWorker(
     await dbContext.SaveChangesAsync(cancellationToken);
   }
 
-  private static string Truncate(string? text, int max) =>
-    string.IsNullOrEmpty(text) || text.Length <= max ? text ?? string.Empty : text[..max] + "…";
+  private static string? NormalizeOptionalText(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return null;
+    return value.Trim();
+  }
 }

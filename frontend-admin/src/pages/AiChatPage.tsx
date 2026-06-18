@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { FileText, MessageSquare, PanelLeft } from 'lucide-react'
+import { Activity, FileText, MessageSquare, PanelLeft } from 'lucide-react'
 import { FullChatArea } from '@/components/ai/FullChatArea'
 import { ChatHistorySidebar } from '@/components/ai/ChatHistorySidebar'
+import { HermesEventsPanel } from '@/components/hermes/HermesEventsPanel'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 
 export function AiChatPage() {
   const { chatId } = useParams<{ chatId: string }>()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024)
+  const [activeTab, setActiveTab] = useState<'chat' | 'events'>('chat')
   const activeConversationId = useAdminAiStore((s) => s.activeConversationId)
   const messages = useAdminAiStore((s) => s.messages)
   const loadConversation = useAdminAiStore((s) => s.loadConversation)
@@ -77,8 +79,11 @@ export function AiChatPage() {
           <div className="flex shrink-0 gap-2 border-b border-gray-200 bg-white px-4 py-2">
             <button
               type="button"
-              onClick={() => navigate(activeConversationId ? `/admin/ai-chat/${activeConversationId}` : '/admin/ai-chat')}
-              className="inline-flex items-center gap-2 rounded-lg bg-wine px-3 py-2 text-sm font-medium text-white"
+              onClick={() => {
+                setActiveTab('chat')
+                navigate(activeConversationId ? `/admin/ai-chat/${activeConversationId}` : '/admin/ai-chat')
+              }}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${activeTab === 'chat' ? 'bg-wine text-white' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <MessageSquare className="size-4" />
               Chat Hermes
@@ -91,9 +96,18 @@ export function AiChatPage() {
               <FileText className="size-4" />
               Báo cáo Hermes
             </button>
+            <button
+              type="button"
+              onClick={() => navigate('/admin/hermes-events')}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${activeTab === 'events' ? 'bg-wine text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <Activity className="size-4" />
+              Event Hermes
+            </button>
           </div>
           <div className="min-h-0 flex-1">
-            <FullChatArea />
+            {activeTab === 'chat' && <FullChatArea />}
+            {activeTab === 'events' && <HermesEventsPanel />}
           </div>
         </div>
       </div>

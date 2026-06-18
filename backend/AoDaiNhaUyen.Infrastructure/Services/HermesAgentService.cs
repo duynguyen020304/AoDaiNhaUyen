@@ -21,7 +21,6 @@ public sealed class HermesAgentService(
   ILogger<HermesAgentService> logger) : IHermesAgentService
 {
   private const int MaxReportPageSize = 100;
-  private const int MaxPayloadJsonLength = 20_000;
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
   private static readonly HashSet<string> AllowedSeverities = new(StringComparer.OrdinalIgnoreCase)
   {
@@ -66,7 +65,7 @@ public sealed class HermesAgentService(
       Model = Limit(request.Model, 160),
       GatewayStatus = Limit(request.GatewayStatus, 120),
       ActiveJobs = Math.Max(0, request.ActiveJobs),
-      LastError = Limit(request.LastError, 1000),
+      LastError = NormalizeOptionalText(request.LastError),
       RecordedAt = now,
       CreatedAt = now.UtcDateTime,
       UpdatedAt = now.UtcDateTime
@@ -92,7 +91,7 @@ public sealed class HermesAgentService(
       Trigger = "admin_chat",
       AdminUserId = adminUserId,
       ConversationId = Limit(conversationId, 160),
-      PromptPreview = Truncate(request.Message, 500),
+      PromptPreview = NormalizeRequiredText(request.Message),
       StartedAt = now,
       CreatedAt = now.UtcDateTime,
       UpdatedAt = now.UtcDateTime
@@ -203,7 +202,7 @@ public sealed class HermesAgentService(
       ReportType = LimitRequired(request.ReportType, 80),
       Severity = NormalizeSeverity(request.Severity),
       Title = LimitRequired(request.Title, 200),
-      Summary = LimitRequired(request.Summary, 4000),
+      Summary = NormalizeRequiredText(request.Summary),
       PayloadJson = payloadJson,
       Source = Limit(request.Source, 80) ?? "hermes_agent",
       CorrelationId = Limit(request.CorrelationId, 128),
@@ -313,8 +312,8 @@ public sealed class HermesAgentService(
     if (run is null) return;
 
     run.Status = status;
-    run.ResultPreview = Truncate(result, 1000);
-    run.Error = Truncate(error, 1000);
+    run.ResultPreview = NormalizeOptionalText(result);
+    run.Error = NormalizeOptionalText(error);
     run.CompletedAt = DateTimeOffset.UtcNow;
     run.UpdatedAt = DateTime.UtcNow;
     await dbContext.SaveChangesAsync(cancellationToken);
@@ -346,7 +345,7 @@ public sealed class HermesAgentService(
 
     if (!response.IsSuccessStatusCode)
     {
-      throw new InvalidOperationException($"Hermes API returned {(int)response.StatusCode}: {Truncate(body, 500)}");
+      throw new InvalidOperationException($"Hermes API returned {(int)response.StatusCode}: {body}");
     }
 
     return JsonSerializer.Deserialize<HermesResponse>(body, JsonOptions);
@@ -424,7 +423,6 @@ public sealed class HermesAgentService(
   {
     if (string.IsNullOrWhiteSpace(payloadJson)) return null;
     var trimmed = payloadJson.Trim();
-    if (trimmed.Length > MaxPayloadJsonLength) throw new ArgumentException("PayloadJson quá dài.", nameof(payloadJson));
     using var _ = JsonDocument.Parse(trimmed);
     return trimmed;
   }
@@ -438,6 +436,18 @@ public sealed class HermesAgentService(
 
   private static string NormalizeStatus(string status) =>
     string.IsNullOrWhiteSpace(status) ? "unknown" : LimitRequired(status, 80).ToLowerInvariant();
+
+  private static string NormalizeRequiredText(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("Thiếu dữ liệu bắt buộc.", nameof(value));
+    return value.Trim();
+  }
+
+  private static string? NormalizeOptionalText(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return null;
+    return value.Trim();
+  }
 
   private static string LimitRequired(string? value, int maxLength)
   {
@@ -454,7 +464,7 @@ public sealed class HermesAgentService(
   }
 
   private static string Truncate(string? text, int max) =>
-    string.IsNullOrEmpty(text) || text.Length <= max ? text ?? string.Empty : text[..max] + "…";
+    string.IsNullOrEmpty(text) || text.Length <= max ? text ?? string.Empty : text[..Math.Max(0, max - 1)] + "…";
 
   private sealed record HermesResponse(HermesOutput[]? Output);
 

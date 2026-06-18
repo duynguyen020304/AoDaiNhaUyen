@@ -14,6 +14,7 @@ namespace AoDaiNhaUyen.Api.Controllers.Admin;
 public sealed class AdminHermesController(
   IHermesAgentService hermesAgentService,
   IHermesEventOutboxService hermesEventOutboxService,
+  IHermesMonitorLinkService hermesMonitorLinkService,
   ILogger<AdminHermesController> logger) : ControllerBase
 {
   /// <summary>Get Hermes agent status and latest heartbeat.</summary>
@@ -124,6 +125,39 @@ public sealed class AdminHermesController(
       : BadRequest(ApiResponseFactory.Failure("Không thể hủy event Hermes.", "cannot_cancel_hermes_event", "Event không tồn tại hoặc đã completed/dead."));
   }
 
+  /// <summary>Create a signed public read-only monitor link for one Hermes event.</summary>
+  [Authorize(Policy = "RequireAdminRole")]
+  [HttpPost("monitor-links")]
+  public async Task<ActionResult<ApiResponse<HermesMonitorLinkResponse>>> CreateMonitorLink(
+    CreateHermesMonitorLinkRequest request,
+    CancellationToken cancellationToken)
+  {
+    try
+    {
+      var link = await hermesMonitorLinkService.CreateLinkAsync(request, GetAdminUserId(), GetPublicBaseUrl(), cancellationToken);
+      return Ok(ApiResponseFactory.Success(link, "Đã tạo link giám sát Hermes."));
+    }
+    catch (KeyNotFoundException ex)
+    {
+      return NotFound(ApiResponseFactory.Failure("Không tạo được link giám sát.", "not_found", ex.Message));
+    }
+    catch (ArgumentException ex)
+    {
+      return BadRequest(ApiResponseFactory.Failure("Không tạo được link giám sát.", "invalid_monitor_link", ex.Message));
+    }
+  }
+
+  /// <summary>Revoke a public monitor link.</summary>
+  [Authorize(Policy = "RequireAdminRole")]
+  [HttpPost("monitor-links/{id:guid}/revoke")]
+  public async Task<ActionResult<ApiResponse<object?>>> RevokeMonitorLink(Guid id, CancellationToken cancellationToken)
+  {
+    var ok = await hermesMonitorLinkService.RevokeLinkAsync(id, cancellationToken);
+    return ok
+      ? Ok(ApiResponseFactory.Success<object?>(null, "Đã thu hồi link giám sát Hermes."))
+      : NotFound(ApiResponseFactory.Failure("Không tìm thấy link giám sát.", "not_found", "Link không tồn tại hoặc đã bị thu hồi."));
+  }
+
   /// <summary>Stream an admin prompt through Hermes Agent.</summary>
   [Authorize(Policy = "RequireAdminRole")]
   [HttpPost("chat")]
@@ -221,7 +255,7 @@ public sealed class AdminHermesController(
   private static string? ValidateChatRequest(HermesChatRequest request)
   {
     if (string.IsNullOrWhiteSpace(request.Message)) return "Tin nhắn không được để trống.";
-    return request.Message.Length > 4000 ? "Tin nhắn quá dài. Tối đa 4000 ký tự." : null;
+    return null;
   }
 
   private static string? ValidateHeartbeatRequest(HermesHeartbeatRequest request)
@@ -240,10 +274,17 @@ public sealed class AdminHermesController(
     if (string.IsNullOrWhiteSpace(request.Summary)) return "Thiếu tóm tắt báo cáo.";
     if (request.ReportType.Length > 80) return "Loại báo cáo quá dài.";
     if (request.Title.Length > 200) return "Tiêu đề báo cáo quá dài.";
-    if (request.Summary.Length > 4000) return "Tóm tắt báo cáo quá dài.";
-    if (request.PayloadJson?.Length > 20000) return "PayloadJson quá dài.";
     if (request.CorrelationId?.Length > 128) return "CorrelationId quá dài.";
     return null;
+  }
+
+  private string GetPublicBaseUrl()
+  {
+    var origin = Request.Headers.Origin.ToString();
+    if (Uri.TryCreate(origin, UriKind.Absolute, out var originUri))
+      return originUri.GetLeftPart(UriPartial.Authority);
+
+    return $"{Request.Scheme}://{Request.Host}";
   }
 
   private Guid? GetAdminUserId()

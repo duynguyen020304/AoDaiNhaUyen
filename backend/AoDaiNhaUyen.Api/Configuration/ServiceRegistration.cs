@@ -150,6 +150,7 @@ public static class ServiceRegistration
     services.AddScoped<IHermesEventOutboxPublisher>(sp => sp.GetRequiredService<HermesEventOutboxPublisher>());
     services.AddScoped<IHermesEventOutboxService>(sp => sp.GetRequiredService<HermesEventOutboxPublisher>());
     services.AddScoped<IHermesEventProcessor, HermesEventProcessor>();
+    services.AddScoped<IHermesMonitorLinkService, HermesMonitorLinkService>();
     services.AddHostedService<BackgroundHermesOutboxWorker>();
     services.AddScoped<IAdminProductService, AdminProductService>();
     services.AddScoped<IAdminUserService, AdminUserService>();

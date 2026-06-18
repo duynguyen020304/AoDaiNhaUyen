@@ -4,6 +4,7 @@ using System.Net;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260618142416_AddHermesMonitorLinks")]
+    partial class AddHermesMonitorLinks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -110,91 +113,6 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasDatabaseName("idx_admin_ai_actions_created_at");
 
                     b.ToTable("admin_ai_actions", (string)null);
-                });
-
-            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.AiTryOnFeedback", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AdminNote")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("admin_note");
-
-                    b.Property<string>("Comment")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("comment");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<string>("GuestKeyHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("guest_key_hash");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_deleted");
-
-                    b.Property<bool>("IsResolved")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_resolved");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("integer")
-                        .HasColumnName("rating");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<Guid>("UserGeneratedImageId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_generated_image_id");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt")
-                        .HasDatabaseName("idx_ai_tryon_feedbacks_created_at");
-
-                    b.HasIndex("UserGeneratedImageId")
-                        .HasDatabaseName("idx_ai_tryon_feedbacks_image_id");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("idx_ai_tryon_feedbacks_user_id");
-
-                    b.ToTable("ai_tryon_feedbacks", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_ai_tryon_feedbacks_rating", "rating BETWEEN 1 AND 5");
-                        });
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.BlogCategory", b =>
@@ -1535,7 +1453,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("duration_ms");
 
                     b.Property<string>("Error")
-                        .HasColumnType("text")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
                         .HasColumnName("error");
 
                     b.Property<Guid?>("EventOutboxId")
@@ -1582,7 +1501,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
                     b.Property<string>("Summary")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
                         .HasColumnName("summary");
 
                     b.Property<string>("Title")
@@ -1676,7 +1596,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("is_deleted");
 
                     b.Property<string>("LastError")
-                        .HasColumnType("text")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
                         .HasColumnName("last_error");
 
                     b.Property<DateTimeOffset?>("LockedAt")
@@ -1789,7 +1710,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("is_deleted");
 
                     b.Property<string>("LastError")
-                        .HasColumnType("text")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
                         .HasColumnName("last_error");
 
                     b.Property<string>("Model")
@@ -1997,7 +1919,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
                     b.Property<string>("Summary")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
                         .HasColumnName("summary");
 
                     b.Property<string>("Title")
@@ -2066,7 +1989,8 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .HasColumnName("deleted_at");
 
                     b.Property<string>("Error")
-                        .HasColumnType("text")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
                         .HasColumnName("error");
 
                     b.Property<bool>("IsActive")
@@ -2083,11 +2007,13 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
                     b.Property<string>("PromptPreview")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasColumnName("prompt_preview");
 
                     b.Property<string>("ResultPreview")
-                        .HasColumnType("text")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
                         .HasColumnName("result_preview");
 
                     b.Property<DateTimeOffset>("StartedAt")
@@ -4937,24 +4863,6 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("AdminUser");
-                });
-
-            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.AiTryOnFeedback", b =>
-                {
-                    b.HasOne("AoDaiNhaUyen.Domain.Entities.UserGeneratedImage", "UserGeneratedImage")
-                        .WithMany()
-                        .HasForeignKey("UserGeneratedImageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("AoDaiNhaUyen.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("User");
-
-                    b.Navigation("UserGeneratedImage");
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.BlogImage", b =>

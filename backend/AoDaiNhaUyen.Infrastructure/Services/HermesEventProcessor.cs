@@ -29,6 +29,8 @@ public sealed class HermesEventProcessor(
     dbContext.HermesRuns.Add(run);
     await dbContext.SaveChangesAsync(cancellationToken);
 
+    await AddTraceAsync(item.Id, run.Id, "prompt_built", "Đã tạo prompt an toàn", "Payload được bọc trong vùng dữ liệu không tin cậy trước khi gửi Hermes.", "success", null, cancellationToken);
+
     if (_outboxOptions.DryRun)
     {
       await CompleteRunAsync(run, "completed", "Hermes outbox dry-run: event accepted but not sent.", null, cancellationToken);
@@ -65,17 +67,42 @@ public sealed class HermesEventProcessor(
       }
     };
 
+    await AddTraceAsync(item.Id, run.Id, "agent_request", "Gửi request tới Hermes", "Backend gửi event đã làm sạch tới Hermes runner để phân tích vận hành.", "running", null, cancellationToken);
+
     using var content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
     using var response = await client.PostAsync(_outboxOptions.EventPath, content, cancellationToken);
     var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
     if (!response.IsSuccessStatusCode)
     {
-      await CompleteRunAsync(run, "failed", null, $"Hermes API returned {(int)response.StatusCode}: {Truncate(body, 500)}", cancellationToken);
-      throw new InvalidOperationException($"Hermes API returned {(int)response.StatusCode}: {Truncate(body, 500)}");
+      await AddTraceAsync(item.Id, run.Id, "failed", "Hermes trả lỗi", $"Hermes API returned {(int)response.StatusCode}.", "failed", body, cancellationToken);
+      await CompleteRunAsync(run, "failed", null, $"Hermes API returned {(int)response.StatusCode}: {body}", cancellationToken);
+      throw new InvalidOperationException($"Hermes API returned {(int)response.StatusCode}: {body}");
     }
 
-    await CompleteRunAsync(run, "completed", Truncate(body, 1000), null, cancellationToken);
+    await AddTraceAsync(item.Id, run.Id, "agent_response", "Hermes đã phản hồi", "Hermes runner trả phản hồi và backend lưu kết quả run.", "success", null, cancellationToken);
+    await CompleteRunAsync(run, "completed", body, null, cancellationToken);
+  }
+
+  private async Task AddTraceAsync(Guid eventId, Guid runId, string kind, string title, string summary, string status, string? error, CancellationToken cancellationToken)
+  {
+    var now = DateTimeOffset.UtcNow;
+    dbContext.HermesAgentTraceSteps.Add(new HermesAgentTraceStep
+    {
+      Id = Guid.NewGuid(),
+      EventOutboxId = eventId,
+      RunId = runId,
+      Kind = kind,
+      Title = title,
+      Summary = summary,
+      Status = status,
+      StartedAt = now,
+      CompletedAt = status == "running" ? null : now,
+      Error = NormalizeOptionalText(error),
+      CreatedAt = now.UtcDateTime,
+      UpdatedAt = now.UtcDateTime
+    });
+    await dbContext.SaveChangesAsync(cancellationToken);
   }
 
   private HermesRun CreateRun(HermesEventOutbox item)
@@ -87,7 +114,7 @@ public sealed class HermesEventProcessor(
       Status = "running",
       Trigger = "admin_event",
       ConversationId = item.Id.ToString("N"),
-      PromptPreview = Truncate($"{item.EventType}:{item.AggregateType}:{item.AggregateId}", 500),
+      PromptPreview = $"{item.EventType}:{item.AggregateType}:{item.AggregateId}",
       StartedAt = now,
       CreatedAt = now.UtcDateTime,
       UpdatedAt = now.UtcDateTime
@@ -97,8 +124,8 @@ public sealed class HermesEventProcessor(
   private async Task CompleteRunAsync(HermesRun run, string status, string? result, string? error, CancellationToken cancellationToken)
   {
     run.Status = status;
-    run.ResultPreview = Truncate(result, 1000);
-    run.Error = Truncate(error, 1000);
+    run.ResultPreview = NormalizeOptionalText(result);
+    run.Error = NormalizeOptionalText(error);
     run.CompletedAt = DateTimeOffset.UtcNow;
     run.UpdatedAt = DateTime.UtcNow;
     await dbContext.SaveChangesAsync(cancellationToken);
@@ -138,6 +165,9 @@ public sealed class HermesEventProcessor(
     using var _ = JsonDocument.Parse(payloadJson);
   }
 
-  private static string Truncate(string? text, int max) =>
-    string.IsNullOrEmpty(text) || text.Length <= max ? text ?? string.Empty : text[..max] + "…";
+  private static string? NormalizeOptionalText(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return null;
+    return value.Trim();
+  }
 }
