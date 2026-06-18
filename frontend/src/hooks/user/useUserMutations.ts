@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { cancelOrder, createAddress, deleteAddress, updateProfile } from '../../api/user';
+import { cancelOrder, createAddress, deleteAddress, updateAddress, updateProfile } from '../../api/user';
 import { queryKeys } from '../../lib/queryKeys';
 import type { CreateAddressPayload, UserAddress } from '../../types/address';
 import type { UserOrder } from '../../types/order';
@@ -19,6 +19,15 @@ export function useCreateAddressMutation() {
   return useMutation({
     mutationFn: (payload: CreateAddressPayload) => createAddress(payload),
     onSuccess: (address) => queryClient.setQueryData<UserAddress[]>(queryKeys.addresses.list, (current = []) => [...current, address]),
+    onSettled: () => void queryClient.invalidateQueries({ queryKey: queryKeys.addresses.list }),
+  });
+}
+
+export function useUpdateAddressMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: CreateAddressPayload }) => updateAddress(id, payload),
+    onSuccess: (address) => queryClient.setQueryData<UserAddress[]>(queryKeys.addresses.list, (current = []) => current.map((item) => (item.id === address.id ? address : item))),
     onSettled: () => void queryClient.invalidateQueries({ queryKey: queryKeys.addresses.list }),
   });
 }

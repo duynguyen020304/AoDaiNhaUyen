@@ -42,6 +42,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<Comment> Comments => Set<Comment>();
   public DbSet<ImageValidationCacheEntry> ImageValidationCacheEntries => Set<ImageValidationCacheEntry>();
   public DbSet<UserGeneratedImage> UserGeneratedImages => Set<UserGeneratedImage>();
+  public DbSet<AiTryOnFeedback> AiTryOnFeedbacks => Set<AiTryOnFeedback>();
   public DbSet<AdminAiAction> AdminAiActions => Set<AdminAiAction>();
   public DbSet<ToolRiskConfig> ToolRiskConfigs => Set<ToolRiskConfig>();
   public DbSet<LlmAuditLog> LlmAuditLogs => Set<LlmAuditLog>();
@@ -642,6 +643,25 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => x.GuestKeyHash).HasDatabaseName("idx_user_generated_images_guest_key");
       builder.HasIndex(x => x.SourceType).HasDatabaseName("idx_user_generated_images_source_type");
       builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+    });
+
+    modelBuilder.Entity<AiTryOnFeedback>(builder =>
+    {
+      builder.ToTable("ai_tryon_feedbacks");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Rating).IsRequired();
+      builder.Property(x => x.Comment).HasMaxLength(1000);
+      builder.Property(x => x.AdminNote).HasMaxLength(1000);
+      builder.Property(x => x.GuestKeyHash).HasMaxLength(128);
+      builder.Property(x => x.IsResolved).HasDefaultValue(false).IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.UserGeneratedImageId).HasDatabaseName("idx_ai_tryon_feedbacks_image_id");
+      builder.HasIndex(x => x.UserId).HasDatabaseName("idx_ai_tryon_feedbacks_user_id");
+      builder.HasIndex(x => x.CreatedAt).HasDatabaseName("idx_ai_tryon_feedbacks_created_at");
+      builder.HasOne(x => x.UserGeneratedImage).WithMany().HasForeignKey(x => x.UserGeneratedImageId).OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+      builder.ToTable(t => t.HasCheckConstraint("ck_ai_tryon_feedbacks_rating", "rating BETWEEN 1 AND 5"));
     });
 
 

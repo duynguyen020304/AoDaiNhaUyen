@@ -245,8 +245,7 @@ public sealed class AiTryOnController(
 
   private static string? ComputeGuestKeyHash(HttpContext context)
   {
-    var guestKey = context.Request.Headers["X-Guest-Key"].FirstOrDefault()
-      ?? context.Connection.RemoteIpAddress?.ToString();
+    var guestKey = context.Request.Headers["X-Guest-Key"].FirstOrDefault();
     if (string.IsNullOrWhiteSpace(guestKey)) return null;
     var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(guestKey.Trim()));
     return Convert.ToHexString(bytes).ToLowerInvariant();

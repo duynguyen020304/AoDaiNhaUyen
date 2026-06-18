@@ -23,6 +23,8 @@ import type {
   CreatePromoRequest,
   UpdatePromoRequest,
   AdminReviewItem,
+  AdminAiTryOnFeedbackItem,
+  UpdateAiTryOnFeedbackStatusRequest,
 } from '@/types/admin'
 
 // ── Users ──
@@ -305,6 +307,29 @@ export async function replyToReview(id: string, productId: string, content: stri
   await request<void>(`/api/admin/reviews/${id}/reply`, {
     method: 'POST',
     body: JSON.stringify({ productId, content }),
+  })
+}
+
+// ── AI Try-on Feedback ──
+
+export async function getAiTryOnFeedback(params?: {
+  rating?: number | 'all'
+  isResolved?: boolean | 'all'
+  page?: number
+  pageSize?: number
+}): Promise<PaginatedApiEnvelope<AdminAiTryOnFeedbackItem[]>> {
+  const qs = new URLSearchParams()
+  if (params?.rating && params.rating !== 'all') qs.set('rating', String(params.rating))
+  if (params?.isResolved !== undefined && params.isResolved !== 'all') qs.set('isResolved', String(params.isResolved))
+  qs.set('page', String(params?.page ?? 1))
+  qs.set('pageSize', String(params?.pageSize ?? 20))
+  return requestPaginated<AdminAiTryOnFeedbackItem[]>(`/api/admin/ai-tryon-feedback?${qs}`)
+}
+
+export async function updateAiTryOnFeedbackStatus(id: string, data: UpdateAiTryOnFeedbackStatusRequest): Promise<AdminAiTryOnFeedbackItem> {
+  return request<AdminAiTryOnFeedbackItem>(`/api/admin/ai-tryon-feedback/${id}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
   })
 }
 

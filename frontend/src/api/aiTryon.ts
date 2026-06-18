@@ -1,3 +1,4 @@
+import { getGuestKey } from './guestKey';
 import { request } from './client';
 
 export interface AiTryOnCatalogItem {
@@ -34,6 +35,7 @@ export interface AiTryOnCatalogCategory {
 export interface AiTryOnResponse {
   resultImageUrl: string;
   mimeType: string;
+  generatedImageId: string | null;
 }
 
 interface SubmitAiTryOnParams {
@@ -89,6 +91,7 @@ export function submitAiTryOn({
 
   return request<AiTryOnResponse>('/api/v1/ai-tryon', {
     method: 'POST',
+    headers: { 'X-Guest-Key': getGuestKey() },
     body: formData,
   });
 }

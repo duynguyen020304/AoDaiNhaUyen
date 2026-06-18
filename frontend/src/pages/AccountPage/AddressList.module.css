@@ -114,6 +114,22 @@
   box-shadow: 0 0 0 4px rgba(114, 19, 17, 0.1);
 }
 
+.checkboxRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  color: #5f4a47;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.checkboxRow input {
+  width: 16px;
+  height: 16px;
+  accent-color: #721311;
+}
+
 .saveButton {
   align-self: flex-end;
   min-width: 140px;
@@ -285,6 +301,82 @@
   font-size: 20px;
   font-weight: 800;
   line-height: 1;
+}
+
+.comboField {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.comboLabel {
+  color: #721311;
+  font-size: 11px;
+  font-weight: 780;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.comboBox {
+  position: relative;
+}
+
+.comboBox .input {
+  padding-right: 34px;
+}
+
+.comboChevron {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  color: #8c6a66;
+  font-size: 14px;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.comboMenu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  max-height: 236px;
+  overflow-y: auto;
+  border: 1px solid rgba(114, 19, 17, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 40px rgba(73, 14, 12, 0.14);
+  padding: 6px;
+}
+
+.comboOption {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #3a201d;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 650;
+  padding: 10px 11px;
+  text-align: left;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.comboOption:hover,
+.comboOption[aria-selected="true"] {
+  background: rgba(114, 19, 17, 0.08);
+  color: #721311;
+}
+
+.comboEmpty {
+  color: #8c7b78;
+  font-size: 13px;
+  padding: 12px;
+  text-align: center;
 }
 
 @media (max-width: 800px) {

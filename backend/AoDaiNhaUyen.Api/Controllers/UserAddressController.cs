@@ -69,6 +69,33 @@ public sealed class UserAddressController(
         return Ok(ApiResponseFactory.Success(result.Value, "Tạo địa chỉ thành công."));
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateAddress(Guid id, [FromBody] CreateAddressDto address, CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(ApiResponseFactory.Failure(
+                "Không có quyền truy cập",
+                "unauthorized",
+                "Vui lòng đăng nhập."));
+        }
+
+        logger.LogInformation("User {UserId} updating address {AddressId}", userId, id);
+
+        var result = await userService.UpdateUserAddressAsync(userId, id, address, cancellationToken);
+
+        if (!result.Succeeded || result.Value == null)
+        {
+            return BadRequest(ApiResponseFactory.Failure(
+                "Cập nhật địa chỉ thất bại",
+                result.ErrorCode ?? "address_update_failed",
+                result.ErrorMessage ?? "Không thể cập nhật địa chỉ này."));
+        }
+
+        return Ok(ApiResponseFactory.Success(result.Value, "Cập nhật địa chỉ thành công."));
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteAddress(Guid id, CancellationToken cancellationToken)
     {

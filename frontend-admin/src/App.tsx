@@ -21,6 +21,7 @@ import { LlmLogsPage } from '@/pages/LlmLogsPage'
 import { PromosPage } from '@/pages/PromosPage'
 import { BlogListPage } from '@/pages/BlogListPage'
 import { BlogFormPage } from '@/pages/BlogFormPage'
+import { AiTryOnFeedbackPage } from '@/pages/AiTryOnFeedbackPage'
 import { MarketingDashboardPage } from '@/pages/MarketingDashboardPage'
 import { EmailTemplatesPage } from '@/pages/EmailTemplatesPage'
 import { SubscribersPage } from '@/pages/SubscribersPage'
@@ -73,6 +74,7 @@ export function App() {
             <Route path="media" element={<MediaPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="reviews" element={<ReviewsPage />} />
+            <Route path="ai-tryon-feedback" element={<AiTryOnFeedbackPage />} />
             <Route path="ai-chat" element={<AiChatPage />} />
             <Route path="ai-chat/:chatId" element={<AiChatPage />} />
             <Route path="llm-logs" element={<LlmLogsPage />} />

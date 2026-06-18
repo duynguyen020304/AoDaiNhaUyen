@@ -168,6 +168,7 @@ public static class ServiceRegistration
     services.AddScoped<IAdminMarketingCampaignService, AdminMarketingCampaignService>();
     services.AddScoped<IOrderService, OrderService>();
     services.AddScoped<IUserService, UserService>();
+    services.AddScoped<IAiTryOnFeedbackService, AiTryOnFeedbackService>();
     services.AddScoped<ISeedDataService, SeedDataService>();
 
 

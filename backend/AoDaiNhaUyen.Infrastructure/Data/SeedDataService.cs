@@ -112,10 +112,16 @@ public sealed class SeedDataService(
   {
     await dbContext.Database.MigrateAsync();
 
-    ValidateS3Configuration();
-
     await SeedRolesAsync();
     await SeedAdminAsync();
+
+    if (await HasExistingCatalogDataAsync())
+    {
+      return;
+    }
+
+    ValidateS3Configuration();
+
     await SeedCustomersAsync();
     await SeedCategoriesAsync();
     await SeedProductImagesToS3Async();
@@ -132,6 +138,11 @@ public sealed class SeedDataService(
     await SeedToolRiskConfigsAsync();
     await SeedEmailTemplatesAsync();
     await RemoveStaleCategoriesAsync();
+  }
+
+  private Task<bool> HasExistingCatalogDataAsync()
+  {
+    return dbContext.Products.AsNoTracking().AnyAsync();
   }
 
   private async Task SeedEmailTemplatesAsync()
