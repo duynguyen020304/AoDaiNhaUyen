@@ -42,7 +42,7 @@ export function ChatHistorySidebar({ className = '', onSelect }: ChatHistorySide
         <button
           onClick={() => {
             newConversation()
-            navigate('/admin/ai-chat')
+            navigate('/admin/hermes')
             onSelect?.()
           }}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-wine bg-wine/5 border border-wine/25 hover:bg-wine hover:text-white rounded-xl transition-all duration-200 shadow-sm active:scale-98 cursor-pointer"
@@ -86,7 +86,7 @@ export function ChatHistorySidebar({ className = '', onSelect }: ChatHistorySide
                     : 'bg-white hover:bg-gray-50 border-transparent text-gray-700'
                 }`}
                 onClick={() => {
-                  navigate(`/admin/ai-chat/${convo.id}`)
+                  navigate(`/admin/hermes/${convo.id}`)
                   void loadConversation(convo.id)
                   onSelect?.()
                 }}
@@ -104,7 +104,7 @@ export function ChatHistorySidebar({ className = '', onSelect }: ChatHistorySide
                   onClick={(e) => {
                     e.stopPropagation()
                     void deleteConversation(convo.id)
-                    if (activeConversationId === convo.id) navigate('/admin/ai-chat')
+                    if (activeConversationId === convo.id) navigate('/admin/hermes')
                   }}
                   className={`absolute right-2.5 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-150 shrink-0 hover:bg-black/5 ${
                     isActive ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-red-500'

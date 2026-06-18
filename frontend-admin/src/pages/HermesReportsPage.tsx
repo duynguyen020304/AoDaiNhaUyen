@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Activity, FileText, MessageSquare } from 'lucide-react'
+import { FileText, MessageSquare, Radio } from 'lucide-react'
 import { HermesReportsPanel } from '@/components/hermes/HermesReportsPanel'
 
 export function HermesReportsPage() {
@@ -10,7 +10,7 @@ export function HermesReportsPage() {
       <div className="flex shrink-0 gap-2 border-b border-gray-200 bg-white px-4 py-2">
         <button
           type="button"
-          onClick={() => navigate('/admin/ai-chat')}
+          onClick={() => navigate('/admin/hermes')}
           className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
         >
           <MessageSquare className="size-4" />
@@ -18,11 +18,11 @@ export function HermesReportsPage() {
         </button>
         <button
           type="button"
-          onClick={() => navigate('/admin/hermes-events')}
+          onClick={() => navigate('/admin/hermes?tab=live')}
           className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
         >
-          <Activity className="size-4" />
-          Event Hermes
+          <Radio className="size-4" />
+          Live Monitor
         </button>
         <button
           type="button"

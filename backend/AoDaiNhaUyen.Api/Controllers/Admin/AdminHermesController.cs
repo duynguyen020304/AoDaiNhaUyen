@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.Json;
 using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs.Admin;
@@ -15,6 +16,7 @@ public sealed class AdminHermesController(
   IHermesAgentService hermesAgentService,
   IHermesEventOutboxService hermesEventOutboxService,
   IHermesMonitorLinkService hermesMonitorLinkService,
+  IHermesFeedService hermesFeedService,
   ILogger<AdminHermesController> logger) : ControllerBase
 {
   /// <summary>Get Hermes agent status and latest heartbeat.</summary>
@@ -123,6 +125,55 @@ public sealed class AdminHermesController(
     return ok
       ? Ok(ApiResponseFactory.Success<object?>(null, "Đã hủy event Hermes."))
       : BadRequest(ApiResponseFactory.Failure("Không thể hủy event Hermes.", "cannot_cancel_hermes_event", "Event không tồn tại hoặc đã completed/dead."));
+  }
+
+  /// <summary>Get the global live Hermes chat-style feed snapshot.</summary>
+  [Authorize(Policy = "RequireAdminRole")]
+  [HttpGet("feed")]
+  public async Task<ActionResult<ApiResponse<HermesFeedSnapshotResponse>>> GetFeed(CancellationToken cancellationToken)
+  {
+    var snapshot = await hermesFeedService.GetRecentFeedAsync(50, cancellationToken);
+    return Ok(ApiResponseFactory.Success(snapshot, "Lấy live feed Hermes thành công."));
+  }
+
+  /// <summary>Stream the global live Hermes chat-style feed via Server-Sent Events.</summary>
+  [Authorize(Policy = "RequireAdminRole")]
+  [HttpGet("feed/stream")]
+  public async Task StreamFeed(CancellationToken cancellationToken)
+  {
+    Response.ContentType = "text/event-stream";
+    Response.Headers.Append("Cache-Control", "no-cache");
+    Response.Headers.Append("Connection", "keep-alive");
+    Response.Headers.Append("X-Accel-Buffering", "no");
+
+    try
+    {
+      while (!cancellationToken.IsCancellationRequested)
+      {
+        var snapshot = await hermesFeedService.GetRecentFeedAsync(50, cancellationToken);
+        await WriteSseEventAsync("snapshot", snapshot, cancellationToken);
+        await Response.Body.FlushAsync(cancellationToken);
+        await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+      }
+    }
+    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+    {
+      // Client disconnected.
+    }
+    catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+    {
+      var traceId = HttpContext.TraceIdentifier;
+      logger.LogError(ex, "[HermesAdmin] StreamFeed failed. TraceId={TraceId}", traceId);
+      try
+      {
+        await WriteSseEventAsync("error", new { message = $"Lỗi live feed Hermes. Mã tra cứu: {traceId}" }, CancellationToken.None);
+        await Response.Body.FlushAsync(CancellationToken.None);
+      }
+      catch (Exception writeEx) when (writeEx is OperationCanceledException or IOException)
+      {
+        // Client disconnected before error event could be sent.
+      }
+    }
   }
 
   /// <summary>Create a signed public read-only monitor link for one Hermes event.</summary>
@@ -244,6 +295,13 @@ public sealed class AdminHermesController(
     {
       return BadRequest(ApiResponseFactory.Failure("Báo cáo Hermes không hợp lệ.", "invalid_hermes_report", ex.Message));
     }
+  }
+
+  private async Task WriteSseEventAsync<T>(string eventName, T payload, CancellationToken cancellationToken)
+  {
+    var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+    await Response.WriteAsync($"event: {eventName}\n", cancellationToken);
+    await Response.WriteAsync($"data: {json}\n\n", cancellationToken);
   }
 
   private async Task WriteChunkAsync(HermesStreamChunk chunk, CancellationToken cancellationToken)

@@ -78,6 +78,38 @@ export interface HermesMonitorLink {
   createdAt: string
 }
 
+export interface HermesFeedItem {
+  eventId: string
+  storeMessage: string
+  storeTime: string
+  eventType: string
+  eventStatus: string
+  hermesMessages: HermesFeedHermesMessage[]
+  runStatus: string | null
+}
+
+export interface HermesFeedHermesMessage {
+  kind: 'thinking' | 'step' | 'report' | 'error' | string
+  title: string | null
+  summary: string
+  time: string
+  status: string | null
+  severity: string | null
+}
+
+export interface HermesFeedSnapshot {
+  items: HermesFeedItem[]
+  heartbeat: HermesFeedHeartbeat | null
+  generatedAt: string
+}
+
+export interface HermesFeedHeartbeat {
+  runnerName: string
+  status: string
+  activeJobs: number
+  recordedAt: string
+}
+
 export interface HermesMonitorSnapshot {
   link: {
     id: string
