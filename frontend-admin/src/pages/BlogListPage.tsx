@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal'
 
@@ -31,10 +32,10 @@ export function BlogListPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
+    <div>
+      <div className="flex items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-semibold">Quản lý bài đăng</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">Quản lý bài đăng</h1>
           <p className="text-sm text-muted-foreground">Bài viết SEO hiển thị ở frontend.</p>
         </div>
         <Link to="/admin/blog/new"><Button><Plus className="size-4" />Bài mới</Button></Link>
@@ -42,12 +43,12 @@ export function BlogListPage() {
 
       {error && <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"><span>{error}</span><button onClick={clearError} className="ml-3 underline">Đóng</button></div>}
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:max-w-2xl">
+      <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} onBlur={() => fetchPosts()} placeholder="Tìm tiêu đề hoặc tóm tắt..." />
+          <Input className="pl-9 w-60" value={search} onChange={(e) => setSearch(e.target.value)} onBlur={() => fetchPosts()} placeholder="Tìm tiêu đề hoặc tóm tắt..." />
         </div>
-        <Select value={status} onChange={(e) => { setStatus(e.target.value as BlogStatus | ''); queueMicrotask(fetchPosts) }}>
+        <Select className="w-44" value={status} onChange={(e) => { setStatus(e.target.value as BlogStatus | ''); queueMicrotask(fetchPosts) }}>
           <option value="">Tất cả trạng thái</option>
           <option value="Draft">Bản nháp</option>
           <option value="Published">Đã xuất bản</option>
@@ -56,17 +57,17 @@ export function BlogListPage() {
         <Button variant="outline" onClick={() => fetchPosts()}>Lọc</Button>
       </div>
 
-      <div className="rounded-xl border bg-white overflow-x-auto">
+      <Card className="overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-primary hover:bg-primary">
-              <TableHead className="text-primary-foreground">Tiêu đề</TableHead>
-              <TableHead className="text-primary-foreground">Template</TableHead>
-              <TableHead className="text-primary-foreground">Danh mục</TableHead>
-              <TableHead className="text-primary-foreground">Trạng thái</TableHead>
-              <TableHead className="text-primary-foreground">Tags</TableHead>
-              <TableHead className="text-primary-foreground">Ngày xuất bản</TableHead>
-              <TableHead className="text-primary-foreground text-right">Thao tác</TableHead>
+            <TableRow>
+              <TableHead>Tiêu đề</TableHead>
+              <TableHead>Template</TableHead>
+              <TableHead>Danh mục</TableHead>
+              <TableHead>Trạng thái</TableHead>
+              <TableHead>Tags</TableHead>
+              <TableHead>Ngày xuất bản</TableHead>
+              <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -87,7 +88,7 @@ export function BlogListPage() {
             ))}
           </TableBody>
         </Table>
-      </div>
+      </Card>
 
       <DeleteConfirmModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={confirmDelete} title="Xóa bài đăng" message={`Bạn có chắc muốn xóa "${deleteTarget?.title}"?`} />
     </div>

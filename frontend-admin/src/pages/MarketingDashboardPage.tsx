@@ -47,8 +47,8 @@ export function MarketingDashboardPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-burgundy">Marketing email</h1>
-        <p className="text-sm text-gray-600">
+        <h1 className="text-2xl font-bold tracking-tight text-ink">Marketing email</h1>
+        <p className="text-sm text-muted-foreground">
           Quản lý mẫu email và người đăng ký.
         </p>
       </div>

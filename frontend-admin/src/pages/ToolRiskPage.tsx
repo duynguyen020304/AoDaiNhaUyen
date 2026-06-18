@@ -16,11 +16,11 @@ interface ToolRiskConfig {
 const RISK_LEVELS = ['Read', 'Low', 'Medium', 'High', 'Critical'] as const
 
 const RISK_BADGE: Record<string, string> = {
-  Read: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200',
-  Low: 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300',
-  Medium: 'bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/50',
-  High: 'bg-red-50 text-red-900 border border-red-200 dark:bg-red-950/20 dark:text-red-300 dark:border-red-900/30',
-  Critical: 'bg-red-100 text-red-900 border border-red-300 dark:bg-red-950/40 dark:text-red-200',
+  Read: 'bg-gray-100 text-gray-700',
+  Low: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  Medium: 'bg-amber-50 text-amber-800 border border-amber-200',
+  High: 'bg-red-50 text-red-900 border border-red-200',
+  Critical: 'bg-red-100 text-red-900 border border-red-300',
 }
 
 export function ToolRiskPage() {
@@ -115,10 +115,10 @@ export function ToolRiskPage() {
       {/* Main: Tool table */}
       <div className="flex-1 space-y-6 min-w-0">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-2xl font-bold tracking-tight text-ink">
             Cấu hình rủi ro công cụ AI
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Quản lý mức độ rủi ro và quyền tự động cho từng công cụ AI
           </p>
         </div>
@@ -135,11 +135,11 @@ export function ToolRiskPage() {
           </div>
         ) : (
           Object.entries(grouped).map(([category, tools]) => (
-            <div key={category} className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
-              <div className="px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
-                <Settings2 className="size-4 text-zinc-400" />
-                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{category}</span>
-                <span className="text-xs text-zinc-400 ml-auto">{tools.length} công cụ</span>
+            <div key={category} className="rounded-xl border bg-white overflow-hidden">
+              <div className="px-4 py-3 bg-cream/50 border-b border-border flex items-center gap-2">
+                <Settings2 className="size-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-ink">{category}</span>
+                <span className="text-xs text-muted-foreground ml-auto">{tools.length} công cụ</span>
               </div>
               <Table>
                 <TableHeader>
@@ -153,9 +153,9 @@ export function ToolRiskPage() {
                 </TableHeader>
                 <TableBody>
                   {tools.map((tool) => (
-                    <TableRow key={tool.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
+                    <TableRow key={tool.id} className="">
                       <TableCell className="font-mono text-xs">{tool.toolName}</TableCell>
-                      <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">
+                      <TableCell className="text-sm text-zinc-600 dark:text-muted-foreground">
                         {tool.description || '—'}
                       </TableCell>
                       <TableCell>
@@ -163,7 +163,7 @@ export function ToolRiskPage() {
                           value={tool.riskLevel}
                           onChange={(e) => updateConfig(tool, e.target.value, tool.requiresConfirmation)}
                           disabled={saving === tool.id}
-                          className="rounded-md border border-zinc-200 dark:border-zinc-700 px-2 py-1 text-sm bg-white dark:bg-zinc-800 transition-colors disabled:opacity-50"
+                          className="rounded-md border border-input px-2 py-1 text-sm bg-white transition-colors disabled:opacity-50"
                         >
                           {RISK_LEVELS.map(level => (
                             <option key={level} value={level}>{level}</option>
@@ -178,7 +178,7 @@ export function ToolRiskPage() {
                           onClick={() => updateConfig(tool, tool.riskLevel, !tool.requiresConfirmation)}
                           disabled={saving === tool.id}
                           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 ${
-                            tool.requiresConfirmation ? 'bg-primary' : 'bg-zinc-300 dark:bg-zinc-600'
+                            tool.requiresConfirmation ? 'bg-primary' : 'bg-muted'
                           }`}
                         >
                           <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
@@ -203,31 +203,31 @@ export function ToolRiskPage() {
       {/* Sidebar: Stats + Auto Mode */}
       <aside className="w-full lg:w-72 shrink-0 space-y-4">
         {/* Stats */}
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3">
-          <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Thống kê</h3>
+        <div className="rounded-xl border bg-white p-4 space-y-3">
+          <h3 className="text-sm font-medium text-ink">Thống kê</h3>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-zinc-500">Tổng công cụ</span>
-              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{stats.total}</span>
+              <span className="text-sm text-muted-foreground">Tổng công cụ</span>
+              <span className="text-sm font-semibold text-ink">{stats.total}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-zinc-500">Tự động duyệt</span>
+              <span className="text-sm text-muted-foreground">Tự động duyệt</span>
               <span className="text-sm font-semibold text-emerald-600">{stats.autoApproved}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-zinc-500">Cần xác nhận</span>
+              <span className="text-sm text-muted-foreground">Cần xác nhận</span>
               <span className="text-sm font-semibold text-amber-600">{stats.needsConfirmation}</span>
             </div>
           </div>
         </div>
 
         {/* Auto Mode Toggle */}
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3">
+        <div className="rounded-xl border bg-white p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Bot className="size-4 text-primary" />
-            <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Chế độ tự động</h3>
+            <h3 className="text-sm font-medium text-ink">Chế độ tự động</h3>
           </div>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             Khi bật, các hành động Medium risk sẽ được tự động thực hiện mà không cần xác nhận.
           </p>
           <Button
@@ -235,7 +235,7 @@ export function ToolRiskPage() {
             className={`w-full active:scale-[0.98] transition-transform ${
               autoMode
                 ? 'bg-[#721311] hover:bg-[#870e0b] text-white'
-                : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-300'
+                : 'bg-muted hover:bg-muted/70 text-ink'
             }`}
           >
             {autoMode ? (
@@ -253,12 +253,12 @@ export function ToolRiskPage() {
         </div>
 
         {/* Activity hint */}
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3">
+        <div className="rounded-xl border bg-white p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Activity className="size-4 text-zinc-400" />
-            <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Hoạt động gần đây</h3>
+            <Activity className="size-4 text-muted-foreground" />
+            <h3 className="text-sm font-medium text-ink">Hoạt động gần đây</h3>
           </div>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             Mọi hành động của AI đều được ghi lại trong nhật ký. Xem chi tiết tại trang AI Trợ lý.
           </p>
         </div>

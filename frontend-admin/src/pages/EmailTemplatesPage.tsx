@@ -3,6 +3,7 @@ import { Eye, ExternalLink, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -67,8 +68,8 @@ export function EmailTemplatesPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-burgundy">Mẫu email</h1>
-          <p className="text-sm text-gray-600">
+          <h1 className="text-2xl font-bold tracking-tight text-ink">Mẫu email</h1>
+          <p className="text-sm text-muted-foreground">
             Tạo và chỉnh nội dung HTML cho email.
           </p>
         </div>
@@ -83,16 +84,18 @@ export function EmailTemplatesPage() {
         </Button>
       </div>
       {error && (
-        <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
-      <Input
-        placeholder="Tìm theo khóa, tên, tiêu đề..."
+      <div className="mb-4 max-w-md">
+        <Input
+          placeholder="Tìm theo khóa, tên, tiêu đề..."
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
-      <div className="rounded-lg border bg-white">
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+      <Card className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -175,7 +178,7 @@ export function EmailTemplatesPage() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </Card>
       <div className="flex justify-end gap-2">
         <Button
           variant="outline"
@@ -213,8 +216,8 @@ export function EmailTemplatesPage() {
           <div className="relative h-[85vh] w-full max-w-5xl rounded-xl bg-white p-4 shadow-lg">
             <div className="mb-3 flex items-center justify-between gap-3 pr-8">
               <div>
-                <h2 className="text-lg font-semibold text-burgundy">Preview mẫu email</h2>
-                <p className="text-sm text-gray-600">{preview.subject}</p>
+                <h2 className="text-lg font-semibold text-ink">Preview mẫu email</h2>
+                <p className="text-sm text-muted-foreground">{preview.subject}</p>
               </div>
               <Button
                 type="button"

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Select } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -79,19 +81,19 @@ export function EmailQueuePage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-burgundy">Hàng đợi email</h1>
-        <p className="text-sm text-gray-600">
+        <h1 className="text-2xl font-bold tracking-tight text-ink">Hàng đợi email</h1>
+        <p className="text-sm text-muted-foreground">
           Theo dõi job gửi email và xử lý lỗi.
         </p>
       </div>
       {error && (
-        <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-3">
-        <select
-          className="h-9 rounded-md border bg-white px-3 text-sm"
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <Select
+          className="w-44"
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
@@ -102,12 +104,12 @@ export function EmailQueuePage() {
           <option value="dead">Dead</option>
           <option value="failed">Failed</option>
           <option value="cancelled">Cancelled</option>
-        </select>
-        <span className="text-xs text-gray-500">
+        </Select>
+        <span className="text-xs text-muted-foreground">
           Trạng thái hiện có: queued, sending, sent, dead, failed, cancelled (6).
         </span>
       </div>
-      <div className="rounded-lg border bg-white">
+      <Card className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -175,7 +177,7 @@ export function EmailQueuePage() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </Card>
       <div className="flex justify-end gap-2">
         <Button
           variant="outline"

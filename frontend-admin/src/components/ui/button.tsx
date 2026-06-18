@@ -7,7 +7,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<string, string> = {
-  default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+  default: 'bg-gold text-ink font-semibold hover:bg-gold/90',
   destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
   outline: 'border border-input bg-white hover:bg-muted',
   secondary: 'bg-muted text-foreground hover:bg-muted/70',
