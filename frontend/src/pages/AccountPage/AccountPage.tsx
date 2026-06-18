@@ -1,7 +1,7 @@
 import { useCallback, useEffect, type MouseEvent } from 'react';
 import { useAuthModal } from '../../auth/AuthModalContext';
 import { useAuth } from '../../auth/useAuth';
-import AccountSidebar from './AccountSidebar';
+import { resolveAssetUrl } from '../../api/client';
 import AccountInfo from './AccountInfo';
 import AccountEditForm from './AccountEditForm';
 import OrderList from './OrderList';
@@ -17,6 +17,13 @@ interface AccountPageProps {
   onViewChange: (view: AccountView) => void;
   variant?: 'modal' | 'page';
 }
+
+const NAV_ITEMS: { view: AccountView; label: string; icon: string }[] = [
+  { view: 'profile', label: 'Thông tin tài khoản', icon: '◉' },
+  { view: 'orders', label: 'Quản lý đơn hàng', icon: '▣' },
+  { view: 'addresses', label: 'Danh sách địa chỉ', icon: '⌖' },
+  { view: 'images', label: 'Hình ảnh của tôi', icon: '□' },
+];
 
 export default function AccountPage({
   activeView,
@@ -58,10 +65,13 @@ export default function AccountPage({
     return null;
   }
 
+  const avatarSrc = resolveAssetUrl(user.avatarUrl);
+  const initial = user.fullName.charAt(0).toUpperCase();
+  const activeRootView = activeView === 'profile/edit' ? 'profile' : activeView;
   const content = {
-    profile: <AccountInfo onEdit={() => onViewChange('profile/edit')} />,
+    profile: <AccountInfo onEdit={() => onViewChange('profile/edit')} onNavigate={onViewChange} />,
     'profile/edit': <AccountEditForm onSaved={() => onViewChange('profile')} />,
-    orders: <OrderList onRequestClose={variant === 'modal' ? onClose : undefined} />,
+    orders: <OrderList />,
     addresses: <AddressList />,
     images: <ImageHistory />,
   }[activeView];
@@ -84,16 +94,55 @@ export default function AccountPage({
             ✕
           </button>
         ) : null}
-        <div className={styles.layout}>
-          <AccountSidebar
-            user={user}
-            onLogout={handleLogout}
-            activeView={activeView}
-            onNavigate={onViewChange}
-          />
-          <div className={styles.content}>
+
+        <div className={styles.dashboard}>
+          <header className={styles.profileHero}>
+            <div className={styles.profileIdentity}>
+              <div className={styles.avatarFrame}>
+                {avatarSrc ? (
+                  <img className={styles.avatar} src={avatarSrc} alt={user.fullName} />
+                ) : (
+                  <span className={styles.avatarFallback}>{initial}</span>
+                )}
+              </div>
+              <div className={styles.profileCopy}>
+                <p className={styles.eyebrow}>Bảng điều khiển tài khoản</p>
+                <h1>{user.fullName}</h1>
+                <p>{user.email ?? 'Chưa cập nhật email'}</p>
+                <div className={styles.badges}>
+                  <span>Khách hàng Hà Uyên</span>
+                  <span>Đã đăng nhập</span>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.heroActions}>
+              <button type="button" className={styles.primaryAction} onClick={() => onViewChange('profile/edit')}>
+                Cập nhật hồ sơ
+              </button>
+              <button type="button" className={styles.logoutAction} onClick={handleLogout}>
+                Đăng xuất
+              </button>
+            </div>
+          </header>
+
+          <nav className={styles.tabs} aria-label="Điều hướng tài khoản">
+            {NAV_ITEMS.map(({ view, label, icon }) => (
+              <button
+                key={view}
+                type="button"
+                className={`${styles.tab} ${activeRootView === view ? styles.tabActive : ''}`}
+                onClick={() => onViewChange(view)}
+              >
+                <span aria-hidden="true">{icon}</span>
+                {label}
+              </button>
+            ))}
+          </nav>
+
+          <main className={styles.content}>
             {content}
-          </div>
+          </main>
         </div>
       </div>
     </section>

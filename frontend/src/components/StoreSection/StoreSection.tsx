@@ -45,7 +45,8 @@ export default function StoreSection() {
         whileHover={prefersReducedMotion ? undefined : 'hover'}
       >
         <motion.iframe
-          src="https://www.google.com/maps?q=Kho%20%C3%81o%20d%C3%A0i%20Nh%C3%A3%20Uy%C3%AAn,%2010.7989693,106.6900893&z=17&output=embed"
+          src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3919.1561669854177!2d106.68645222458214!3d10.799348697814532!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x317529254b7478e5%3A0x59e5f3408e331199!2zS2hvIMOBbyBkw6BpIE5ow6MgVXnDqm4!5e0!3m2!1svi!2sus!4v1781755861254!5m2!1svi!2sus"
+          title="Store Location"
         />
       </motion.div>
     </motion.section>
