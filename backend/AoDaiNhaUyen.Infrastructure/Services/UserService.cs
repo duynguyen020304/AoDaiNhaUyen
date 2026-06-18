@@ -125,6 +125,61 @@ public sealed class UserService(
         }
     }
 
+    public async Task<AuthResult<UserAddressDto>> UpdateUserAddressAsync(Guid userId, Guid addressId, CreateAddressDto address, CancellationToken cancellationToken = default)
+    {
+        var user = await dbContext.Users
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
+        if (user == null)
+        {
+            return AuthResult<UserAddressDto>.Failure("user_not_found", "Người dùng không tồn tại.");
+        }
+
+        var existingAddress = await dbContext.UserAddresses
+            .FirstOrDefaultAsync(ua => ua.Id == addressId && ua.UserId == userId, cancellationToken);
+
+        if (existingAddress == null)
+        {
+            return AuthResult<UserAddressDto>.Failure("address_not_found", "Địa chỉ không tồn tại.");
+        }
+
+        if (address.IsDefault)
+        {
+            var existingDefault = await dbContext.UserAddresses
+                .Where(ua => ua.UserId == userId && ua.IsDefault && ua.Id != addressId)
+                .ToListAsync(cancellationToken);
+
+            foreach (var defaultAddress in existingDefault)
+            {
+                defaultAddress.IsDefault = false;
+            }
+        }
+
+        existingAddress.RecipientName = address.RecipientName.Trim();
+        existingAddress.RecipientPhone = address.RecipientPhone.Trim();
+        existingAddress.Province = address.Province.Trim();
+        existingAddress.District = address.District.Trim();
+        existingAddress.Ward = string.IsNullOrWhiteSpace(address.Ward) ? null : address.Ward.Trim();
+        existingAddress.AddressLine = address.AddressLine.Trim();
+        existingAddress.IsDefault = address.IsDefault;
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("User {UserId} updated address {AddressId}", userId, addressId);
+
+            var addressDto = (await userProfileRepository.GetUserAddressesAsync(userId, cancellationToken))
+                .FirstOrDefault(ua => ua.Id == addressId);
+
+            return AuthResult<UserAddressDto>.Success(addressDto!);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to update address {AddressId} for user {UserId}", addressId, userId);
+            return AuthResult<UserAddressDto>.Failure("address_update_failed", "Cập nhật địa chỉ thất bại.");
+        }
+    }
+
     public async Task<AuthResult<bool>> DeleteUserAddressAsync(Guid userId, Guid addressId, CancellationToken cancellationToken = default)
     {
         var user = await dbContext.Users

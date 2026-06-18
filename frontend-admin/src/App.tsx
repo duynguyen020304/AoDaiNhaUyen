@@ -14,6 +14,7 @@ import { UsersPage } from '@/pages/UsersPage'
 import { RolesPage } from '@/pages/RolesPage'
 import { MediaPage } from '@/pages/MediaPage'
 import { AiChatPage } from '@/pages/AiChatPage'
+import { HermesReportsPage } from '@/pages/HermesReportsPage'
 import { OrdersPage } from '@/pages/OrdersPage'
 import { ReviewsPage } from '@/pages/ReviewsPage'
 import { ToolRiskPage } from '@/pages/ToolRiskPage'
@@ -21,6 +22,7 @@ import { LlmLogsPage } from '@/pages/LlmLogsPage'
 import { PromosPage } from '@/pages/PromosPage'
 import { BlogListPage } from '@/pages/BlogListPage'
 import { BlogFormPage } from '@/pages/BlogFormPage'
+import { AiTryOnFeedbackPage } from '@/pages/AiTryOnFeedbackPage'
 import { MarketingDashboardPage } from '@/pages/MarketingDashboardPage'
 import { EmailTemplatesPage } from '@/pages/EmailTemplatesPage'
 import { SubscribersPage } from '@/pages/SubscribersPage'
@@ -77,8 +79,10 @@ export function App() {
             <Route path="media" element={<MediaPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="reviews" element={<ReviewsPage />} />
+            <Route path="ai-tryon-feedback" element={<AiTryOnFeedbackPage />} />
             <Route path="ai-chat" element={<AiChatPage />} />
-            <Route path="hermes-reports" element={<AiChatPage initialTab="reports" />} />
+            <Route path="ai-chat/:chatId" element={<AiChatPage />} />
+            <Route path="hermes-reports" element={<HermesReportsPage />} />
             <Route path="llm-logs" element={<LlmLogsPage />} />
             <Route path="tools-risk" element={<ToolRiskPage />} />
           </Route>

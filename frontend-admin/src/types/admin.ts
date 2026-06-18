@@ -259,6 +259,27 @@ export interface ReplyToReviewRequest {
   content: string
 }
 
+// ── AI Try-on Feedback ──
+
+export interface AdminAiTryOnFeedbackItem {
+  id: string
+  generatedImageId: string
+  imageUrl: string
+  userId: string | null
+  userName: string | null
+  userEmail: string | null
+  rating: number
+  comment: string | null
+  adminNote: string | null
+  isResolved: boolean
+  createdAt: string
+}
+
+export interface UpdateAiTryOnFeedbackStatusRequest {
+  isResolved: boolean
+  adminNote?: string | null
+}
+
 // ── Orders ──
 
 export interface AdminOrderListItem {

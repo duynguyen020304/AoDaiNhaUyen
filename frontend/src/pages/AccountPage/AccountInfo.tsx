@@ -1,6 +1,7 @@
 import { resolveAssetUrl } from '../../api/client';
 import { useUserProfileQuery, useOrdersQuery } from '../../hooks/user/useUserQueries';
 import type { AccountView } from './AccountPage';
+import { formatAccountDisplayName, getAccountInitial } from '../../utils/accountDisplay';
 import styles from './AccountInfo.module.css';
 
 interface AccountInfoProps {
@@ -17,6 +18,22 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'Đã hủy',
   returned: 'Đã trả hàng',
 };
+
+const GENDER_LABELS: Record<string, string> = {
+  male: 'Nam',
+  female: 'Nữ',
+  other: 'Khác',
+  nam: 'Nam',
+  nu: 'Nữ',
+  nữ: 'Nữ',
+  khac: 'Khác',
+  khác: 'Khác',
+};
+
+function formatGender(gender: string | null) {
+  if (!gender) return 'Chưa cập nhật';
+  return GENDER_LABELS[gender.trim().toLowerCase()] ?? gender;
+}
 
 function formatDate(iso: string | null) {
   if (!iso) return 'Chưa cập nhật';
@@ -52,7 +69,8 @@ export default function AccountInfo({ onEdit, onNavigate }: AccountInfoProps) {
   if (!profile) return <div className={styles.stateCard}>Không tìm thấy thông tin tài khoản.</div>;
 
   const avatarSrc = resolveAssetUrl(profile.avatarUrl);
-  const initial = profile.fullName.charAt(0).toUpperCase();
+  const displayName = formatAccountDisplayName(profile);
+  const initial = getAccountInitial(profile);
   const { firstName, lastName } = splitName(profile.fullName);
 
   return (
@@ -97,7 +115,7 @@ export default function AccountInfo({ onEdit, onNavigate }: AccountInfoProps) {
               </div>
               <div className={styles.fieldBlock}>
                 <span className={styles.label}>Giới tính</span>
-                <span className={styles.value}>{profile.gender || 'Chưa cập nhật'}</span>
+                <span className={styles.value}>{formatGender(profile.gender)}</span>
               </div>
               <div className={`${styles.fieldBlock} ${styles.fullWidth}`}>
                 <span className={styles.label}>Trạng thái</span>
@@ -112,13 +130,13 @@ export default function AccountInfo({ onEdit, onNavigate }: AccountInfoProps) {
             <div className={styles.profileMini}>
               <div className={styles.avatarSmall}>
                 {avatarSrc ? (
-                  <img src={avatarSrc} alt={profile.fullName} />
+                  <img src={avatarSrc} alt={displayName} />
                 ) : (
                   <span>{initial}</span>
                 )}
               </div>
               <div>
-                <h3>{profile.fullName}</h3>
+                <h3>{displayName}</h3>
                 <p>{profile.email ?? 'Chưa cập nhật email'}</p>
               </div>
             </div>

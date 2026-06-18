@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { Activity, FileText, MessageSquare, PanelLeft } from 'lucide-react'
 import { FullChatArea } from '@/components/ai/FullChatArea'
 import { ChatHistorySidebar } from '@/components/ai/ChatHistorySidebar'
 import { HermesEventsPanel } from '@/components/hermes/HermesEventsPanel'
-import { HermesReportsPanel } from '@/components/hermes/HermesReportsPanel'
+import { useAdminAiStore } from '@/stores/adminAiStore'
 
-interface AiChatPageProps {
-  initialTab?: 'chat' | 'reports'
-}
-
-export function AiChatPage({ initialTab = 'chat' }: AiChatPageProps) {
+export function AiChatPage() {
+  const { chatId } = useParams<{ chatId: string }>()
+  const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024)
-  const [activeTab, setActiveTab] = useState<'chat' | 'reports' | 'events'>(initialTab)
+  const [activeTab, setActiveTab] = useState<'chat' | 'events'>('chat')
+  const activeConversationId = useAdminAiStore((s) => s.activeConversationId)
+  const messages = useAdminAiStore((s) => s.messages)
+  const loadConversation = useAdminAiStore((s) => s.loadConversation)
 
   useEffect(() => {
     function handleResize() {
@@ -22,6 +24,18 @@ export function AiChatPage({ initialTab = 'chat' }: AiChatPageProps) {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  useEffect(() => {
+    if (chatId && chatId !== activeConversationId) {
+      void loadConversation(chatId)
+    }
+  }, [activeConversationId, chatId, loadConversation])
+
+  useEffect(() => {
+    if (!chatId && activeConversationId && messages.length > 0) {
+      navigate(`/admin/ai-chat/${activeConversationId}`, { replace: true })
+    }
+  }, [activeConversationId, chatId, messages.length, navigate])
 
   return (
     <div className="flex flex-col lg:flex-row h-dvh -mx-4 -mb-4 -mt-14 lg:-m-6 overflow-hidden relative bg-white">
@@ -49,25 +63,26 @@ export function AiChatPage({ initialTab = 'chat' }: AiChatPageProps) {
           />
         )}
 
-        {activeTab === 'chat' && (
-          <div
-            className={`${
-              sidebarOpen ? 'w-72' : 'w-0'
-            } transition-all duration-200 overflow-hidden shrink-0 max-lg:fixed max-lg:left-0 max-lg:top-0 max-lg:z-20 max-lg:h-dvh lg:h-full`}
-          >
-            <ChatHistorySidebar className="w-72" onSelect={() => {
-              if (window.innerWidth <= 1024) {
-                setSidebarOpen(false)
-              }
-            }} />
-          </div>
-        )}
+        <div
+          className={`${
+            sidebarOpen ? 'w-72' : 'w-0'
+          } transition-all duration-200 overflow-hidden shrink-0 max-lg:fixed max-lg:left-0 max-lg:top-0 max-lg:z-20 max-lg:h-dvh lg:h-full`}
+        >
+          <ChatHistorySidebar className="w-72" onSelect={() => {
+            if (window.innerWidth <= 1024) {
+              setSidebarOpen(false)
+            }
+          }} />
+        </div>
 
         <div className="flex-1 min-w-0 h-full flex flex-col">
           <div className="flex shrink-0 gap-2 border-b border-gray-200 bg-white px-4 py-2">
             <button
               type="button"
-              onClick={() => setActiveTab('chat')}
+              onClick={() => {
+                setActiveTab('chat')
+                navigate(activeConversationId ? `/admin/ai-chat/${activeConversationId}` : '/admin/ai-chat')
+              }}
               className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${activeTab === 'chat' ? 'bg-wine text-white' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <MessageSquare className="size-4" />
@@ -75,8 +90,8 @@ export function AiChatPage({ initialTab = 'chat' }: AiChatPageProps) {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('reports')}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${activeTab === 'reports' ? 'bg-wine text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+              onClick={() => navigate('/admin/hermes-reports')}
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
             >
               <FileText className="size-4" />
               Báo cáo Hermes
@@ -92,7 +107,6 @@ export function AiChatPage({ initialTab = 'chat' }: AiChatPageProps) {
           </div>
           <div className="min-h-0 flex-1">
             {activeTab === 'chat' && <FullChatArea />}
-            {activeTab === 'reports' && <HermesReportsPanel />}
             {activeTab === 'events' && <HermesEventsPanel />}
           </div>
         </div>

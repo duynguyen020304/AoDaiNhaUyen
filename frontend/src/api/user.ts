@@ -1,6 +1,6 @@
 import { request, requestPaginated } from './client';
 import type { UserProfile, UpdateProfilePayload } from '../types/user';
-import type { UserAddress, CreateAddressPayload } from '../types/address';
+import type { UserAddress, CreateAddressPayload, UpdateAddressPayload } from '../types/address';
 import type { UserOrder } from '../types/order';
 
 export function getUserProfile(): Promise<UserProfile> {
@@ -21,6 +21,13 @@ export function getAddresses(): Promise<UserAddress[]> {
 export function createAddress(payload: CreateAddressPayload): Promise<UserAddress> {
   return request<UserAddress>('/api/users/me/addresses', {
     method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAddress(id: string, payload: UpdateAddressPayload): Promise<UserAddress> {
+  return request<UserAddress>(`/api/users/me/addresses/${id}`, {
+    method: 'PUT',
     body: JSON.stringify(payload),
   });
 }

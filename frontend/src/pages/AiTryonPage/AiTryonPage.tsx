@@ -16,6 +16,7 @@ import {
   type AiTryOnCatalogItem,
   type AiTryOnCatalogPage,
 } from '../../api/aiTryon';
+import { createAiTryOnFeedback } from '../../api/aiTryonFeedback';
 import { trackEvent } from '../../api/events';
 import { addCartItem } from '../../api/cart';
 import styles from './AiTryonPage.module.css';
@@ -65,6 +66,12 @@ export default function AiTryonPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [generatedImageId, setGeneratedImageId] = useState<string | null>(null);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [tryonError, setTryonError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -123,6 +130,8 @@ export default function AiTryonPage() {
     setUserFileName(file.name);
     setUserPhotoSource('file');
     setTryonResult(null);
+    setGeneratedImageId(null);
+    setShowFeedbackModal(false);
     setTryonError(null);
     setSelectedAccessories([]);
     setSelectedAccessoryItems({});
@@ -147,6 +156,8 @@ export default function AiTryonPage() {
     setUserFileName(pastedFile.name);
     setUserPhotoSource('paste');
     setTryonResult(null);
+    setGeneratedImageId(null);
+    setShowFeedbackModal(false);
     setTryonError(null);
     setSelectedAccessories([]);
     setSelectedAccessoryItems({});
@@ -180,12 +191,16 @@ export default function AiTryonPage() {
       return [...prev, id];
     });
     setTryonResult(null);
+    setGeneratedImageId(null);
+    setShowFeedbackModal(false);
   }, []);
 
   const handleSelectGarment = useCallback((item: AiTryOnCatalogItem) => {
     setSelectedGarment(item.productId);
     setSelectedGarmentItem(item);
     setTryonResult(null);
+    setGeneratedImageId(null);
+    setShowFeedbackModal(false);
     setTryonError(null);
   }, []);
 
@@ -222,13 +237,44 @@ export default function AiTryonPage() {
 
       void trackEvent({ eventType: 'ai_tryon_completed', productId: garment.productId, productVariantId: garment.defaultVariantId, metadata: { accessoryProductIds: selectedAccessories } });
       setTryonResult(result.resultImageUrl);
+      setGeneratedImageId(result.generatedImageId);
+      if (result.generatedImageId) {
+        setFeedbackRating(5);
+        setFeedbackComment('');
+        setFeedbackError(null);
+        setShowFeedbackModal(true);
+      }
     } catch (error) {
       setTryonResult(null);
+      setGeneratedImageId(null);
       setTryonError(error instanceof Error ? error.message : 'Không thể tạo ảnh thử đồ.');
     } finally {
       setIsProcessing(false);
     }
   }, [selectedAccessories, selectedGarment, selectedGarmentItem, userPhotoFile]);
+
+  const handleSubmitFeedback = useCallback(async () => {
+    if (!generatedImageId) {
+      setShowFeedbackModal(false);
+      return;
+    }
+
+    setFeedbackSubmitting(true);
+    setFeedbackError(null);
+    try {
+      await createAiTryOnFeedback({
+        generatedImageId,
+        rating: feedbackRating,
+        comment: feedbackComment.trim() || undefined,
+      });
+      setShowFeedbackModal(false);
+      setFeedbackComment('');
+    } catch (error) {
+      setFeedbackError(error instanceof Error ? error.message : 'Không thể gửi đánh giá.');
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  }, [feedbackComment, feedbackRating, generatedImageId]);
 
   const handleBuyNowClick = useCallback(async () => {
     if (!tryonResult || !selectedGarment) return;
@@ -389,6 +435,66 @@ export default function AiTryonPage() {
           </div>
         </motion.div>
       </motion.section>
+
+      {showFeedbackModal ? (
+        <div
+          className={styles.loginPromptOverlay}
+          role="presentation"
+          onClick={() => setShowFeedbackModal(false)}
+        >
+          <motion.div
+            className={styles.feedbackModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ai-tryon-feedback-title"
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.18 }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="ai-tryon-feedback-title">Bạn thấy ảnh thử đồ thế nào?</h2>
+            <p>Đánh giá của bạn giúp Nhã Uyên cải thiện chất lượng AI try-on.</p>
+            <div className={styles.ratingRow} aria-label="Chọn số sao">
+              {[1, 2, 3, 4, 5].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={value <= feedbackRating ? styles.starActive : styles.starButton}
+                  onClick={() => setFeedbackRating(value)}
+                  aria-label={`${value} sao`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <textarea
+              className={styles.feedbackTextarea}
+              value={feedbackComment}
+              onChange={(event) => setFeedbackComment(event.target.value)}
+              placeholder="Góp ý thêm về độ giống, dáng áo, màu sắc..."
+              rows={4}
+            />
+            {feedbackError ? <p className={styles.feedbackError}>{feedbackError}</p> : null}
+            <div className={styles.loginPromptActions}>
+              <button
+                type="button"
+                className={styles.loginPromptSecondary}
+                onClick={() => setShowFeedbackModal(false)}
+              >
+                Để sau
+              </button>
+              <button
+                type="button"
+                className={styles.loginPromptPrimary}
+                onClick={handleSubmitFeedback}
+                disabled={feedbackSubmitting}
+              >
+                {feedbackSubmitting ? 'Đang gửi...' : 'Gửi đánh giá'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      ) : null}
 
       {showLoginPrompt ? (
         <div

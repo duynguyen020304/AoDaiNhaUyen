@@ -18,3 +18,5 @@ export interface CreateAddressPayload {
   addressLine: string;
   isDefault?: boolean;
 }
+
+export type UpdateAddressPayload = CreateAddressPayload;
