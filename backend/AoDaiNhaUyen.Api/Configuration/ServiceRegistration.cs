@@ -74,6 +74,7 @@ public static class ServiceRegistration
       .ValidateOnStart();
     services.Configure<HermesAgentOptions>(configuration.GetSection(HermesAgentOptions.SectionName));
     services.Configure<HermesAdminAuthOptions>(configuration.GetSection(HermesAdminAuthOptions.SectionName));
+    services.Configure<HermesOutboxOptions>(configuration.GetSection(HermesOutboxOptions.SectionName));
     services.Configure<AdminSeedOptions>(configuration.GetSection(AdminSeedOptions.SectionName));
     services.Configure<CookieSettings>(configuration.GetSection("CookieSettings"));
 
@@ -145,6 +146,11 @@ public static class ServiceRegistration
     services.AddScoped<IBlogPostService, BlogPostService>();
     services.AddScoped<ICommentService, CommentService>();
     services.AddScoped<IHermesAgentService, HermesAgentService>();
+    services.AddScoped<HermesEventOutboxPublisher>();
+    services.AddScoped<IHermesEventOutboxPublisher>(sp => sp.GetRequiredService<HermesEventOutboxPublisher>());
+    services.AddScoped<IHermesEventOutboxService>(sp => sp.GetRequiredService<HermesEventOutboxPublisher>());
+    services.AddScoped<IHermesEventProcessor, HermesEventProcessor>();
+    services.AddHostedService<BackgroundHermesOutboxWorker>();
     services.AddScoped<IAdminProductService, AdminProductService>();
     services.AddScoped<IAdminUserService, AdminUserService>();
     services.AddScoped<IAdminRoleService, AdminRoleService>();

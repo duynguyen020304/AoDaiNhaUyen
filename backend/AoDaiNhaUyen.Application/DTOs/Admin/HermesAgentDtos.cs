@@ -36,6 +36,51 @@ public sealed record HermesRunSummaryResponse(
   DateTimeOffset? CompletedAt,
   string? Error);
 
+public sealed record HermesReportRequest
+{
+  public required string ReportType { get; init; }
+  public required string Title { get; init; }
+  public required string Summary { get; init; }
+  public string Severity { get; init; } = "info";
+  public string? PayloadJson { get; init; }
+  public string? Source { get; init; }
+  public string? CorrelationId { get; init; }
+  public Guid? RunId { get; init; }
+}
+
+public sealed record HermesReportSearchRequest(
+  int Page = 1,
+  int PageSize = 20,
+  string? Severity = null,
+  string? Type = null,
+  string? Status = null,
+  string? Q = null);
+
+public sealed record HermesReportListItemResponse(
+  Guid Id,
+  string ReportType,
+  string Severity,
+  string Title,
+  string SummaryPreview,
+  string Source,
+  string? CorrelationId,
+  Guid? RunId,
+  string Status,
+  DateTime CreatedAt);
+
+public sealed record HermesReportResponse(
+  Guid Id,
+  string ReportType,
+  string Severity,
+  string Title,
+  string Summary,
+  string? PayloadJson,
+  string Source,
+  string? CorrelationId,
+  Guid? RunId,
+  string Status,
+  DateTime CreatedAt);
+
 public sealed record HermesStreamChunk(
   string Type,
   string Content,

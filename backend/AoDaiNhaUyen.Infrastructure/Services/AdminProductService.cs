@@ -7,7 +7,12 @@ using Microsoft.Extensions.Logging;
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
 /// <summary>Admin product management service implementation.</summary>
-public sealed class AdminProductService(AppDbContext dbContext, IImageVisibilityService imageVisibilityService, IStorageService storageService, ILogger<AdminProductService> logger) : IAdminProductService
+public sealed class AdminProductService(
+    AppDbContext dbContext,
+    IImageVisibilityService imageVisibilityService,
+    IStorageService storageService,
+    IHermesEventOutboxPublisher hermesEvents,
+    ILogger<AdminProductService> logger) : IAdminProductService
 {
     public async Task<(IReadOnlyList<AdminProductListItemResponse> Items, int TotalCount)> GetPagedAsync(
         string? search,
@@ -99,6 +104,13 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
         };
 
         dbContext.Products.Add(product);
+        await hermesEvents.EnqueueAdminProductEventAsync(
+            "product_created",
+            product.Id,
+            new { productId = product.Id, product.Name, product.Slug, product.ProductType, product.CategoryId, product.Status, product.IsFeatured },
+            $"product_created:Product:{product.Id:N}:{product.CreatedAt.Ticks}",
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Admin created product {ProductId} ({Name})", product.Id, product.Name);
@@ -130,6 +142,13 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
         product.IsFeatured = request.IsFeatured;
         product.UpdatedAt = DateTime.UtcNow;
 
+        await hermesEvents.EnqueueAdminProductEventAsync(
+            "product_updated",
+            product.Id,
+            new { productId = product.Id, product.Name, product.Slug, product.ProductType, product.CategoryId, oldStatus, newStatus = product.Status, product.IsFeatured },
+            $"product_updated:Product:{product.Id:N}:{product.UpdatedAt.Ticks}",
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await ProcessStatusChangeVisibilityAsync(product, oldStatus, product.Status, cancellationToken);
@@ -146,9 +165,17 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
 
         if (variant is null) return null;
 
+        var oldStockQty = variant.StockQty;
         variant.StockQty = stockQty;
         variant.UpdatedAt = DateTime.UtcNow;
         variant.Product.UpdatedAt = DateTime.UtcNow;
+
+        await hermesEvents.EnqueueAdminInventoryEventAsync(
+            "product_stock_changed",
+            variant.Id,
+            new { productId, variantId, variant.Sku, productName = variant.Product.Name, oldStockQty, newStockQty = stockQty, delta = stockQty - oldStockQty },
+            $"product_stock_changed:Inventory:{variant.Id:N}:{oldStockQty}:{stockQty}:{variant.UpdatedAt.Ticks}",
+            cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -166,6 +193,13 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
         var oldStatus = product.Status;
         product.Status = newStatus;
         product.UpdatedAt = DateTime.UtcNow;
+        await hermesEvents.EnqueueAdminProductEventAsync(
+            "product_visibility_changed",
+            product.Id,
+            new { productId = product.Id, product.Name, oldStatus, newStatus },
+            $"product_visibility_changed:Product:{product.Id:N}:{oldStatus}:{newStatus}:{product.UpdatedAt.Ticks}",
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         await ProcessStatusChangeVisibilityAsync(product, oldStatus, newStatus, cancellationToken);
@@ -185,6 +219,13 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
         product.IsDeleted = true;
         product.DeletedAt = DateTime.UtcNow;
         product.UpdatedAt = DateTime.UtcNow;
+        await hermesEvents.EnqueueAdminProductEventAsync(
+            "product_deleted",
+            product.Id,
+            new { productId = product.Id, product.Name, product.Slug, deletedAt = product.DeletedAt },
+            $"product_deleted:Product:{product.Id:N}:{product.UpdatedAt.Ticks}",
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Admin soft-deleted product {ProductId} ({Name})", product.Id, product.Name);
@@ -202,8 +243,15 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
         product.IsDeleted = false;
         product.DeletedAt = null;
         product.UpdatedAt = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken);
 
+        await hermesEvents.EnqueueAdminProductEventAsync(
+            "product_updated",
+            product.Id,
+            new { productId = product.Id, product.Name, action = "restored" },
+            $"product_restored:Product:{product.Id:N}:{product.UpdatedAt.Ticks}",
+            cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
         logger.LogInformation("Admin restored product {ProductId} ({Name})", product.Id, product.Name);
         return true;
     }
@@ -270,6 +318,14 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
         }
 
         var resolvedUrl = await imageVisibilityService.ResolveUrlAsync(image.ImageUrl, image.IsPublic, image.PublicObjectKey, cancellationToken);
+
+        await hermesEvents.EnqueueAdminProductEventAsync(
+            "product_media_changed",
+            productId,
+            new { productId, imageId = image.Id, action = "uploaded", isPublic = image.IsPublic, isPrimary = image.IsPrimary },
+            $"product_media_changed:Product:{productId:N}:{image.Id:N}:uploaded:{image.CreatedAt.Ticks}",
+            cancellationToken);
+
         return new AdminImageResponse(image.Id, resolvedUrl, image.AltText, image.SortOrder, image.IsPrimary, image.IsPublic);
     }
 
@@ -288,6 +344,13 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
         dbContext.ProductImages.Remove(image);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        await hermesEvents.EnqueueAdminProductEventAsync(
+            "product_media_changed",
+            productId,
+            new { productId, imageId = imageId, action = "deleted" },
+            $"product_media_changed:Product:{productId:N}:{imageId:N}:deleted:{DateTime.UtcNow.Ticks}",
+            cancellationToken);
+
         return true;
     }
 
@@ -302,6 +365,14 @@ public sealed class AdminProductService(AppDbContext dbContext, IImageVisibility
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await hermesEvents.EnqueueAdminProductEventAsync(
+            "product_media_changed",
+            productId,
+            new { productId, imageId, action = "set_primary" },
+            $"product_media_changed:Product:{productId:N}:{imageId:N}:set_primary:{DateTime.UtcNow.Ticks}",
+            cancellationToken);
+
         return true;
     }
 

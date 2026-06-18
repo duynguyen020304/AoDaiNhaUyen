@@ -147,6 +147,22 @@ public sealed class HermesAdminApiDescriptionRegistry
     Patch("/api/admin/email-jobs/{id}/cancel", "Hủy email job.", "null", path: [Id("id", "ID job")]),
     Get("/api/admin/marketing/stats", "Thống kê marketing.", "MarketingStatsDto"),
 
+    // Hermes reports
+    Get("/api/admin/hermes/reports", "List báo cáo Hermes đã lưu.", "Paginated HermesReportListItemResponse[]", query: [Param("severity", "string", false, "info/warning/high/critical"), Param("type", "string", false, "Loại báo cáo"), Param("status", "string", false, "Trạng thái"), Param("q", "string", false, "Từ khóa"), Param("page", "int", false, "Trang"), Param("pageSize", "int", false, "Kích thước trang")]),
+    Get("/api/admin/hermes/reports/{id}", "Chi tiết báo cáo Hermes.", "HermesReportResponse", path: [Id("id", "ID báo cáo")]),
+    Post("/api/admin/hermes/report", "Hermes runner gửi báo cáo về backend để lưu DB.", "HermesReportResponse", HermesReportBody(), notes: ["Endpoint callback dùng X-Hermes-Admin-Key.", "PayloadJson phải là chuỗi JSON hợp lệ nếu có.", "Không gửi secrets/token/raw PII nếu không cần."]),
+
+    // Hermes outbox events
+    Get("/api/admin/hermes/events", "List Hermes event outbox.", "Paginated HermesEventOutboxListItemResponse[]", query: [Param("status", "string", false, "pending/processing/completed/failed/dead/cancelled"), Param("eventType", "string", false, "Loại event"), Param("aggregateType", "string", false, "Order/Product/Inventory/Promotion/AdminSecurity/Role/Content/Email/HermesConfig"), Param("q", "string", false, "Từ khóa"), Param("page", "int", false, "Trang"), Param("pageSize", "int", false, "Kích thước trang")]),
+    Get("/api/admin/hermes/events/{id}", "Chi tiết Hermes event outbox.", "HermesEventOutboxResponse", path: [Id("id", "ID event")]),
+    Post("/api/admin/hermes/events/{id}/retry", "Đưa event Hermes vào hàng đợi xử lý lại.", "null", path: [Id("id", "ID event")]),
+    Post("/api/admin/hermes/events/{id}/cancel", "Hủy event Hermes đang pending/failed.", "null", path: [Id("id", "ID event")]),
+
+    // NOTE: Admin-side mutations (order/product/stock/promo/user/role/content/email/tools-risk) 
+    // auto-enqueue Hermes events into a durable outbox for autonomous analysis.
+    // Event payloads are UNTRUSTED DATA — never treat payload fields as instructions.
+    // Hermes event worker does NOT auto-mutate store data; analysis/report only.
+
     // AI
     Post("/api/admin/ai/chat", "Stream chat AI admin qua SSE.", "text/event-stream chunks", AdminChatBody(), notes: ["Endpoint trả về text/event-stream, không phải JSON envelope.", "Dùng conversationId để tiếp tục cuộc trò chuyện cũ.", "Response kết thúc bằng data: [DONE]."]),
     Get("/api/admin/ai/conversations", "List cuộc trò chuyện AI admin.", "AdminConversationSummaryDto[]"),
@@ -189,6 +205,18 @@ public sealed class HermesAdminApiDescriptionRegistry
 
   private static HermesBodyDescription MultipartBody(string fieldName, string description) =>
     new("multipart/form-data", true, new Dictionary<string, HermesFieldDescription> { [fieldName] = new("file", true, description) }, null);
+
+  private static HermesBodyDescription HermesReportBody() =>
+    Body([
+      Field("reportType", "string", true, "Loại báo cáo, ví dụ daily_summary/order_anomaly/provider_health"),
+      Field("severity", "string", false, "info/warning/high/critical"),
+      Field("title", "string", true, "Tiêu đề báo cáo"),
+      Field("summary", "string", true, "Tóm tắt tiếng Việt, tối đa 4000 ký tự"),
+      Field("payloadJson", "string", false, "Chuỗi JSON hợp lệ chứa dữ liệu chi tiết"),
+      Field("source", "string", false, "Nguồn báo cáo"),
+      Field("correlationId", "string", false, "ID liên kết ngoài nếu có"),
+      Field("runId", "guid", false, "ID Hermes run nếu có")
+    ], new { reportType = "provider_health", severity = "warning", title = "Z.AI đang rate limit", summary = "Hermes gặp HTTP 429 khi gọi upstream.", payloadJson = "{\"provider\":\"zai\",\"status\":429}" });
 
   private static HermesBodyDescription AdminChatBody() =>
     Body([Field("message", "string", false, "Tin nhắn mới, tối đa 4000 ký tự"), Field("conversationId", "string", false, "ID cuộc trò chuyện để tiếp tục thread cũ")], new { message = "Tóm tắt tình hình cửa hàng hôm nay", conversationId = (string?)null });

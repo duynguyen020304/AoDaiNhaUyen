@@ -4,6 +4,7 @@ using System.Net;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260618075024_AddHermesPersistence")]
+    partial class AddHermesPersistence
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1422,143 +1425,6 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("email_verification_tokens", (string)null);
-                });
-
-            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.HermesEventOutbox", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AggregateId")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("aggregate_id");
-
-                    b.Property<string>("AggregateType")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("aggregate_type");
-
-                    b.Property<int>("Attempts")
-                        .HasColumnType("integer")
-                        .HasColumnName("attempts");
-
-                    b.Property<string>("CorrelationId")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("correlation_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("event_type");
-
-                    b.Property<string>("IdempotencyKey")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("idempotency_key");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_deleted");
-
-                    b.Property<string>("LastError")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("last_error");
-
-                    b.Property<DateTimeOffset?>("LockedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("locked_at");
-
-                    b.Property<string>("LockedBy")
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)")
-                        .HasColumnName("locked_by");
-
-                    b.Property<int>("MaxAttempts")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(5)
-                        .HasColumnName("max_attempts");
-
-                    b.Property<DateTimeOffset>("OccurredAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("occurred_at");
-
-                    b.Property<string>("PayloadJson")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("payload_json");
-
-                    b.Property<DateTimeOffset?>("ProcessedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("processed_at");
-
-                    b.Property<DateTimeOffset>("ScheduledAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("scheduled_at");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasDefaultValue("pending")
-                        .HasColumnName("status");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CorrelationId")
-                        .HasDatabaseName("idx_hermes_event_outbox_correlation_id");
-
-                    b.HasIndex("IdempotencyKey")
-                        .IsUnique()
-                        .HasDatabaseName("ux_hermes_event_outbox_idempotency_key")
-                        .HasFilter("idempotency_key IS NOT NULL");
-
-                    b.HasIndex("AggregateType", "AggregateId")
-                        .HasDatabaseName("idx_hermes_event_outbox_aggregate");
-
-                    b.HasIndex("EventType", "OccurredAt")
-                        .HasDatabaseName("idx_hermes_event_outbox_type_occurred_at");
-
-                    b.HasIndex("Status", "ScheduledAt", "OccurredAt")
-                        .HasDatabaseName("idx_hermes_event_outbox_status_schedule");
-
-                    b.ToTable("hermes_event_outbox", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_hermes_event_outbox_status", "status IN ('pending','processing','completed','failed','dead','cancelled')");
-                        });
                 });
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.HermesHeartbeat", b =>

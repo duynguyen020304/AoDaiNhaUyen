@@ -6,7 +6,9 @@ using Microsoft.EntityFrameworkCore;
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
 /// <summary>Admin role management service implementation.</summary>
-public sealed class AdminRoleService(AppDbContext dbContext) : IAdminRoleService
+public sealed class AdminRoleService(
+    AppDbContext dbContext,
+    IHermesEventOutboxPublisher hermesEvents) : IAdminRoleService
 {
     public async Task<IReadOnlyList<RoleDto>> GetRolesAsync(CancellationToken cancellationToken = default)
     {
@@ -25,6 +27,13 @@ public sealed class AdminRoleService(AppDbContext dbContext) : IAdminRoleService
         };
 
         dbContext.Roles.Add(role);
+        await hermesEvents.EnqueueAdminSecurityEventAsync(
+            "role_created",
+            role.Id,
+            new { roleId = role.Id, roleName = role.Name },
+            $"role_created:AdminSecurity:{role.Id:N}:{role.CreatedAt.Ticks}",
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return new RoleDto(role.Id, role.Name, role.Description);
@@ -37,6 +46,13 @@ public sealed class AdminRoleService(AppDbContext dbContext) : IAdminRoleService
 
         role.Name = request.Name;
         role.Description = request.Description;
+
+        await hermesEvents.EnqueueAdminSecurityEventAsync(
+            "role_updated",
+            role.Id,
+            new { roleId = role.Id, roleName = role.Name },
+            $"role_updated:AdminSecurity:{role.Id:N}:{role.UpdatedAt.Ticks}",
+            cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -55,6 +71,14 @@ public sealed class AdminRoleService(AppDbContext dbContext) : IAdminRoleService
         if (role.UserRoles.Any()) return false;
 
         dbContext.Roles.Remove(role);
+
+        await hermesEvents.EnqueueAdminSecurityEventAsync(
+            "role_deleted",
+            role.Id,
+            new { roleId = role.Id, roleName = role.Name },
+            $"role_deleted:AdminSecurity:{role.Id:N}:{DateTime.UtcNow.Ticks}",
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return true;

@@ -1,3 +1,4 @@
+using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 
 namespace AoDaiNhaUyen.Application.Interfaces.Services;
@@ -14,4 +15,12 @@ public interface IHermesAgentService
     CancellationToken cancellationToken);
 
   Task<IReadOnlyList<HermesRunSummaryResponse>> ListRunsAsync(CancellationToken cancellationToken);
+
+  Task<HermesReportResponse> RecordReportAsync(HermesReportRequest request, CancellationToken cancellationToken);
+
+  Task<PagedResult<HermesReportListItemResponse>> ListReportsAsync(
+    HermesReportSearchRequest request,
+    CancellationToken cancellationToken);
+
+  Task<HermesReportResponse?> GetReportAsync(Guid id, CancellationToken cancellationToken);
 }

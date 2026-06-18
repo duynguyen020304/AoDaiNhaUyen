@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react'
-import { PanelLeft } from 'lucide-react'
+import { FileText, MessageSquare, PanelLeft } from 'lucide-react'
 import { FullChatArea } from '@/components/ai/FullChatArea'
 import { ChatHistorySidebar } from '@/components/ai/ChatHistorySidebar'
+import { HermesReportsPanel } from '@/components/hermes/HermesReportsPanel'
 
-export function AiChatPage() {
+interface AiChatPageProps {
+  initialTab?: 'chat' | 'reports'
+}
+
+export function AiChatPage({ initialTab = 'chat' }: AiChatPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024)
+  const [activeTab, setActiveTab] = useState<'chat' | 'reports'>(initialTab)
 
   useEffect(() => {
     function handleResize() {
@@ -42,22 +48,42 @@ export function AiChatPage() {
           />
         )}
 
-        {/* Chat history sidebar */}
-        <div
-          className={`${
-            sidebarOpen ? 'w-72' : 'w-0'
-          } transition-all duration-200 overflow-hidden shrink-0 max-lg:fixed max-lg:left-0 max-lg:top-0 max-lg:z-20 max-lg:h-dvh lg:h-full`}
-        >
-          <ChatHistorySidebar className="w-72" onSelect={() => {
-            if (window.innerWidth <= 1024) {
-              setSidebarOpen(false)
-            }
-          }} />
-        </div>
+        {activeTab === 'chat' && (
+          <div
+            className={`${
+              sidebarOpen ? 'w-72' : 'w-0'
+            } transition-all duration-200 overflow-hidden shrink-0 max-lg:fixed max-lg:left-0 max-lg:top-0 max-lg:z-20 max-lg:h-dvh lg:h-full`}
+          >
+            <ChatHistorySidebar className="w-72" onSelect={() => {
+              if (window.innerWidth <= 1024) {
+                setSidebarOpen(false)
+              }
+            }} />
+          </div>
+        )}
 
-        {/* Chat area */}
-        <div className="flex-1 min-w-0 h-full">
-          <FullChatArea />
+        <div className="flex-1 min-w-0 h-full flex flex-col">
+          <div className="flex shrink-0 gap-2 border-b border-gray-200 bg-white px-4 py-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab('chat')}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${activeTab === 'chat' ? 'bg-wine text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <MessageSquare className="size-4" />
+              Chat Hermes
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('reports')}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${activeTab === 'reports' ? 'bg-wine text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <FileText className="size-4" />
+              Báo cáo Hermes
+            </button>
+          </div>
+          <div className="min-h-0 flex-1">
+            {activeTab === 'chat' ? <FullChatArea /> : <HermesReportsPanel />}
+          </div>
         </div>
       </div>
     </div>

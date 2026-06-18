@@ -1,11 +1,14 @@
-using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
+using AoDaiNhaUyen.Domain.Entities;
+using AoDaiNhaUyen.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -14,47 +17,62 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 public sealed class HermesAgentService(
   IHttpClientFactory httpClientFactory,
   IOptions<HermesAgentOptions> options,
+  AppDbContext dbContext,
   ILogger<HermesAgentService> logger) : IHermesAgentService
 {
+  private const int MaxReportPageSize = 100;
+  private const int MaxPayloadJsonLength = 20_000;
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-  private static readonly ConcurrentQueue<HermesRunRecord> Runs = new();
-  private static HermesHeartbeatSnapshot? _lastHeartbeat;
+  private static readonly HashSet<string> AllowedSeverities = new(StringComparer.OrdinalIgnoreCase)
+  {
+    "info", "warning", "high", "critical"
+  };
 
   private readonly HermesAgentOptions _options = options.Value;
 
-  public Task<HermesStatusResponse> GetStatusAsync(CancellationToken cancellationToken)
+  public async Task<HermesStatusResponse> GetStatusAsync(CancellationToken cancellationToken)
   {
-    var heartbeat = _lastHeartbeat;
+    var heartbeat = await dbContext.HermesHeartbeats
+      .AsNoTracking()
+      .OrderByDescending(x => x.RecordedAt)
+      .FirstOrDefaultAsync(cancellationToken);
+
     var now = DateTimeOffset.UtcNow;
     var status = heartbeat is null
       ? "offline"
-      : now - heartbeat.CreatedAt > TimeSpan.FromMinutes(5)
+      : now - heartbeat.RecordedAt > TimeSpan.FromMinutes(5)
         ? "stale"
         : heartbeat.Status;
 
-    return Task.FromResult(new HermesStatusResponse(
+    return new HermesStatusResponse(
       status,
       heartbeat?.RunnerName ?? _options.RunnerName,
-      heartbeat?.CreatedAt,
+      heartbeat?.RecordedAt,
       heartbeat?.Model,
       heartbeat?.GatewayStatus,
       heartbeat?.ActiveJobs ?? 0,
       heartbeat?.LastError,
-      IsApiConfigured()));
+      IsApiConfigured());
   }
 
-  public Task RecordHeartbeatAsync(HermesHeartbeatRequest request, CancellationToken cancellationToken)
+  public async Task RecordHeartbeatAsync(HermesHeartbeatRequest request, CancellationToken cancellationToken)
   {
-    _lastHeartbeat = new HermesHeartbeatSnapshot(
-      request.RunnerName.Trim(),
-      NormalizeStatus(request.Status),
-      request.Model,
-      request.GatewayStatus,
-      Math.Max(0, request.ActiveJobs),
-      request.LastError,
-      DateTimeOffset.UtcNow);
+    var now = DateTimeOffset.UtcNow;
+    dbContext.HermesHeartbeats.Add(new HermesHeartbeat
+    {
+      Id = Guid.NewGuid(),
+      RunnerName = LimitRequired(request.RunnerName, 120),
+      Status = NormalizeStatus(request.Status),
+      Model = Limit(request.Model, 160),
+      GatewayStatus = Limit(request.GatewayStatus, 120),
+      ActiveJobs = Math.Max(0, request.ActiveJobs),
+      LastError = Limit(request.LastError, 1000),
+      RecordedAt = now,
+      CreatedAt = now.UtcDateTime,
+      UpdatedAt = now.UtcDateTime
+    });
 
-    return Task.CompletedTask;
+    await dbContext.SaveChangesAsync(cancellationToken);
   }
 
   public async IAsyncEnumerable<HermesStreamChunk> StreamChatAsync(
@@ -62,24 +80,34 @@ public sealed class HermesAgentService(
     Guid adminUserId,
     [EnumeratorCancellation] CancellationToken cancellationToken)
   {
-    var run = new HermesRunRecord(
-      Guid.NewGuid(),
-      "running",
-      "admin_chat",
-      request.Message,
-      null,
-      DateTimeOffset.UtcNow,
-      null,
-      null);
-    AddRun(run);
+    var now = DateTimeOffset.UtcNow;
+    var conversationId = string.IsNullOrWhiteSpace(request.ConversationId)
+      ? Guid.NewGuid().ToString("N")
+      : request.ConversationId.Trim();
 
-    yield return new HermesStreamChunk("conversation", request.ConversationId ?? run.Id.ToString("N"));
+    var run = new HermesRun
+    {
+      Id = Guid.NewGuid(),
+      Status = "running",
+      Trigger = "admin_chat",
+      AdminUserId = adminUserId,
+      ConversationId = Limit(conversationId, 160),
+      PromptPreview = Truncate(request.Message, 500),
+      StartedAt = now,
+      CreatedAt = now.UtcDateTime,
+      UpdatedAt = now.UtcDateTime
+    };
+
+    dbContext.HermesRuns.Add(run);
+    await dbContext.SaveChangesAsync(cancellationToken);
+
+    yield return new HermesStreamChunk("conversation", conversationId);
     yield return new HermesStreamChunk("tool_call", "Đang gửi yêu cầu tới Hermes Agent…", "hermes_api", run.Id.ToString("N"));
 
     if (!IsApiConfigured())
     {
       var message = "Hermes API server chưa cấu hình. Cần Hermes__ApiServerUrl và Hermes__ApiServerKey.";
-      CompleteRun(run.Id, "failed", null, message);
+      await CompleteRunAsync(run.Id, "failed", null, message, cancellationToken);
       yield return new HermesStreamChunk("error", message);
       yield break;
     }
@@ -92,13 +120,14 @@ public sealed class HermesAgentService(
     }
     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
     {
+      await CompleteRunAsync(run.Id, "cancelled", null, "Client disconnected.", CancellationToken.None);
       throw;
     }
     catch (Exception ex)
     {
       logger.LogError(ex, "[HermesAgent] Chat call failed. RunId={RunId}", run.Id);
       const string message = "Không gọi được Hermes Agent. Kiểm tra gateway/API server trên VPS.";
-      CompleteRun(run.Id, "failed", null, ex.Message);
+      await CompleteRunAsync(run.Id, "failed", null, ex.Message, cancellationToken);
       hermesResponse = null;
       errorChunk = new HermesStreamChunk("error", message);
     }
@@ -121,27 +150,174 @@ public sealed class HermesAgentService(
       text = "Hermes Agent đã phản hồi nhưng không có nội dung văn bản.";
     }
 
-    CompleteRun(run.Id, "completed", text, null);
+    await CompleteRunAsync(run.Id, "completed", text, null, cancellationToken);
     yield return new HermesStreamChunk("text", text);
   }
 
-  public Task<IReadOnlyList<HermesRunSummaryResponse>> ListRunsAsync(CancellationToken cancellationToken)
+  public async Task<IReadOnlyList<HermesRunSummaryResponse>> ListRunsAsync(CancellationToken cancellationToken)
   {
-    IReadOnlyList<HermesRunSummaryResponse> runs = Runs
-      .Reverse()
+    var runs = await dbContext.HermesRuns
+      .AsNoTracking()
+      .OrderByDescending(x => x.StartedAt)
       .Take(50)
-      .Select(r => new HermesRunSummaryResponse(
-        r.Id,
-        r.Status,
-        r.Trigger,
-        Truncate(r.Prompt, 120),
-        Truncate(r.Result, 160),
-        r.StartedAt,
-        r.CompletedAt,
-        r.Error))
+      .Select(x => new
+      {
+        x.Id,
+        x.Status,
+        x.Trigger,
+        x.PromptPreview,
+        x.ResultPreview,
+        x.StartedAt,
+        x.CompletedAt,
+        x.Error
+      })
+      .ToListAsync(cancellationToken);
+
+    return runs
+      .Select(x => new HermesRunSummaryResponse(
+        x.Id,
+        x.Status,
+        x.Trigger,
+        Truncate(x.PromptPreview, 120),
+        Truncate(x.ResultPreview, 160),
+        x.StartedAt,
+        x.CompletedAt,
+        x.Error))
+      .ToList();
+  }
+
+  public async Task<HermesReportResponse> RecordReportAsync(
+    HermesReportRequest request,
+    CancellationToken cancellationToken)
+  {
+    var payloadJson = NormalizePayloadJson(request.PayloadJson);
+    if (request.RunId is not null && !await dbContext.HermesRuns.AnyAsync(x => x.Id == request.RunId, cancellationToken))
+    {
+      throw new ArgumentException("RunId không tồn tại.", nameof(request.RunId));
+    }
+
+    var now = DateTime.UtcNow;
+    var report = new HermesReport
+    {
+      Id = Guid.NewGuid(),
+      ReportType = LimitRequired(request.ReportType, 80),
+      Severity = NormalizeSeverity(request.Severity),
+      Title = LimitRequired(request.Title, 200),
+      Summary = LimitRequired(request.Summary, 4000),
+      PayloadJson = payloadJson,
+      Source = Limit(request.Source, 80) ?? "hermes_agent",
+      CorrelationId = Limit(request.CorrelationId, 128),
+      RunId = request.RunId,
+      Status = "open",
+      CreatedAt = now,
+      UpdatedAt = now
+    };
+
+    dbContext.HermesReports.Add(report);
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return MapReport(report);
+  }
+
+  public async Task<PagedResult<HermesReportListItemResponse>> ListReportsAsync(
+    HermesReportSearchRequest request,
+    CancellationToken cancellationToken)
+  {
+    var page = Math.Max(1, request.Page);
+    var pageSize = Math.Clamp(request.PageSize, 1, MaxReportPageSize);
+    var query = dbContext.HermesReports.AsNoTracking().AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(request.Severity))
+    {
+      var severity = NormalizeSeverity(request.Severity);
+      query = query.Where(x => x.Severity == severity);
+    }
+
+    if (!string.IsNullOrWhiteSpace(request.Type))
+    {
+      var type = request.Type.Trim();
+      query = query.Where(x => x.ReportType == type);
+    }
+
+    if (!string.IsNullOrWhiteSpace(request.Status))
+    {
+      var status = LimitRequired(request.Status, 40).ToLowerInvariant();
+      query = query.Where(x => x.Status == status);
+    }
+
+    if (!string.IsNullOrWhiteSpace(request.Q))
+    {
+      var q = request.Q.Trim();
+      query = query.Where(x => x.Title.Contains(q) || x.Summary.Contains(q) || (x.CorrelationId != null && x.CorrelationId.Contains(q)));
+    }
+
+    var total = await query.CountAsync(cancellationToken);
+    var rows = await query
+      .OrderByDescending(x => x.CreatedAt)
+      .Skip((page - 1) * pageSize)
+      .Take(pageSize)
+      .Select(x => new
+      {
+        x.Id,
+        x.ReportType,
+        x.Severity,
+        x.Title,
+        x.Summary,
+        x.Source,
+        x.CorrelationId,
+        x.RunId,
+        x.Status,
+        x.CreatedAt
+      })
+      .ToListAsync(cancellationToken);
+
+    var items = rows
+      .Select(x => new HermesReportListItemResponse(
+        x.Id,
+        x.ReportType,
+        x.Severity,
+        x.Title,
+        Truncate(x.Summary, 180),
+        x.Source,
+        x.CorrelationId,
+        x.RunId,
+        x.Status,
+        x.CreatedAt))
       .ToList();
 
-    return Task.FromResult(runs);
+    return new PagedResult<HermesReportListItemResponse>(items, total, page, pageSize);
+  }
+
+  public async Task<HermesReportResponse?> GetReportAsync(Guid id, CancellationToken cancellationToken)
+  {
+    return await dbContext.HermesReports
+      .AsNoTracking()
+      .Where(x => x.Id == id)
+      .Select(x => new HermesReportResponse(
+        x.Id,
+        x.ReportType,
+        x.Severity,
+        x.Title,
+        x.Summary,
+        x.PayloadJson,
+        x.Source,
+        x.CorrelationId,
+        x.RunId,
+        x.Status,
+        x.CreatedAt))
+      .FirstOrDefaultAsync(cancellationToken);
+  }
+
+  private async Task CompleteRunAsync(Guid id, string status, string? result, string? error, CancellationToken cancellationToken)
+  {
+    var run = await dbContext.HermesRuns.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    if (run is null) return;
+
+    run.Status = status;
+    run.ResultPreview = Truncate(result, 1000);
+    run.Error = Truncate(error, 1000);
+    run.CompletedAt = DateTimeOffset.UtcNow;
+    run.UpdatedAt = DateTime.UtcNow;
+    await dbContext.SaveChangesAsync(cancellationToken);
   }
 
   private async Task<HermesResponse?> CallHermesResponsesApiAsync(
@@ -179,7 +355,8 @@ public sealed class HermesAgentService(
   private static string BuildInstructions() =>
     "Bạn là Hermes Agent quản trị cho AoDaiNhaUyen. Trả lời tiếng Việt. " +
     "Ưu tiên đọc/kiểm tra an toàn. Không thực hiện thay đổi phá hủy nếu chưa có phê duyệt rõ ràng. " +
-    "Nếu cần thao tác admin, dùng API nội bộ và mô tả rõ rủi ro.";
+    "Nếu cần thao tác admin, dùng API nội bộ và mô tả rõ rủi ro. " +
+    "Khi tạo báo cáo quan trọng, gửi lại backend qua POST /api/admin/hermes/report.";
 
   private bool IsApiConfigured() =>
     Uri.TryCreate(_options.ApiServerUrl, UriKind.Absolute, out _) &&
@@ -229,48 +406,55 @@ public sealed class HermesAgentService(
     return builder.ToString();
   }
 
+  private static HermesReportResponse MapReport(HermesReport report) =>
+    new(
+      report.Id,
+      report.ReportType,
+      report.Severity,
+      report.Title,
+      report.Summary,
+      report.PayloadJson,
+      report.Source,
+      report.CorrelationId,
+      report.RunId,
+      report.Status,
+      report.CreatedAt);
+
+  private static string? NormalizePayloadJson(string? payloadJson)
+  {
+    if (string.IsNullOrWhiteSpace(payloadJson)) return null;
+    var trimmed = payloadJson.Trim();
+    if (trimmed.Length > MaxPayloadJsonLength) throw new ArgumentException("PayloadJson quá dài.", nameof(payloadJson));
+    using var _ = JsonDocument.Parse(trimmed);
+    return trimmed;
+  }
+
+  private static string NormalizeSeverity(string severity)
+  {
+    var value = LimitRequired(severity, 30).ToLowerInvariant();
+    if (!AllowedSeverities.Contains(value)) throw new ArgumentException("Mức độ báo cáo Hermes không hợp lệ.", nameof(severity));
+    return value;
+  }
+
   private static string NormalizeStatus(string status) =>
-    string.IsNullOrWhiteSpace(status) ? "unknown" : status.Trim().ToLowerInvariant();
+    string.IsNullOrWhiteSpace(status) ? "unknown" : LimitRequired(status, 80).ToLowerInvariant();
+
+  private static string LimitRequired(string? value, int maxLength)
+  {
+    if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("Thiếu dữ liệu bắt buộc.", nameof(value));
+    var trimmed = value.Trim();
+    return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+  }
+
+  private static string? Limit(string? value, int maxLength)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return null;
+    var trimmed = value.Trim();
+    return trimmed.Length <= maxLength ? trimmed : trimmed[..maxLength];
+  }
 
   private static string Truncate(string? text, int max) =>
     string.IsNullOrEmpty(text) || text.Length <= max ? text ?? string.Empty : text[..max] + "…";
-
-  private static void AddRun(HermesRunRecord run)
-  {
-    Runs.Enqueue(run);
-    while (Runs.Count > 100 && Runs.TryDequeue(out _)) { }
-  }
-
-  private static void CompleteRun(Guid id, string status, string? result, string? error)
-  {
-    var snapshot = Runs.ToArray();
-    Runs.Clear();
-    foreach (var run in snapshot)
-    {
-      Runs.Enqueue(run.Id == id
-        ? run with { Status = status, Result = result, CompletedAt = DateTimeOffset.UtcNow, Error = error }
-        : run);
-    }
-  }
-
-  private sealed record HermesHeartbeatSnapshot(
-    string RunnerName,
-    string Status,
-    string? Model,
-    string? GatewayStatus,
-    int ActiveJobs,
-    string? LastError,
-    DateTimeOffset CreatedAt);
-
-  private sealed record HermesRunRecord(
-    Guid Id,
-    string Status,
-    string Trigger,
-    string Prompt,
-    string? Result,
-    DateTimeOffset StartedAt,
-    DateTimeOffset? CompletedAt,
-    string? Error);
 
   private sealed record HermesResponse(HermesOutput[]? Output);
 

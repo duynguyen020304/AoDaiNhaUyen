@@ -11,7 +11,9 @@ using Microsoft.Extensions.Options;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
-public sealed class AdminEmailTemplateService(AppDbContext dbContext) : IAdminEmailTemplateService
+public sealed class AdminEmailTemplateService(
+  AppDbContext dbContext,
+  IHermesEventOutboxPublisher hermesEvents) : IAdminEmailTemplateService
 {
   public async Task<(IReadOnlyList<EmailTemplateListItem> Items, int TotalItem)> GetListAsync(string? search, bool includeDeleted, int page, int pageSize, CancellationToken cancellationToken = default)
   {
@@ -62,6 +64,12 @@ public sealed class AdminEmailTemplateService(AppDbContext dbContext) : IAdminEm
     };
     dbContext.EmailTemplates.Add(template);
     await dbContext.SaveChangesAsync(cancellationToken);
+    await hermesEvents.EnqueueAdminEmailEventAsync(
+      "email_template_created",
+      template.Id,
+      new { templateId = template.Id, template.Key, template.Name, template.Locale, template.Version },
+      $"email_template_created:Email:{template.Id:N}:{template.Version}",
+      cancellationToken);
     return ToDetail(template);
   }
 
@@ -79,6 +87,12 @@ public sealed class AdminEmailTemplateService(AppDbContext dbContext) : IAdminEm
     template.IsActive = request.IsActive;
     template.UpdatedAt = DateTime.UtcNow;
     await dbContext.SaveChangesAsync(cancellationToken);
+    await hermesEvents.EnqueueAdminEmailEventAsync(
+      "email_template_updated",
+      template.Id,
+      new { templateId = template.Id, template.Key, template.Name, template.Locale, template.IsActive },
+      $"email_template_updated:Email:{template.Id:N}:{template.UpdatedAt.Ticks}",
+      cancellationToken);
     return ToDetail(template);
   }
 
@@ -91,6 +105,13 @@ public sealed class AdminEmailTemplateService(AppDbContext dbContext) : IAdminEm
     template.DeletedAt = DateTime.UtcNow;
     template.UpdatedAt = DateTime.UtcNow;
     await dbContext.SaveChangesAsync(cancellationToken);
+
+    await hermesEvents.EnqueueAdminEmailEventAsync(
+      "email_template_updated",
+      template.Id,
+      new { templateId = template.Id, template.Key, action = "deleted" },
+      $"email_template_deleted:Email:{template.Id:N}:{template.UpdatedAt.Ticks}",
+      cancellationToken);
     return true;
   }
 
@@ -103,6 +124,13 @@ public sealed class AdminEmailTemplateService(AppDbContext dbContext) : IAdminEm
     template.DeletedAt = null;
     template.UpdatedAt = DateTime.UtcNow;
     await dbContext.SaveChangesAsync(cancellationToken);
+
+    await hermesEvents.EnqueueAdminEmailEventAsync(
+      "email_template_updated",
+      template.Id,
+      new { templateId = template.Id, template.Key, action = "restored" },
+      $"email_template_restored:Email:{template.Id:N}:{template.UpdatedAt.Ticks}",
+      cancellationToken);
     return true;
   }
 
@@ -118,7 +146,9 @@ public sealed class AdminEmailTemplateService(AppDbContext dbContext) : IAdminEm
   }
 }
 
-public sealed class AdminSubscriberService(AppDbContext dbContext) : IAdminSubscriberService
+public sealed class AdminSubscriberService(
+  AppDbContext dbContext,
+  IHermesEventOutboxPublisher hermesEvents) : IAdminSubscriberService
 {
   public async Task<(IReadOnlyList<SubscriberListItem> Items, int TotalItem)> GetListAsync(string? search, string? status, bool includeDeleted, int page, int pageSize, CancellationToken cancellationToken = default)
   {
@@ -160,6 +190,14 @@ public sealed class AdminSubscriberService(AppDbContext dbContext) : IAdminSubsc
       consent.UpdatedAt = now;
     }
     await dbContext.SaveChangesAsync(cancellationToken);
+
+    await hermesEvents.EnqueueAdminEmailEventAsync(
+      "email_template_updated",
+      subscriber.Id,
+      new { subscriberId = subscriber.Id, action = "unsubscribed", status = subscriber.Status },
+      $"subscriber_unsubscribed:Email:{subscriber.Id:N}:{subscriber.UpdatedAt.Ticks}",
+      cancellationToken);
+
     return true;
   }
 
@@ -190,6 +228,14 @@ public sealed class AdminSubscriberService(AppDbContext dbContext) : IAdminSubsc
       imported++;
     }
     await dbContext.SaveChangesAsync(cancellationToken);
+
+    await hermesEvents.EnqueueAdminEmailEventAsync(
+      "email_template_updated",
+      Guid.NewGuid(),
+      new { action = "bulk_imported", source = string.IsNullOrWhiteSpace(source) ? "admin_import" : source.Trim(), importedCount = imported, requestedCount = emails.Count },
+      $"subscriber_bulk_imported:Email:{now.Ticks}:{imported}",
+      cancellationToken);
+
     return new ImportSubscribersResult(imported, emails.Count - imported);
   }
 
@@ -259,7 +305,10 @@ public sealed class AdminMarketingStatsService(AppDbContext dbContext) : IAdminM
   }
 }
 
-public sealed class AdminMarketingCampaignService(AppDbContext dbContext, IOptions<EmailSettings> emailSettings) : IAdminMarketingCampaignService
+public sealed class AdminMarketingCampaignService(
+  AppDbContext dbContext,
+  IOptions<EmailSettings> emailSettings,
+  IHermesEventOutboxPublisher hermesEvents) : IAdminMarketingCampaignService
 {
   private const int MaxRecipients = 5000;
   private const int MaxAttachments = 12;
@@ -368,6 +417,15 @@ public sealed class AdminMarketingCampaignService(AppDbContext dbContext, IOptio
     }
 
     await dbContext.SaveChangesAsync(cancellationToken);
+
+    var campaignKey = $"campaign:{templateKey}:{request.Subject.Trim().GetHashCode(StringComparison.OrdinalIgnoreCase):X}:{scheduledAt.Ticks}";
+    await hermesEvents.EnqueueAdminEmailEventAsync(
+      scheduledAt > DateTime.UtcNow.AddSeconds(5) ? "email_campaign_scheduled" : "email_campaign_created",
+      Guid.NewGuid(),
+      new { templateKey, subject = request.Subject.Trim(), recipientCount = queued, scheduledAt, recipientMode = request.RecipientMode },
+      $"email_campaign_created:Email:{campaignKey}",
+      cancellationToken);
+
     return new MarketingCampaignSendResult(queued, skippedEmails.Count, skippedEmails);
   }
 

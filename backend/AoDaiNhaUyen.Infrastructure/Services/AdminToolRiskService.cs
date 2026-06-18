@@ -5,7 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
-public sealed class AdminToolRiskService(AppDbContext dbContext, ISafetyGate safetyGate) : IAdminToolRiskService
+public sealed class AdminToolRiskService(
+  AppDbContext dbContext,
+  ISafetyGate safetyGate,
+  IHermesEventOutboxPublisher hermesEvents) : IAdminToolRiskService
 {
   public async Task<IReadOnlyList<ToolRiskConfigDto>> GetAllAsync(CancellationToken ct = default)
   {
@@ -29,10 +32,17 @@ public sealed class AdminToolRiskService(AppDbContext dbContext, ISafetyGate saf
     config.RequiresConfirmation = request.RequiresConfirmation;
     config.UpdatedAt = DateTimeOffset.UtcNow;
 
-    await dbContext.SaveChangesAsync(ct);
-
     // Invalidate SafetyGate cache so new config takes effect immediately
     await safetyGate.InvalidateCacheAsync(ct);
+
+    await dbContext.SaveChangesAsync(ct);
+
+    await hermesEvents.EnqueueAdminAiConfigEventAsync(
+      "hermes_config_changed",
+      config.Id.ToString("N"),
+      new { configId = config.Id, config.ToolName, config.RiskLevel, config.RequiresConfirmation, config.Category },
+      $"hermes_config_changed:HermesConfig:{config.Id:N}:{config.RiskLevel}:{config.UpdatedAt.Ticks}",
+      ct);
 
     return true;
   }
@@ -104,6 +114,10 @@ public sealed class AdminToolRiskService(AppDbContext dbContext, ISafetyGate saf
       // Promotions
       new() { ToolName = "list_promo_codes", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê mã khuyến mãi", Category = "Promotions" },
       new() { ToolName = "create_promo_code", RiskLevel = "High", RequiresConfirmation = true, Description = "Tạo mã khuyến mãi mới", Category = "Promotions" },
+      new() { ToolName = "get_promo_code", RiskLevel = "Read", RequiresConfirmation = false, Description = "Chi tiết mã khuyến mãi", Category = "Promotions" },
+      new() { ToolName = "update_promo_code", RiskLevel = "High", RequiresConfirmation = true, Description = "Cập nhật mã khuyến mãi", Category = "Promotions" },
+      new() { ToolName = "toggle_promo_code", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Bật/tắt mã khuyến mãi", Category = "Promotions" },
+      new() { ToolName = "delete_promo_code", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm mã khuyến mãi", Category = "Promotions" },
 
       // Blog content
       new() { ToolName = "generate_blog_draft", RiskLevel = "Read", RequiresConfirmation = false, Description = "Tạo bản nháp blog AI", Category = "Content" },

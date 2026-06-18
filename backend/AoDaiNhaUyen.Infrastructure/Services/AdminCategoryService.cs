@@ -11,6 +11,7 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 public sealed class AdminCategoryService(
     AppDbContext dbContext,
     IImageVisibilityService imageVisibilityService,
+    IHermesEventOutboxPublisher hermesEvents,
     ILogger<AdminCategoryService> logger) : IAdminCategoryService
 {
     public async Task<IReadOnlyList<AdminCategoryListItemResponse>> GetAllAsync(
@@ -83,6 +84,12 @@ public sealed class AdminCategoryService(
         dbContext.Categories.Add(category);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        await hermesEvents.EnqueueAdminEventAsync(
+            "category_created", "Category", category.Id.ToString("N"),
+            new { categoryId = category.Id, category.Name, category.Slug, category.Parent, category.SortOrder },
+            $"category_created:Category:{category.Id:N}:{category.CreatedAt.Ticks}",
+            null, cancellationToken);
+
         logger.LogInformation("Admin created category {CategoryId} ({Name})", category.Id, category.Name);
 
         var created = MapToDetail(category);
@@ -114,6 +121,12 @@ public sealed class AdminCategoryService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        await hermesEvents.EnqueueAdminEventAsync(
+            "category_updated", "Category", category.Id.ToString("N"),
+            new { categoryId = category.Id, category.Name, category.Slug, category.Parent, category.SortOrder },
+            $"category_updated:Category:{category.Id:N}:{category.UpdatedAt.Ticks}",
+            null, cancellationToken);
+
         logger.LogInformation("Admin updated category {CategoryId}", id);
 
         var updated = MapToDetail(category);
@@ -138,6 +151,12 @@ public sealed class AdminCategoryService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        await hermesEvents.EnqueueAdminEventAsync(
+            "category_deleted", "Category", category.Id.ToString("N"),
+            new { categoryId = category.Id, category.Name, category.Slug },
+            $"category_deleted:Category:{category.Id:N}:{category.UpdatedAt.Ticks}",
+            null, cancellationToken);
+
         logger.LogInformation("Admin soft-deleted category {CategoryId} ({Name})", id, category.Name);
 
         return true;
@@ -160,6 +179,12 @@ public sealed class AdminCategoryService(
         category.UpdatedAt = DateTime.UtcNow;
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await hermesEvents.EnqueueAdminEventAsync(
+            "category_updated", "Category", category.Id.ToString("N"),
+            new { categoryId = category.Id, category.Name, action = "restored" },
+            $"category_restored:Category:{category.Id:N}:{category.UpdatedAt.Ticks}",
+            null, cancellationToken);
 
         logger.LogInformation("Admin restored category {CategoryId} ({Name})", id, category.Name);
 

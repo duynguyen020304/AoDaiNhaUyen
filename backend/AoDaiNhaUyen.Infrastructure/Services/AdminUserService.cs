@@ -12,6 +12,7 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 public sealed class AdminUserService(
     AppDbContext dbContext,
     IPasswordHasher passwordHasher,
+    IHermesEventOutboxPublisher hermesEvents,
     ILogger<AdminUserService> logger) : IAdminUserService
 {
     public async Task<PagedResult<AdminUserListItemDto>> GetUsersAsync(
@@ -122,6 +123,13 @@ public sealed class AdminUserService(
         }
 
         dbContext.Users.Add(user);
+        await hermesEvents.EnqueueAdminSecurityEventAsync(
+            "admin_user_created",
+            user.Id,
+            new { targetUserId = user.Id, hasCredentialsAccount = !string.IsNullOrWhiteSpace(request.Password), roleId = request.RoleId, status = user.Status },
+            $"admin_user_created:AdminSecurity:{user.Id:N}:{user.CreatedAt.Ticks}",
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Admin created user {UserId} ({FullName})", user.Id, user.FullName);
@@ -139,6 +147,13 @@ public sealed class AdminUserService(
         user.Email = request.Email;
         user.Phone = request.Phone;
         user.UpdatedAt = DateTime.UtcNow;
+
+        await hermesEvents.EnqueueAdminSecurityEventAsync(
+            "admin_user_updated",
+            user.Id,
+            new { targetUserId = user.Id, changedFields = new[] { "fullName", "email", "phone" } },
+            $"admin_user_updated:AdminSecurity:{user.Id:N}:{user.UpdatedAt.Ticks}",
+            cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -158,6 +173,13 @@ public sealed class AdminUserService(
         if (removesAdmin && !await HasAnotherActiveAdminAsync(id, cancellationToken)) return AdminMutationResult.Failure("cannot_disable_last_admin", "Không thể hạ quyền quản trị viên cuối cùng.");
         user.UserRoles.Clear();
         user.UserRoles.Add(new Domain.Entities.UserRole { UserId = user.Id, RoleId = request.RoleId });
+        await hermesEvents.EnqueueAdminSecurityEventAsync(
+            "role_permissions_changed",
+            user.Id,
+            new { targetUserId = user.Id, oldRoles, newRoleId = request.RoleId, actorUserId },
+            $"role_permissions_changed:AdminSecurity:{user.Id:N}:{request.RoleId}:{user.UpdatedAt.Ticks}",
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
         logger.LogWarning("Admin {ActorUserId} changed role for user {UserId} from {OldRoles} to {RoleId}", actorUserId, user.Id, oldRoles, request.RoleId);
         return AdminMutationResult.Success();
@@ -173,6 +195,13 @@ public sealed class AdminUserService(
         var oldStatus = user.Status;
         user.Status = request.Status;
         user.UpdatedAt = DateTime.UtcNow;
+        await hermesEvents.EnqueueAdminSecurityEventAsync(
+            "admin_user_updated",
+            user.Id,
+            new { targetUserId = user.Id, oldStatus, newStatus = request.Status, actorUserId },
+            $"admin_user_status_changed:AdminSecurity:{user.Id:N}:{request.Status}:{user.UpdatedAt.Ticks}",
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
         logger.LogWarning("Admin {ActorUserId} changed status for user {UserId} from {OldStatus} to {Status}", actorUserId, user.Id, oldStatus, request.Status);
         return AdminMutationResult.Success();
@@ -187,6 +216,13 @@ public sealed class AdminUserService(
         user.IsDeleted = true;
         user.DeletedAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
+        await hermesEvents.EnqueueAdminSecurityEventAsync(
+            "admin_user_disabled",
+            user.Id,
+            new { targetUserId = user.Id, isDeleted = user.IsDeleted, actorUserId },
+            $"admin_user_disabled:AdminSecurity:{user.Id:N}:{user.UpdatedAt.Ticks}",
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
         logger.LogWarning("Admin {ActorUserId} soft-deleted user {UserId}", actorUserId, user.Id);
         return AdminMutationResult.Success();
@@ -199,6 +235,14 @@ public sealed class AdminUserService(
         user.IsDeleted = false;
         user.DeletedAt = null;
         user.UpdatedAt = DateTime.UtcNow;
+
+        await hermesEvents.EnqueueAdminSecurityEventAsync(
+            "admin_user_updated",
+            user.Id,
+            new { targetUserId = user.Id, action = "restored", actorUserId },
+            $"admin_user_restored:AdminSecurity:{user.Id:N}:{user.UpdatedAt.Ticks}",
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
         logger.LogWarning("Admin {ActorUserId} restored user {UserId}", actorUserId, user.Id);
         return AdminMutationResult.Success();

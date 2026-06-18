@@ -18,7 +18,8 @@ public sealed class BlogPostService(
   IBlogPostRepository blogPostRepository,
   IBlogCategoryRepository blogCategoryRepository,
   IStorageService storageService,
-  IFusionCacheService cache) : IBlogPostService
+  IFusionCacheService cache,
+  IHermesEventOutboxPublisher hermesEvents) : IBlogPostService
 {
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
   {
@@ -146,6 +147,12 @@ public sealed class BlogPostService(
     await blogPostRepository.AddAsync(post, cancellationToken);
     await cache.RemoveByTagAsync(CacheTags.Blog, cancellationToken);
     var created = await blogPostRepository.GetByIdAsync(post.Id, false, cancellationToken) ?? post;
+    await hermesEvents.EnqueueAdminContentEventAsync(
+      status == BlogPostStatus.Published ? "content_published" : "content_created",
+      post.Id,
+      new { contentId = post.Id, title = post.Title, slug = post.Slug, status = post.Status.ToString(), type = "blog_post" },
+      $"content_created:Content:{post.Id:N}:{post.CreatedAt.Ticks}",
+      cancellationToken);
     return await MapPostAsync(created, cancellationToken);
   }
 
@@ -185,6 +192,12 @@ public sealed class BlogPostService(
     await blogPostRepository.UpdateAsync(post, cancellationToken);
     await cache.RemoveByTagAsync(CacheTags.Blog, cancellationToken);
     var updated = await blogPostRepository.GetByIdAsync(post.Id, false, cancellationToken) ?? post;
+    await hermesEvents.EnqueueAdminContentEventAsync(
+      request.Status == BlogPostStatus.Published ? "content_published" : "content_updated",
+      post.Id,
+      new { contentId = post.Id, title = post.Title, slug = post.Slug, status = post.Status.ToString(), type = "blog_post" },
+      $"content_updated:Content:{post.Id:N}:{post.UpdatedAt.Ticks}",
+      cancellationToken);
     return await MapPostAsync(updated, cancellationToken);
   }
 
@@ -192,6 +205,12 @@ public sealed class BlogPostService(
   {
     await blogPostRepository.SoftDeleteAsync(id, cancellationToken);
     await cache.RemoveByTagAsync(CacheTags.Blog, cancellationToken);
+    await hermesEvents.EnqueueAdminContentEventAsync(
+      "content_updated",
+      id,
+      new { contentId = id, type = "blog_post", action = "deleted" },
+      $"content_deleted:Content:{id:N}:{DateTime.UtcNow.Ticks}",
+      cancellationToken);
   }
 
   public async Task<string> BuildBlogSitemapAsync(string siteBaseUrl, CancellationToken cancellationToken = default)
