@@ -24,18 +24,36 @@ const statusClass: Record<string, string> = {
 function cleanSummary(text: string): { displayText: string; rawDetail: string | null } {
   if (!text) return { displayText: text, rawDetail: null }
   const trimmed = text.trim()
+  const extracted = extractAssistantText(trimmed)
+  if (extracted) return { displayText: extracted, rawDetail: trimmed }
+
   const looksLikeJson =
     (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
     (trimmed.startsWith('[') && trimmed.endsWith(']')) ||
-    trimmed.includes('"type":"function_call"') ||
-    trimmed.includes('"type":"function_call_output"') ||
-    trimmed.includes('"output":[') ||
+    /"type"\s*:\s*"function_call"/.test(trimmed) ||
+    /"type"\s*:\s*"function_call_output"/.test(trimmed) ||
+    /"output"\s*:\s*\[/.test(trimmed) ||
     /\b(curl|POST|GET|PUT|DELETE)\s+\/.*HTTP/i.test(trimmed)
 
   if (looksLikeJson) {
-    return { displayText: 'Hermes đã ghi nhận kết quả phân tích.', rawDetail: trimmed }
+    return { displayText: 'Hermes đã ghi nhận kết quả phân tích. Mở chi tiết kỹ thuật nếu cần audit raw output.', rawDetail: trimmed }
   }
   return { displayText: trimmed, rawDetail: null }
+}
+
+function extractAssistantText(text: string): string | null {
+  if (!text.startsWith('{')) return null
+  try {
+    const parsed = JSON.parse(text) as { output?: Array<{ type?: string; content?: Array<{ text?: string }> }> }
+    const parts = parsed.output
+      ?.filter((item) => item.type === 'message')
+      .flatMap((item) => item.content ?? [])
+      .map((part) => part.text?.trim())
+      .filter((part): part is string => Boolean(part)) ?? []
+    return parts.length > 0 ? parts.join('\n') : null
+  } catch {
+    return null
+  }
 }
 
 
