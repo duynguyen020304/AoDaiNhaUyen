@@ -31,6 +31,8 @@ public sealed class HermesEventProcessor(
 
     await AddTraceAsync(item.Id, run.Id, "prompt_built", "Chuẩn bị phân tích", "Hermes đang đọc sự kiện.", "success", null, cancellationToken);
 
+    await RecordProactiveReportAsync(item, run.Id, "Hermes đã nhận event và tạo báo cáo chủ động trước khi phân tích sâu.", cancellationToken);
+
     if (_outboxOptions.DryRun)
     {
       await CompleteRunAsync(run, "completed", "Hermes outbox dry-run: event accepted but not sent.", null, cancellationToken);
@@ -83,7 +85,6 @@ public sealed class HermesEventProcessor(
     var result = ExtractAssistantText(body);
     await AddTraceAsync(item.Id, run.Id, "agent_response", "Phân tích xong", "Hermes đã hoàn thành đánh giá.", "success", null, cancellationToken);
     await CompleteRunAsync(run, "completed", result, null, cancellationToken);
-    await RecordProactiveReportAsync(item, run.Id, result, cancellationToken);
   }
 
   private async Task AddTraceAsync(Guid eventId, Guid runId, string kind, string title, string summary, string status, string? error, CancellationToken cancellationToken)
