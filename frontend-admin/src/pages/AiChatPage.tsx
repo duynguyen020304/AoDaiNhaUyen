@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { FileText, MessageSquare, PanelLeft } from 'lucide-react'
+import { Activity, FileText, MessageSquare, PanelLeft } from 'lucide-react'
 import { FullChatArea } from '@/components/ai/FullChatArea'
 import { ChatHistorySidebar } from '@/components/ai/ChatHistorySidebar'
+import { HermesEventsPanel } from '@/components/hermes/HermesEventsPanel'
 import { HermesReportsPanel } from '@/components/hermes/HermesReportsPanel'
 
 interface AiChatPageProps {
@@ -10,7 +11,7 @@ interface AiChatPageProps {
 
 export function AiChatPage({ initialTab = 'chat' }: AiChatPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024)
-  const [activeTab, setActiveTab] = useState<'chat' | 'reports'>(initialTab)
+  const [activeTab, setActiveTab] = useState<'chat' | 'reports' | 'events'>(initialTab)
 
   useEffect(() => {
     function handleResize() {
@@ -80,9 +81,19 @@ export function AiChatPage({ initialTab = 'chat' }: AiChatPageProps) {
               <FileText className="size-4" />
               Báo cáo Hermes
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('events')}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${activeTab === 'events' ? 'bg-wine text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <Activity className="size-4" />
+              Event Hermes
+            </button>
           </div>
           <div className="min-h-0 flex-1">
-            {activeTab === 'chat' ? <FullChatArea /> : <HermesReportsPanel />}
+            {activeTab === 'chat' && <FullChatArea />}
+            {activeTab === 'reports' && <HermesReportsPanel />}
+            {activeTab === 'events' && <HermesEventsPanel />}
           </div>
         </div>
       </div>

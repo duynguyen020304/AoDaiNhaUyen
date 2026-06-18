@@ -170,6 +170,16 @@ builder.Services.AddRateLimiter(options =>
       AutoReplenishment = true
     }));
 
+  options.AddPolicy("hermes-monitor", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+    GetClientPartitionKey(httpContext, includeGuestKey: true),
+    _ => new FixedWindowRateLimiterOptions
+    {
+      PermitLimit = 120,
+      Window = TimeSpan.FromMinutes(1),
+      QueueLimit = 0,
+      AutoReplenishment = true
+    }));
+
   options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
     RateLimitPartition.GetFixedWindowLimiter(
       GetClientPartitionKey(httpContext, includeGuestKey: false),

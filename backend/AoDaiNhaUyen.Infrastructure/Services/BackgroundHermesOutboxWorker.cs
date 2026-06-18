@@ -72,6 +72,25 @@ public sealed class BackgroundHermesOutboxWorker(
         batchSize)
       .ToListAsync(cancellationToken);
 
+    if (claimedIds.Count > 0)
+    {
+      var now = DateTimeOffset.UtcNow;
+      dbContext.HermesAgentTraceSteps.AddRange(claimedIds.Select(id => new Domain.Entities.HermesAgentTraceStep
+      {
+        Id = Guid.NewGuid(),
+        EventOutboxId = id,
+        Kind = "claimed",
+        Title = "Worker đã claim event",
+        Summary = $"Runner {runner} đã claim event từ outbox để xử lý.",
+        Status = "success",
+        StartedAt = now,
+        CompletedAt = now,
+        CreatedAt = now.UtcDateTime,
+        UpdatedAt = now.UtcDateTime
+      }));
+      await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     foreach (var id in claimedIds)
     {
       var item = await dbContext.HermesEventOutbox.FirstAsync(x => x.Id == id, cancellationToken);

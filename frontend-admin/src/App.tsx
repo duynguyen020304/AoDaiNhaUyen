@@ -25,6 +25,7 @@ import { MarketingDashboardPage } from '@/pages/MarketingDashboardPage'
 import { EmailTemplatesPage } from '@/pages/EmailTemplatesPage'
 import { SubscribersPage } from '@/pages/SubscribersPage'
 import { EmailQueuePage } from '@/pages/EmailQueuePage'
+import { HermesMonitorPage } from '@/pages/HermesMonitorPage'
 
 export function App() {
   const status = useAuthStore((s) => s.status)
@@ -49,6 +50,9 @@ export function App() {
         <Route element={<GuestRoute />}>
           <Route path="/login" element={<LoginPage />} />
         </Route>
+
+        {/* Public signed Hermes monitor */}
+        <Route path="/hermes-monitor/:token" element={<HermesMonitorPage />} />
 
         {/* Protected admin */}
         <Route element={<AdminRoute />}>

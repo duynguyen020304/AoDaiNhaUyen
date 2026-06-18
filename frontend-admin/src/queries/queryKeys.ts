@@ -37,4 +37,9 @@ export const queryKeys = {
   inventory: {
     root: ['inventory'] as const,
   },
+  hermes: {
+    root: ['hermes'] as const,
+    events: (params?: unknown) => ['hermes', 'events', params] as const,
+    monitor: (token: string) => ['hermes', 'monitor', token] as const,
+  },
 } as const

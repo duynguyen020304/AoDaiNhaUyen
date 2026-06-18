@@ -59,6 +59,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<HermesRun> HermesRuns => Set<HermesRun>();
   public DbSet<HermesHeartbeat> HermesHeartbeats => Set<HermesHeartbeat>();
   public DbSet<HermesEventOutbox> HermesEventOutbox => Set<HermesEventOutbox>();
+  public DbSet<HermesMonitorLink> HermesMonitorLinks => Set<HermesMonitorLink>();
+  public DbSet<HermesAgentTraceStep> HermesAgentTraceSteps => Set<HermesAgentTraceStep>();
   public DbSet<OrderPromoCostSnapshot> OrderPromoCostSnapshots => Set<OrderPromoCostSnapshot>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -781,6 +783,42 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         .HasFilter("idempotency_key IS NOT NULL")
         .HasDatabaseName("ux_hermes_event_outbox_idempotency_key");
       builder.ToTable(t => t.HasCheckConstraint("ck_hermes_event_outbox_status", "status IN ('pending','processing','completed','failed','dead','cancelled')"));
+    });
+
+    modelBuilder.Entity<HermesMonitorLink>(builder =>
+    {
+      builder.ToTable("hermes_monitor_links");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.TokenHash).HasMaxLength(128).IsRequired();
+      builder.Property(x => x.ScopeType).HasMaxLength(40).HasDefaultValue("event").IsRequired();
+      builder.Property(x => x.ScopeId).HasMaxLength(128).IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.TokenHash).IsUnique().HasDatabaseName("ux_hermes_monitor_links_token_hash");
+      builder.HasIndex(x => x.ExpiresAt).HasDatabaseName("idx_hermes_monitor_links_expires_at");
+      builder.HasIndex(x => new { x.ScopeType, x.ScopeId }).HasDatabaseName("idx_hermes_monitor_links_scope");
+      builder.HasIndex(x => x.CreatedByAdminUserId).HasDatabaseName("idx_hermes_monitor_links_created_by_admin_user_id");
+      builder.ToTable(t => t.HasCheckConstraint("ck_hermes_monitor_links_scope_type", "scope_type IN ('event')"));
+    });
+
+    modelBuilder.Entity<HermesAgentTraceStep>(builder =>
+    {
+      builder.ToTable("hermes_agent_trace_steps");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Kind).HasMaxLength(60).IsRequired();
+      builder.Property(x => x.Title).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.Summary).HasMaxLength(2000).IsRequired();
+      builder.Property(x => x.Status).HasMaxLength(40).HasDefaultValue("success").IsRequired();
+      builder.Property(x => x.SafePayloadJson).HasColumnType("jsonb");
+      builder.Property(x => x.Error).HasMaxLength(1000);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.EventOutboxId, x.StartedAt }).HasDatabaseName("idx_hermes_trace_steps_event_started_at");
+      builder.HasIndex(x => new { x.RunId, x.StartedAt }).HasDatabaseName("idx_hermes_trace_steps_run_started_at");
+      builder.HasIndex(x => new { x.Kind, x.StartedAt }).HasDatabaseName("idx_hermes_trace_steps_kind_started_at");
+      builder.HasOne(x => x.Run).WithMany().HasForeignKey(x => x.RunId).OnDelete(DeleteBehavior.SetNull);
+      builder.HasOne(x => x.EventOutbox).WithMany().HasForeignKey(x => x.EventOutboxId).OnDelete(DeleteBehavior.SetNull);
+      builder.ToTable(t => t.HasCheckConstraint("ck_hermes_agent_trace_steps_status", "status IN ('success','failed','running','skipped')"));
     });
 
     modelBuilder.Entity<OrderAttribution>(builder =>
