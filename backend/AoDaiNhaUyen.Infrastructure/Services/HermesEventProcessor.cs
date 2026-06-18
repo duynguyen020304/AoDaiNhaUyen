@@ -80,8 +80,10 @@ public sealed class HermesEventProcessor(
       throw new InvalidOperationException($"Hermes API returned {(int)response.StatusCode}: {body}");
     }
 
+    var result = ExtractAssistantText(body);
     await AddTraceAsync(item.Id, run.Id, "agent_response", "Phân tích xong", "Hermes đã hoàn thành đánh giá.", "success", null, cancellationToken);
-    await CompleteRunAsync(run, "completed", ExtractAssistantText(body), null, cancellationToken);
+    await CompleteRunAsync(run, "completed", result, null, cancellationToken);
+    await RecordProactiveReportAsync(item, run.Id, result, cancellationToken);
   }
 
   private async Task AddTraceAsync(Guid eventId, Guid runId, string kind, string title, string summary, string status, string? error, CancellationToken cancellationToken)
@@ -103,6 +105,96 @@ public sealed class HermesEventProcessor(
       UpdatedAt = now.UtcDateTime
     });
     await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private async Task RecordProactiveReportAsync(HermesEventOutbox item, Guid runId, string result, CancellationToken cancellationToken)
+  {
+    var now = DateTime.UtcNow;
+    var profile = BuildReportProfile(item);
+    var title = $"{profile.TitlePrefix}: {ShortCode(item.AggregateId)}";
+    var summary = BuildReportSummary(item, profile, result);
+
+    dbContext.HermesReports.Add(new HermesReport
+    {
+      Id = Guid.NewGuid(),
+      ReportType = profile.ReportType,
+      Severity = profile.Severity,
+      Title = Limit(title, 200),
+      Summary = Limit(summary, 4000),
+      PayloadJson = BuildReportPayload(item, profile, result),
+      Source = "hermes_agent",
+      CorrelationId = item.Id.ToString("N"),
+      RunId = runId,
+      Status = "open",
+      CreatedAt = now,
+      UpdatedAt = now
+    });
+
+    dbContext.HermesAgentTraceSteps.Add(new HermesAgentTraceStep
+    {
+      Id = Guid.NewGuid(),
+      EventOutboxId = item.Id,
+      RunId = runId,
+      Kind = "report_created",
+      Title = "Đã tạo báo cáo",
+      Summary = "Hermes đã lưu báo cáo chủ động cho admin.",
+      Status = "success",
+      StartedAt = DateTimeOffset.UtcNow,
+      CompletedAt = DateTimeOffset.UtcNow,
+      CreatedAt = now,
+      UpdatedAt = now
+    });
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private static ReportProfile BuildReportProfile(HermesEventOutbox item)
+  {
+    var eventType = item.EventType.ToLowerInvariant();
+    if (eventType.Contains("negative", StringComparison.Ordinal) || eventType.Contains("low_stock", StringComparison.Ordinal) || eventType.Contains("disabled", StringComparison.Ordinal))
+      return new ReportProfile("risk", "warning", "Cần xử lý rủi ro", "rủi ro cần xử lý", "Giảm thất thoát hoặc trải nghiệm xấu");
+
+    if (eventType.Contains("high_value", StringComparison.Ordinal) || eventType.Contains("checkout", StringComparison.Ordinal) || eventType.Contains("promo", StringComparison.Ordinal))
+      return new ReportProfile("revenue", "info", "Cơ hội doanh thu", "cơ hội tăng doanh thu", "Tăng AOV, upsell hoặc giữ chân khách");
+
+    if (eventType.Contains("blog", StringComparison.Ordinal) || eventType.Contains("content", StringComparison.Ordinal))
+      return new ReportProfile("seo", "info", "Cơ hội SEO", "cơ hội SEO", "Tăng organic traffic và internal link");
+
+    if (eventType.Contains("email", StringComparison.Ordinal) || eventType.Contains("campaign", StringComparison.Ordinal))
+      return new ReportProfile("crm", "info", "Cơ hội CRM", "cơ hội CRM", "Tăng repeat purchase và phân khúc khách");
+
+    if (eventType.Contains("role", StringComparison.Ordinal) || eventType.Contains("admin", StringComparison.Ordinal) || eventType.Contains("config", StringComparison.Ordinal))
+      return new ReportProfile("operations", "warning", "Rủi ro vận hành", "rủi ro vận hành", "Bảo vệ quyền admin và cấu hình kinh doanh");
+
+    return new ReportProfile("growth", "info", "Gợi ý tăng trưởng", "tín hiệu tăng trưởng", "Biến tín hiệu cửa hàng thành hành động cụ thể");
+  }
+
+  private static string BuildReportSummary(HermesEventOutbox item, ReportProfile profile, string result)
+  {
+    var assistantResult = string.IsNullOrWhiteSpace(result) ? "Hermes đã phân tích xong nhưng chưa có tóm tắt chi tiết." : result.Trim();
+    return $"""
+    Nhận định: Hermes phát hiện {profile.Impact} từ sự kiện {item.EventType} ({item.AggregateType}).
+    Hành động đề xuất: kiểm tra dữ liệu liên quan, ưu tiên việc có tác động trực tiếp tới doanh thu hoặc rủi ro vận hành, rồi giao admin xử lý bước tiếp theo.
+    Ước tính tác động: {profile.PriorityReason}.
+    Ưu tiên: {(profile.Severity == "warning" ? "Cao" : "Trung bình")}.
+    Kết luận Hermes: {assistantResult}
+    """.Trim();
+  }
+
+  private static string BuildReportPayload(HermesEventOutbox item, ReportProfile profile, string result)
+  {
+    var payload = new
+    {
+      proactive = true,
+      profile.ReportType,
+      profile.Severity,
+      item.EventType,
+      item.AggregateType,
+      item.AggregateId,
+      item.CorrelationId,
+      resultPreview = Limit(result, 1200)
+    };
+    return JsonSerializer.Serialize(payload, JsonOptions);
   }
 
   private HermesRun CreateRun(HermesEventOutbox item)
@@ -249,4 +341,21 @@ public sealed class HermesEventProcessor(
     if (string.IsNullOrWhiteSpace(value)) return null;
     return value.Trim();
   }
+
+  private static string Limit(string? value, int maxLength)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+    var trimmed = value.Trim();
+    return trimmed.Length <= maxLength ? trimmed : trimmed[..Math.Max(0, maxLength - 1)] + "…";
+  }
+
+  private static string ShortCode(string value)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return "event";
+    var trimmed = value.Trim();
+    if (Guid.TryParse(trimmed, out var id)) return $"#{id.ToString("N")[..8]}";
+    return trimmed.Length <= 18 ? trimmed : $"{trimmed[..17]}…";
+  }
+
+  private sealed record ReportProfile(string ReportType, string Severity, string TitlePrefix, string Impact, string PriorityReason);
 }

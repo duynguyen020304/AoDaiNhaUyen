@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Bot, Radio, Store } from 'lucide-react'
+import { AlertTriangle, Bot, Clock3, FileText, Radio, Store } from 'lucide-react'
 import { HERMES_FEED_SSE_URL, getHermesFeedSnapshot } from '@/api/hermes'
 import type { HermesFeedHeartbeat, HermesFeedHermesMessage, HermesFeedItem, HermesFeedSnapshot } from '@/types/hermes'
 
@@ -148,6 +148,9 @@ export function HermesLiveMonitorPanel() {
   const items = useMemo(() => snapshot?.items ?? [], [snapshot?.items])
   const heartbeat = snapshot?.heartbeat ?? null
   const hermesMessages = useMemo(() => flattenHermesMessages(items), [items])
+  const reportCount = hermesMessages.filter(({ message }) => message.kind === 'report').length
+  const riskCount = hermesMessages.filter(({ message }) => message.kind === 'report' && ['warning', 'high', 'critical'].includes(message.severity ?? '')).length
+  const pendingCount = items.filter((item) => ['pending', 'processing', 'failed'].includes(item.eventStatus)).length
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f4f4f5]">
@@ -166,6 +169,14 @@ export function HermesLiveMonitorPanel() {
         {error && <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{error}</div>}
       </header>
 
+      <section className="shrink-0 border-b border-zinc-200 bg-zinc-50 px-4 py-3 lg:px-6" aria-label="Tóm tắt trạng thái Hermes">
+        <div className="grid gap-3 md:grid-cols-3">
+          <MetricCard icon={<FileText className="size-4" />} label="Báo cáo đã tạo" value={reportCount} helper="Phải tăng khi có event mới" tone="emerald" />
+          <MetricCard icon={<AlertTriangle className="size-4" />} label="Rủi ro cần xem" value={riskCount} helper="Warning, high, critical" tone="amber" />
+          <MetricCard icon={<Clock3 className="size-4" />} label="Event chưa xong" value={pendingCount} helper="Pending, processing, failed" tone="zinc" />
+        </div>
+      </section>
+
       <main className="grid min-h-0 flex-1 gap-0 lg:grid-cols-2">
         <ChatPanel title="Cửa hàng" subtitle="Sự kiện đang xảy ra" icon={<Store className="size-5" />} tone="store">
           {items.length === 0 ? <EmptyStore /> : items.map((item) => <StoreBubble key={item.eventId} item={item} />)}
@@ -175,6 +186,27 @@ export function HermesLiveMonitorPanel() {
           {hermesMessages.length === 0 ? <EmptyAgent /> : hermesMessages.map((message) => <HermesBubble key={message.key} message={message.message} />)}
         </ChatPanel>
       </main>
+    </div>
+  )
+}
+
+function MetricCard({ icon, label, value, helper, tone }: { icon: React.ReactNode; label: string; value: number; helper: string; tone: 'emerald' | 'amber' | 'zinc' }) {
+  const toneClass = {
+    emerald: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
+    amber: 'bg-amber-50 text-amber-800 ring-amber-200',
+    zinc: 'bg-white text-zinc-800 ring-zinc-200',
+  }[tone]
+
+  return (
+    <div className={`rounded-2xl px-4 py-3 ring-1 ${toneClass}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-current/70">
+          {icon}
+          {label}
+        </div>
+        <div className="text-2xl font-black tabular-nums">{value}</div>
+      </div>
+      <p className="mt-1 text-xs font-medium text-current/65">{helper}</p>
     </div>
   )
 }
@@ -243,13 +275,13 @@ function HermesBubble({ message }: { message: HermesFeedHermesMessage }) {
   const { displayText, rawDetail } = cleanSummary(message.summary)
   return (
     <article className="flex items-start justify-end gap-3">
-      <div className={`max-w-[90%] rounded-3xl rounded-tr-md px-4 py-3 shadow-sm ring-1 ${tone.className}`}>
+      <div className={`max-w-[92%] rounded-3xl rounded-tr-md px-4 py-3 shadow-sm ring-1 ${tone.className}`}>
         <div className="mb-1 flex items-center gap-2">
           <span className="text-base" aria-hidden="true">{tone.icon}</span>
           <span className="text-xs font-bold uppercase tracking-wide text-current/70">{tone.label}</span>
         </div>
         {message.title && <h3 className="text-sm font-bold leading-6">{message.title}</h3>}
-        <p className="whitespace-pre-wrap text-sm leading-6">{displayText}</p>
+        {message.kind === 'report' ? <ReportSummary text={displayText} /> : <p className="whitespace-pre-wrap text-sm leading-6">{displayText}</p>}
         {rawDetail && (
           <details className="mt-2">
             <summary className="cursor-pointer text-xs font-medium text-current/60 hover:text-current/80">Chi tiết kỹ thuật</summary>
@@ -264,6 +296,26 @@ function HermesBubble({ message }: { message: HermesFeedHermesMessage }) {
         <Bot className="size-4" />
       </div>
     </article>
+  )
+}
+
+function ReportSummary({ text }: { text: string }) {
+  const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean)
+  const labeled = lines.filter((line) => /^(Nhận định|Hành động|Ước tính|Ưu tiên|Kết luận)/i.test(line))
+  if (labeled.length === 0) return <p className="whitespace-pre-wrap text-sm leading-6">{text}</p>
+
+  return (
+    <dl className="mt-2 space-y-2 text-sm leading-6">
+      {labeled.map((line) => {
+        const [label, ...rest] = line.split(':')
+        return (
+          <div key={line} className="rounded-2xl bg-white/55 px-3 py-2 ring-1 ring-black/5">
+            <dt className="text-[11px] font-bold uppercase tracking-wide text-current/60">{label}</dt>
+            <dd className="mt-0.5 whitespace-pre-wrap font-medium text-current/90">{rest.join(':').trim()}</dd>
+          </div>
+        )
+      })}
+    </dl>
   )
 }
 
