@@ -5,6 +5,7 @@ import type { CategoryListItem } from '@/types/admin'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { CategoryFormModal } from '@/components/admin/CategoryFormModal'
 import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal'
@@ -76,9 +77,9 @@ export function CategoriesPage() {
     : categories
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold">Quản lý danh mục</h1>
+    <div>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-ink">Quản lý danh mục</h1>
         <Button onClick={openCreate}>
           <Plus className="size-4" />
           Thêm danh mục
@@ -93,11 +94,11 @@ export function CategoriesPage() {
       )}
 
       {/* Search bar + toggle */}
-      <div className="flex items-center gap-3 max-w-lg">
+      <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            className="pl-9"
+            className="pl-9 w-60"
             placeholder="Tìm theo tên hoặc slug..."
             value={searchInput}
             onChange={(e) => handleSearchInput(e.target.value)}
@@ -115,17 +116,17 @@ export function CategoriesPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border bg-white overflow-x-auto">
+      <Card className="overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-primary hover:bg-primary">
-              <TableHead className="text-primary-foreground">Tên danh mục</TableHead>
-              <TableHead className="text-primary-foreground">Slug</TableHead>
-              <TableHead className="text-primary-foreground">Danh mục cha</TableHead>
-              <TableHead className="text-primary-foreground">Sản phẩm</TableHead>
-              <TableHead className="text-primary-foreground">Thứ tự</TableHead>
-              <TableHead className="text-primary-foreground">Ngày tạo</TableHead>
-              <TableHead className="text-primary-foreground text-right">Thao tác</TableHead>
+            <TableRow>
+              <TableHead>Tên danh mục</TableHead>
+              <TableHead>Slug</TableHead>
+              <TableHead>Danh mục cha</TableHead>
+              <TableHead>Sản phẩm</TableHead>
+              <TableHead>Thứ tự</TableHead>
+              <TableHead>Ngày tạo</TableHead>
+              <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -178,7 +179,7 @@ export function CategoriesPage() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </Card>
 
       {/* Modals */}
       <CategoryFormModal

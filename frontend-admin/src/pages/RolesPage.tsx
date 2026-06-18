@@ -4,6 +4,7 @@ import { useRoleStore } from '@/stores/roleStore'
 import type { RoleDto } from '@/types/admin'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { RoleFormModal } from '@/components/admin/RoleFormModal'
 import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal'
 
@@ -36,9 +37,9 @@ export function RolesPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold">Quản lý vai trò</h1>
+    <div>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-ink">Quản lý vai trò</h1>
         <Button onClick={openCreate}>
           <Plus className="size-4" />
           Thêm vai trò
@@ -52,13 +53,13 @@ export function RolesPage() {
         </div>
       )}
 
-      <div className="rounded-xl border bg-white overflow-x-auto">
+      <Card className="overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-primary hover:bg-primary">
-              <TableHead className="text-primary-foreground">Tên vai trò</TableHead>
-              <TableHead className="text-primary-foreground">Mô tả</TableHead>
-              <TableHead className="text-primary-foreground text-right">Thao tác</TableHead>
+            <TableRow>
+              <TableHead>Tên vai trò</TableHead>
+              <TableHead>Mô tả</TableHead>
+              <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -103,7 +104,7 @@ export function RolesPage() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </Card>
 
       {/* Modals */}
       <RoleFormModal

@@ -3,8 +3,10 @@ import { Search, Trash2, Loader2, ChevronLeft, ChevronRight, Eye } from 'lucide-
 import { getAllImages, deleteImage, getMediaStats, type UserImage, type MediaStats } from '@/api/media'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('vi-VN')
@@ -97,7 +99,7 @@ export function MediaPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Quản lý hình ảnh</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">Quản lý hình ảnh</h1>
           <p className="text-sm text-muted-foreground">Quản lý ảnh chat và AI try-on của người dùng</p>
         </div>
       </div>
@@ -135,15 +137,15 @@ export function MediaPage() {
             className="pl-9"
           />
         </div>
-        <select
+        <Select
+          className="w-40"
           value={sourceFilter}
           onChange={(e) => handleFilterChange(e.target.value)}
-          className="h-9 rounded-md border bg-background px-3 text-sm"
         >
           <option value="">Tất cả nguồn</option>
           <option value="chat">Chat</option>
           <option value="ai_tryon">AI Try-On</option>
-        </select>
+        </Select>
         <span className="text-sm text-muted-foreground">{totalItems} ảnh</span>
       </div>
 
@@ -152,7 +154,7 @@ export function MediaPage() {
       )}
 
       {/* Table */}
-      <div className="rounded-md border">
+      <Card className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -231,7 +233,7 @@ export function MediaPage() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </Card>
 
       {/* Pagination */}
       {totalPages > 1 && (

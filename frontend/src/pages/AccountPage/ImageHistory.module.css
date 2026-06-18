@@ -1,61 +1,74 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1a1a2e;
-  margin: 0;
+  margin: 0 0 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(114, 19, 17, 0.1);
+  color: #250606;
+  font-size: clamp(20px, 2.6vw, 26px);
+  font-weight: 820;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  text-wrap: balance;
 }
 
 .filters {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
 }
 
 .filterBtn {
-  padding: 6px 16px;
-  border: 1px solid #d4d4d8;
-  border-radius: 20px;
-  background: #fff;
-  color: #71717a;
-  font-size: 13px;
+  border: 1px solid rgba(114, 19, 17, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #7b6663;
   cursor: pointer;
-  transition: all 0.2s;
+  font-size: 12px;
+  font-weight: 720;
+  padding: 8px 13px;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
 
-.filterBtn:hover {
-  border-color: #a1a1aa;
-  color: #3f3f46;
+.filterBtn:hover:not(.filterBtnActive) {
+  border-color: rgba(114, 19, 17, 0.24);
+  color: #721311;
+  transform: translateY(-1px);
 }
 
 .filterBtnActive {
-  background: #1a1a2e;
-  color: #fff;
-  border-color: #1a1a2e;
+  border-color: #721311;
+  background: #721311;
+  color: #ffffff;
+}
+
+.filterBtnActive:hover {
+  opacity: 0.88;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
 }
 
 .card {
   position: relative;
-  border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e4e4e7;
-  background: #fff;
-  transition: box-shadow 0.2s;
+  border: 1px solid rgba(114, 19, 17, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: rgba(114, 19, 17, 0.2);
+  box-shadow: 0 14px 30px rgba(73, 14, 12, 0.08);
+  transform: translateY(-1px);
 }
 
 .thumbnailBtn {
@@ -63,96 +76,121 @@
   width: 100%;
   padding: 0;
   border: none;
-  background: none;
+  background: #f7efed;
   cursor: pointer;
   aspect-ratio: 1;
   overflow: hidden;
 }
 
+.thumbnailBtn:focus-visible,
+.downloadBtn:focus-visible,
+.filterBtn:focus-visible,
+.previewClose:focus-visible,
+.pagination button:focus-visible {
+  outline: 3px solid rgba(114, 19, 17, 0.2);
+  outline-offset: 2px;
+}
+
 .thumbnail {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
+  transition: transform 0.22s ease;
+}
+
+.card:hover .thumbnail {
+  transform: scale(1.03);
 }
 
 .cardInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 8px 10px;
+  display: grid;
+  gap: 3px;
+  padding: 10px;
 }
 
 .sourceTag {
+  color: #241111;
   font-size: 11px;
-  color: #71717a;
+  font-weight: 760;
 }
 
-.fileSize {
-  font-size: 11px;
-  color: #a1a1aa;
-}
-
+.fileSize,
 .date {
+  color: #8c7b78;
   font-size: 11px;
-  color: #a1a1aa;
+  font-weight: 620;
 }
 
 .downloadBtn {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.9);
-  color: #3f3f46;
-  font-size: 14px;
-  cursor: pointer;
+  top: 8px;
+  right: 8px;
   display: flex;
+  width: 30px;
+  height: 30px;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(114, 19, 17, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #721311;
+  cursor: pointer;
+  font-size: 14px;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.18s ease, transform 0.18s ease, background 0.18s ease;
 }
 
 .card:hover .downloadBtn {
   opacity: 1;
 }
 
+.downloadBtn:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
 .pagination {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding-top: 8px;
+  gap: 12px;
+  padding-top: 4px;
 }
 
 .pagination button {
-  padding: 6px 14px;
-  border: 1px solid #d4d4d8;
-  border-radius: 6px;
-  background: #fff;
-  color: #3f3f46;
-  font-size: 13px;
+  border: 1px solid rgba(114, 19, 17, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #721311;
   cursor: pointer;
+  font-size: 12px;
+  font-weight: 720;
+  padding: 8px 12px;
 }
 
 .pagination button:disabled {
-  opacity: 0.4;
+  opacity: 0.42;
   cursor: default;
 }
 
 .pagination span {
-  font-size: 13px;
-  color: #71717a;
+  color: #7b6663;
+  font-size: 12px;
+  font-weight: 720;
 }
 
-.empty {
+.empty,
+.loading,
+.error {
+  border: 1px dashed rgba(114, 19, 17, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.66);
+  color: #7b6663;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 34px 18px;
   text-align: center;
-  padding: 48px 16px;
-  color: #71717a;
 }
 
 .empty p {
@@ -160,62 +198,52 @@
 }
 
 .emptyHint {
-  font-size: 13px;
-  color: #a1a1aa;
-}
-
-.loading {
-  text-align: center;
-  padding: 48px 16px;
-  color: #71717a;
-  font-size: 14px;
+  color: #9a8986;
+  font-size: 12px;
 }
 
 .error {
-  text-align: center;
-  padding: 48px 16px;
-  color: #dc2626;
-  font-size: 14px;
+  color: #b91c1c;
 }
 
 .previewOverlay {
   position: fixed;
   inset: 0;
   z-index: 1100;
-  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
+  background: rgba(24, 8, 8, 0.88);
 }
 
 .previewClose {
   position: absolute;
   top: 16px;
   right: 24px;
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  font-size: 18px;
-  border-radius: 50%;
-  cursor: pointer;
   display: flex;
+  width: 34px;
+  height: 34px;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 16px;
 }
 
 .previewImg {
   max-width: 90vw;
   max-height: 90vh;
-  border-radius: 8px;
+  border-radius: 16px;
   object-fit: contain;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 

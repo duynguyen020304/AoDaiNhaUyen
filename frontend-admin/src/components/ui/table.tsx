@@ -5,10 +5,10 @@ export function Table({ className, ...props }: React.HTMLAttributes<HTMLTableEle
   return <table className={cn('w-full caption-bottom text-sm', className)} {...props} />
 }
 export function TableHeader({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn('[&_tr]:border-b', className)} {...props} />
+  return <thead className={cn('bg-burgundy [&_th]:text-white [&_th]:font-medium [&_tr]:border-b', className)} {...props} />
 }
 export function TableBody({ className, ...props }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn('[&_tr:last-child]:border-0', className)} {...props} />
+  return <tbody className={cn('[&_tr:nth-child(odd)]:bg-white [&_tr:nth-child(even)]:bg-cream/50 [&_tr:last-child]:border-0', className)} {...props} />
 }
 export function TableRow({ className, ...props }: React.HTMLAttributes<HTMLTableRowElement>) {
   return <tr className={cn('border-b transition-colors', className)} {...props} />

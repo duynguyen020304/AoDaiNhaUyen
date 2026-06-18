@@ -5,6 +5,7 @@ import type { AdminUserListItem } from '@/types/admin'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { UserFormModal } from '@/components/admin/UserFormModal'
@@ -77,9 +78,9 @@ export function UsersPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold">Quản lý người dùng</h1>
+    <div>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-ink">Quản lý người dùng</h1>
         <Button onClick={openCreate}>
           <Plus className="size-4" />
           Thêm người dùng
@@ -94,11 +95,11 @@ export function UsersPage() {
       )}
 
       {/* Search bar + toggle */}
-      <div className="flex items-center gap-3 max-w-lg">
+      <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            className="pl-9"
+            className="pl-9 w-60"
             placeholder="Tìm theo tên hoặc email..."
             value={searchInput}
             onChange={(e) => handleSearchInput(e.target.value)}
@@ -116,17 +117,17 @@ export function UsersPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border bg-white overflow-x-auto">
+      <Card className="overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-primary hover:bg-primary">
-              <TableHead className="text-primary-foreground">Họ tên</TableHead>
-              <TableHead className="text-primary-foreground">Email</TableHead>
-              <TableHead className="text-primary-foreground">SĐT</TableHead>
-              <TableHead className="text-primary-foreground">Trạng thái</TableHead>
-              <TableHead className="text-primary-foreground">Vai trò</TableHead>
-              <TableHead className="text-primary-foreground">Ngày tạo</TableHead>
-              <TableHead className="text-primary-foreground text-right">Thao tác</TableHead>
+            <TableRow>
+              <TableHead>Họ tên</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>SĐT</TableHead>
+              <TableHead>Trạng thái</TableHead>
+              <TableHead>Vai trò</TableHead>
+              <TableHead>Ngày tạo</TableHead>
+              <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -197,11 +198,11 @@ export function UsersPage() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </Card>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between text-sm text-muted-foreground mt-4">
           <span>Tổng: {totalItems} người dùng</span>
           <div className="flex items-center gap-2">
             <Button

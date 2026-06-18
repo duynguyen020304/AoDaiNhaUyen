@@ -107,7 +107,7 @@ export default function App() {
       return;
     }
 
-    if (location.pathname === '/login' || location.pathname === '/cart' || location.pathname === '/account' || location.pathname === '/account/' || location.pathname === '/account/orders') {
+    if (location.pathname === '/login' || location.pathname === '/cart' || location.pathname.startsWith('/account')) {
       navigate('/', { replace: true });
     }
   }, [location.pathname, navigate]);

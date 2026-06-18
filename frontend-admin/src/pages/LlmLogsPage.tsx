@@ -42,9 +42,9 @@ export function LlmLogsPage() {
         <div>
           <div className="flex items-center gap-2">
             <FileSearch className="size-6 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Nhật ký LLM</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-ink">Nhật ký LLM</h1>
           </div>
-          <p className="mt-1 text-sm text-zinc-500">Theo dõi lời gọi AI, công cụ, token, lỗi và hành động đã duyệt.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Theo dõi lời gọi AI, công cụ, token, lỗi và hành động đã duyệt.</p>
         </div>
         <Button onClick={refresh} disabled={loadingList}>Làm mới</Button>
       </div>
@@ -59,7 +59,7 @@ export function LlmLogsPage() {
       )}
 
       <div className="flex items-center justify-between" aria-live="polite">
-        <p className="text-sm text-zinc-500">{totalItem} log</p>
+        <p className="text-sm text-muted-foreground">{totalItem} log</p>
         <div className="flex gap-2">
           <Button variant="outline" disabled={!hasPreviousPage || loadingList} onClick={() => setFilters({ page: Math.max(1, filters.page - 1) })}>Trước</Button>
           <Button variant="outline" disabled={!hasNextPage || loadingList} onClick={() => setFilters({ page: filters.page + 1 })}>Sau</Button>

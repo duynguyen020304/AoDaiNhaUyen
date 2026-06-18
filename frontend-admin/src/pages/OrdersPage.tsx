@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { RefreshCw, Truck, CheckCircle2, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { updateOrderStatus, createShipment } from '@/api/admin'
 import { getRecentOrders } from '@/api/dashboard'
 import { invalidateAdminDashboardQueries } from '@/queries/invalidateAdminQueries'
@@ -120,7 +122,7 @@ export function OrdersPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-ink">Đơn hàng</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">Đơn hàng</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             Quản lý trạng thái và vận chuyển đơn hàng
           </p>
@@ -148,7 +150,7 @@ export function OrdersPage() {
       </div>
 
       {/* Orders table */}
-      <div className="bg-white rounded-lg border overflow-hidden">
+      <Card className="overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
             Đang tải...
@@ -158,33 +160,33 @@ export function OrdersPage() {
             Không có đơn hàng nào.
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Mã đơn</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Khách hàng</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Tổng tiền</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Trạng thái</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Ngày tạo</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mã đơn</TableHead>
+                <TableHead>Khách hàng</TableHead>
+                <TableHead className="text-right">Tổng tiền</TableHead>
+                <TableHead className="text-center">Trạng thái</TableHead>
+                <TableHead>Ngày tạo</TableHead>
+                <TableHead className="text-center">Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filtered.map((order) => {
                 const nextStatus = NEXT_STATUS[order.status]
                 const isProcessing = processingId === order.id
                 return (
-                  <tr key={order.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 font-mono font-medium text-ink">{order.orderCode}</td>
-                    <td className="px-4 py-3 text-ink">{order.customerName}</td>
-                    <td className="px-4 py-3 text-right font-medium text-ink">{formatPrice(order.totalAmount)}</td>
-                    <td className="px-4 py-3 text-center">
+                  <TableRow key={order.id}>
+                    <TableCell className="font-mono font-medium text-ink">{order.orderCode}</TableCell>
+                    <TableCell className="text-ink">{order.customerName}</TableCell>
+                    <TableCell className="text-right font-medium text-ink">{formatPrice(order.totalAmount)}</TableCell>
+                    <TableCell className="text-center">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[order.status] ?? 'bg-gray-100 text-gray-700'}`}>
                         {STATUS_LABELS[order.status] ?? order.status}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDate(order.createdAt)}</td>
-                    <td className="px-4 py-3 text-center">
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{formatDate(order.createdAt)}</TableCell>
+                    <TableCell className="text-center">
                       {order.status === 'processing' ? (
                         <Button
                           variant="outline"
@@ -213,14 +215,14 @@ export function OrdersPage() {
                           Xong
                         </span>
                       ) : null}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </Card>
 
       {/* Ship modal */}
       {showShipModal && (

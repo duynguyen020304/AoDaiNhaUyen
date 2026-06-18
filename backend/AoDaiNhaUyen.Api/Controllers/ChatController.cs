@@ -276,6 +276,11 @@ public sealed class ChatController(
   {
     if (GetCurrentUserId().HasValue && Request.Cookies.ContainsKey(GuestCookieName))
     {
+      if (Response.HasStarted)
+      {
+        logger.LogWarning("Cannot clear guest cookie: response already started");
+        return;
+      }
       Response.Cookies.Delete(GuestCookieName, new CookieOptions { Path = "/" });
     }
   }

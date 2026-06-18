@@ -126,7 +126,7 @@ export function MarketingSendPage() {
       <div className="rounded-2xl border bg-white p-4 shadow-sm md:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-burgundy">Gửi email marketing</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-ink">Gửi email marketing</h1>
             <p className="mt-1 max-w-2xl text-sm text-gray-600">Tạo chiến dịch theo từng bước: chọn người nhận, nhập nội dung mail và đính kèm, xác nhận trước khi gửi.</p>
           </div>
           <div className="rounded-xl border bg-muted/30 px-4 py-3 text-sm">

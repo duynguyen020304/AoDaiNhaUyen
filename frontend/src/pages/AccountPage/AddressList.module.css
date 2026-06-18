@@ -1,128 +1,307 @@
 .container {
-  padding-top: 30px;
+  min-height: 100%;
 }
 
-.title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #680000;
-  text-align: center;
-  margin: 0 0 24px;
-}
-
-.header {
+.pageHeader {
   display: flex;
-  justify-content: flex-end;
-  margin-bottom: 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
 }
 
-.addButton {
-  background: #680000;
-  color: #fff;
+.pageHeader h1 {
+  margin: 0;
+  color: #250606;
+  font-size: clamp(20px, 2.6vw, 26px);
+  font-weight: 820;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.addButton,
+.saveButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-size: 15px;
-  font-weight: 700;
+  border-radius: 12px;
+  background: #721311;
+  color: #ffffff;
   cursor: pointer;
-  transition: opacity 0.15s;
+  font-size: 12px;
+  font-weight: 780;
+  letter-spacing: 0.04em;
+  padding: 10px 16px;
+  text-transform: uppercase;
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  box-shadow: 0 10px 22px rgba(114, 19, 17, 0.16);
 }
 
-.addButton:hover {
-  opacity: 0.9;
+.addButton:hover,
+.saveButton:hover {
+  background: #4f0d0c;
+  box-shadow: 0 12px 26px rgba(114, 19, 17, 0.22);
+  transform: translateY(-1px);
 }
 
-.addressForm {
+.addButton:active,
+.saveButton:active {
+  transform: translateY(0);
+}
+
+.addButton:focus-visible,
+.saveButton:focus-visible,
+.input:focus-visible,
+.editButton:focus-visible,
+.deleteButton:focus-visible,
+.addCard:focus-visible {
+  outline: 3px solid rgba(114, 19, 17, 0.2);
+  outline-offset: 2px;
+}
+
+.stateNote {
+  margin: 0 0 16px;
+  padding: 20px 18px;
+  border: 1px dashed rgba(114, 19, 17, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.66);
+  color: #7b6663;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.form {
   display: flex;
   flex-direction: column;
+  gap: 14px;
+  margin-bottom: 22px;
+  padding: 18px;
+  border: 1px solid rgba(114, 19, 17, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  padding: 20px;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  margin-bottom: 24px;
 }
 
 .input {
-  height: 36px;
-  border: 1px solid rgba(0, 0, 0, 0.25);
-  border-radius: 4px;
+  width: 100%;
+  height: 40px;
+  border: 1px solid rgba(114, 19, 17, 0.14);
+  border-radius: 11px;
   padding: 0 12px;
-  font-size: 14px;
+  background: rgba(114, 19, 17, 0.03);
+  color: #241111;
+  font-size: 13px;
+  font-weight: 620;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.input::placeholder {
+  color: #9a8986;
 }
 
 .input:focus {
   outline: none;
-  border-color: #680000;
+  border-color: #721311;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(114, 19, 17, 0.1);
 }
 
 .saveButton {
   align-self: flex-end;
-  background: #680000;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 24px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
+  min-width: 140px;
 }
 
-.addressList {
-  display: flex;
-  flex-direction: column;
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
-.addressCard {
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
-  border-radius: 8px;
-  padding: 20px;
-  position: relative;
+.card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid rgba(114, 19, 17, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.84);
+  overflow: hidden;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
-.recipient {
-  font-weight: 600;
-  font-size: 16px;
-  margin: 0 0 8px;
-  color: #000;
+.card:hover {
+  border-color: rgba(114, 19, 17, 0.2);
+  box-shadow: 0 14px 30px rgba(73, 14, 12, 0.08);
+  transform: translateY(-1px);
 }
 
-.addressText {
-  font-size: 14px;
-  color: rgba(0, 0, 0, 0.7);
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 18px 0;
+}
+
+.cardHeader > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cardHeader h3 {
   margin: 0;
+  color: #250606;
+  font-size: 15px;
+  font-weight: 780;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
-.badge {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 2px 10px;
-  background: #680000;
-  color: #fff;
-  border-radius: 4px;
-  font-size: 12px;
+.defaultBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(114, 19, 17, 0.08);
+  color: #721311;
+  font-size: 10px;
+  font-weight: 820;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+
+.cardFields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  color: #7b6663;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.fieldIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: #721311;
+  font-size: 13px;
+  flex-shrink: 0;
+  padding-top: 1px;
 }
 
 .cardActions {
-  position: absolute;
-  top: 16px;
-  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(114, 19, 17, 0.1);
+}
+
+.editButton,
+.deleteButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 720;
+  padding: 7px 10px;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.editButton {
+  color: #721311;
+}
+
+.editButton:hover {
+  background: rgba(114, 19, 17, 0.07);
+  transform: translateY(-1px);
 }
 
 .deleteButton {
-  background: none;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-  padding: 4px 12px;
-  font-size: 12px;
-  color: rgba(0, 0, 0, 0.5);
-  cursor: pointer;
+  color: #b91c1c;
 }
 
 .deleteButton:hover {
-  color: #680000;
-  border-color: #680000;
+  background: #fff0ee;
+  transform: translateY(-1px);
+}
+
+.addCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 180px;
+  border: 2px dashed rgba(114, 19, 17, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.66);
+  color: #7b6663;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 720;
+  padding: 24px;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.addCard:hover {
+  border-color: rgba(114, 19, 17, 0.28);
+  background: rgba(114, 19, 17, 0.035);
+  color: #721311;
+  transform: translateY(-1px);
+}
+
+.addCardIcon {
+  display: flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(114, 19, 17, 0.08);
+  color: #721311;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+@media (max-width: 800px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .addButton {
+    justify-content: center;
+  }
 }

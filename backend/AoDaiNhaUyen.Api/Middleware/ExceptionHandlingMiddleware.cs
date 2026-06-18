@@ -16,6 +16,12 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
     {
       logger.LogError(ex, "Unhandled exception while processing request");
 
+      if (context.Response.HasStarted)
+      {
+        logger.LogWarning("Response has already started; cannot write error payload");
+        return;
+      }
+
       context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
       context.Response.ContentType = "application/json";
 

@@ -43,8 +43,8 @@ export default function OrderDetailPage() {
     return (
       <main className={styles.page}>
         <section className={styles.shell}>
-          <div className={styles.skeletonHero} />
-          <div className={styles.skeletonGrid}>
+          <div className={styles.skeleton}>
+            <span />
             <span />
             <span />
             <span />
@@ -57,7 +57,7 @@ export default function OrderDetailPage() {
   if (ordersQuery.error || !order) {
     return (
       <main className={styles.page}>
-        <section className={styles.emptyState}>
+        <section className={styles.emptyCard}>
           <p className={styles.eyebrow}>Không tìm thấy</p>
           <h1>Không tìm thấy đơn hàng</h1>
           <p>Đơn hàng không tồn tại hoặc bạn không có quyền xem thông tin này.</p>
@@ -77,15 +77,13 @@ export default function OrderDetailPage() {
         </Link>
 
         <div className={styles.heroGrid}>
-          <div className={styles.heroCopy}>
+          <div className={styles.heroCard}>
             <p className={styles.eyebrow}>Chi tiết đơn hàng</p>
             <h1>{order.orderCode}</h1>
-            <p>
-              Theo dõi tiến trình, thông tin giao hàng và toàn bộ sản phẩm trong đơn hàng của bạn.
-            </p>
+            <p className={styles.heroDesc}>Theo dõi tiến trình, thông tin giao hàng và toàn bộ sản phẩm trong đơn hàng.</p>
           </div>
           <div className={styles.summaryCard}>
-            <span>{statusLabel(order.orderStatus)}</span>
+            <span className={styles.summaryBadge}>{statusLabel(order.orderStatus)}</span>
             <strong>{formatPrice(order.totalAmount)}</strong>
             <small>Ngày đặt: {formatDate(order.placedAt)}</small>
           </div>
@@ -110,46 +108,62 @@ export default function OrderDetailPage() {
         )}
 
         <div className={styles.contentGrid}>
-          <section className={styles.panel}>
-            <h2>Sản phẩm</h2>
+          <section className={styles.card}>
+            <header className={styles.cardHeader}>
+              <div>
+                <p className={styles.cardEyebrow}>Đơn hàng</p>
+                <h2>Sản phẩm</h2>
+              </div>
+            </header>
+
             <div className={styles.itemList}>
               {order.items.map((item) => (
                 <article key={item.id} className={styles.itemCard}>
                   <div className={styles.itemImage}>
                     {item.imageUrl ? (
                       <img src={resolveAssetUrl(item.imageUrl) ?? ''} alt={item.productName} />
-                    ) : null}
+                    ) : (
+                      <span className={styles.imagePlaceholder} />
+                    )}
                   </div>
-                  <div>
+                  <div className={styles.itemInfo}>
                     <h3>{item.productName}</h3>
-                    <p>Số lượng: {item.quantity}</p>
-                    {item.size ? <p>Size: {item.size}</p> : null}
-                    {item.color ? <p>Màu: {item.color}</p> : null}
+                    <div className={styles.itemMeta}>
+                      <span>Số lượng: {item.quantity}</span>
+                      {item.size ? <span>Size: {item.size}</span> : null}
+                      {item.color ? <span>Màu: {item.color}</span> : null}
+                    </div>
                   </div>
-                  <strong>{formatPrice(item.lineTotal)}</strong>
+                  <strong className={styles.itemPrice}>{formatPrice(item.lineTotal)}</strong>
                 </article>
               ))}
             </div>
           </section>
 
-          <aside className={styles.sideStack}>
-            <section className={styles.panel}>
-              <h2>Người nhận</h2>
-              <dl className={styles.infoList}>
+          <aside className={styles.sideColumn}>
+            <section className={styles.card}>
+              <header className={styles.cardHeader}>
                 <div>
+                  <p className={styles.cardEyebrow}>Giao hàng</p>
+                  <h2>Người nhận</h2>
+                </div>
+              </header>
+
+              <dl className={styles.infoList}>
+                <div className={styles.infoRow}>
                   <dt>Họ tên</dt>
                   <dd>{order.recipientName}</dd>
                 </div>
-                <div>
+                <div className={styles.infoRow}>
                   <dt>Số điện thoại</dt>
                   <dd>{order.recipientPhone}</dd>
                 </div>
-                <div>
+                <div className={styles.infoRow}>
                   <dt>Địa chỉ</dt>
                   <dd>{address}</dd>
                 </div>
                 {order.note ? (
-                  <div>
+                  <div className={styles.infoRow}>
                     <dt>Ghi chú</dt>
                     <dd>{order.note}</dd>
                   </div>
@@ -157,27 +171,34 @@ export default function OrderDetailPage() {
               </dl>
             </section>
 
-            <section className={styles.panel}>
-              <h2>Thanh toán</h2>
-              <dl className={styles.priceList}>
+            <section className={styles.card}>
+              <header className={styles.cardHeader}>
                 <div>
+                  <p className={styles.cardEyebrow}>Tài chính</p>
+                  <h2>Thanh toán</h2>
+                </div>
+              </header>
+
+              <dl className={styles.priceList}>
+                <div className={styles.priceRow}>
                   <dt>Tạm tính</dt>
                   <dd>{formatPrice(order.subtotal)}</dd>
                 </div>
-                <div>
+                <div className={styles.priceRow}>
                   <dt>Phí vận chuyển</dt>
                   <dd>{formatPrice(order.shippingFee)}</dd>
                 </div>
-                <div>
+                <div className={styles.priceRow}>
                   <dt>Giảm giá</dt>
                   <dd>-{formatPrice(order.discountAmount)}</dd>
                 </div>
-                <div className={styles.priceTotal}>
+                <div className={`${styles.priceRow} ${styles.priceTotal}`}>
                   <dt>Tổng cộng</dt>
                   <dd>{formatPrice(order.totalAmount)}</dd>
                 </div>
               </dl>
-              <p className={styles.paymentStatus}>Trạng thái: {statusLabel(order.paymentStatus)}</p>
+
+              <p className={styles.paymentStatus}>{statusLabel(order.paymentStatus)}</p>
             </section>
           </aside>
         </div>

@@ -15,7 +15,7 @@ interface LoginPageProps {
 export default function LoginPage({ initialTab = 'login', redirectTo: redirectOverride, onClose }: LoginPageProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, startGoogleLogin, startZaloLogin, status } = useAuth();
+  const { login, startGoogleLogin, status } = useAuth();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<AuthTab>(initialTab);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -266,10 +266,6 @@ export default function LoginPage({ initialTab = 'login', redirectTo: redirectOv
                 <img src="/assets/login/icon-google.svg" alt="Google" />
                 Google
               </button>
-              <button type="button" className={styles.socialBtn} onClick={startZaloLogin}>
-                <img src="/assets/login/icon-zalo.svg" alt="Zalo" />
-                Zalo
-              </button>
             </div>
           </form>
         )}
@@ -370,10 +366,6 @@ export default function LoginPage({ initialTab = 'login', redirectTo: redirectOv
               <button type="button" className={styles.socialBtn} onClick={startGoogleLogin}>
                 <img src="/assets/login/icon-google.svg" alt="Google" />
                 Google
-              </button>
-              <button type="button" className={styles.socialBtn} onClick={startZaloLogin}>
-                <img src="/assets/login/icon-zalo.svg" alt="Zalo" />
-                Zalo
               </button>
             </div>
 

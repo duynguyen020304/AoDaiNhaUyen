@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Select } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -78,24 +80,24 @@ export function SubscribersPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-burgundy">Người đăng ký</h1>
-        <p className="text-sm text-gray-600">
+        <h1 className="text-2xl font-bold tracking-tight text-ink">Người đăng ký</h1>
+        <p className="text-sm text-muted-foreground">
           Theo dõi consent và trạng thái nhận email.
         </p>
       </div>
       {error && (
-        <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
-      <div className="grid gap-3 md:grid-cols-[1fr_180px]">
+      <div className="grid gap-3 md:grid-cols-[1fr_180px] mb-4">
         <Input
           placeholder="Tìm email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <select
-          className="h-9 rounded-md border bg-white px-3 text-sm"
+        <Select
+          className="w-full"
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
@@ -103,9 +105,9 @@ export function SubscribersPage() {
           <option value="pending">Pending</option>
           <option value="active">Active</option>
           <option value="unsubscribed">Unsubscribed</option>
-        </select>
+        </Select>
       </div>
-      <div className="rounded-lg border bg-white p-3">
+      <Card className="mb-4 p-3">
         <label className="text-sm font-medium">Nhập email nhanh</label>
         <textarea
           className="mt-2 min-h-20 w-full rounded-md border p-2 text-sm"
@@ -116,8 +118,8 @@ export function SubscribersPage() {
         <Button className="mt-2" size="sm" onClick={handleImport}>
           Nhập danh sách
         </Button>
-      </div>
-      <div className="rounded-lg border bg-white">
+      </Card>
+      <Card className="overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -169,7 +171,7 @@ export function SubscribersPage() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </Card>
       <div className="flex justify-end gap-2">
         <Button
           variant="outline"
