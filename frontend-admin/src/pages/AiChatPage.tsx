@@ -98,7 +98,7 @@ export function AiChatPage() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('events')}
+              onClick={() => navigate('/admin/hermes-events')}
               className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${activeTab === 'events' ? 'bg-wine text-white' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <Activity className="size-4" />
