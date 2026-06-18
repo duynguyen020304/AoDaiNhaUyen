@@ -6,6 +6,12 @@ on:
     branches:
       - master
 
+env:
+  INFISICAL_API_URL: https://infisical.shiphard.studio
+  INFISICAL_PROJECT_ID: cd653fdf-37da-4872-a27c-4864d673b89a
+  INFISICAL_ENVIRONMENT_SLUG: development
+  INFISICAL_SECRET_PATH: /
+
 jobs:
   # ==========================================
   # Build Frontend for HK1
@@ -26,11 +32,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?workspaceId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -62,6 +75,7 @@ jobs:
           VITE_API_BASE_URL="$HK1_VITE_API_BASE_URL" \
           PUBLIC_GOOGLE_CLIENT_ID="$HK1_PUBLIC_GOOGLE_CLIENT_ID" \
           PUBLIC_ZALO_APP_ID="$HK1_ZALO_OAUTH_APP_ID" \
+          PUBLIC_FACEBOOK_CLIENT_ID="${HK1_PUBLIC_FACEBOOK_CLIENT_ID:-}" \
           bun run build
 
       - name: Upload Frontend Artifact to S3
@@ -99,11 +113,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?workspaceId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -135,6 +156,7 @@ jobs:
           VITE_API_BASE_URL="$US1_VITE_API_BASE_URL" \
           PUBLIC_GOOGLE_CLIENT_ID="$US1_PUBLIC_GOOGLE_CLIENT_ID" \
           PUBLIC_ZALO_APP_ID="$US1_ZALO_OAUTH_APP_ID" \
+          PUBLIC_FACEBOOK_CLIENT_ID="${US1_PUBLIC_FACEBOOK_CLIENT_ID:-}" \
           bun run build
 
       - name: Upload Frontend Artifact to S3
@@ -172,11 +194,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?workspaceId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -241,11 +270,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?workspaceId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -311,11 +347,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?workspaceId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -385,11 +428,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?workspaceId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -627,6 +677,13 @@ jobs:
           export ConnectionStrings__DefaultConnection='${HK1_POSTGRESQL_CONNECTION_STRING}'
           export RunMigrationsAndSeedOnStartup='${HK1_RUN_MIGRATIONS_AND_SEED_ON_STARTUP}'
           export JwtSettings__SecretKey='${HK1_JWT_SECRET_KEY}'
+          export JwtSettings__Issuer='${HK1_JWT_ISSUER:-AoDaiNhaUyen.Api}'
+          export JwtSettings__Audience='${HK1_JWT_AUDIENCE:-AoDaiNhaUyen.Frontend}'
+          export JwtSettings__ExpiryMinutes='${HK1_JWT_EXPIRY_MINUTES:-60}'
+          export JwtSettings__RefreshTokenExpiryDays='${HK1_JWT_REFRESH_TOKEN_EXPIRY_DAYS:-30}'
+          export CookieSettings__AccessTokenCookieName='${HK1_COOKIE_ACCESS_TOKEN_COOKIE_NAME:-access_token}'
+          export CookieSettings__RefreshTokenCookieName='${HK1_COOKIE_REFRESH_TOKEN_COOKIE_NAME:-refresh_token}'
+          export ConnectionStrings__Redis='${HK1_REDIS_CONNECTION_STRING:-}'
           export GoogleOAuth__ClientId='${HK1_GOOGLE_OAUTH_CLIENT_ID}'
           export GoogleOAuth__ClientSecret='${HK1_GOOGLE_OAUTH_CLIENT_SECRET}'
           export GoogleOAuth__RedirectUri='${HK1_GOOGLE_OAUTH_REDIRECT_URI}'
@@ -649,13 +706,18 @@ jobs:
           export GoogleCloud__StylistTextModel='${HK1_GCLOUD_STYLIST_TEXT_MODEL}'
           export GoogleCloud__TimeoutSeconds='${HK1_GCLOUD_TIMEOUT_SECONDS}'
           export CacheSettings__Version='${HK1_CACHE_SETTINGS_VERSION}'
-          export FrontendOrigins='${HK1_FRONTEND_ORIGINS}'
+          export FrontendOrigins='${HK1_FRONTEND_ORIGINS};${HK1_ADMIN_FRONTEND_ORIGIN}'
+          export AdminFrontendPort='${HK1_ADMIN_FRONTEND_PORT}'
           export S3Storage__BucketName='${S3_BUCKET_NAME}'
           export S3Storage__Region='${S3_REGION}'
           export S3Storage__AccessKey='${S3_ACCESS_KEY}'
           export S3Storage__SecretKey='${S3_SECRET_KEY}'
           export S3Storage__ServiceUrl='${S3_SERVICE_URL}'
           export S3Storage__UsePathStyle='${S3_USE_PATH_STYLE}'
+          export Hermes__AdminApiKey='${HK1_HERMES_ADMIN_API_KEY:-}'
+          export Hermes__ApiServerUrl='${HK1_HERMES_API_SERVER_URL:-http://127.0.0.1:8642}'
+          export Hermes__ApiServerKey='${HK1_HERMES_API_SERVER_KEY:-}'
+          export Hermes__RunnerName='${HK1_HERMES_RUNNER_NAME:-aodai-admin-hermes}'
           export AdminSeed__Email='${HK1_ADMIN_SEED_EMAIL}'
           export AdminSeed__Password='${HK1_ADMIN_SEED_PASSWORD}'
           RUNTIMEEOF
@@ -713,6 +775,27 @@ jobs:
           echo "[${SERVER_NAME}] Installing runtime-env.sh..."
           cp /tmp/runtime-env.sh /root/AoDaiNhaUyen/backend/runtime-env.sh
           chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
+
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
+          if [ "${#JwtSettings__SecretKey}" -lt 64 ]; then
+            echo "[${SERVER_NAME}] Infisical JWT secret is weak or missing; using persistent server-generated fallback. Rotate Infisical key ASAP."
+            JWT_FALLBACK_FILE="/root/AoDaiNhaUyen/backend/.jwt-secret"
+            if [ ! -s "$JWT_FALLBACK_FILE" ]; then
+              umask 077
+              openssl rand -base64 96 | tr -d '\n' > "$JWT_FALLBACK_FILE"
+              chmod 600 "$JWT_FALLBACK_FILE"
+            fi
+            JWT_SECRET_VALUE=$(cat "$JWT_FALLBACK_FILE")
+            ENV_FILE="/root/AoDaiNhaUyen/backend/runtime-env.sh"
+            if grep -q '^export JwtSettings__SecretKey=' "$ENV_FILE"; then
+              sed -i "/^export JwtSettings__SecretKey=/c\\export JwtSettings__SecretKey='${JWT_SECRET_VALUE}'" "$ENV_FILE"
+            else
+              echo "export JwtSettings__SecretKey='${JWT_SECRET_VALUE}'" >> "$ENV_FILE"
+            fi
+            chmod 600 "$ENV_FILE"
+          fi
 
           # ==========================================
           # 4. Stop PM2 Processes
@@ -783,14 +866,17 @@ jobs:
           cat > /root/AoDaiNhaUyen/frontend/start.sh << 'STARTEOF'
           #!/bin/bash
           cd /root/AoDaiNhaUyen/frontend/dist
-          /root/.bun/bin/serve -s -l 3100 .
+          /root/.bun/bin/serve -s -l 3000 .
           STARTEOF
           chmod +x /root/AoDaiNhaUyen/frontend/start.sh
 
           cat > /root/AoDaiNhaUyen/frontend-admin/start.sh << 'STARTEOF'
           #!/bin/bash
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
           cd /root/AoDaiNhaUyen/frontend-admin/dist
-          /root/.bun/bin/serve -s -l 3101 .
+          /root/.bun/bin/serve -s -l ${AdminFrontendPort:-3101} .
           STARTEOF
           chmod +x /root/AoDaiNhaUyen/frontend-admin/start.sh
 
@@ -809,7 +895,30 @@ jobs:
           /root/.bun/bin/pm2 save
 
           # ==========================================
-          # 9. Cleanup
+          # 9. Verify backend health
+          # ==========================================
+          echo "[${SERVER_NAME}] Verifying backend health..."
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
+          HEALTH_URL="${ASPNETCORE_URLS%/}/health"
+          for attempt in 1 2 3 4 5 6; do
+            if curl -fsS --max-time 10 "$HEALTH_URL" >/dev/null; then
+              echo "[${SERVER_NAME}] Backend health OK: $HEALTH_URL"
+              break
+            fi
+            echo "[${SERVER_NAME}] Backend health not ready (attempt $attempt/6)"
+            sleep 10
+          done
+          if ! curl -fsS --max-time 10 "$HEALTH_URL" >/dev/null; then
+            echo "[${SERVER_NAME}] ERROR: backend health check failed: $HEALTH_URL"
+            /root/.bun/bin/pm2 status || true
+            /root/.bun/bin/pm2 logs aodai-api --lines 120 --nostream || true
+            exit 1
+          fi
+
+          # ==========================================
+          # 10. Cleanup
           # ==========================================
           echo "[${SERVER_NAME}] Cleaning up old backups..."
           cd /root/AoDaiNhaUyen/frontend
@@ -846,11 +955,18 @@ jobs:
           INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
         run: |
           set -euo pipefail
+          case "${INFISICAL_ENVIRONMENT_SLUG}" in
+            prod|production)
+              echo "ERROR: deploy-dev.yml must not fetch production Infisical secrets"
+              exit 1
+              ;;
+          esac
+          echo "Fetching Infisical secrets from environment: ${INFISICAL_ENVIRONMENT_SLUG}"
           sudo apt-get update -qq && sudo apt-get install -y -qq jq >/dev/null 2>&1
           HTTP_CODE=$(curl -sS -w "%{http_code}" -o /tmp/infisical-secrets.json \
             --connect-timeout 15 --max-time 60 --retry 5 --retry-delay 10 \
             -H "Authorization: Bearer ${INFISICAL_TOKEN}" \
-            "http://216.23.94.59:8088/api/v3/secrets/raw?projectId=cd653fdf-37da-4872-a27c-4864d673b89a&environment=dev&secretPath=/")
+            "${INFISICAL_API_URL}/api/v3/secrets/raw?workspaceId=${INFISICAL_PROJECT_ID}&environment=${INFISICAL_ENVIRONMENT_SLUG}&secretPath=${INFISICAL_SECRET_PATH}")
           if [ "$HTTP_CODE" -ne 200 ]; then
             echo "ERROR: Infisical API returned HTTP $HTTP_CODE"
             cat /tmp/infisical-secrets.json
@@ -1088,6 +1204,13 @@ jobs:
           export ConnectionStrings__DefaultConnection='${US1_POSTGRESQL_CONNECTION_STRING}'
           export RunMigrationsAndSeedOnStartup='${US1_RUN_MIGRATIONS_AND_SEED_ON_STARTUP}'
           export JwtSettings__SecretKey='${US1_JWT_SECRET_KEY}'
+          export JwtSettings__Issuer='${US1_JWT_ISSUER:-AoDaiNhaUyen.Api}'
+          export JwtSettings__Audience='${US1_JWT_AUDIENCE:-AoDaiNhaUyen.Frontend}'
+          export JwtSettings__ExpiryMinutes='${US1_JWT_EXPIRY_MINUTES:-60}'
+          export JwtSettings__RefreshTokenExpiryDays='${US1_JWT_REFRESH_TOKEN_EXPIRY_DAYS:-30}'
+          export CookieSettings__AccessTokenCookieName='${US1_COOKIE_ACCESS_TOKEN_COOKIE_NAME:-access_token}'
+          export CookieSettings__RefreshTokenCookieName='${US1_COOKIE_REFRESH_TOKEN_COOKIE_NAME:-refresh_token}'
+          export ConnectionStrings__Redis='${US1_REDIS_CONNECTION_STRING:-}'
           export GoogleOAuth__ClientId='${US1_GOOGLE_OAUTH_CLIENT_ID}'
           export GoogleOAuth__ClientSecret='${US1_GOOGLE_OAUTH_CLIENT_SECRET}'
           export GoogleOAuth__RedirectUri='${US1_GOOGLE_OAUTH_REDIRECT_URI}'
@@ -1110,13 +1233,18 @@ jobs:
           export GoogleCloud__StylistTextModel='${US1_GCLOUD_STYLIST_TEXT_MODEL}'
           export GoogleCloud__TimeoutSeconds='${US1_GCLOUD_TIMEOUT_SECONDS}'
           export CacheSettings__Version='${US1_CACHE_SETTINGS_VERSION}'
-          export FrontendOrigins='${US1_FRONTEND_ORIGINS}'
+          export FrontendOrigins='${US1_FRONTEND_ORIGINS};${US1_ADMIN_FRONTEND_ORIGIN}'
+          export AdminFrontendPort='${US1_ADMIN_FRONTEND_PORT}'
           export S3Storage__BucketName='${S3_BUCKET_NAME}'
           export S3Storage__Region='${S3_REGION}'
           export S3Storage__AccessKey='${S3_ACCESS_KEY}'
           export S3Storage__SecretKey='${S3_SECRET_KEY}'
           export S3Storage__ServiceUrl='${S3_SERVICE_URL}'
           export S3Storage__UsePathStyle='${S3_USE_PATH_STYLE}'
+          export Hermes__AdminApiKey='${US1_HERMES_ADMIN_API_KEY:-}'
+          export Hermes__ApiServerUrl='${US1_HERMES_API_SERVER_URL:-http://127.0.0.1:8642}'
+          export Hermes__ApiServerKey='${US1_HERMES_API_SERVER_KEY:-}'
+          export Hermes__RunnerName='${US1_HERMES_RUNNER_NAME:-aodai-admin-hermes}'
           export AdminSeed__Email='${US1_ADMIN_SEED_EMAIL}'
           export AdminSeed__Password='${US1_ADMIN_SEED_PASSWORD}'
           RUNTIMEEOF
@@ -1175,6 +1303,27 @@ jobs:
           echo "[${SERVER_NAME}] Installing runtime-env.sh..."
           cp /tmp/runtime-env.sh /root/AoDaiNhaUyen/backend/runtime-env.sh
           chmod 600 /root/AoDaiNhaUyen/backend/runtime-env.sh
+
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
+          if [ "${#JwtSettings__SecretKey}" -lt 64 ]; then
+            echo "[${SERVER_NAME}] Infisical JWT secret is weak or missing; using persistent server-generated fallback. Rotate Infisical key ASAP."
+            JWT_FALLBACK_FILE="/root/AoDaiNhaUyen/backend/.jwt-secret"
+            if [ ! -s "$JWT_FALLBACK_FILE" ]; then
+              umask 077
+              openssl rand -base64 96 | tr -d '\n' > "$JWT_FALLBACK_FILE"
+              chmod 600 "$JWT_FALLBACK_FILE"
+            fi
+            JWT_SECRET_VALUE=$(cat "$JWT_FALLBACK_FILE")
+            ENV_FILE="/root/AoDaiNhaUyen/backend/runtime-env.sh"
+            if grep -q '^export JwtSettings__SecretKey=' "$ENV_FILE"; then
+              sed -i "/^export JwtSettings__SecretKey=/c\\export JwtSettings__SecretKey='${JWT_SECRET_VALUE}'" "$ENV_FILE"
+            else
+              echo "export JwtSettings__SecretKey='${JWT_SECRET_VALUE}'" >> "$ENV_FILE"
+            fi
+            chmod 600 "$ENV_FILE"
+          fi
 
           # ==========================================
           # 4. Stop PM2 Processes
@@ -1245,14 +1394,17 @@ jobs:
           cat > /root/AoDaiNhaUyen/frontend/start.sh << 'STARTEOF'
           #!/bin/bash
           cd /root/AoDaiNhaUyen/frontend/dist
-          /root/.bun/bin/serve -s -l 3100 .
+          /root/.bun/bin/serve -s -l 3000 .
           STARTEOF
           chmod +x /root/AoDaiNhaUyen/frontend/start.sh
 
           cat > /root/AoDaiNhaUyen/frontend-admin/start.sh << 'STARTEOF'
           #!/bin/bash
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
           cd /root/AoDaiNhaUyen/frontend-admin/dist
-          /root/.bun/bin/serve -s -l 3101 .
+          /root/.bun/bin/serve -s -l ${AdminFrontendPort:-3101} .
           STARTEOF
           chmod +x /root/AoDaiNhaUyen/frontend-admin/start.sh
 
@@ -1271,7 +1423,30 @@ jobs:
           /root/.bun/bin/pm2 save
 
           # ==========================================
-          # 9. Cleanup
+          # 9. Verify backend health
+          # ==========================================
+          echo "[${SERVER_NAME}] Verifying backend health..."
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
+          HEALTH_URL="${ASPNETCORE_URLS%/}/health"
+          for attempt in 1 2 3 4 5 6; do
+            if curl -fsS --max-time 10 "$HEALTH_URL" >/dev/null; then
+              echo "[${SERVER_NAME}] Backend health OK: $HEALTH_URL"
+              break
+            fi
+            echo "[${SERVER_NAME}] Backend health not ready (attempt $attempt/6)"
+            sleep 10
+          done
+          if ! curl -fsS --max-time 10 "$HEALTH_URL" >/dev/null; then
+            echo "[${SERVER_NAME}] ERROR: backend health check failed: $HEALTH_URL"
+            /root/.bun/bin/pm2 status || true
+            /root/.bun/bin/pm2 logs aodai-api --lines 120 --nostream || true
+            exit 1
+          fi
+
+          # ==========================================
+          # 10. Cleanup
           # ==========================================
           echo "[${SERVER_NAME}] Cleaning up old backups..."
           cd /root/AoDaiNhaUyen/frontend
