@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { PanelLeft } from 'lucide-react'
 import { FullChatArea } from '@/components/ai/FullChatArea'
 import { ChatHistorySidebar } from '@/components/ai/ChatHistorySidebar'
+import { useAdminAiStore } from '@/stores/adminAiStore'
 
 export function AiChatPage() {
+  const { chatId } = useParams<{ chatId: string }>()
+  const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024)
+  const activeConversationId = useAdminAiStore((s) => s.activeConversationId)
+  const messages = useAdminAiStore((s) => s.messages)
+  const loadConversation = useAdminAiStore((s) => s.loadConversation)
 
   useEffect(() => {
     function handleResize() {
@@ -15,6 +22,18 @@ export function AiChatPage() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  useEffect(() => {
+    if (chatId && chatId !== activeConversationId) {
+      void loadConversation(chatId)
+    }
+  }, [activeConversationId, chatId, loadConversation])
+
+  useEffect(() => {
+    if (!chatId && activeConversationId && messages.length > 0) {
+      navigate(`/admin/ai-chat/${activeConversationId}`, { replace: true })
+    }
+  }, [activeConversationId, chatId, messages.length, navigate])
 
   return (
     <div className="flex flex-col lg:flex-row h-dvh -mx-4 -mb-4 -mt-14 lg:-m-6 overflow-hidden relative bg-white">

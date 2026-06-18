@@ -140,7 +140,7 @@ export function AdminLayout() {
   const toggleAi = useAdminAiStore((s) => s.toggle)
   const closeAi = useAdminAiStore((s) => s.close)
   const location = useLocation()
-  const isChatPage = location.pathname === '/admin/ai-chat'
+  const isChatPage = location.pathname.startsWith('/admin/ai-chat')
 
   // Auto-close widget when navigating to full chat page
   useEffect(() => {

@@ -92,11 +92,11 @@ public sealed class AdminAgentService : IAdminAgentService
       P(("limit", O("integer", "Số lượng sản phẩm. Mặc định: 5")))),
 
     // Products
-    T("list_products", "Search/list sản phẩm admin với phân trang và lọc. DÙNG KHI admin hỏi sản phẩm bằng tên/nhóm hoặc duyệt catalog. KẾT QUẢ có total,page,pageSize,totalPages,hasMore,filtersApplied,completeness. KHÔNG kết luận không có sản phẩm trừ khi total == 0. Nếu items rỗng nhưng total > 0 hoặc hasMore=true, kiểm tra page/search tiếp.",
+    T("list_products", "Search/list sản phẩm admin với phân trang và lọc. DÙNG KHI admin hỏi sản phẩm bằng tên/nhóm hoặc duyệt catalog. Khi admin muốn liệt kê/tổng hợp sản phẩm hiện có, số lượng tồn kho, trạng thái, hoặc thông tin hệ thống hợp lệ của catalog: gọi page=1,pageSize=50, không search nếu admin không nêu từ khóa. KẾT QUẢ có total,page,pageSize,totalPages,hasMore,filtersApplied,completeness. KHÔNG kết luận không có sản phẩm trừ khi total == 0. Nếu hasMore=true và admin cần toàn bộ dữ liệu, gọi page tiếp theo hoặc nói rõ chưa đầy đủ.",
       P(
         ("page", O("integer", "Trang hiện tại, 1-based, mặc định 1. Dùng >1 khi còn tiếp = có")),
-        ("pageSize", O("integer", "Số sản phẩm mỗi trang, mặc định 20; response có thể chỉ hiển thị tối đa 10 mục")),
-        ("search", O("string", "Từ khóa từ admin; ưu tiên dùng thay vì page 1 không filter khi tìm sản phẩm/nhóm sản phẩm")),
+        ("pageSize", O("integer", "Số sản phẩm mỗi trang, mặc định 20; dùng 50 cho yêu cầu liệt kê/tổng hợp catalog rộng")),
+        ("search", O("string", "Từ khóa từ admin; chỉ dùng khi admin nêu tên/nhóm cụ thể, không dùng cho yêu cầu liệt kê toàn bộ catalog")),
         ("status", O("string", "Lọc theo trạng thái: active, inactive, draft (tùy chọn)")))),
 
     T("get_product", "Lấy chi tiết một sản phẩm.",

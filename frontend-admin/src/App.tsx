@@ -74,6 +74,7 @@ export function App() {
             <Route path="orders" element={<OrdersPage />} />
             <Route path="reviews" element={<ReviewsPage />} />
             <Route path="ai-chat" element={<AiChatPage />} />
+            <Route path="ai-chat/:chatId" element={<AiChatPage />} />
             <Route path="llm-logs" element={<LlmLogsPage />} />
             <Route path="tools-risk" element={<ToolRiskPage />} />
           </Route>
