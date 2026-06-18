@@ -707,6 +707,7 @@ jobs:
           export GoogleCloud__TimeoutSeconds='${HK1_GCLOUD_TIMEOUT_SECONDS}'
           export CacheSettings__Version='${HK1_CACHE_SETTINGS_VERSION}'
           export FrontendOrigins='${HK1_FRONTEND_ORIGINS};${HK1_ADMIN_FRONTEND_ORIGIN}'
+          export AdminFrontendPort='${HK1_ADMIN_FRONTEND_PORT}'
           export S3Storage__BucketName='${S3_BUCKET_NAME}'
           export S3Storage__Region='${S3_REGION}'
           export S3Storage__AccessKey='${S3_ACCESS_KEY}'
@@ -871,8 +872,11 @@ jobs:
 
           cat > /root/AoDaiNhaUyen/frontend-admin/start.sh << 'STARTEOF'
           #!/bin/bash
+          set -a
+          . /root/AoDaiNhaUyen/backend/runtime-env.sh
+          set +a
           cd /root/AoDaiNhaUyen/frontend-admin/dist
-          /root/.bun/bin/serve -s -l 3101 .
+          /root/.bun/bin/serve -s -l ${AdminFrontendPort:-3101} .
           STARTEOF
           chmod +x /root/AoDaiNhaUyen/frontend-admin/start.sh
 
