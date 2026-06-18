@@ -10,8 +10,10 @@ interface ResultPanelProps {
   isProcessing: boolean;
   isPurchasing?: boolean;
   errorMessage?: string | null;
+  canSendFeedback?: boolean;
   onTryonClick: () => void;
   onBuyNowClick: () => void;
+  onFeedbackClick?: () => void;
 }
 
 export default function ResultPanel({
@@ -20,8 +22,10 @@ export default function ResultPanel({
   isProcessing,
   isPurchasing = false,
   errorMessage,
+  canSendFeedback = false,
   onTryonClick,
   onBuyNowClick,
+  onFeedbackClick,
 }: ResultPanelProps) {
   const isEnabled = tryonResult ? !isPurchasing : canTryOn && !isProcessing;
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -61,6 +65,15 @@ export default function ResultPanel({
                   >
                     Xem ảnh
                   </button>
+                  {canSendFeedback && onFeedbackClick ? (
+                    <button
+                      type="button"
+                      className={styles.resultActionFeedback}
+                      onClick={onFeedbackClick}
+                    >
+                      Gửi đánh giá
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className={styles.resultActionSecondary}
