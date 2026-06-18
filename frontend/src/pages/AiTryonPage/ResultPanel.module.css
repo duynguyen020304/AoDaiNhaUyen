@@ -69,6 +69,7 @@
 }
 
 .resultAction,
+.resultActionFeedback,
 .resultActionSecondary {
   display: inline-flex;
   align-items: center;
@@ -92,6 +93,18 @@
 
 .resultAction:hover {
   background: rgba(255, 255, 255, 0.68);
+  transform: translateY(-1px);
+}
+
+.resultActionFeedback {
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(17, 24, 39, 0.52);
+  color: #FFFFFF;
+  backdrop-filter: blur(10px);
+}
+
+.resultActionFeedback:hover {
+  background: rgba(17, 24, 39, 0.66);
   transform: translateY(-1px);
 }
 
@@ -220,6 +233,7 @@
   }
 
   .resultAction,
+  .resultActionFeedback,
   .resultActionSecondary {
     min-height: 32px;
     padding: 0 10px;

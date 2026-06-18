@@ -67,9 +67,11 @@ export default function AiTryonPage() {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [generatedImageId, setGeneratedImageId] = useState<string | null>(null);
+  const [feedbackSubmittedImageId, setFeedbackSubmittedImageId] = useState<string | null>(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackRating, setFeedbackRating] = useState(5);
   const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackSuccessMessage, setFeedbackSuccessMessage] = useState<string | null>(null);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [tryonError, setTryonError] = useState<string | null>(null);
@@ -131,6 +133,7 @@ export default function AiTryonPage() {
     setUserPhotoSource('file');
     setTryonResult(null);
     setGeneratedImageId(null);
+    setFeedbackSuccessMessage(null);
     setShowFeedbackModal(false);
     setTryonError(null);
     setSelectedAccessories([]);
@@ -157,6 +160,7 @@ export default function AiTryonPage() {
     setUserPhotoSource('paste');
     setTryonResult(null);
     setGeneratedImageId(null);
+    setFeedbackSuccessMessage(null);
     setShowFeedbackModal(false);
     setTryonError(null);
     setSelectedAccessories([]);
@@ -192,6 +196,7 @@ export default function AiTryonPage() {
     });
     setTryonResult(null);
     setGeneratedImageId(null);
+    setFeedbackSuccessMessage(null);
     setShowFeedbackModal(false);
   }, []);
 
@@ -200,6 +205,7 @@ export default function AiTryonPage() {
     setSelectedGarmentItem(item);
     setTryonResult(null);
     setGeneratedImageId(null);
+    setFeedbackSuccessMessage(null);
     setShowFeedbackModal(false);
     setTryonError(null);
   }, []);
@@ -224,6 +230,7 @@ export default function AiTryonPage() {
     }
 
     void trackEvent({ eventType: 'ai_tryon_started', productId: garment.productId, productVariantId: garment.defaultVariantId, metadata: { accessoryProductIds: selectedAccessories } });
+    setFeedbackSuccessMessage(null);
     setIsProcessing(true);
     setTryonError(null);
 
@@ -238,15 +245,17 @@ export default function AiTryonPage() {
       void trackEvent({ eventType: 'ai_tryon_completed', productId: garment.productId, productVariantId: garment.defaultVariantId, metadata: { accessoryProductIds: selectedAccessories } });
       setTryonResult(result.resultImageUrl);
       setGeneratedImageId(result.generatedImageId);
+      setFeedbackSubmittedImageId(null);
       if (result.generatedImageId) {
         setFeedbackRating(5);
         setFeedbackComment('');
         setFeedbackError(null);
-        setShowFeedbackModal(true);
+        setShowFeedbackModal(false);
       }
     } catch (error) {
       setTryonResult(null);
       setGeneratedImageId(null);
+      setFeedbackSuccessMessage(null);
       setTryonError(error instanceof Error ? error.message : 'Không thể tạo ảnh thử đồ.');
     } finally {
       setIsProcessing(false);
@@ -267,6 +276,8 @@ export default function AiTryonPage() {
         rating: feedbackRating,
         comment: feedbackComment.trim() || undefined,
       });
+      setFeedbackSuccessMessage('Cảm ơn bạn! Đánh giá đã được gửi thành công.');
+      setFeedbackSubmittedImageId(generatedImageId);
       setShowFeedbackModal(false);
       setFeedbackComment('');
     } catch (error) {
@@ -429,12 +440,37 @@ export default function AiTryonPage() {
               isProcessing={catalogLoading || isProcessing}
               isPurchasing={isPurchasing}
               errorMessage={tryonError}
+              canSendFeedback={!!generatedImageId && feedbackSubmittedImageId !== generatedImageId}
+              onFeedbackClick={() => {
+                setFeedbackError(null);
+                setShowFeedbackModal(true);
+              }}
               onTryonClick={handleTryonClick}
               onBuyNowClick={handleBuyNowClick}
             />
           </div>
         </motion.div>
       </motion.section>
+
+      {feedbackSuccessMessage ? (
+        <motion.div
+          className={styles.feedbackSuccessToast}
+          role="status"
+          aria-live="polite"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 14 }}
+        >
+          <span>{feedbackSuccessMessage}</span>
+          <button
+            type="button"
+            onClick={() => setFeedbackSuccessMessage(null)}
+            aria-label="Đóng thông báo"
+          >
+            ×
+          </button>
+        </motion.div>
+      ) : null}
 
       {showFeedbackModal ? (
         <div
