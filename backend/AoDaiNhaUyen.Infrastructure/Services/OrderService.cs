@@ -6,7 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
-public sealed class OrderService(AppDbContext dbContext, IStockService stockService) : IOrderService
+public sealed class OrderService(
+  AppDbContext dbContext,
+  IStockService stockService,
+  IHermesEventOutboxPublisher hermesEvents) : IOrderService
 {
   private static readonly Dictionary<string, string[]> AllowedTransitions = new(StringComparer.OrdinalIgnoreCase)
   {
@@ -29,6 +32,7 @@ public sealed class OrderService(AppDbContext dbContext, IStockService stockServ
     if (!allowed.Contains(newStatus, StringComparer.OrdinalIgnoreCase))
       return Fail("invalid_transition", $"Không thể chuyển từ '{order.OrderStatus}' sang '{newStatus}'.", orderId);
 
+    var oldStatus = order.OrderStatus;
     var now = DateTime.UtcNow;
     order.OrderStatus = newStatus;
     order.UpdatedAt = now;
@@ -40,6 +44,26 @@ public sealed class OrderService(AppDbContext dbContext, IStockService stockServ
       order.CancelledAt = now;
       await RestoreStockForOrder(order, cancellationToken);
     }
+
+    await hermesEvents.EnqueueAdminOrderEventAsync(
+      "order_status_changed",
+      order.Id,
+      new
+      {
+        orderId = order.Id,
+        orderCode = order.OrderCode,
+        oldStatus,
+        newStatus,
+        totalAmount = order.TotalAmount,
+        subtotal = order.Subtotal,
+        discountAmount = order.DiscountAmount,
+        shippingFee = order.ShippingFee,
+        province = order.Province,
+        district = order.District,
+        changedAt = now
+      },
+      $"order_status_changed:Order:{order.Id:N}:{oldStatus}:{newStatus}:{now.Ticks}",
+      cancellationToken);
 
     await dbContext.SaveChangesAsync(cancellationToken);
     return new OrderUpdateResult(true, null, null, orderId, newStatus);
@@ -71,6 +95,20 @@ public sealed class OrderService(AppDbContext dbContext, IStockService stockServ
     order.OrderStatus = "shipping";
     order.UpdatedAt = now;
 
+    await hermesEvents.EnqueueAdminOrderEventAsync(
+      "shipment_created",
+      order.Id,
+      new { orderId = order.Id, orderCode = order.OrderCode, shipmentId = shipment.Id, carrier, trackingNumber, shippingStatus = shipment.ShippingStatus },
+      $"shipment_created:Order:{order.Id:N}:{shipment.Id:N}:{now.Ticks}",
+      cancellationToken);
+
+    await hermesEvents.EnqueueAdminOrderEventAsync(
+      "order_status_changed",
+      order.Id,
+      new { orderId = order.Id, orderCode = order.OrderCode, oldStatus = "processing", newStatus = "shipping", totalAmount = order.TotalAmount },
+      $"order_status_changed:Order:{order.Id:N}:processing:shipping:{now.Ticks}",
+      cancellationToken);
+
     await dbContext.SaveChangesAsync(cancellationToken);
     return new OrderUpdateResult(true, null, null, orderId, "shipping");
   }
@@ -85,6 +123,7 @@ public sealed class OrderService(AppDbContext dbContext, IStockService stockServ
     if (!validShippingStatuses.Contains(newStatus, StringComparer.OrdinalIgnoreCase))
       return Fail("invalid_status", $"Trạng thái shipment '{newStatus}' không hợp lệ.", shipment.OrderId);
 
+    var oldShippingStatus = shipment.ShippingStatus;
     shipment.ShippingStatus = newStatus;
 
     if (newStatus is "delivered")
@@ -97,6 +136,13 @@ public sealed class OrderService(AppDbContext dbContext, IStockService stockServ
         order.CompletedAt = DateTime.UtcNow;
       }
     }
+
+    await hermesEvents.EnqueueAdminOrderEventAsync(
+      "shipment_status_changed",
+      shipment.OrderId,
+      new { orderId = shipment.OrderId, shipmentId = shipment.Id, oldStatus = oldShippingStatus, newStatus, deliveredAt = shipment.DeliveredAt },
+      $"shipment_status_changed:Order:{shipment.OrderId:N}:{shipment.Id:N}:{oldShippingStatus}:{newStatus}:{DateTime.UtcNow.Ticks}",
+      cancellationToken);
 
     await dbContext.SaveChangesAsync(cancellationToken);
     return new OrderUpdateResult(true, null, null, shipment.OrderId, newStatus);
@@ -112,12 +158,21 @@ public sealed class OrderService(AppDbContext dbContext, IStockService stockServ
     if (!cancellableStatuses.Contains(order.OrderStatus, StringComparer.OrdinalIgnoreCase))
       return Fail("cannot_cancel", $"Đơn hàng ở trạng thái '{order.OrderStatus}' không thể hủy.", orderId);
 
+    var oldStatus = order.OrderStatus;
     var now = DateTime.UtcNow;
     order.OrderStatus = "cancelled";
     order.CancelledAt = now;
     order.UpdatedAt = now;
 
     await RestoreStockForOrder(order, cancellationToken);
+
+    await hermesEvents.EnqueueAdminOrderEventAsync(
+      "order_status_changed",
+      order.Id,
+      new { orderId = order.Id, orderCode = order.OrderCode, oldStatus, newStatus = "cancelled", totalAmount = order.TotalAmount },
+      $"order_status_changed:Order:{order.Id:N}:{oldStatus}:cancelled:{now.Ticks}",
+      cancellationToken);
+
     await dbContext.SaveChangesAsync(cancellationToken);
     return new OrderUpdateResult(true, null, null, orderId, "cancelled");
   }

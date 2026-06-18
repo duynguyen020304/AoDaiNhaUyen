@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { PanelLeft } from 'lucide-react'
+import { FileText, MessageSquare, PanelLeft } from 'lucide-react'
 import { FullChatArea } from '@/components/ai/FullChatArea'
 import { ChatHistorySidebar } from '@/components/ai/ChatHistorySidebar'
 import { useAdminAiStore } from '@/stores/adminAiStore'
@@ -61,7 +61,6 @@ export function AiChatPage() {
           />
         )}
 
-        {/* Chat history sidebar */}
         <div
           className={`${
             sidebarOpen ? 'w-72' : 'w-0'
@@ -74,9 +73,28 @@ export function AiChatPage() {
           }} />
         </div>
 
-        {/* Chat area */}
-        <div className="flex-1 min-w-0 h-full">
-          <FullChatArea />
+        <div className="flex-1 min-w-0 h-full flex flex-col">
+          <div className="flex shrink-0 gap-2 border-b border-gray-200 bg-white px-4 py-2">
+            <button
+              type="button"
+              onClick={() => navigate(activeConversationId ? `/admin/ai-chat/${activeConversationId}` : '/admin/ai-chat')}
+              className="inline-flex items-center gap-2 rounded-lg bg-wine px-3 py-2 text-sm font-medium text-white"
+            >
+              <MessageSquare className="size-4" />
+              Chat Hermes
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/admin/hermes-reports')}
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+            >
+              <FileText className="size-4" />
+              Báo cáo Hermes
+            </button>
+          </div>
+          <div className="min-h-0 flex-1">
+            <FullChatArea />
+          </div>
         </div>
       </div>
     </div>

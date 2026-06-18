@@ -56,6 +56,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<BlogCategory> BlogCategories => Set<BlogCategory>();
   public DbSet<BlogPost> BlogPosts => Set<BlogPost>();
   public DbSet<BlogImage> BlogImages => Set<BlogImage>();
+  public DbSet<HermesReport> HermesReports => Set<HermesReport>();
+  public DbSet<HermesRun> HermesRuns => Set<HermesRun>();
+  public DbSet<HermesHeartbeat> HermesHeartbeats => Set<HermesHeartbeat>();
+  public DbSet<HermesEventOutbox> HermesEventOutbox => Set<HermesEventOutbox>();
   public DbSet<OrderPromoCostSnapshot> OrderPromoCostSnapshots => Set<OrderPromoCostSnapshot>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -715,6 +719,88 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => x.ConversationId).HasDatabaseName("idx_llm_audit_logs_conversation_id");
       builder.HasIndex(x => x.RequestId).HasDatabaseName("idx_llm_audit_logs_request_id");
       builder.HasIndex(x => new { x.Provider, x.Model }).HasDatabaseName("idx_llm_audit_logs_provider_model");
+    });
+
+    modelBuilder.Entity<HermesRun>(builder =>
+    {
+      builder.ToTable("hermes_runs");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Status).HasMaxLength(40).IsRequired();
+      builder.Property(x => x.Trigger).HasMaxLength(80).IsRequired();
+      builder.Property(x => x.ConversationId).HasMaxLength(160);
+      builder.Property(x => x.PromptPreview).HasMaxLength(500).IsRequired();
+      builder.Property(x => x.ResultPreview).HasMaxLength(1000);
+      builder.Property(x => x.Error).HasMaxLength(1000);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.Status, x.StartedAt }).HasDatabaseName("idx_hermes_runs_status_started_at");
+      builder.HasIndex(x => new { x.Trigger, x.StartedAt }).HasDatabaseName("idx_hermes_runs_trigger_started_at");
+      builder.HasIndex(x => x.AdminUserId).HasDatabaseName("idx_hermes_runs_admin_user_id");
+      builder.HasIndex(x => x.ConversationId).HasDatabaseName("idx_hermes_runs_conversation_id");
+    });
+
+    modelBuilder.Entity<HermesReport>(builder =>
+    {
+      builder.ToTable("hermes_reports");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.ReportType).HasMaxLength(80).IsRequired();
+      builder.Property(x => x.Severity).HasMaxLength(30).HasDefaultValue("info").IsRequired();
+      builder.Property(x => x.Title).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.Summary).HasMaxLength(4000).IsRequired();
+      builder.Property(x => x.PayloadJson).HasColumnType("jsonb");
+      builder.Property(x => x.Source).HasMaxLength(80).HasDefaultValue("hermes_agent").IsRequired();
+      builder.Property(x => x.CorrelationId).HasMaxLength(128);
+      builder.Property(x => x.Status).HasMaxLength(40).HasDefaultValue("open").IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.Severity, x.CreatedAt }).HasDatabaseName("idx_hermes_reports_severity_created_at");
+      builder.HasIndex(x => new { x.ReportType, x.CreatedAt }).HasDatabaseName("idx_hermes_reports_type_created_at");
+      builder.HasIndex(x => new { x.Status, x.CreatedAt }).HasDatabaseName("idx_hermes_reports_status_created_at");
+      builder.HasIndex(x => x.RunId).HasDatabaseName("idx_hermes_reports_run_id");
+      builder.HasIndex(x => x.CorrelationId).HasDatabaseName("idx_hermes_reports_correlation_id");
+      builder.HasOne(x => x.Run).WithMany(x => x.Reports).HasForeignKey(x => x.RunId).OnDelete(DeleteBehavior.SetNull);
+      builder.ToTable(t => t.HasCheckConstraint("ck_hermes_reports_severity", "severity IN ('info', 'warning', 'high', 'critical')"));
+    });
+
+    modelBuilder.Entity<HermesHeartbeat>(builder =>
+    {
+      builder.ToTable("hermes_heartbeats");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.RunnerName).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.Status).HasMaxLength(80).IsRequired();
+      builder.Property(x => x.Model).HasMaxLength(160);
+      builder.Property(x => x.GatewayStatus).HasMaxLength(120);
+      builder.Property(x => x.LastError).HasMaxLength(1000);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.RunnerName, x.RecordedAt }).HasDatabaseName("idx_hermes_heartbeats_runner_recorded_at");
+    });
+
+    modelBuilder.Entity<HermesEventOutbox>(builder =>
+    {
+      builder.ToTable("hermes_event_outbox");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.EventType).HasMaxLength(100).IsRequired();
+      builder.Property(x => x.AggregateType).HasMaxLength(80).IsRequired();
+      builder.Property(x => x.AggregateId).HasMaxLength(128).IsRequired();
+      builder.Property(x => x.PayloadJson).HasColumnType("jsonb").IsRequired();
+      builder.Property(x => x.Status).HasMaxLength(40).HasDefaultValue("pending").IsRequired();
+      builder.Property(x => x.MaxAttempts).HasDefaultValue(5).IsRequired();
+      builder.Property(x => x.LastError).HasMaxLength(1000);
+      builder.Property(x => x.CorrelationId).HasMaxLength(128);
+      builder.Property(x => x.IdempotencyKey).HasMaxLength(200);
+      builder.Property(x => x.LockedBy).HasMaxLength(120);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.Status, x.ScheduledAt, x.OccurredAt }).HasDatabaseName("idx_hermes_event_outbox_status_schedule");
+      builder.HasIndex(x => new { x.EventType, x.OccurredAt }).HasDatabaseName("idx_hermes_event_outbox_type_occurred_at");
+      builder.HasIndex(x => new { x.AggregateType, x.AggregateId }).HasDatabaseName("idx_hermes_event_outbox_aggregate");
+      builder.HasIndex(x => x.CorrelationId).HasDatabaseName("idx_hermes_event_outbox_correlation_id");
+      builder.HasIndex(x => x.IdempotencyKey)
+        .IsUnique()
+        .HasFilter("idempotency_key IS NOT NULL")
+        .HasDatabaseName("ux_hermes_event_outbox_idempotency_key");
+      builder.ToTable(t => t.HasCheckConstraint("ck_hermes_event_outbox_status", "status IN ('pending','processing','completed','failed','dead','cancelled')"));
     });
 
     modelBuilder.Entity<OrderAttribution>(builder =>

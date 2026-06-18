@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, FileSearch, Newspaper, Megaphone, Send, PanelLeftClose, PanelLeftOpen, MessageSquareText, Sparkles } from 'lucide-react'
+import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, FileSearch, FileText, Newspaper, Megaphone, Send, PanelLeftClose, PanelLeftOpen, MessageSquareText, Sparkles } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { to: '/admin/reviews', icon: MessageSquareText, label: 'Đánh giá', end: false },
   { to: '/admin/ai-tryon-feedback', icon: Sparkles, label: 'Đánh giá AI try-on', end: false },
   { to: '/admin/ai-chat', icon: Bot, label: 'AI Trợ lý', end: false },
+  { to: '/admin/hermes-reports', icon: FileText, label: 'Báo cáo Hermes', end: true },
   { to: '/admin/llm-logs', icon: FileSearch, label: 'Nhật ký LLM', end: false },
   { to: '/admin/tools-risk', icon: Settings2, label: 'Cấu hình AI', end: false },
 ] as const
@@ -141,7 +142,7 @@ export function AdminLayout() {
   const toggleAi = useAdminAiStore((s) => s.toggle)
   const closeAi = useAdminAiStore((s) => s.close)
   const location = useLocation()
-  const isChatPage = location.pathname.startsWith('/admin/ai-chat')
+  const isChatPage = location.pathname.startsWith('/admin/ai-chat') || location.pathname === '/admin/hermes-reports'
 
   // Auto-close widget when navigating to full chat page
   useEffect(() => {

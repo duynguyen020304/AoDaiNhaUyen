@@ -7,7 +7,8 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 
 public sealed class AdminMediaService(
   AppDbContext dbContext,
-  IStorageService storageService) : IAdminMediaService
+  IStorageService storageService,
+  IHermesEventOutboxPublisher hermesEvents) : IAdminMediaService
 {
   public async Task<UserImageListDto> GetAllAsync(
     int page,
@@ -129,6 +130,16 @@ public sealed class AdminMediaService(
     entity.IsDeleted = true;
     entity.DeletedAt = DateTime.UtcNow;
     await dbContext.SaveChangesAsync(ct);
+
+    await hermesEvents.EnqueueAdminEventAsync(
+      "media_deleted",
+      "Media",
+      entity.Id.ToString("N"),
+      new { mediaId = entity.Id, kind = entity.Kind, sourceType = entity.SourceType, fileName = entity.OriginalFileName, objectKey = entity.ObjectKey, fileSizeBytes = entity.FileSizeBytes },
+      $"media_deleted:Media:{entity.Id:N}:{entity.DeletedAt.GetValueOrDefault().Ticks}",
+      null,
+      ct);
+
     return true;
   }
 

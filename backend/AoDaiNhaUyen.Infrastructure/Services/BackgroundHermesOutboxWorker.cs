@@ -1,0 +1,139 @@
+using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Application.Options;
+using AoDaiNhaUyen.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace AoDaiNhaUyen.Infrastructure.Services;
+
+public sealed class BackgroundHermesOutboxWorker(
+  IServiceScopeFactory scopeFactory,
+  IOptions<HermesOutboxOptions> options,
+  ILogger<BackgroundHermesOutboxWorker> logger) : BackgroundService
+{
+  private readonly HermesOutboxOptions _options = options.Value;
+
+  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+  {
+    while (!stoppingToken.IsCancellationRequested)
+    {
+      try
+      {
+        if (_options.Enabled)
+        {
+          await ProcessBatchAsync(stoppingToken);
+        }
+      }
+      catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+      {
+        break;
+      }
+      catch (Exception ex)
+      {
+        logger.LogError(ex, "Hermes outbox worker lỗi.");
+      }
+
+      await Task.Delay(TimeSpan.FromSeconds(Math.Max(1, _options.PollIntervalSeconds)), stoppingToken);
+    }
+  }
+
+  private async Task ProcessBatchAsync(CancellationToken cancellationToken)
+  {
+    using var scope = scopeFactory.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var processor = scope.ServiceProvider.GetRequiredService<IHermesEventProcessor>();
+
+    await RequeueStaleProcessingAsync(dbContext, cancellationToken);
+
+    var runner = string.IsNullOrWhiteSpace(_options.RunnerName) ? "aodai-hermes-outbox-worker" : _options.RunnerName;
+    var batchSize = Math.Clamp(_options.BatchSize, 1, 100);
+
+    var claimedIds = await dbContext.Database
+      .SqlQueryRaw<Guid>(
+        """
+        UPDATE hermes_event_outbox
+        SET status = 'processing', locked_by = {0}, locked_at = NOW(), updated_at = NOW()
+        WHERE id IN (
+          SELECT id
+          FROM hermes_event_outbox
+          WHERE status IN ('pending','failed')
+            AND scheduled_at <= NOW()
+            AND attempts < max_attempts
+          ORDER BY scheduled_at, occurred_at
+          FOR UPDATE SKIP LOCKED
+          LIMIT {1}
+        )
+        RETURNING id AS "Value"
+        """,
+        runner,
+        batchSize)
+      .ToListAsync(cancellationToken);
+
+    foreach (var id in claimedIds)
+    {
+      var item = await dbContext.HermesEventOutbox.FirstAsync(x => x.Id == id, cancellationToken);
+      await ProcessItemAsync(dbContext, processor, item, cancellationToken);
+    }
+  }
+
+  private async Task RequeueStaleProcessingAsync(AppDbContext dbContext, CancellationToken cancellationToken)
+  {
+    var staleBefore = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromMinutes(Math.Max(1, _options.LockTimeoutMinutes)));
+
+    await dbContext.HermesEventOutbox
+      .Where(x => x.Status == "processing" && x.LockedAt < staleBefore && x.Attempts < x.MaxAttempts)
+      .ExecuteUpdateAsync(setters => setters
+        .SetProperty(x => x.Status, "failed")
+        .SetProperty(x => x.LockedAt, (DateTimeOffset?)null)
+        .SetProperty(x => x.LockedBy, (string?)null)
+        .SetProperty(x => x.LastError, "Hermes worker recovered stale processing event.")
+        .SetProperty(x => x.UpdatedAt, DateTime.UtcNow), cancellationToken);
+
+    await dbContext.HermesEventOutbox
+      .Where(x => x.Status == "processing" && x.LockedAt < staleBefore && x.Attempts >= x.MaxAttempts)
+      .ExecuteUpdateAsync(setters => setters
+        .SetProperty(x => x.Status, "dead")
+        .SetProperty(x => x.LockedAt, (DateTimeOffset?)null)
+        .SetProperty(x => x.LockedBy, (string?)null)
+        .SetProperty(x => x.LastError, "Hermes worker marked stale event dead.")
+        .SetProperty(x => x.ProcessedAt, DateTimeOffset.UtcNow)
+        .SetProperty(x => x.UpdatedAt, DateTime.UtcNow), cancellationToken);
+  }
+
+  private static async Task ProcessItemAsync(
+    AppDbContext dbContext,
+    IHermesEventProcessor processor,
+    Domain.Entities.HermesEventOutbox item,
+    CancellationToken cancellationToken)
+  {
+    try
+    {
+      await processor.ProcessAsync(item, cancellationToken);
+      item.Status = "completed";
+      item.ProcessedAt = DateTimeOffset.UtcNow;
+      item.LockedAt = null;
+      item.LockedBy = null;
+      item.LastError = null;
+      item.UpdatedAt = DateTime.UtcNow;
+    }
+    catch (Exception ex)
+    {
+      item.Attempts += 1;
+      item.Status = item.Attempts >= item.MaxAttempts ? "dead" : "failed";
+      item.LastError = Truncate(ex.Message, 1000);
+      item.ScheduledAt = DateTimeOffset.UtcNow.AddMinutes(Math.Min(Math.Pow(2, item.Attempts), 60));
+      item.ProcessedAt = item.Status == "dead" ? DateTimeOffset.UtcNow : null;
+      item.LockedAt = null;
+      item.LockedBy = null;
+      item.UpdatedAt = DateTime.UtcNow;
+    }
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private static string Truncate(string? text, int max) =>
+    string.IsNullOrEmpty(text) || text.Length <= max ? text ?? string.Empty : text[..max] + "…";
+}

@@ -14,6 +14,7 @@ import { UsersPage } from '@/pages/UsersPage'
 import { RolesPage } from '@/pages/RolesPage'
 import { MediaPage } from '@/pages/MediaPage'
 import { AiChatPage } from '@/pages/AiChatPage'
+import { HermesReportsPage } from '@/pages/HermesReportsPage'
 import { OrdersPage } from '@/pages/OrdersPage'
 import { ReviewsPage } from '@/pages/ReviewsPage'
 import { ToolRiskPage } from '@/pages/ToolRiskPage'
@@ -77,6 +78,7 @@ export function App() {
             <Route path="ai-tryon-feedback" element={<AiTryOnFeedbackPage />} />
             <Route path="ai-chat" element={<AiChatPage />} />
             <Route path="ai-chat/:chatId" element={<AiChatPage />} />
+            <Route path="hermes-reports" element={<HermesReportsPage />} />
             <Route path="llm-logs" element={<LlmLogsPage />} />
             <Route path="tools-risk" element={<ToolRiskPage />} />
           </Route>

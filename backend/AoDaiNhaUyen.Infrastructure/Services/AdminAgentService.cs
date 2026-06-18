@@ -250,6 +250,29 @@ public sealed class AdminAgentService : IAdminAgentService
         ("maxUses", O("integer", "Số lần sử dụng tối đa. Mặc định: 0 (không giới hạn)")),
         ("endDate", O("string", "Ngày hết hạn (ISO). Mặc định: 30 ngày nữa")))),
 
+    T("get_promo_code", "Xem chi tiết một mã khuyến mãi theo ID.",
+      P(("promoId", O("string", "ID mã khuyến mãi (GUID)")))),
+
+    T("update_promo_code", "Cập nhật mã khuyến mãi. Chỉ đổi các trường được cung cấp.",
+      P(
+        ("promoId", O("string", "ID mã khuyến mãi (GUID) — bắt buộc")),
+        ("code", O("string", "Mã mới (viết hoa, không dấu)")),
+        ("discountType", O("string", "Loại: percentage hoặc fixed")),
+        ("discountValue", O("number", "Giá trị giảm")),
+        ("minOrderAmount", O("number", "Đơn hàng tối thiểu")),
+        ("maxUses", O("integer", "Số lần sử dụng tối đa")),
+        ("isActive", O("boolean", "Bật/tắt")),
+        ("freeShipping", O("boolean", "Freeship")),
+        ("endDate", O("string", "Ngày hết hạn (ISO)")))),
+
+    T("toggle_promo_code", "Bật hoặc tắt mã khuyến mãi.",
+      P(
+        ("promoId", O("string", "ID mã khuyến mãi (GUID)")),
+        ("isActive", O("boolean", "true để bật, false để tắt")))),
+
+    T("delete_promo_code", "Xóa mềm mã khuyến mãi. Có thể khôi phục.",
+      P(("promoId", O("string", "ID mã khuyến mãi (GUID)")))),
+
     // Phase 3: Intelligence
     T("generate_product_description", "Tạo mô tả sản phẩm bằng AI (tiếng Việt). Dùng khi tạo hoặc cải thiện mô tả sản phẩm.",
       P(
@@ -765,6 +788,10 @@ public sealed class AdminAgentService : IAdminAgentService
         // Promotions
         "list_promo_codes" => await ListPromoCodes(ct),
         "create_promo_code" => await CreatePromoCode(args, ct),
+        "get_promo_code" => await GetPromoCode(args, ct),
+        "update_promo_code" => await UpdatePromoCode(args, ct),
+        "toggle_promo_code" => await TogglePromoCode(args, ct),
+        "delete_promo_code" => await DeletePromoCode(args, ct),
 
         // Purchase Note + Daily Report
         "create_purchase_note" => CreatePurchaseNote(args),
@@ -841,15 +868,14 @@ public sealed class AdminAgentService : IAdminAgentService
     var requiresExplicitId = toolName is
       "update_product" or "delete_product" or "toggle_product_status" or
       "update_user_status" or "update_user_role" or
-      "delete_category" or "update_category";
+      "delete_category" or "update_category" or
+      "update_promo_code" or "toggle_promo_code" or "delete_promo_code" or "get_promo_code";
 
     if (!requiresExplicitId) return null;
 
-    var idName = toolName.Contains("user", StringComparison.OrdinalIgnoreCase)
-      ? "id"
-      : toolName.Contains("category", StringComparison.OrdinalIgnoreCase)
-        ? "id"
-        : "id";
+    var idName = toolName.Contains("promo", StringComparison.OrdinalIgnoreCase)
+      ? "promoId"
+      : "id";
 
     var hasId = args.TryGetProperty(idName, out var idElement)
       && idElement.ValueKind == JsonValueKind.String
@@ -1447,6 +1473,91 @@ TỔNG QUAN:
     return result.Success
       ? $"✅ {result.Message}"
       : $"❌ {result.Message}";
+  }
+
+  private async Task<string> GetPromoCode(JsonElement args, CancellationToken ct)
+  {
+    var id = RequiredGuid(args, "promoId");
+    var promo = await _promos.GetByIdAsync(id, ct);
+    if (promo is null) return "❌ Không tìm thấy mã khuyến mãi.";
+
+    var discount = promo.DiscountType == "percentage"
+      ? $"{promo.DiscountValue}%"
+      : $"{promo.DiscountValue:N0}đ";
+    return $"🎫 Chi tiết mã {promo.Code}:\n" +
+           $"- Giảm: {discount}\n" +
+           $"- Đơn tối thiểu: {promo.MinOrderAmount:N0}đ\n" +
+           $"- Đã dùng: {promo.CurrentUses}/{(promo.MaxUses > 0 ? promo.MaxUses.ToString() : "∞")}\n" +
+           $"- Hoạt động: {(promo.IsActive ? "✅" : "❌")}\n" +
+           $"- Freeship: {(promo.FreeShipping ? "Có" : "Không")}\n" +
+           $"- Hiệu lực: {promo.StartDate:dd/MM/yyyy} - {promo.EndDate:dd/MM/yyyy}\n" +
+           $"- ID: {promo.Id}";
+  }
+
+  private async Task<string> UpdatePromoCode(JsonElement args, CancellationToken ct)
+  {
+    var id = RequiredGuid(args, "promoId");
+    var existing = await _promos.GetByIdAsync(id, ct);
+    if (existing is null) return "❌ Không tìm thấy mã khuyến mãi.";
+
+    var code = GetStrArg(args, "code");
+    if (!string.IsNullOrWhiteSpace(code))
+      code = code.Trim().ToUpperInvariant();
+    else
+      code = existing.Code;
+
+    var discountType = OptionalEnum(args, "discountType", "percentage", "fixed") ?? existing.DiscountType;
+    var discountValue = GetDecimalArg(args, "discountValue", existing.DiscountValue);
+    var minOrderAmount = GetDecimalArg(args, "minOrderAmount", existing.MinOrderAmount);
+    var maxUses = GetIntArg(args, "maxUses", existing.MaxUses);
+    var isActive = GetBoolArg(args, "isActive", existing.IsActive);
+    var freeShipping = GetBoolArg(args, "freeShipping", existing.FreeShipping);
+
+    var endDateStr = GetOptionalString(args, "endDate", 40);
+    var startDate = existing.StartDate.UtcDateTime;
+    var endDate = existing.EndDate.UtcDateTime;
+    if (endDateStr is not null && DateTime.TryParse(endDateStr, out var parsed))
+      endDate = parsed;
+
+    if (discountType == "percentage")
+      discountValue = ClampDecimal(discountValue, 1m, 100m);
+    else
+      discountValue = ClampDecimal(discountValue, 1000m, 100000000m);
+
+    var request = new UpdatePromoRequest
+    {
+      Code = code,
+      DiscountType = discountType,
+      DiscountValue = discountValue,
+      MinOrderAmount = minOrderAmount,
+      MaxUses = maxUses,
+      StartDate = startDate,
+      EndDate = endDate,
+      IsActive = isActive,
+      FreeShipping = freeShipping
+    };
+
+    var updated = await _promos.UpdateAsync(id, request, ct);
+    if (updated is null) return "❌ Không thể cập nhật mã khuyến mãi.";
+    return $"✅ Đã cập nhật mã {updated.Code}. Giảm {(updated.DiscountType == "percentage" ? $"{updated.DiscountValue}%" : $"{updated.DiscountValue:N0}đ")}, hoạt động: {(updated.IsActive ? "✅" : "❌")}.";
+  }
+
+  private async Task<string> TogglePromoCode(JsonElement args, CancellationToken ct)
+  {
+    var id = RequiredGuid(args, "promoId");
+    var isActive = GetBoolArg(args, "isActive", true);
+
+    var ok = await _promos.ToggleActiveAsync(id, isActive, ct);
+    if (!ok) return "❌ Không tìm thấy mã khuyến mãi hoặc đã bị xóa.";
+    return isActive ? "✅ Đã bật mã khuyến mãi." : "✅ Đã tắt mã khuyến mãi.";
+  }
+
+  private async Task<string> DeletePromoCode(JsonElement args, CancellationToken ct)
+  {
+    var id = RequiredGuid(args, "promoId");
+    var ok = await _promos.DeleteAsync(id, ct);
+    if (!ok) return "❌ Không tìm thấy mã khuyến mãi hoặc đã bị xóa.";
+    return "✅ Đã xóa mềm mã khuyến mãi. Có thể khôi phục.";
   }
 
   // --- Phase 3: Intelligence tools ---

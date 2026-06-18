@@ -10,6 +10,7 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 /// <summary>Admin promo code management service implementation.</summary>
 public sealed class AdminPromoService(
   AppDbContext dbContext,
+  IHermesEventOutboxPublisher hermesEvents,
   ILogger<AdminPromoService> logger) : IAdminPromoService
 {
   public async Task<(IReadOnlyList<AdminPromoListItemResponse> Items, int TotalItem)> GetAllAdminAsync(
@@ -99,6 +100,13 @@ public sealed class AdminPromoService(
     };
 
     dbContext.PromoCodes.Add(promo);
+    await hermesEvents.EnqueueAdminPromotionEventAsync(
+      "promo_created",
+      promo.Id,
+      new { promoId = promo.Id, promo.Code, promo.DiscountType, promo.DiscountValue, promo.MinOrderAmount, promo.MaxUses, promo.IsActive, promo.FreeShipping, promo.StartDate, promo.EndDate },
+      $"promo_created:Promotion:{promo.Id:N}:{promo.CreatedAt.Ticks}",
+      cancellationToken);
+
     await dbContext.SaveChangesAsync(cancellationToken);
 
     logger.LogInformation("Admin created promo code {PromoId} ({Code})", promo.Id, promo.Code);
@@ -134,6 +142,13 @@ public sealed class AdminPromoService(
     promo.EndDate = endDate;
     promo.UpdatedAt = DateTime.UtcNow;
 
+    await hermesEvents.EnqueueAdminPromotionEventAsync(
+      "promo_updated",
+      promo.Id,
+      new { promoId = promo.Id, promo.Code, promo.DiscountType, promo.DiscountValue, promo.MinOrderAmount, promo.MaxUses, promo.IsActive, promo.FreeShipping, promo.StartDate, promo.EndDate },
+      $"promo_updated:Promotion:{promo.Id:N}:{promo.UpdatedAt.Ticks}",
+      cancellationToken);
+
     await dbContext.SaveChangesAsync(cancellationToken);
 
     logger.LogInformation("Admin updated promo code {PromoId} ({Code})", promo.Id, promo.Code);
@@ -157,6 +172,13 @@ public sealed class AdminPromoService(
     promo.DeletedAt = now;
     promo.UpdatedAt = now;
 
+    await hermesEvents.EnqueueAdminPromotionEventAsync(
+      "promo_disabled",
+      promo.Id,
+      new { promoId = promo.Id, promo.Code, promo.IsActive, promo.IsDeleted, deletedAt = promo.DeletedAt },
+      $"promo_disabled:Promotion:{promo.Id:N}:{promo.UpdatedAt.Ticks}",
+      cancellationToken);
+
     await dbContext.SaveChangesAsync(cancellationToken);
 
     logger.LogInformation("Admin soft-deleted promo code {PromoId} ({Code})", promo.Id, promo.Code);
@@ -179,6 +201,13 @@ public sealed class AdminPromoService(
     promo.DeletedAt = null;
     promo.UpdatedAt = DateTime.UtcNow;
 
+    await hermesEvents.EnqueueAdminPromotionEventAsync(
+      "promo_updated",
+      promo.Id,
+      new { promoId = promo.Id, promo.Code, action = "restored" },
+      $"promo_restored:Promotion:{promo.Id:N}:{promo.UpdatedAt.Ticks}",
+      cancellationToken);
+
     await dbContext.SaveChangesAsync(cancellationToken);
 
     logger.LogInformation("Admin restored promo code {PromoId} ({Code})", promo.Id, promo.Code);
@@ -199,6 +228,13 @@ public sealed class AdminPromoService(
 
     promo.IsActive = isActive;
     promo.UpdatedAt = DateTime.UtcNow;
+
+    await hermesEvents.EnqueueAdminPromotionEventAsync(
+      isActive ? "promo_updated" : "promo_disabled",
+      promo.Id,
+      new { promoId = promo.Id, promo.Code, isActive },
+      $"promo_status_changed:Promotion:{promo.Id:N}:{isActive}:{promo.UpdatedAt.Ticks}",
+      cancellationToken);
 
     await dbContext.SaveChangesAsync(cancellationToken);
 

@@ -3,6 +3,7 @@ using System.Text;
 using AoDaiNhaUyen.Application.DTOs.Auth;
 using AoDaiNhaUyen.Application.DTOs.Checkout;
 using AoDaiNhaUyen.Application.Interfaces.Repositories;
+using AoDaiNhaUyen.Application.Options;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
@@ -17,7 +18,9 @@ public sealed class CheckoutService(
   IPromoService promoService,
   IOrderAttributionService orderAttributionService,
   IPromoCostService promoCostService,
-  IStockService stockService) : ICheckoutService
+  IStockService stockService,
+  IHermesEventOutboxPublisher hermesEvents,
+  Microsoft.Extensions.Options.IOptions<HermesOutboxOptions> hermesOutboxOptions) : ICheckoutService
 {
   private const decimal DefaultShippingFee = 25000m;
   private const decimal FreeShippingThreshold = 500000m;
@@ -208,6 +211,24 @@ public sealed class CheckoutService(
         {
           // Email queue failure must not make a committed checkout look failed.
         }
+      }
+
+      await hermesEvents.EnqueueAdminOrderEventAsync(
+        "checkout_completed",
+        order.Id,
+        new { orderId = order.Id, orderCode = order.OrderCode, itemCount = order.Items.Count, totalAmount = order.TotalAmount, promoCode = appliedPromoCode, province = order.Province, district = order.District },
+        $"checkout_completed:Order:{order.Id:N}:{now.Ticks}",
+        cancellationToken);
+
+      var highValueThreshold = hermesOutboxOptions.Value.HighValueOrderThreshold;
+      if (order.TotalAmount >= highValueThreshold)
+      {
+        await hermesEvents.EnqueueAdminOrderEventAsync(
+          "high_value_order_flagged",
+          order.Id,
+          new { orderId = order.Id, orderCode = order.OrderCode, totalAmount = order.TotalAmount, threshold = highValueThreshold, province = order.Province },
+          $"high_value_order_flagged:Order:{order.Id:N}:{now.Ticks}",
+          cancellationToken);
       }
 
       return AuthResult<CheckoutResultDto>.Success(result);

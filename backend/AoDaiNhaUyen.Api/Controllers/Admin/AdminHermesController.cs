@@ -13,6 +13,7 @@ namespace AoDaiNhaUyen.Api.Controllers.Admin;
 [Route("api/admin/hermes")]
 public sealed class AdminHermesController(
   IHermesAgentService hermesAgentService,
+  IHermesEventOutboxService hermesEventOutboxService,
   ILogger<AdminHermesController> logger) : ControllerBase
 {
   /// <summary>Get Hermes agent status and latest heartbeat.</summary>
@@ -31,6 +32,96 @@ public sealed class AdminHermesController(
   {
     var runs = await hermesAgentService.ListRunsAsync(cancellationToken);
     return Ok(ApiResponseFactory.Success(runs, "Lấy lịch sử Hermes thành công."));
+  }
+
+  /// <summary>List saved Hermes reports.</summary>
+  [Authorize(Policy = "RequireAdminRole")]
+  [HttpGet("reports")]
+  public async Task<ActionResult<PaginatedApiResponse<IReadOnlyList<HermesReportListItemResponse>>>> ListReports(
+    [FromQuery] HermesReportSearchRequest request,
+    CancellationToken cancellationToken)
+  {
+    try
+    {
+      var result = await hermesAgentService.ListReportsAsync(request, cancellationToken);
+      return Ok(ApiResponseFactory.PaginatedSuccess(
+        result.Items,
+        result.Page,
+        result.PageSize,
+        result.TotalCount,
+        "Lấy báo cáo Hermes thành công."));
+    }
+    catch (ArgumentException ex)
+    {
+      return BadRequest(ApiResponseFactory.Failure("Bộ lọc báo cáo Hermes không hợp lệ.", "invalid_hermes_report_filter", ex.Message));
+    }
+  }
+
+  /// <summary>Get saved Hermes report detail.</summary>
+  [Authorize(Policy = "RequireAdminRole")]
+  [HttpGet("reports/{id:guid}")]
+  public async Task<ActionResult<ApiResponse<HermesReportResponse>>> GetReport(Guid id, CancellationToken cancellationToken)
+  {
+    var report = await hermesAgentService.GetReportAsync(id, cancellationToken);
+    return report is null
+      ? NotFound(ApiResponseFactory.Failure("Không tìm thấy báo cáo Hermes.", "not_found", "Báo cáo không tồn tại."))
+      : Ok(ApiResponseFactory.Success(report, "Lấy chi tiết báo cáo Hermes thành công."));
+  }
+
+  /// <summary>List Hermes outbox events.</summary>
+  [Authorize(Policy = "RequireAdminRole")]
+  [HttpGet("events")]
+  public async Task<ActionResult<PaginatedApiResponse<IReadOnlyList<HermesEventOutboxListItemResponse>>>> ListEvents(
+    [FromQuery] HermesEventOutboxSearchRequest request,
+    CancellationToken cancellationToken)
+  {
+    try
+    {
+      var result = await hermesEventOutboxService.ListEventsAsync(request, cancellationToken);
+      return Ok(ApiResponseFactory.PaginatedSuccess(
+        result.Items,
+        result.Page,
+        result.PageSize,
+        result.TotalCount,
+        "Lấy danh sách event Hermes thành công."));
+    }
+    catch (ArgumentException ex)
+    {
+      return BadRequest(ApiResponseFactory.Failure("Bộ lọc event Hermes không hợp lệ.", "invalid_hermes_event_filter", ex.Message));
+    }
+  }
+
+  /// <summary>Get Hermes outbox event detail.</summary>
+  [Authorize(Policy = "RequireAdminRole")]
+  [HttpGet("events/{id:guid}")]
+  public async Task<ActionResult<ApiResponse<HermesEventOutboxResponse>>> GetEvent(Guid id, CancellationToken cancellationToken)
+  {
+    var item = await hermesEventOutboxService.GetEventAsync(id, cancellationToken);
+    return item is null
+      ? NotFound(ApiResponseFactory.Failure("Không tìm thấy event Hermes.", "not_found", "Event không tồn tại."))
+      : Ok(ApiResponseFactory.Success(item, "Lấy chi tiết event Hermes thành công."));
+  }
+
+  /// <summary>Retry a failed/dead/cancelled Hermes outbox event.</summary>
+  [Authorize(Policy = "RequireAdminRole")]
+  [HttpPost("events/{id:guid}/retry")]
+  public async Task<ActionResult<ApiResponse<object?>>> RetryEvent(Guid id, CancellationToken cancellationToken)
+  {
+    var ok = await hermesEventOutboxService.RetryEventAsync(id, cancellationToken);
+    return ok
+      ? Ok(ApiResponseFactory.Success<object?>(null, "Đã đưa event Hermes vào hàng đợi xử lý lại."))
+      : BadRequest(ApiResponseFactory.Failure("Không thể retry event Hermes.", "cannot_retry_hermes_event", "Event không tồn tại hoặc đang pending/processing."));
+  }
+
+  /// <summary>Cancel a pending/failed Hermes outbox event.</summary>
+  [Authorize(Policy = "RequireAdminRole")]
+  [HttpPost("events/{id:guid}/cancel")]
+  public async Task<ActionResult<ApiResponse<object?>>> CancelEvent(Guid id, CancellationToken cancellationToken)
+  {
+    var ok = await hermesEventOutboxService.CancelEventAsync(id, cancellationToken);
+    return ok
+      ? Ok(ApiResponseFactory.Success<object?>(null, "Đã hủy event Hermes."))
+      : BadRequest(ApiResponseFactory.Failure("Không thể hủy event Hermes.", "cannot_cancel_hermes_event", "Event không tồn tại hoặc đã completed/dead."));
   }
 
   /// <summary>Stream an admin prompt through Hermes Agent.</summary>
@@ -95,6 +186,32 @@ public sealed class AdminHermesController(
     return Ok(ApiResponseFactory.Success<object?>(null, "Đã ghi nhận heartbeat Hermes."));
   }
 
+  /// <summary>Record a Hermes report. Called by Hermes runner/tooling.</summary>
+  [Authorize(AuthenticationSchemes = HermesAdminAuthOptions.SchemeName)]
+  [HttpPost("report")]
+  public async Task<ActionResult<ApiResponse<HermesReportResponse>>> RecordReport(
+    HermesReportRequest request,
+    CancellationToken cancellationToken)
+  {
+    var validationError = ValidateReportRequest(request);
+    if (validationError is not null)
+      return BadRequest(ApiResponseFactory.Failure("Báo cáo Hermes không hợp lệ.", "invalid_hermes_report", validationError));
+
+    try
+    {
+      var report = await hermesAgentService.RecordReportAsync(request, cancellationToken);
+      return Ok(ApiResponseFactory.Success(report, "Đã lưu báo cáo Hermes."));
+    }
+    catch (JsonException)
+    {
+      return BadRequest(ApiResponseFactory.Failure("Báo cáo Hermes không hợp lệ.", "invalid_payload_json", "PayloadJson phải là JSON hợp lệ."));
+    }
+    catch (ArgumentException ex)
+    {
+      return BadRequest(ApiResponseFactory.Failure("Báo cáo Hermes không hợp lệ.", "invalid_hermes_report", ex.Message));
+    }
+  }
+
   private async Task WriteChunkAsync(HermesStreamChunk chunk, CancellationToken cancellationToken)
   {
     var json = JsonSerializer.Serialize(chunk, new JsonSerializerOptions(JsonSerializerDefaults.Web));
@@ -113,6 +230,19 @@ public sealed class AdminHermesController(
     if (string.IsNullOrWhiteSpace(request.Status)) return "Thiếu trạng thái runner.";
     if (request.RunnerName.Length > 120) return "Tên runner quá dài.";
     if (request.Status.Length > 80) return "Trạng thái quá dài.";
+    return null;
+  }
+
+  private static string? ValidateReportRequest(HermesReportRequest request)
+  {
+    if (string.IsNullOrWhiteSpace(request.ReportType)) return "Thiếu loại báo cáo.";
+    if (string.IsNullOrWhiteSpace(request.Title)) return "Thiếu tiêu đề báo cáo.";
+    if (string.IsNullOrWhiteSpace(request.Summary)) return "Thiếu tóm tắt báo cáo.";
+    if (request.ReportType.Length > 80) return "Loại báo cáo quá dài.";
+    if (request.Title.Length > 200) return "Tiêu đề báo cáo quá dài.";
+    if (request.Summary.Length > 4000) return "Tóm tắt báo cáo quá dài.";
+    if (request.PayloadJson?.Length > 20000) return "PayloadJson quá dài.";
+    if (request.CorrelationId?.Length > 128) return "CorrelationId quá dài.";
     return null;
   }
 
