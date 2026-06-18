@@ -1,5 +1,6 @@
 import type { AuthUser } from '../../types/auth';
 import { resolveAssetUrl } from '../../api/client';
+import { formatAccountDisplayName, getAccountInitial } from '../../utils/accountDisplay';
 import { useNavigate } from 'react-router-dom';
 import styles from './AccountSidebar.module.css';
 import type { AccountView } from './AccountPage';
@@ -26,7 +27,8 @@ export default function AccountSidebar({
 }: AccountSidebarProps) {
   const navigate = useNavigate();
   const avatarSrc = resolveAssetUrl(user.avatarUrl);
-  const initial = user.fullName.charAt(0).toUpperCase();
+  const displayName = formatAccountDisplayName(user);
+  const initial = getAccountInitial(user);
   const activeRootView = activeView === 'profile/edit' ? 'profile' : activeView;
 
   return (
@@ -46,13 +48,13 @@ export default function AccountSidebar({
           <img
             className={styles.avatar}
             src={avatarSrc}
-            alt={user.fullName}
+            alt={displayName}
           />
         ) : (
           <div className={styles.avatarPlaceholder}>{initial}</div>
         )}
       </div>
-      <p className={styles.userName}>{user.fullName}</p>
+      <p className={styles.userName}>{displayName}</p>
 
       <nav className={styles.nav}>
         {NAV_ITEMS.map(({ view, label }) => (

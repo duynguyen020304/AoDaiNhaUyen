@@ -117,9 +117,10 @@ public sealed class CatalogTryOnService(
       // Chat callers leave UserId/GuestKeyHash null and persist their own row
       // (with correct user tracking) via SaveGeneratedTryOnAttachmentAsync.
       // Skipping here avoids double-save for the same try-on result.
+      Guid? generatedImageId = null;
       if (request.UserId is not null || !string.IsNullOrWhiteSpace(request.GuestKeyHash))
       {
-        dbContext.UserGeneratedImages.Add(new UserGeneratedImage
+        var generatedImage = new UserGeneratedImage
         {
           UserId = request.UserId,
           GuestKeyHash = request.GuestKeyHash,
@@ -130,11 +131,13 @@ public sealed class CatalogTryOnService(
           OriginalFileName = fileName,
           FileSizeBytes = bytes.LongLength,
           SourceType = "ai_tryon"
-        });
+        };
+        dbContext.UserGeneratedImages.Add(generatedImage);
         await dbContext.SaveChangesAsync(cancellationToken);
+        generatedImageId = generatedImage.Id;
       }
 
-      return new AiTryOnResultDto(presignedUrl, mimeType);
+      return new AiTryOnResultDto(presignedUrl, mimeType, generatedImageId);
     }
 
     return aiResult;

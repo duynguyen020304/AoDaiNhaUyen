@@ -46,21 +46,27 @@ public sealed class MediaController(
     var normalizedPageSize = Math.Clamp(pageSize, 1, 50);
     var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)normalizedPageSize));
 
-    var items = await query
+    var rows = await query
       .OrderByDescending(x => x.CreatedAt)
       .Skip((normalizedPage - 1) * normalizedPageSize)
       .Take(normalizedPageSize)
-      .Select(x => new UserImageDto(
-        x.Id,
-        x.ObjectKey,
-        x.Url,
-        x.Kind,
-        x.MimeType,
-        x.OriginalFileName,
-        x.FileSizeBytes,
-        x.SourceType,
-        new DateTimeOffset(x.CreatedAt, TimeSpan.Zero)))
       .ToListAsync(cancellationToken);
+
+    var items = new List<UserImageDto>(rows.Count);
+    foreach (var image in rows)
+    {
+      var imageUrl = await ResolveImageUrlAsync(image.ObjectKey, image.Url, 3600, cancellationToken);
+      items.Add(new UserImageDto(
+        image.Id,
+        image.ObjectKey,
+        imageUrl,
+        image.Kind,
+        image.MimeType,
+        image.OriginalFileName,
+        image.FileSizeBytes,
+        image.SourceType,
+        new DateTimeOffset(image.CreatedAt, TimeSpan.Zero)));
+    }
 
     return Ok(ApiResponseFactory.Success(
       new UserImageListDto(items, normalizedPage, normalizedPageSize, totalItems, totalPages)));
@@ -90,7 +96,7 @@ public sealed class MediaController(
       return NotFound(ApiResponseFactory.Failure("Không tìm thấy ảnh", "not_found", "Ảnh không tồn tại."));
     }
 
-    var presignedUrl = await storageService.GeneratePresignedGetUrlAsync(image.ObjectKey, 3600, cancellationToken);
+    var presignedUrl = await ResolveImageUrlAsync(image.ObjectKey, image.Url, 3600, cancellationToken);
 
     return Ok(ApiResponseFactory.Success(new { url = presignedUrl, image.MimeType, image.OriginalFileName }));
   }
@@ -119,7 +125,21 @@ public sealed class MediaController(
       return NotFound();
     }
 
-    var presignedUrl = await storageService.GeneratePresignedGetUrlAsync(image.ObjectKey, 300, cancellationToken);
+    var presignedUrl = await ResolveImageUrlAsync(image.ObjectKey, image.Url, 300, cancellationToken);
     return Redirect(presignedUrl);
+  }
+
+  private async Task<string> ResolveImageUrlAsync(
+    string objectKey,
+    string fallbackUrl,
+    int expirationSeconds,
+    CancellationToken cancellationToken)
+  {
+    if (!string.IsNullOrWhiteSpace(objectKey))
+    {
+      return await storageService.GeneratePresignedGetUrlAsync(objectKey, expirationSeconds, cancellationToken);
+    }
+
+    return fallbackUrl;
   }
 }

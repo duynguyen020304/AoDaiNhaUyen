@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { formatAccountDisplayName } from '../../utils/accountDisplay';
 import styles from './Header.module.css';
 import { fadeUp, staggerContainer } from '../../utils/motion';
 import type { HeaderCategory } from '../../types/catalog';
@@ -224,7 +225,7 @@ export default function Header({ onOpenAuth }: HeaderProps) {
                 navigate('/account/profile');
               }}
             >
-              {user.fullName}
+              {formatAccountDisplayName(user)}
             </a>
             <button className={styles.logoutButton} type="button" onClick={handleLogout}>
               Đăng xuất

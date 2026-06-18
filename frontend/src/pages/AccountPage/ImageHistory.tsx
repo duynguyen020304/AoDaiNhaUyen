@@ -4,6 +4,36 @@ import { useMyImagesQuery } from '../../hooks/media/useMediaQueries';
 import { resolveAssetUrl } from '../../api/client';
 import styles from './ImageHistory.module.css';
 
+interface UserImageThumbnailProps {
+  image: UserImage;
+}
+
+function UserImageThumbnail({ image }: UserImageThumbnailProps) {
+  const [src, setSrc] = useState(() => resolveAssetUrl(image.url) ?? image.url);
+  const [triedPresigned, setTriedPresigned] = useState(false);
+
+  async function handleImageError() {
+    if (triedPresigned) return;
+    setTriedPresigned(true);
+    try {
+      const { url } = await getImagePresignedUrl(image.id);
+      setSrc(url);
+    } catch {
+      // Keep broken state if S3 presign also fails.
+    }
+  }
+
+  return (
+    <img
+      className={styles.thumbnail}
+      src={src}
+      alt={image.originalFileName ?? 'Ảnh'}
+      loading="lazy"
+      onError={() => void handleImageError()}
+    />
+  );
+}
+
 const SOURCE_FILTERS = [
   { value: '', label: 'Tất cả' },
   { value: 'chat', label: 'Chat' },
@@ -119,12 +149,7 @@ export default function ImageHistory() {
                   className={styles.thumbnailBtn}
                   onClick={() => handlePreview(image)}
                 >
-                  <img
-                    className={styles.thumbnail}
-                    src={resolveAssetUrl(image.url) ?? image.url}
-                    alt={image.originalFileName ?? 'Ảnh'}
-                    loading="lazy"
-                  />
+                  <UserImageThumbnail image={image} />
                 </button>
                 <div className={styles.cardInfo}>
                   <span className={styles.sourceTag}>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, type MouseEvent } from 'react';
 import { useAuthModal } from '../../auth/AuthModalContext';
 import { useAuth } from '../../auth/useAuth';
 import { resolveAssetUrl } from '../../api/client';
+import { formatAccountDisplayName, getAccountInitial, getAccountRoleLabel } from '../../utils/accountDisplay';
 import AccountInfo from './AccountInfo';
 import AccountEditForm from './AccountEditForm';
 import OrderList from './OrderList';
@@ -66,7 +67,9 @@ export default function AccountPage({
   }
 
   const avatarSrc = resolveAssetUrl(user.avatarUrl);
-  const initial = user.fullName.charAt(0).toUpperCase();
+  const displayName = formatAccountDisplayName(user);
+  const initial = getAccountInitial(user);
+  const roleLabel = getAccountRoleLabel(user);
   const activeRootView = activeView === 'profile/edit' ? 'profile' : activeView;
   const content = {
     profile: <AccountInfo onEdit={() => onViewChange('profile/edit')} onNavigate={onViewChange} />,
@@ -100,17 +103,17 @@ export default function AccountPage({
             <div className={styles.profileIdentity}>
               <div className={styles.avatarFrame}>
                 {avatarSrc ? (
-                  <img className={styles.avatar} src={avatarSrc} alt={user.fullName} />
+                  <img className={styles.avatar} src={avatarSrc} alt={displayName} />
                 ) : (
                   <span className={styles.avatarFallback}>{initial}</span>
                 )}
               </div>
               <div className={styles.profileCopy}>
                 <p className={styles.eyebrow}>Bảng điều khiển tài khoản</p>
-                <h1>{user.fullName}</h1>
+                <h1>{displayName}</h1>
                 <p>{user.email ?? 'Chưa cập nhật email'}</p>
                 <div className={styles.badges}>
-                  <span>Khách hàng Hà Uyên</span>
+                  <span>{roleLabel}</span>
                   <span>Đã đăng nhập</span>
                 </div>
               </div>
