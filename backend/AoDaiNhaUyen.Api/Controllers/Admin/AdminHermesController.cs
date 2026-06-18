@@ -255,7 +255,7 @@ public sealed class AdminHermesController(
   private static string? ValidateChatRequest(HermesChatRequest request)
   {
     if (string.IsNullOrWhiteSpace(request.Message)) return "Tin nhắn không được để trống.";
-    return request.Message.Length > 4000 ? "Tin nhắn quá dài. Tối đa 4000 ký tự." : null;
+    return null;
   }
 
   private static string? ValidateHeartbeatRequest(HermesHeartbeatRequest request)
@@ -274,8 +274,6 @@ public sealed class AdminHermesController(
     if (string.IsNullOrWhiteSpace(request.Summary)) return "Thiếu tóm tắt báo cáo.";
     if (request.ReportType.Length > 80) return "Loại báo cáo quá dài.";
     if (request.Title.Length > 200) return "Tiêu đề báo cáo quá dài.";
-    if (request.Summary.Length > 4000) return "Tóm tắt báo cáo quá dài.";
-    if (request.PayloadJson?.Length > 20000) return "PayloadJson quá dài.";
     if (request.CorrelationId?.Length > 128) return "CorrelationId quá dài.";
     return null;
   }

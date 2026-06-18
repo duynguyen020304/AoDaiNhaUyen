@@ -222,7 +222,7 @@ public sealed class HermesEventOutboxPublisher(
   {
     if (string.IsNullOrWhiteSpace(payloadJson)) throw new ArgumentException("PayloadJson bắt buộc.", nameof(payloadJson));
     var trimmed = payloadJson.Trim();
-    if (System.Text.Encoding.UTF8.GetByteCount(trimmed) > maxBytes) throw new ArgumentException("PayloadJson quá dài.", nameof(payloadJson));
+    if (maxBytes > 0 && System.Text.Encoding.UTF8.GetByteCount(trimmed) > maxBytes) throw new ArgumentException("PayloadJson quá dài.", nameof(payloadJson));
     using var _ = JsonDocument.Parse(trimmed);
     return trimmed;
   }

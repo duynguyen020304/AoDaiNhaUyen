@@ -730,9 +730,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.Status).HasMaxLength(40).IsRequired();
       builder.Property(x => x.Trigger).HasMaxLength(80).IsRequired();
       builder.Property(x => x.ConversationId).HasMaxLength(160);
-      builder.Property(x => x.PromptPreview).HasMaxLength(500).IsRequired();
-      builder.Property(x => x.ResultPreview).HasMaxLength(1000);
-      builder.Property(x => x.Error).HasMaxLength(1000);
+      builder.Property(x => x.PromptPreview).HasColumnType("text").IsRequired();
+      builder.Property(x => x.ResultPreview).HasColumnType("text");
+      builder.Property(x => x.Error).HasColumnType("text");
       builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
       builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
       builder.HasIndex(x => new { x.Status, x.StartedAt }).HasDatabaseName("idx_hermes_runs_status_started_at");
@@ -748,7 +748,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.ReportType).HasMaxLength(80).IsRequired();
       builder.Property(x => x.Severity).HasMaxLength(30).HasDefaultValue("info").IsRequired();
       builder.Property(x => x.Title).HasMaxLength(200).IsRequired();
-      builder.Property(x => x.Summary).HasMaxLength(4000).IsRequired();
+      builder.Property(x => x.Summary).HasColumnType("text").IsRequired();
       builder.Property(x => x.PayloadJson).HasColumnType("jsonb");
       builder.Property(x => x.Source).HasMaxLength(80).HasDefaultValue("hermes_agent").IsRequired();
       builder.Property(x => x.CorrelationId).HasMaxLength(128);
@@ -772,7 +772,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.Status).HasMaxLength(80).IsRequired();
       builder.Property(x => x.Model).HasMaxLength(160);
       builder.Property(x => x.GatewayStatus).HasMaxLength(120);
-      builder.Property(x => x.LastError).HasMaxLength(1000);
+      builder.Property(x => x.LastError).HasColumnType("text");
       builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
       builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
       builder.HasIndex(x => new { x.RunnerName, x.RecordedAt }).HasDatabaseName("idx_hermes_heartbeats_runner_recorded_at");
@@ -788,7 +788,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.PayloadJson).HasColumnType("jsonb").IsRequired();
       builder.Property(x => x.Status).HasMaxLength(40).HasDefaultValue("pending").IsRequired();
       builder.Property(x => x.MaxAttempts).HasDefaultValue(5).IsRequired();
-      builder.Property(x => x.LastError).HasMaxLength(1000);
+      builder.Property(x => x.LastError).HasColumnType("text");
       builder.Property(x => x.CorrelationId).HasMaxLength(128);
       builder.Property(x => x.IdempotencyKey).HasMaxLength(200);
       builder.Property(x => x.LockedBy).HasMaxLength(120);
@@ -827,10 +827,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasKey(x => x.Id);
       builder.Property(x => x.Kind).HasMaxLength(60).IsRequired();
       builder.Property(x => x.Title).HasMaxLength(200).IsRequired();
-      builder.Property(x => x.Summary).HasMaxLength(2000).IsRequired();
+      builder.Property(x => x.Summary).HasColumnType("text").IsRequired();
       builder.Property(x => x.Status).HasMaxLength(40).HasDefaultValue("success").IsRequired();
       builder.Property(x => x.SafePayloadJson).HasColumnType("jsonb");
-      builder.Property(x => x.Error).HasMaxLength(1000);
+      builder.Property(x => x.Error).HasColumnType("text");
       builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
       builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
       builder.HasIndex(x => new { x.EventOutboxId, x.StartedAt }).HasDatabaseName("idx_hermes_trace_steps_event_started_at");

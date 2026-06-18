@@ -75,13 +75,13 @@ public sealed class HermesEventProcessor(
 
     if (!response.IsSuccessStatusCode)
     {
-      await AddTraceAsync(item.Id, run.Id, "failed", "Hermes trả lỗi", $"Hermes API returned {(int)response.StatusCode}.", "failed", Truncate(body, 500), cancellationToken);
-      await CompleteRunAsync(run, "failed", null, $"Hermes API returned {(int)response.StatusCode}: {Truncate(body, 500)}", cancellationToken);
-      throw new InvalidOperationException($"Hermes API returned {(int)response.StatusCode}: {Truncate(body, 500)}");
+      await AddTraceAsync(item.Id, run.Id, "failed", "Hermes trả lỗi", $"Hermes API returned {(int)response.StatusCode}.", "failed", body, cancellationToken);
+      await CompleteRunAsync(run, "failed", null, $"Hermes API returned {(int)response.StatusCode}: {body}", cancellationToken);
+      throw new InvalidOperationException($"Hermes API returned {(int)response.StatusCode}: {body}");
     }
 
     await AddTraceAsync(item.Id, run.Id, "agent_response", "Hermes đã phản hồi", "Hermes runner trả phản hồi và backend lưu kết quả run.", "success", null, cancellationToken);
-    await CompleteRunAsync(run, "completed", Truncate(body, 1000), null, cancellationToken);
+    await CompleteRunAsync(run, "completed", body, null, cancellationToken);
   }
 
   private async Task AddTraceAsync(Guid eventId, Guid runId, string kind, string title, string summary, string status, string? error, CancellationToken cancellationToken)
@@ -98,7 +98,7 @@ public sealed class HermesEventProcessor(
       Status = status,
       StartedAt = now,
       CompletedAt = status == "running" ? null : now,
-      Error = Truncate(error, 1000),
+      Error = NormalizeOptionalText(error),
       CreatedAt = now.UtcDateTime,
       UpdatedAt = now.UtcDateTime
     });
@@ -114,7 +114,7 @@ public sealed class HermesEventProcessor(
       Status = "running",
       Trigger = "admin_event",
       ConversationId = item.Id.ToString("N"),
-      PromptPreview = Truncate($"{item.EventType}:{item.AggregateType}:{item.AggregateId}", 500),
+      PromptPreview = $"{item.EventType}:{item.AggregateType}:{item.AggregateId}",
       StartedAt = now,
       CreatedAt = now.UtcDateTime,
       UpdatedAt = now.UtcDateTime
@@ -124,8 +124,8 @@ public sealed class HermesEventProcessor(
   private async Task CompleteRunAsync(HermesRun run, string status, string? result, string? error, CancellationToken cancellationToken)
   {
     run.Status = status;
-    run.ResultPreview = Truncate(result, 1000);
-    run.Error = Truncate(error, 1000);
+    run.ResultPreview = NormalizeOptionalText(result);
+    run.Error = NormalizeOptionalText(error);
     run.CompletedAt = DateTimeOffset.UtcNow;
     run.UpdatedAt = DateTime.UtcNow;
     await dbContext.SaveChangesAsync(cancellationToken);
@@ -165,6 +165,9 @@ public sealed class HermesEventProcessor(
     using var _ = JsonDocument.Parse(payloadJson);
   }
 
-  private static string Truncate(string? text, int max) =>
-    string.IsNullOrEmpty(text) || text.Length <= max ? text ?? string.Empty : text[..max] + "…";
+  private static string? NormalizeOptionalText(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return null;
+    return value.Trim();
+  }
 }
