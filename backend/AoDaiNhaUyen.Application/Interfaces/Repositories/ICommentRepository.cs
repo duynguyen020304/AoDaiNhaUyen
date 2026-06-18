@@ -16,6 +16,10 @@ public interface ICommentRepository
 
   Task AddAsync(Comment comment, CancellationToken cancellationToken = default);
 
+  Task<Comment?> GetByIdWithProductAndUserAsync(
+    Guid id,
+    CancellationToken cancellationToken = default);
+
   Task<(IReadOnlyList<Comment> Items, int TotalCount)> GetRatedByProductIdAsync(
     Guid productId,
     int page,

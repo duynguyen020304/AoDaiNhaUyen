@@ -16,6 +16,13 @@ const SEVERITY_BADGE: Record<string, string> = {
   critical: 'bg-red-50 text-red-700 border-red-200',
 }
 
+function sourceLabel(source: string) {
+  if (source === 'hermes_cron') return 'Chủ động'
+  if (source === 'hermes_agent') return 'Theo sự kiện'
+  if (source === 'hermes_chat') return 'Chat admin'
+  return source
+}
+
 export function HermesReportTable({ items, loading, onOpen }: Props) {
   if (loading) {
     return (
@@ -64,7 +71,11 @@ export function HermesReportTable({ items, loading, onOpen }: Props) {
                   <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.summaryPreview}</div>
                 </TableCell>
                 <TableCell className="text-xs">{item.status}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{item.source}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  <span className={item.source === 'hermes_cron' ? 'rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700 ring-1 ring-emerald-200' : ''}>
+                    {sourceLabel(item.source)}
+                  </span>
+                </TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="sm" onClick={() => onOpen(item.id)} aria-label="Xem chi tiết báo cáo Hermes">
                     <Eye className="size-4" />

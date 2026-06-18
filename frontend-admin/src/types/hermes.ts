@@ -31,6 +31,7 @@ export interface HermesReportFilters {
   severity?: string
   type?: string
   status?: string
+  source?: string
   q?: string
 }
 

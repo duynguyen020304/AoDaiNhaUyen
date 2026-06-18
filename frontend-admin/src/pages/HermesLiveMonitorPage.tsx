@@ -20,6 +20,24 @@ const statusClass: Record<string, string> = {
   dead: 'bg-zinc-900 text-white ring-zinc-700',
   cancelled: 'bg-zinc-100 text-zinc-600 ring-zinc-200',
 }
+/** Detect raw JSON / tool-call noise. Returns { displayText, rawDetail } — rawDetail is non-null when noise detected. */
+function cleanSummary(text: string): { displayText: string; rawDetail: string | null } {
+  if (!text) return { displayText: text, rawDetail: null }
+  const trimmed = text.trim()
+  const looksLikeJson =
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+    (trimmed.startsWith('[') && trimmed.endsWith(']')) ||
+    trimmed.includes('"type":"function_call"') ||
+    trimmed.includes('"type":"function_call_output"') ||
+    trimmed.includes('"output":[') ||
+    /\b(curl|POST|GET|PUT|DELETE)\s+\/.*HTTP/i.test(trimmed)
+
+  if (looksLikeJson) {
+    return { displayText: 'Hermes đã ghi nhận kết quả phân tích.', rawDetail: trimmed }
+  }
+  return { displayText: trimmed, rawDetail: null }
+}
+
 
 type ConnectionState = 'connecting' | 'live' | 'polling' | 'error'
 
@@ -154,7 +172,7 @@ export function HermesLiveMonitorPanel() {
         </ChatPanel>
 
         <ChatPanel title="Hermes Agent" subtitle="Suy nghĩ an toàn và kết quả" icon={<Bot className="size-5" />} tone="agent">
-          {hermesMessages.length === 0 ? <EmptyAgent /> : hermesMessages.map((message) => <HermesBubble key={message.key} item={message.item} message={message.message} />)}
+          {hermesMessages.length === 0 ? <EmptyAgent /> : hermesMessages.map((message) => <HermesBubble key={message.key} message={message.message} />)}
         </ChatPanel>
       </main>
     </div>
@@ -167,10 +185,10 @@ function StatusBar({ connection, heartbeat, count, generatedAt }: { connection: 
     <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-zinc-700">
       <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ring-1 ${live ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : connection === 'error' ? 'bg-rose-50 text-rose-700 ring-rose-200' : 'bg-amber-50 text-amber-700 ring-amber-200'}`}>
         <span className={`size-2 rounded-full ${live ? 'bg-emerald-500' : connection === 'error' ? 'bg-rose-500' : 'bg-amber-500'}`} />
-        {live ? 'Live' : connection === 'polling' ? 'Polling' : connection === 'error' ? 'Mất kết nối' : 'Đang kết nối'}
+        {live ? 'Trực tiếp' : connection === 'polling' ? 'Đang tải' : connection === 'error' ? 'Mất kết nối' : 'Đang kết nối'}
       </span>
-      <span className="rounded-full bg-zinc-100 px-2.5 py-1 ring-1 ring-zinc-200">{count} event gần nhất</span>
-      <span className="rounded-full bg-zinc-100 px-2.5 py-1 ring-1 ring-zinc-200">Worker: {heartbeat?.status ?? 'chưa rõ'}</span>
+      <span className="rounded-full bg-zinc-100 px-2.5 py-1 ring-1 ring-zinc-200">{count} sự kiện gần nhất</span>
+      <span className="rounded-full bg-zinc-100 px-2.5 py-1 ring-1 ring-zinc-200">Trợ lý AI: {heartbeat?.status ?? 'chưa rõ'}</span>
       <span className="rounded-full bg-zinc-100 px-2.5 py-1 ring-1 ring-zinc-200">Cập nhật: {formatTime(generatedAt)}</span>
     </div>
   )
@@ -214,15 +232,15 @@ function StoreBubble({ item }: { item: HermesFeedItem }) {
             {statusLabel[item.eventStatus] ?? item.eventStatus}
           </span>
           <span className="text-[11px] font-medium text-zinc-500">{relativeTime(item.storeTime)}</span>
-          <span className="font-mono text-[11px] text-zinc-400">#{item.eventId.slice(0, 8)}</span>
         </div>
       </div>
     </article>
   )
 }
 
-function HermesBubble({ item, message }: { item: HermesFeedItem; message: HermesFeedHermesMessage }) {
+function HermesBubble({ message }: { message: HermesFeedHermesMessage }) {
   const tone = getHermesTone(message)
+  const { displayText, rawDetail } = cleanSummary(message.summary)
   return (
     <article className="flex items-start justify-end gap-3">
       <div className={`max-w-[90%] rounded-3xl rounded-tr-md px-4 py-3 shadow-sm ring-1 ${tone.className}`}>
@@ -231,10 +249,15 @@ function HermesBubble({ item, message }: { item: HermesFeedItem; message: Hermes
           <span className="text-xs font-bold uppercase tracking-wide text-current/70">{tone.label}</span>
         </div>
         {message.title && <h3 className="text-sm font-bold leading-6">{message.title}</h3>}
-        <p className="whitespace-pre-wrap text-sm leading-6">{message.summary}</p>
+        <p className="whitespace-pre-wrap text-sm leading-6">{displayText}</p>
+        {rawDetail && (
+          <details className="mt-2">
+            <summary className="cursor-pointer text-xs font-medium text-current/60 hover:text-current/80">Chi tiết kỹ thuật</summary>
+            <pre className="mt-1 max-h-40 overflow-auto rounded-lg bg-black/5 p-2 text-[11px] leading-4 whitespace-pre-wrap">{rawDetail}</pre>
+          </details>
+        )}
         <div className="mt-2 flex flex-wrap items-center justify-end gap-2 text-[11px] font-medium text-current/60">
-          <span>{relativeTime(message.time)}</span>
-          <span className="font-mono">event #{item.eventId.slice(0, 8)}</span>
+          <span>Hermes · {relativeTime(message.time)}</span>
         </div>
       </div>
       <div className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white" aria-hidden="true">

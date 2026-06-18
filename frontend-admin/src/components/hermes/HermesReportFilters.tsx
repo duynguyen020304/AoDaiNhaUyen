@@ -10,7 +10,7 @@ interface Props {
 export function HermesReportFilters({ filters, onChange, onReset }: Props) {
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm" aria-label="Bộ lọc báo cáo Hermes">
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         <label className="space-y-1 text-xs font-medium text-zinc-600">
           Tìm kiếm
           <input
@@ -37,6 +37,15 @@ export function HermesReportFilters({ filters, onChange, onReset }: Props) {
             <option value="open">Open</option>
             <option value="acknowledged">Acknowledged</option>
             <option value="resolved">Resolved</option>
+          </select>
+        </label>
+        <label className="space-y-1 text-xs font-medium text-zinc-600">
+          Nguồn
+          <select value={filters.source ?? ''} onChange={(event) => onChange({ source: event.target.value })} className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm">
+            <option value="">Tất cả</option>
+            <option value="hermes_cron">Chủ động</option>
+            <option value="hermes_agent">Tự động theo sự kiện</option>
+            <option value="hermes_chat">Từ chat admin</option>
           </select>
         </label>
         <label className="space-y-1 text-xs font-medium text-zinc-600">
