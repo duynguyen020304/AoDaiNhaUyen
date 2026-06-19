@@ -27,6 +27,7 @@ import { EmailTemplatesPage } from '@/pages/EmailTemplatesPage'
 import { SubscribersPage } from '@/pages/SubscribersPage'
 import { EmailQueuePage } from '@/pages/EmailQueuePage'
 import { HermesMonitorPage } from '@/pages/HermesMonitorPage'
+import { FacebookPage } from '@/pages/FacebookPage'
 
 export function App() {
   const status = useAuthStore((s) => s.status)
@@ -72,6 +73,7 @@ export function App() {
             <Route path="marketing" element={<MarketingDashboardPage />} />
             <Route path="email-templates" element={<EmailTemplatesPage />} />
             <Route path="subscribers" element={<SubscribersPage />} />
+            <Route path="facebook" element={<FacebookPage />} />
             <Route path="email-queue" element={<EmailQueuePage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="roles" element={<RolesPage />} />
