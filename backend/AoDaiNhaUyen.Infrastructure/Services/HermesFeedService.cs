@@ -80,7 +80,13 @@ public sealed partial class HermesFeedService(AppDbContext dbContext) : IHermesF
     messages.AddRange(traces.Select(step => new HermesFeedHermesMessageResponse(
       MapTraceKind(step.Kind, step.Status), Redact(step.Title, 200), Redact(step.Error ?? step.Summary, 1200) ?? string.Empty, step.StartedAt, step.Status, null)));
 
-    messages.AddRange(runs.Where(run => !string.IsNullOrWhiteSpace(run.ResultPreview) || !string.IsNullOrWhiteSpace(run.Error)).Select(run => new HermesFeedHermesMessageResponse(
+    var reportRunIds = reports.Where(report => report.RunId.HasValue).Select(report => report.RunId!.Value).ToHashSet();
+    var hasEventLevelReport = reports.Count > 0;
+
+    messages.AddRange(runs.Where(run =>
+      !string.IsNullOrWhiteSpace(run.Error) ||
+      (!string.IsNullOrWhiteSpace(run.ResultPreview) && !reportRunIds.Contains(run.Id) && !hasEventLevelReport)
+    ).Select(run => new HermesFeedHermesMessageResponse(
       string.IsNullOrWhiteSpace(run.Error) ? "thinking" : "error", run.Status == "completed" ? "Hermes đã phản hồi" : "Trạng thái Hermes", Redact(run.ResultPreview ?? run.Error, 1600) ?? string.Empty, run.CompletedAt ?? run.StartedAt, run.Status, null)));
 
     messages.AddRange(reports.Select(report => new HermesFeedHermesMessageResponse("report", Redact(report.Title, 200), Redact(report.Summary, 2000) ?? string.Empty, report.CreatedAt, report.Status, report.Severity)));
