@@ -218,11 +218,7 @@ public sealed class HermesEventProcessor(
 
   private static string BuildInput(HermesEventOutbox item) =>
     $"""
-    ĐÂY LÀ SỰ KIỆN MỚI từ cửa hàng áo dài Nhã Uyên. Hãy PHÂN TÍCH CHỦ ĐỘNG.
-
-    BẮT BUỘC: Trước khi kết luận, hãy dùng công cụ (read_file, execute_code, web_search)
-    để KIỂM TRA dữ liệu thực tế của cửa hàng — không chỉ dựa vào payload sự kiện.
-    Ví dụ: kiểm tra doanh thu gần đây, tồn kho, lượt xem blog, tỷ lệ mở email, v.v.
+    ĐÂY LÀ SỰ KIỆN LIVE từ cửa hàng áo dài Nhã Uyên.
 
     <store_context>
     store: Áo Dài Nhã Uyên
