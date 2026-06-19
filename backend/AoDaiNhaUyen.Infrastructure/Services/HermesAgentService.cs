@@ -329,7 +329,7 @@ public sealed class HermesAgentService(
     CancellationToken cancellationToken)
   {
     var client = httpClientFactory.CreateClient();
-    client.Timeout = TimeSpan.FromMinutes(3);
+    client.Timeout = TimeSpan.FromMinutes(6);
     client.BaseAddress = new Uri(_options.ApiServerUrl!, UriKind.Absolute);
     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiServerKey);
 
