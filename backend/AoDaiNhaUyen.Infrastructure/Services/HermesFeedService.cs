@@ -244,7 +244,7 @@ public sealed partial class HermesFeedService(AppDbContext dbContext) : IHermesF
     redacted = EmailPattern().Replace(redacted, MaskEmail);
     redacted = PhonePattern().Replace(redacted, "[sđt đã che]");
     redacted = AddressPattern().Replace(redacted, "$1[địa chỉ đã che]");
-    redacted = redacted.Replace('\r', ' ').Replace('\n', ' ').Trim();
+    redacted = redacted.Replace("\r\n", "\n").Replace('\r', '\n').Trim();
     return redacted.Length <= max ? redacted : redacted[..Math.Max(0, max - 1)] + "…";
   }
 

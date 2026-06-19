@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { AlertTriangle, Bot, Clock3, FileText, Radio, Store } from 'lucide-react'
@@ -248,12 +248,19 @@ function StatusBar({ connection, heartbeat, count, generatedAt }: { connection: 
 
 function ChatPanel({ title, subtitle, icon, tone, children }: { title: string; subtitle: string; icon: React.ReactNode; tone: 'store' | 'agent'; children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
+  const shouldStickToBottomRef = useRef(true)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const node = ref.current
-    if (!node) return
+    if (!node || !shouldStickToBottomRef.current) return
     node.scrollTop = node.scrollHeight
   }, [children])
+
+  function handleScroll() {
+    const node = ref.current
+    if (!node) return
+    shouldStickToBottomRef.current = node.scrollHeight - node.scrollTop - node.clientHeight < 80
+  }
 
   return (
     <section className={`flex min-h-0 flex-col border-zinc-200 ${tone === 'agent' ? 'border-t bg-[#eef2ff] lg:border-l lg:border-t-0' : 'bg-white'}`}>
@@ -266,7 +273,7 @@ function ChatPanel({ title, subtitle, icon, tone, children }: { title: string; s
           </div>
         </div>
       </div>
-      <div ref={ref} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 lg:px-6">
+      <div ref={ref} onScroll={handleScroll} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 lg:px-6">
         {children}
       </div>
     </section>
@@ -329,24 +336,11 @@ function safeHref(href?: string) {
   }
 }
 
-function normalizeHermesMarkdown(text: string) {
-  return text
-    .trim()
-    .replace(/\r\n/g, '\n')
-    .replace(/\s+---\s+/g, '\n\n---\n\n')
-    .replace(/(^|[^\n])\s+(#{1,6})\s+/g, '$1\n\n$2 ')
-    .replace(/\|\s+(?=\|)/g, '|\n')
-    .replace(/(#{1,6}[^\n]*?)\s+(\| [^\n]*\|\n\|[-| :]+\|)/g, '$1\n\n$2')
-    .replace(/(^|[^\n])\s+(```[\w-]*)\s*/g, '$1\n\n$2\n')
-    .replace(/```\s+/g, '```\n\n')
-}
-
 function HermesMarkdown({ text }: { text: string }) {
-  const normalized = normalizeHermesMarkdown(text)
   return (
     <div className="hermes-markdown mt-2 max-w-none text-sm leading-6 text-current">
       <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-        {normalized}
+        {text.trim()}
       </Markdown>
     </div>
   )
