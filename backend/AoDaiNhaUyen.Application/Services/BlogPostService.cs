@@ -153,6 +153,7 @@ public sealed class BlogPostService(
       new { contentId = post.Id, title = post.Title, slug = post.Slug, status = post.Status.ToString(), type = "blog_post" },
       $"content_created:Content:{post.Id:N}:{post.CreatedAt.Ticks}",
       cancellationToken);
+    await EnqueueBlogSeoOpportunityAsync(post, cancellationToken);
     return await MapPostAsync(created, cancellationToken);
   }
 
@@ -198,6 +199,7 @@ public sealed class BlogPostService(
       new { contentId = post.Id, title = post.Title, slug = post.Slug, status = post.Status.ToString(), type = "blog_post" },
       $"content_updated:Content:{post.Id:N}:{post.UpdatedAt.Ticks}",
       cancellationToken);
+    await EnqueueBlogSeoOpportunityAsync(post, cancellationToken);
     return await MapPostAsync(updated, cancellationToken);
   }
 
@@ -210,6 +212,47 @@ public sealed class BlogPostService(
       id,
       new { contentId = id, type = "blog_post", action = "deleted" },
       $"content_deleted:Content:{id:N}:{DateTime.UtcNow.Ticks}",
+      cancellationToken);
+  }
+
+  private async Task EnqueueBlogSeoOpportunityAsync(BlogPost post, CancellationToken cancellationToken)
+  {
+    if (post.Status != BlogPostStatus.Published) return;
+
+    var tags = DeserializeTags(post.Tags);
+    var hasMetaTitle = !string.IsNullOrWhiteSpace(post.MetaTitle);
+    var hasMetaDescription = !string.IsNullOrWhiteSpace(post.MetaDescription);
+    var hasKeywords = tags.Count > 0;
+    var hasOgImage = !string.IsNullOrWhiteSpace(post.FeaturedImage);
+    var hasCanonicalUrl = !string.IsNullOrWhiteSpace(post.CanonicalUrl);
+    var hasInformationGain = !string.IsNullOrWhiteSpace(post.InformationGain);
+    var hasReviewedBy = !string.IsNullOrWhiteSpace(post.ReviewedBy);
+
+    if (hasMetaTitle && hasMetaDescription && hasKeywords && hasOgImage && hasCanonicalUrl && hasInformationGain && hasReviewedBy) return;
+
+    await hermesEvents.EnqueueAdminContentEventAsync(
+      "blog_seo_opportunity",
+      post.Id,
+      new
+      {
+        postId = post.Id,
+        contentId = post.Id,
+        title = post.Title,
+        slug = post.Slug,
+        status = post.Status.ToString(),
+        type = "blog_post",
+        hasMetaTitle,
+        hasMetaDescription,
+        hasKeywords,
+        hasOgImage,
+        hasCanonicalUrl,
+        hasInformationGain,
+        hasReviewedBy,
+        tags,
+        publishedAt = post.PublishedAt,
+        updatedAt = post.UpdatedAt
+      },
+      $"blog_seo_opportunity:Content:{post.Id:N}:{post.UpdatedAt.Ticks}",
       cancellationToken);
   }
 

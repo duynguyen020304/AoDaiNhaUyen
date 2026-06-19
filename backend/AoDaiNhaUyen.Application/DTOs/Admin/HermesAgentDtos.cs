@@ -54,6 +54,7 @@ public sealed record HermesReportSearchRequest(
   string? Severity = null,
   string? Type = null,
   string? Status = null,
+  string? Source = null,
   string? Q = null);
 
 public sealed record HermesReportListItemResponse(

@@ -23,6 +23,9 @@ export function HermesReportsPanel() {
   const openDetail = useHermesReportStore((s) => s.openDetail)
   const closeDetail = useHermesReportStore((s) => s.closeDetail)
 
+  const proactiveCount = items.filter((item) => item.source === 'hermes_cron').length
+  const eventDrivenCount = items.filter((item) => item.source === 'hermes_agent').length
+
   const refresh = useCallback(() => {
     void fetchReports()
   }, [fetchReports])
@@ -44,6 +47,24 @@ export function HermesReportsPanel() {
             <p className="mt-1 text-sm text-muted-foreground">Báo cáo do Hermes runner gửi về backend và lưu DB.</p>
           </div>
           <Button onClick={refresh} disabled={loadingList}>Làm mới</Button>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Chủ động</p>
+            <p className="mt-1 text-2xl font-bold text-emerald-900">{proactiveCount}</p>
+            <p className="mt-1 text-xs text-emerald-700">Báo cáo do lịch tự động/chiến lược tạo.</p>
+          </div>
+          <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">Theo sự kiện</p>
+            <p className="mt-1 text-2xl font-bold text-indigo-900">{eventDrivenCount}</p>
+            <p className="mt-1 text-xs text-indigo-700">Báo cáo từ đơn hàng, tồn kho, SEO, review.</p>
+          </div>
+          <div className="rounded-xl border border-zinc-200 bg-white p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">Tổng báo cáo</p>
+            <p className="mt-1 text-2xl font-bold text-zinc-950">{totalItem}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Lọc nguồn để xem Hermes chủ động làm gì.</p>
+          </div>
         </div>
 
         <HermesReportFilters filters={filters} onChange={setFilters} onReset={resetFilters} />

@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
-public sealed class AdminReviewService(AppDbContext dbContext) : IAdminReviewService
+public sealed class AdminReviewService(
+  AppDbContext dbContext,
+  IHermesEventOutboxPublisher hermesEvents) : IAdminReviewService
 {
   public async Task<IReadOnlyList<AdminReviewItem>> GetRecentReviewsAsync(
     int limit = 10, CancellationToken ct = default)
@@ -88,6 +90,8 @@ public sealed class AdminReviewService(AppDbContext dbContext) : IAdminReviewSer
     Guid id, bool isVisible, CancellationToken ct = default)
   {
     var review = await dbContext.Comments
+      .Include(c => c.User)
+      .Include(c => c.Product)
       .FirstOrDefaultAsync(c => c.Id == id && c.Rating.HasValue && c.ParentCommentId == null, ct);
 
     if (review is null)
@@ -95,6 +99,7 @@ public sealed class AdminReviewService(AppDbContext dbContext) : IAdminReviewSer
 
     review.IsVisible = isVisible;
     await dbContext.SaveChangesAsync(ct);
+    await EnqueueReviewModerationEventAsync(review, isVisible ? "shown" : "hidden", ct);
 
     return new AdminReviewActionResult(true, isVisible ? "Đã hiển thị đánh giá." : "Đã ẩn đánh giá.");
   }
@@ -102,11 +107,14 @@ public sealed class AdminReviewService(AppDbContext dbContext) : IAdminReviewSer
   public async Task<AdminReviewActionResult> DeleteReviewAsync(Guid id, CancellationToken ct = default)
   {
     var review = await dbContext.Comments
+      .Include(c => c.User)
+      .Include(c => c.Product)
       .FirstOrDefaultAsync(c => c.Id == id && c.Rating.HasValue && c.ParentCommentId == null, ct);
 
     if (review is null)
       return new AdminReviewActionResult(false, "Không tìm thấy đánh giá.");
 
+    await EnqueueReviewModerationEventAsync(review, "deleted", ct);
     dbContext.Comments.Remove(review);
     await dbContext.SaveChangesAsync(ct);
 
@@ -133,6 +141,36 @@ public sealed class AdminReviewService(AppDbContext dbContext) : IAdminReviewSer
       .ToListAsync(ct);
 
     return comments;
+  }
+
+  private async Task EnqueueReviewModerationEventAsync(Comment review, string action, CancellationToken ct)
+  {
+    await hermesEvents.EnqueueAdminEventAsync(
+      "review_moderation_changed",
+      "Review",
+      review.Id.ToString("N"),
+      new
+      {
+        reviewId = review.Id,
+        productId = review.ProductId,
+        productName = review.Product?.Name,
+        rating = review.Rating,
+        content = Truncate(review.Content, 500),
+        customerName = review.User?.FullName,
+        isVisible = review.IsVisible,
+        action,
+        moderatedAt = DateTimeOffset.UtcNow
+      },
+      $"review_moderation_changed:{review.Id:N}:{action}:{DateTime.UtcNow.Ticks}",
+      review.ProductId.ToString("N"),
+      ct);
+  }
+
+  private static string Truncate(string? value, int maxLength)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+    var trimmed = value.Trim();
+    return trimmed.Length <= maxLength ? trimmed : trimmed[..Math.Max(0, maxLength - 1)] + "…";
   }
 
   public async Task<AdminReplyResult> ReplyToCommentAsync(

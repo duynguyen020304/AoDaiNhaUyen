@@ -46,6 +46,17 @@ public sealed class CommentRepository(AppDbContext dbContext) : ICommentReposito
     await dbContext.SaveChangesAsync(cancellationToken);
   }
 
+  public async Task<Comment?> GetByIdWithProductAndUserAsync(
+    Guid id,
+    CancellationToken cancellationToken = default)
+  {
+    return await dbContext.Comments
+      .AsNoTracking()
+      .Include(c => c.User)
+      .Include(c => c.Product)
+      .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+  }
+
   public async Task<(IReadOnlyList<Comment> Items, int TotalCount)> GetRatedByProductIdAsync(
     Guid productId,
     int page,

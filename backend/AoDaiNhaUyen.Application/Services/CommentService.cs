@@ -6,7 +6,8 @@ using AoDaiNhaUyen.Domain.Entities;
 namespace AoDaiNhaUyen.Application.Services;
 
 public sealed class CommentService(
-  ICommentRepository commentRepository) : ICommentService
+  ICommentRepository commentRepository,
+  IHermesEventOutboxPublisher hermesEvents) : ICommentService
 {
   public async Task<PagedResult<CommentDto>> GetProductCommentsAsync(
     Guid productId,
@@ -66,6 +67,7 @@ public sealed class CommentService(
     };
 
     await commentRepository.AddAsync(comment, cancellationToken);
+    await EnqueueCommentEventsAsync(comment.Id, cancellationToken);
 
     return new CommentDto(
       comment.Id,
@@ -160,8 +162,74 @@ public sealed class CommentService(
       IsVisible = true
     };
     await commentRepository.AddAsync(comment, ct);
+    await EnqueueCommentEventsAsync(comment.Id, ct);
 
     return new ReviewDto(comment.Id, userId, "", null, comment.Rating!.Value, comment.Content, comment.CreatedAt);
+  }
+
+  private async Task EnqueueCommentEventsAsync(Guid commentId, CancellationToken cancellationToken)
+  {
+    var comment = await commentRepository.GetByIdWithProductAndUserAsync(commentId, cancellationToken);
+    if (comment is null) return;
+
+    var preview = Truncate(comment.Content, 500);
+    var isReview = comment.Rating.HasValue && comment.ParentCommentId is null;
+    var aggregateType = isReview ? "Review" : "Comment";
+    var customerName = Truncate(comment.User.FullName, 120);
+    var productName = Truncate(comment.Product.Name, 160);
+    var basePayload = new
+    {
+      commentId = comment.Id,
+      reviewId = isReview ? comment.Id : (Guid?)null,
+      productId = comment.ProductId,
+      productName,
+      rating = comment.Rating,
+      content = preview,
+      customerName,
+      parentCommentId = comment.ParentCommentId,
+      createdAt = comment.CreatedAt
+    };
+
+    await hermesEvents.EnqueueAdminEventAsync(
+      "pending_review_needed",
+      aggregateType,
+      comment.Id.ToString("N"),
+      basePayload,
+      $"pending_review_needed:{comment.Id:N}:{comment.CreatedAt.Ticks}",
+      comment.ProductId.ToString("N"),
+      cancellationToken);
+
+    if (comment.Rating is <= 2 || ContainsNegativeSignal(comment.Content))
+    {
+      await hermesEvents.EnqueueAdminEventAsync(
+        "negative_review_detected",
+        aggregateType,
+        comment.Id.ToString("N"),
+        basePayload,
+        $"negative_review_detected:{comment.Id:N}:{comment.CreatedAt.Ticks}",
+        comment.ProductId.ToString("N"),
+        cancellationToken);
+    }
+  }
+
+  private static bool ContainsNegativeSignal(string value)
+  {
+    var text = value.ToLowerInvariant();
+    return text.Contains("tệ", StringComparison.Ordinal)
+      || text.Contains("xấu", StringComparison.Ordinal)
+      || text.Contains("thất vọng", StringComparison.Ordinal)
+      || text.Contains("không hài lòng", StringComparison.Ordinal)
+      || text.Contains("lỗi", StringComparison.Ordinal)
+      || text.Contains("chậm", StringComparison.Ordinal)
+      || text.Contains("hoàn tiền", StringComparison.Ordinal)
+      || text.Contains("kém", StringComparison.Ordinal);
+  }
+
+  private static string Truncate(string? value, int maxLength)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+    var trimmed = value.Trim();
+    return trimmed.Length <= maxLength ? trimmed : trimmed[..Math.Max(0, maxLength - 1)] + "…";
   }
 
   private async Task<CommentDto> MapCommentToDtoAsync(Comment comment, CancellationToken cancellationToken)

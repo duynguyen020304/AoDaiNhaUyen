@@ -1,6 +1,6 @@
-import { request, requestPaginated } from '@/api/client'
+import { API_BASE_URL, request, requestPaginated } from '@/api/client'
 import type { PaginatedApiEnvelope } from '@/types/api'
-import type { CreateHermesMonitorLinkRequest, HermesEventFilters, HermesEventListItem, HermesMonitorLink, HermesMonitorSnapshot, HermesReportDetail, HermesReportFilters, HermesReportListItem } from '@/types/hermes'
+import type { CreateHermesMonitorLinkRequest, HermesEventFilters, HermesEventListItem, HermesFeedSnapshot, HermesMonitorLink, HermesMonitorSnapshot, HermesReportDetail, HermesReportFilters, HermesReportListItem } from '@/types/hermes'
 
 function cleanParams(filters: Record<string, unknown>) {
   const params = new URLSearchParams()
@@ -22,6 +22,12 @@ export async function getHermesReport(id: string): Promise<HermesReportDetail> {
 export async function getHermesEvents(filters: Partial<HermesEventFilters>): Promise<PaginatedApiEnvelope<HermesEventListItem[]>> {
   const query = cleanParams(filters)
   return requestPaginated<HermesEventListItem[]>(`/api/admin/hermes/events${query ? `?${query}` : ''}`)
+}
+
+export const HERMES_FEED_SSE_URL = `${API_BASE_URL}/api/admin/hermes/feed/stream`
+
+export async function getHermesFeedSnapshot(): Promise<HermesFeedSnapshot> {
+  return request<HermesFeedSnapshot>('/api/admin/hermes/feed')
 }
 
 export async function createHermesMonitorLink(input: CreateHermesMonitorLinkRequest): Promise<HermesMonitorLink> {
