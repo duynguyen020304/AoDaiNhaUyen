@@ -62,6 +62,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<HermesEventOutbox> HermesEventOutbox => Set<HermesEventOutbox>();
   public DbSet<HermesMonitorLink> HermesMonitorLinks => Set<HermesMonitorLink>();
   public DbSet<HermesAgentTraceStep> HermesAgentTraceSteps => Set<HermesAgentTraceStep>();
+  public DbSet<FacebookPageConnection> FacebookPageConnections => Set<FacebookPageConnection>();
   public DbSet<OrderPromoCostSnapshot> OrderPromoCostSnapshots => Set<OrderPromoCostSnapshot>();
 
   protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -956,6 +957,22 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => new { x.SubscriberId, x.Channel, x.IsOptIn });
       builder.HasOne(x => x.Subscriber).WithMany(x => x.Consents).HasForeignKey(x => x.SubscriberId).OnDelete(DeleteBehavior.Cascade);
       builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+    });
+
+    modelBuilder.Entity<FacebookPageConnection>(builder =>
+    {
+      builder.ToTable("facebook_page_connections");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.PageId).HasMaxLength(100).IsRequired();
+      builder.Property(x => x.PageName).HasMaxLength(255);
+      builder.Property(x => x.EncryptedPageAccessToken).HasColumnType("text").IsRequired();
+      builder.Property(x => x.TokenLast4).HasMaxLength(8).IsRequired();
+      builder.Property(x => x.ExpiresAt);
+      builder.Property(x => x.LastValidatedAt);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.PageId).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_facebook_page_connections_page_id_unique");
+      builder.HasIndex(x => new { x.IsActive, x.PageName }).HasDatabaseName("idx_facebook_page_connections_active_name");
     });
 
     modelBuilder.Entity<OrderPromoCostSnapshot>(builder =>

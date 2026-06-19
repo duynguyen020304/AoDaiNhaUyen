@@ -72,3 +72,6 @@ Premium Vietnamese áo dài e-commerce platform. Full-stack app: ASP.NET Core 10
 - CI/CD: GitHub Actions, SSH/Cloudflare Tunnel, rsync, pm2/serve.
 
 <!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->
+
+## Manual Notes
+- Facebook Page management lives under `backend/AoDaiNhaUyen.Api/Controllers/FacebookController.cs`, `backend/AoDaiNhaUyen.Infrastructure/Services/FacebookService.cs`, and `frontend-admin/src/pages/FacebookPage.tsx`. Page Access Tokens must stay encrypted via DataProtection, only expose `TokenLast4`, never log raw tokens.
