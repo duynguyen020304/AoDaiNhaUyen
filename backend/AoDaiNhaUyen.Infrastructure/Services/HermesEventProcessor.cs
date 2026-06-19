@@ -31,8 +31,6 @@ public sealed class HermesEventProcessor(
 
     await AddTraceAsync(item.Id, run.Id, "prompt_built", "Chuẩn bị phân tích", "Hermes đang đọc sự kiện.", "success", null, cancellationToken);
 
-    await RecordProactiveReportAsync(item, run.Id, "Hermes đã nhận event và tạo báo cáo chủ động trước khi phân tích sâu.", cancellationToken);
-
     if (_outboxOptions.DryRun)
     {
       await CompleteRunAsync(run, "completed", "Hermes outbox dry-run: event accepted but not sent.", null, cancellationToken);
@@ -48,7 +46,7 @@ public sealed class HermesEventProcessor(
     }
 
     var client = httpClientFactory.CreateClient();
-    client.Timeout = TimeSpan.FromMinutes(3);
+    client.Timeout = TimeSpan.FromMinutes(6);
     client.BaseAddress = new Uri(_agentOptions.ApiServerUrl!, UriKind.Absolute);
     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _agentOptions.ApiServerKey);
 
@@ -83,6 +81,7 @@ public sealed class HermesEventProcessor(
 
     var result = ExtractAssistantText(body);
     await AddTraceAsync(item.Id, run.Id, "agent_response", "Phân tích xong", "Hermes đã hoàn thành đánh giá.", "success", null, cancellationToken);
+    await RecordAgentReportAsync(item, run.Id, result, cancellationToken);
     await CompleteRunAsync(run, "completed", result, null, cancellationToken);
   }
 
@@ -107,12 +106,18 @@ public sealed class HermesEventProcessor(
     await dbContext.SaveChangesAsync(cancellationToken);
   }
 
-  private async Task RecordProactiveReportAsync(HermesEventOutbox item, Guid runId, string result, CancellationToken cancellationToken)
+  private async Task RecordAgentReportAsync(HermesEventOutbox item, Guid runId, string result, CancellationToken cancellationToken)
   {
     var now = DateTime.UtcNow;
+    var agentSummary = NormalizeAgentReportText(result);
+    if (string.IsNullOrWhiteSpace(agentSummary))
+    {
+      logger.LogWarning("Hermes event {EventId} completed without agent report text; skipping saved report.", item.Id);
+      return;
+    }
+
     var profile = BuildReportProfile(item);
     var title = $"{profile.TitlePrefix}: {ShortCode(item.AggregateId)}";
-    var summary = BuildReportSummary(item, profile, result);
 
     dbContext.HermesReports.Add(new HermesReport
     {
@@ -120,7 +125,7 @@ public sealed class HermesEventProcessor(
       ReportType = profile.ReportType,
       Severity = profile.Severity,
       Title = Limit(title, 200),
-      Summary = Limit(summary, 4000),
+      Summary = Limit(agentSummary, 4000),
       PayloadJson = BuildReportPayload(item, profile, result),
       Source = "hermes_agent",
       CorrelationId = item.Id.ToString("N"),
@@ -169,23 +174,11 @@ public sealed class HermesEventProcessor(
     return new ReportProfile("growth", "info", "Gợi ý tăng trưởng", "tín hiệu tăng trưởng", "Biến tín hiệu cửa hàng thành hành động cụ thể");
   }
 
-  private static string BuildReportSummary(HermesEventOutbox item, ReportProfile profile, string result)
-  {
-    var assistantResult = string.IsNullOrWhiteSpace(result) ? "Hermes đã phân tích xong nhưng chưa có tóm tắt chi tiết." : result.Trim();
-    return $"""
-    Nhận định: Hermes phát hiện {profile.Impact} từ sự kiện {item.EventType} ({item.AggregateType}).
-    Hành động đề xuất: kiểm tra dữ liệu liên quan, ưu tiên việc có tác động trực tiếp tới doanh thu hoặc rủi ro vận hành, rồi giao admin xử lý bước tiếp theo.
-    Ước tính tác động: {profile.PriorityReason}.
-    Ưu tiên: {(profile.Severity == "warning" ? "Cao" : "Trung bình")}.
-    Kết luận Hermes: {assistantResult}
-    """.Trim();
-  }
-
   private static string BuildReportPayload(HermesEventOutbox item, ReportProfile profile, string result)
   {
     var payload = new
     {
-      proactive = true,
+      agentGenerated = true,
       profile.ReportType,
       profile.Severity,
       item.EventType,
@@ -295,6 +288,12 @@ public sealed class HermesEventProcessor(
   private static void ValidatePayload(string payloadJson)
   {
     using var _ = JsonDocument.Parse(payloadJson);
+  }
+
+  private static string NormalizeAgentReportText(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+    return value.Trim();
   }
 
   private static string? NormalizeOptionalText(string? value)

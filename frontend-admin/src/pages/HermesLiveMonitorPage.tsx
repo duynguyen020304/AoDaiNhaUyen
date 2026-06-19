@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { AlertTriangle, Bot, Clock3, FileText, Radio, Store } from 'lucide-react'
 import { HERMES_FEED_SSE_URL, getHermesFeedSnapshot } from '@/api/hermes'
 import type { HermesFeedHeartbeat, HermesFeedHermesMessage, HermesFeedItem, HermesFeedSnapshot } from '@/types/hermes'
@@ -299,7 +301,7 @@ function HermesBubble({ message }: { message: HermesFeedHermesMessage }) {
           <span className="text-xs font-bold uppercase tracking-wide text-current/70">{tone.label}</span>
         </div>
         {message.title && <h3 className="text-sm font-bold leading-6">{message.title}</h3>}
-        {message.kind === 'report' ? <ReportSummary text={displayText} /> : <p className="whitespace-pre-wrap text-sm leading-6">{displayText}</p>}
+        <HermesMarkdown text={displayText} />
         {rawDetail && (
           <details className="mt-2">
             <summary className="cursor-pointer text-xs font-medium text-current/60 hover:text-current/80">Chi tiết kỹ thuật</summary>
@@ -317,24 +319,71 @@ function HermesBubble({ message }: { message: HermesFeedHermesMessage }) {
   )
 }
 
-function ReportSummary({ text }: { text: string }) {
-  const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean)
-  const labeled = lines.filter((line) => /^(Nhận định|Hành động|Ước tính|Ưu tiên|Kết luận)/i.test(line))
-  if (labeled.length === 0) return <p className="whitespace-pre-wrap text-sm leading-6">{text}</p>
+function safeHref(href?: string) {
+  if (!href) return undefined
+  try {
+    const url = new URL(href, window.location.origin)
+    return ['http:', 'https:', 'mailto:'].includes(url.protocol) ? href : undefined
+  } catch {
+    return undefined
+  }
+}
 
+function normalizeHermesMarkdown(text: string) {
+  return text
+    .trim()
+    .replace(/\r\n/g, '\n')
+    .replace(/\s+---\s+/g, '\n\n---\n\n')
+    .replace(/(^|[^\n])\s+(#{1,6})\s+/g, '$1\n\n$2 ')
+    .replace(/\|\s+(?=\|)/g, '|\n')
+    .replace(/(#{1,6}[^\n]*?)\s+(\| [^\n]*\|\n\|[-| :]+\|)/g, '$1\n\n$2')
+    .replace(/(^|[^\n])\s+(```[\w-]*)\s*/g, '$1\n\n$2\n')
+    .replace(/```\s+/g, '```\n\n')
+}
+
+function HermesMarkdown({ text }: { text: string }) {
+  const normalized = normalizeHermesMarkdown(text)
   return (
-    <dl className="mt-2 space-y-2 text-sm leading-6">
-      {labeled.map((line) => {
-        const [label, ...rest] = line.split(':')
-        return (
-          <div key={line} className="rounded-2xl bg-white/55 px-3 py-2 ring-1 ring-black/5">
-            <dt className="text-[11px] font-bold uppercase tracking-wide text-current/60">{label}</dt>
-            <dd className="mt-0.5 whitespace-pre-wrap font-medium text-current/90">{rest.join(':').trim()}</dd>
-          </div>
-        )
-      })}
-    </dl>
+    <div className="hermes-markdown mt-2 max-w-none text-sm leading-6 text-current">
+      <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+        {normalized}
+      </Markdown>
+    </div>
   )
+}
+
+const markdownComponents = {
+  h1: ({ children }: { children?: React.ReactNode }) => <h1 className="mb-2 mt-3 text-lg font-black leading-6 first:mt-0">{children}</h1>,
+  h2: ({ children }: { children?: React.ReactNode }) => <h2 className="mb-2 mt-3 text-base font-extrabold leading-6 first:mt-0">{children}</h2>,
+  h3: ({ children }: { children?: React.ReactNode }) => <h3 className="mb-1.5 mt-3 text-sm font-bold leading-6 first:mt-0">{children}</h3>,
+  p: ({ children }: { children?: React.ReactNode }) => <p className="my-1.5 leading-6">{children}</p>,
+  ul: ({ children }: { children?: React.ReactNode }) => <ul className="my-2 list-disc space-y-1 pl-5">{children}</ul>,
+  ol: ({ children }: { children?: React.ReactNode }) => <ol className="my-2 list-decimal space-y-1 pl-5">{children}</ol>,
+  li: ({ children }: { children?: React.ReactNode }) => <li className="leading-6">{children}</li>,
+  table: ({ children }: { children?: React.ReactNode }) => (
+    <div className="my-3 max-w-full overflow-x-auto rounded-xl border border-current/10 bg-white/55 shadow-sm">
+      <table className="w-full min-w-max border-collapse text-xs">{children}</table>
+    </div>
+  ),
+  thead: ({ children }: { children?: React.ReactNode }) => <thead className="bg-black/5">{children}</thead>,
+  th: ({ children }: { children?: React.ReactNode }) => <th className="border-b border-current/10 px-3 py-2 text-left font-bold uppercase tracking-wide text-current/70">{children}</th>,
+  td: ({ children }: { children?: React.ReactNode }) => <td className="border-b border-current/10 px-3 py-2 align-top">{children}</td>,
+  code: ({ children, className }: { children?: React.ReactNode; className?: string }) => {
+    const isBlock = /language-/.test(className || '')
+    if (isBlock) {
+      return <code className={className}>{children}</code>
+    }
+    return <code className="rounded-md bg-black/5 px-1.5 py-0.5 font-mono text-[0.82em] font-semibold">{children}</code>
+  },
+  pre: ({ children }: { children?: React.ReactNode }) => <pre className="my-3 max-h-72 overflow-auto rounded-xl bg-zinc-950 p-3 text-xs leading-5 text-zinc-50 shadow-inner">{children}</pre>,
+  blockquote: ({ children }: { children?: React.ReactNode }) => <blockquote className="my-3 rounded-r-xl border-l-4 border-current/25 bg-white/45 py-2 pl-3 pr-2 italic">{children}</blockquote>,
+  a: ({ href, children }: { href?: string; children?: React.ReactNode }) => {
+    const safe = safeHref(href)
+    if (!safe) return <span>{children}</span>
+    return <a href={safe} target="_blank" rel="noopener noreferrer nofollow" className="font-semibold underline underline-offset-2 hover:opacity-80">{children}</a>
+  },
+  strong: ({ children }: { children?: React.ReactNode }) => <strong className="font-extrabold text-current">{children}</strong>,
+  hr: () => <hr className="my-4 border-current/15" />,
 }
 
 function EmptyStore() {
