@@ -119,4 +119,8 @@ public interface ISocialService
     string conversationId,
     string accountId,
     CancellationToken cancellationToken = default);
+
+  Task IngestZernioWebhookAsync(
+    System.Text.Json.JsonElement payload,
+    CancellationToken cancellationToken = default);
 }

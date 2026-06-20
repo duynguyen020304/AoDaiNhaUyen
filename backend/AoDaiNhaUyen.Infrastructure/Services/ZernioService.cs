@@ -373,10 +373,12 @@ public sealed class ZernioService(
   {
     var query = BuildInboxQuery(platform, accountId, profileId, cursor, limit);
     var response = await SendAsync<JsonElement>(HttpMethod.Get, "inbox/comments", query, null, cancellationToken);
-    return new SocialCommentedPostListDto(
+    var result = new SocialCommentedPostListDto(
       ExtractArray(response, "data", "items", "posts").Select(MapCommentedPost).ToList(),
       GetPaginationCursor(response),
       GetPaginationHasMore(response));
+    await UpsertSyncCursorAsync("comments", query["platform"], accountId, profileId, result.NextCursor, null, cancellationToken);
+    return result;
   }
 
   public async Task<SocialCommentListDto> GetCommentsAsync(
@@ -394,10 +396,13 @@ public sealed class ZernioService(
     if (!string.IsNullOrWhiteSpace(cursor)) query["cursor"] = cursor.Trim();
 
     var response = await SendAsync<JsonElement>(HttpMethod.Get, $"inbox/comments/{Uri.EscapeDataString(NormalizeRequired(postId, "postId"))}", query, null, cancellationToken);
-    return new SocialCommentListDto(
+    var result = new SocialCommentListDto(
       ExtractArray(response, "comments", "data", "items").Select(MapComment).ToList(),
       GetPaginationCursor(response),
       GetPaginationHasMore(response));
+    await UpsertCommentsAsync(postId, accountId, result.Items, cancellationToken);
+    await UpsertSyncCursorAsync("post_comments", "facebook", accountId, null, result.NextCursor, null, cancellationToken);
+    return result;
   }
 
   public async Task<SocialActionResultDto> ReplyToCommentAsync(
@@ -414,7 +419,27 @@ public sealed class ZernioService(
 
     var response = await SendAsync<JsonElement>(HttpMethod.Post, $"inbox/comments/{Uri.EscapeDataString(NormalizeRequired(postId, "postId"))}", null, body, cancellationToken);
     var data = ExtractObject(response, "data") ?? response;
-    return new SocialActionResultDto(GetBool(response, "success") || GetBool(data, "success"), GetString(response, "message") ?? GetString(data, "message"), GetString(data, "commentId", "id"));
+    var commentId = GetString(data, "commentId", "id");
+    if (!string.IsNullOrWhiteSpace(commentId))
+    {
+      await UpsertCommentsAsync(postId, request.AccountId, [new SocialCommentDto(
+        commentId,
+        request.CommentId,
+        null,
+        request.Message,
+        DateTimeOffset.UtcNow,
+        0,
+        0,
+        "facebook",
+        null,
+        true,
+        true,
+        true,
+        false,
+        [])], cancellationToken);
+    }
+
+    return new SocialActionResultDto(GetBool(response, "success") || GetBool(data, "success"), GetString(response, "message") ?? GetString(data, "message"), commentId);
   }
 
   public async Task<SocialActionResultDto> DeleteCommentAsync(
@@ -429,6 +454,7 @@ public sealed class ZernioService(
       ["commentId"] = NormalizeRequired(commentId, "commentId")
     };
     var response = await SendAsync<JsonElement>(HttpMethod.Delete, $"inbox/comments/{Uri.EscapeDataString(NormalizeRequired(postId, "postId"))}", query, null, cancellationToken);
+    await MarkCommentDeletedAsync(accountId, commentId, cancellationToken);
     return new SocialActionResultDto(GetBool(response, "success"), GetString(response, "message"), commentId);
   }
 
@@ -446,6 +472,7 @@ public sealed class ZernioService(
     var body = isHidden ? new { accountId = NormalizeRequired(accountId, "accountId") } : null;
     var query = isHidden ? null : new Dictionary<string, string> { ["accountId"] = NormalizeRequired(accountId, "accountId") };
     var response = await SendAsync<JsonElement>(method, path, query, body, cancellationToken);
+    await MarkCommentHiddenAsync(accountId, commentId, isHidden, cancellationToken);
     return new SocialActionResultDto(GetBool(response, "success") || true, isHidden ? "Đã ẩn bình luận." : "Đã hiện bình luận.", commentId);
   }
 
@@ -459,10 +486,13 @@ public sealed class ZernioService(
   {
     var query = BuildInboxQuery(platform, accountId, profileId, cursor, limit);
     var response = await SendAsync<JsonElement>(HttpMethod.Get, "inbox/conversations", query, null, cancellationToken);
-    return new SocialConversationListDto(
+    var result = new SocialConversationListDto(
       ExtractArray(response, "data", "items", "conversations").Select(MapConversation).ToList(),
       GetPaginationCursor(response),
       GetPaginationHasMore(response));
+    await UpsertConversationsAsync(result.Items, profileId, cancellationToken);
+    await UpsertSyncCursorAsync("conversations", query["platform"], accountId, profileId, result.NextCursor, null, cancellationToken);
+    return result;
   }
 
   public async Task<SocialMessageListDto> GetConversationMessagesAsync(
@@ -481,10 +511,13 @@ public sealed class ZernioService(
     if (!string.IsNullOrWhiteSpace(cursor)) query["cursor"] = cursor.Trim();
 
     var response = await SendAsync<JsonElement>(HttpMethod.Get, $"inbox/conversations/{Uri.EscapeDataString(NormalizeRequired(conversationId, "conversationId"))}/messages", query, null, cancellationToken);
-    return new SocialMessageListDto(
+    var result = new SocialMessageListDto(
       ExtractArray(response, "messages", "data", "items").Select(MapMessage).ToList(),
       GetPaginationCursor(response),
       GetPaginationHasMore(response));
+    await UpsertMessagesAsync(conversationId, accountId, result.Items, cancellationToken);
+    await UpsertSyncCursorAsync("messages", "facebook", accountId, null, result.NextCursor, null, cancellationToken);
+    return result;
   }
 
   public async Task<SocialActionResultDto> SendMessageAsync(
@@ -506,7 +539,23 @@ public sealed class ZernioService(
     if (!string.IsNullOrWhiteSpace(request.AttachmentType)) body["attachmentType"] = request.AttachmentType.Trim();
     var response = await SendAsync<JsonElement>(HttpMethod.Post, $"inbox/conversations/{Uri.EscapeDataString(NormalizeRequired(conversationId, "conversationId"))}/messages", null, body, cancellationToken);
     var data = ExtractObject(response, "data") ?? response;
-    return new SocialActionResultDto(GetBool(response, "success") || GetBool(data, "success"), GetString(response, "message") ?? GetString(data, "message"), GetString(data, "messageId", "id"));
+    var messageId = GetString(data, "messageId", "id");
+    if (!string.IsNullOrWhiteSpace(messageId))
+    {
+      await UpsertMessagesAsync(conversationId, request.AccountId, [new SocialMessageDto(
+        messageId,
+        conversationId,
+        request.AccountId,
+        "facebook",
+        request.Message,
+        request.AccountId,
+        null,
+        "outgoing",
+        DateTimeOffset.UtcNow,
+        string.IsNullOrWhiteSpace(request.AttachmentUrl) ? [] : [new SocialMessageAttachmentDto(null, request.AttachmentType, request.AttachmentUrl, null, request.AttachmentUrl)])], cancellationToken);
+    }
+
+    return new SocialActionResultDto(GetBool(response, "success") || GetBool(data, "success"), GetString(response, "message") ?? GetString(data, "message"), messageId);
   }
 
   public async Task<SocialActionResultDto> MarkConversationReadAsync(
@@ -516,6 +565,7 @@ public sealed class ZernioService(
   {
     var body = new { accountId = NormalizeRequired(accountId, "accountId") };
     var response = await SendAsync<JsonElement>(HttpMethod.Post, $"inbox/conversations/{Uri.EscapeDataString(NormalizeRequired(conversationId, "conversationId"))}/read", null, body, cancellationToken);
+    await MarkConversationReadInCacheAsync(accountId, conversationId, cancellationToken);
     return new SocialActionResultDto(GetBool(response, "success") || true, "Đã đánh dấu đã đọc.", conversationId);
   }
 
@@ -595,6 +645,295 @@ public sealed class ZernioService(
     }
 
     await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  public async Task IngestZernioWebhookAsync(JsonElement payload, CancellationToken cancellationToken = default)
+  {
+    var eventName = GetString(payload, "event") ?? string.Empty;
+    if (eventName.StartsWith("message.", StringComparison.OrdinalIgnoreCase))
+    {
+      var message = ExtractObject(payload, "message");
+      var conversation = ExtractObject(payload, "conversation");
+      var account = ExtractObject(payload, "account");
+      if (conversation.HasValue)
+      {
+        var conversationDto = new SocialConversationDto(
+          GetString(conversation.Value, "id", "platformConversationId") ?? GetString(message ?? default, "conversationId") ?? string.Empty,
+          GetString(account ?? default, "platform") ?? GetString(message ?? default, "platform") ?? "facebook",
+          GetString(account ?? default, "id", "accountId") ?? GetString(message ?? default, "accountId") ?? string.Empty,
+          GetString(account ?? default, "username", "accountUsername"),
+          null,
+          null,
+          null,
+          GetString(message ?? default, "text", "message"),
+          ParseDate(GetString(message ?? default, "sentAt", "createdAt")),
+          GetString(conversation.Value, "status"),
+          null,
+          null);
+        await UpsertConversationsAsync([conversationDto], null, cancellationToken);
+      }
+
+      if (message.HasValue)
+      {
+        var dto = MapWebhookMessage(message.Value, account, conversation);
+        await UpsertMessagesAsync(dto.ConversationId, dto.AccountId, [dto], cancellationToken);
+      }
+    }
+    else if (eventName.StartsWith("comment.", StringComparison.OrdinalIgnoreCase))
+    {
+      var comment = ExtractObject(payload, "comment");
+      var account = ExtractObject(payload, "account");
+      if (comment.HasValue)
+      {
+        var postId = GetString(comment.Value, "postId", "platformPostId") ?? string.Empty;
+        var accountId = GetString(account ?? default, "id", "accountId") ?? GetString(comment.Value, "accountId") ?? string.Empty;
+        await UpsertCommentsAsync(postId, accountId, [MapComment(comment.Value)], cancellationToken);
+      }
+    }
+  }
+
+  private async Task UpsertConversationsAsync(IEnumerable<SocialConversationDto> conversations, string? profileId, CancellationToken cancellationToken)
+  {
+    foreach (var conversation in conversations.Where(x => !string.IsNullOrWhiteSpace(x.Id) && !string.IsNullOrWhiteSpace(x.AccountId)))
+    {
+      var existing = await dbContext.SocialInboxConversations
+        .IgnoreQueryFilters()
+        .FirstOrDefaultAsync(x => x.Platform == conversation.Platform && x.AccountId == conversation.AccountId && x.ConversationId == conversation.Id, cancellationToken);
+      if (existing is null)
+      {
+        dbContext.SocialInboxConversations.Add(new SocialInboxConversation
+        {
+          Platform = conversation.Platform,
+          AccountId = conversation.AccountId,
+          ConversationId = conversation.Id,
+          CreatedAt = DateTime.UtcNow
+        });
+        existing = dbContext.SocialInboxConversations.Local.Last();
+      }
+
+      existing.AccountUsername = conversation.AccountUsername;
+      existing.ProfileId = profileId ?? existing.ProfileId;
+      existing.ParticipantId = conversation.ParticipantId;
+      existing.ParticipantName = conversation.ParticipantName;
+      existing.ParticipantPicture = conversation.ParticipantPicture;
+      existing.LastMessage = conversation.LastMessage;
+      existing.UpdatedTime = conversation.UpdatedTime;
+      existing.Status = conversation.Status;
+      existing.UnreadCount = conversation.UnreadCount;
+      existing.Url = conversation.Url;
+      existing.LastSyncedAt = DateTimeOffset.UtcNow;
+      existing.RawJson = JsonSerializer.Serialize(conversation, JsonOptions);
+      existing.IsActive = true;
+      existing.IsDeleted = false;
+      existing.DeletedAt = null;
+      existing.UpdatedAt = DateTime.UtcNow;
+    }
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private async Task UpsertMessagesAsync(string conversationId, string accountId, IEnumerable<SocialMessageDto> messages, CancellationToken cancellationToken)
+  {
+    var normalizedAccountId = accountId.Trim();
+    var normalizedConversationId = conversationId.Trim();
+    if (string.IsNullOrWhiteSpace(normalizedAccountId) || string.IsNullOrWhiteSpace(normalizedConversationId)) return;
+
+    foreach (var message in messages.Where(x => !string.IsNullOrWhiteSpace(x.Id)))
+    {
+      var platform = message.Platform ?? "facebook";
+      var existing = await dbContext.SocialInboxMessages
+        .IgnoreQueryFilters()
+        .FirstOrDefaultAsync(x => x.Platform == platform && x.AccountId == normalizedAccountId && x.MessageId == message.Id, cancellationToken);
+      if (existing is null)
+      {
+        existing = new SocialInboxMessage
+        {
+          Platform = platform,
+          AccountId = normalizedAccountId,
+          ConversationId = normalizedConversationId,
+          MessageId = message.Id,
+          CreatedAt = DateTime.UtcNow
+        };
+        dbContext.SocialInboxMessages.Add(existing);
+      }
+
+      existing.ConversationId = string.IsNullOrWhiteSpace(message.ConversationId) ? normalizedConversationId : message.ConversationId;
+      existing.SenderId = message.SenderId;
+      existing.SenderName = message.SenderName;
+      existing.Direction = message.Direction;
+      existing.Text = message.Text;
+      existing.CreatedAt = message.CreatedAt?.UtcDateTime ?? existing.CreatedAt;
+      existing.AttachmentsJson = JsonSerializer.Serialize(message.Attachments, JsonOptions);
+      existing.LastSyncedAt = DateTimeOffset.UtcNow;
+      existing.RawJson = JsonSerializer.Serialize(message, JsonOptions);
+      existing.IsActive = true;
+      existing.IsDeleted = false;
+      existing.DeletedAt = null;
+      existing.UpdatedAt = DateTime.UtcNow;
+    }
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private async Task UpsertCommentsAsync(string postId, string accountId, IEnumerable<SocialCommentDto> comments, CancellationToken cancellationToken)
+  {
+    var normalizedPostId = postId.Trim();
+    var normalizedAccountId = accountId.Trim();
+    if (string.IsNullOrWhiteSpace(normalizedPostId) || string.IsNullOrWhiteSpace(normalizedAccountId)) return;
+
+    foreach (var comment in FlattenComments(comments).Where(x => !string.IsNullOrWhiteSpace(x.Id)))
+    {
+      var platform = comment.Platform ?? "facebook";
+      var existing = await dbContext.SocialInboxComments
+        .IgnoreQueryFilters()
+        .FirstOrDefaultAsync(x => x.Platform == platform && x.AccountId == normalizedAccountId && x.CommentId == comment.Id, cancellationToken);
+      if (existing is null)
+      {
+        existing = new SocialInboxComment
+        {
+          Platform = platform,
+          AccountId = normalizedAccountId,
+          PostId = normalizedPostId,
+          CommentId = comment.Id,
+          CreatedAt = DateTime.UtcNow
+        };
+        dbContext.SocialInboxComments.Add(existing);
+      }
+
+      existing.PostId = normalizedPostId;
+      existing.ParentCommentId = comment.ParentId;
+      existing.AuthorId = comment.Author?.Id;
+      existing.AuthorName = comment.Author?.Name;
+      existing.AuthorUsername = comment.Author?.Username;
+      existing.AuthorPicture = comment.Author?.Picture;
+      existing.AuthorIsOwner = comment.Author?.IsOwner ?? false;
+      existing.Message = comment.Message;
+      existing.CreatedTime = comment.CreatedTime;
+      existing.LikeCount = comment.LikeCount;
+      existing.ReplyCount = comment.ReplyCount;
+      existing.Url = comment.Url;
+      existing.CanReply = comment.CanReply;
+      existing.CanDelete = comment.CanDelete;
+      existing.CanHide = comment.CanHide;
+      existing.IsHidden = comment.IsHidden;
+      existing.LastSyncedAt = DateTimeOffset.UtcNow;
+      existing.RawJson = JsonSerializer.Serialize(comment, JsonOptions);
+      existing.IsActive = true;
+      existing.IsDeleted = false;
+      existing.DeletedAt = null;
+      existing.UpdatedAt = DateTime.UtcNow;
+    }
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private async Task UpsertSyncCursorAsync(string resource, string platform, string? accountId, string? profileId, string? cursor, string? error, CancellationToken cancellationToken)
+  {
+    var normalizedAccountId = accountId?.Trim() ?? string.Empty;
+    var normalizedProfileId = profileId?.Trim() ?? string.Empty;
+    var existing = await dbContext.SocialInboxSyncCursors
+      .IgnoreQueryFilters()
+      .FirstOrDefaultAsync(x => x.Resource == resource && x.Platform == platform && x.AccountId == normalizedAccountId && x.ProfileId == normalizedProfileId, cancellationToken);
+    if (existing is null)
+    {
+      existing = new SocialInboxSyncCursor
+      {
+        Resource = resource,
+        Platform = platform,
+        AccountId = normalizedAccountId,
+        ProfileId = normalizedProfileId
+      };
+      dbContext.SocialInboxSyncCursors.Add(existing);
+    }
+
+    existing.Cursor = cursor;
+    existing.LastSuccessAt = error is null ? DateTimeOffset.UtcNow : existing.LastSuccessAt;
+    existing.LastError = error;
+    existing.IsActive = true;
+    existing.IsDeleted = false;
+    existing.DeletedAt = null;
+    existing.UpdatedAt = DateTime.UtcNow;
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private async Task MarkCommentDeletedAsync(string accountId, string commentId, CancellationToken cancellationToken)
+  {
+    var normalizedAccountId = NormalizeRequired(accountId, "accountId");
+    var normalizedCommentId = NormalizeRequired(commentId, "commentId");
+    var existing = await dbContext.SocialInboxComments
+      .IgnoreQueryFilters()
+      .FirstOrDefaultAsync(x => x.AccountId == normalizedAccountId && x.CommentId == normalizedCommentId, cancellationToken);
+    if (existing is null) return;
+
+    existing.IsDeleted = true;
+    existing.IsActive = false;
+    existing.DeletedAt = DateTime.UtcNow;
+    existing.UpdatedAt = DateTime.UtcNow;
+    existing.LastSyncedAt = DateTimeOffset.UtcNow;
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private async Task MarkCommentHiddenAsync(string accountId, string commentId, bool isHidden, CancellationToken cancellationToken)
+  {
+    var normalizedAccountId = NormalizeRequired(accountId, "accountId");
+    var normalizedCommentId = NormalizeRequired(commentId, "commentId");
+    var existing = await dbContext.SocialInboxComments
+      .IgnoreQueryFilters()
+      .FirstOrDefaultAsync(x => x.AccountId == normalizedAccountId && x.CommentId == normalizedCommentId, cancellationToken);
+    if (existing is null) return;
+
+    existing.IsHidden = isHidden;
+    existing.LastSyncedAt = DateTimeOffset.UtcNow;
+    existing.UpdatedAt = DateTime.UtcNow;
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private async Task MarkConversationReadInCacheAsync(string accountId, string conversationId, CancellationToken cancellationToken)
+  {
+    var normalizedAccountId = NormalizeRequired(accountId, "accountId");
+    var normalizedConversationId = NormalizeRequired(conversationId, "conversationId");
+    var conversation = await dbContext.SocialInboxConversations
+      .IgnoreQueryFilters()
+      .FirstOrDefaultAsync(x => x.AccountId == normalizedAccountId && x.ConversationId == normalizedConversationId, cancellationToken);
+    if (conversation is not null)
+    {
+      conversation.UnreadCount = 0;
+      conversation.UpdatedAt = DateTime.UtcNow;
+      conversation.LastSyncedAt = DateTimeOffset.UtcNow;
+    }
+
+    await dbContext.SocialInboxMessages
+      .Where(x => x.AccountId == normalizedAccountId && x.ConversationId == normalizedConversationId && x.Direction == "incoming")
+      .ExecuteUpdateAsync(updates => updates
+        .SetProperty(x => x.IsRead, true)
+        .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
+        .SetProperty(x => x.LastSyncedAt, DateTimeOffset.UtcNow), cancellationToken);
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private static IEnumerable<SocialCommentDto> FlattenComments(IEnumerable<SocialCommentDto> comments)
+  {
+    foreach (var comment in comments)
+    {
+      yield return comment;
+      foreach (var reply in FlattenComments(comment.Replies)) yield return reply;
+    }
+  }
+
+  private static SocialMessageDto MapWebhookMessage(JsonElement message, JsonElement? account, JsonElement? conversation)
+  {
+    return new SocialMessageDto(
+      GetString(message, "id", "messageId", "platformMessageId") ?? string.Empty,
+      GetString(message, "conversationId") ?? GetString(conversation ?? default, "id", "platformConversationId") ?? string.Empty,
+      GetString(message, "accountId") ?? GetString(account ?? default, "id", "accountId") ?? string.Empty,
+      GetString(message, "platform") ?? GetString(account ?? default, "platform"),
+      GetString(message, "text", "message"),
+      GetString(ExtractObject(message, "sender") ?? default, "id") ?? GetString(message, "senderId"),
+      GetString(ExtractObject(message, "sender") ?? default, "name") ?? GetString(message, "senderName"),
+      GetString(message, "direction") ?? "incoming",
+      ParseDate(GetString(message, "sentAt", "createdAt")),
+      ExtractArray(message, "attachments").Select(MapMessageAttachment).ToList());
   }
 
   private static Dictionary<string, string> BuildInboxQuery(string? platform, string? accountId, string? profileId, string? cursor, int limit)
