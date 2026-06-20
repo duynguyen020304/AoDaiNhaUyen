@@ -1,26 +1,43 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-19 | Updated: 2026-07-14 -->
+<!-- Generated: 2026-06-19 | Updated: 2026-06-19 -->
 
 # Repositories
 
 ## Purpose
-EF Core data access implementations. Repositories wrap `AppDbContext` queries and return Domain entities or paged domain results; DTO mapping happens in services.
+EF Core repository implementations. Each class wraps `AppDbContext` queries and returns Domain entities or paged domain results. DTO mapping happens in services, not here. Implements interfaces defined in `Application/Interfaces/Repositories/`.
 
-## Files
+## Key Files
 | File | Interface | Notes |
 |------|-----------|-------|
-| `CategoryRepository.cs` | `ICategoryRepository` | Active category queries/tree inputs |
-| `ProductRepository.cs` | `IProductRepository` | Product list/detail with filters and eager loading |
-| `CartRepository.cs` | `ICartRepository` | Cart/item reads and mutations |
-| `UserProfileRepository.cs` | `IUserProfileRepository` | Profile, addresses, orders, order items |
+| `CategoryRepository.cs` | `ICategoryRepository` | Active category queries and category tree inputs |
+| `ProductRepository.cs` | `IProductRepository` | Product list/detail with filters, pagination, and eager loading of variants/images |
+| `CartRepository.cs` | `ICartRepository` | Cart and cart item reads and mutations |
+| `UserProfileRepository.cs` | `IUserProfileRepository` | User profile, saved addresses, order history, order items |
 | `BlogCategoryRepository.cs` | `IBlogCategoryRepository` | Blog category lookups |
-| `BlogPostRepository.cs` | `IBlogPostRepository` | Blog listing/detail/admin CRUD inputs |
-| `CommentRepository.cs` | `ICommentRepository` | Product comment persistence/queries |
+| `BlogPostRepository.cs` | `IBlogPostRepository` | Blog listing/detail/admin CRUD with status filters |
+| `CommentRepository.cs` | `ICommentRepository` | Product comment persistence and paged queries |
 
-## Local Conventions
-- Keep business rules out; services decide behavior.
-- Use `Include`/`ThenInclude` only where caller needs graph data.
-- Prefer `AsNoTracking()` for read-only queries unless mutation follows.
-- Register new repos as scoped services in `ServiceRegistration.cs`.
-- For paged reads, return deterministic ordering before `Skip`/`Take`.
-- Keep PostgreSQL-specific query assumptions visible in tests or service callers.
+## For AI Agents
+### Working In This Directory
+- Keep business rules out of repositories — services decide behavior; repos only query/persist.
+- Use `Include`/`ThenInclude` only where the caller needs the related graph data.
+- Prefer `AsNoTracking()` for read-only queries; use tracked queries only when a mutation follows.
+- Register new repos as scoped services in `Api/Configuration/ServiceRegistration.cs`.
+- For paged reads, apply a deterministic `OrderBy` before `Skip`/`Take`.
+- Match the existing primary constructor DI pattern: `public class FooRepository(AppDbContext db)`.
+
+### Common Patterns
+- Primary constructor DI: `public class ProductRepository(AppDbContext db) : IProductRepository`.
+- Soft-deleted records excluded automatically via global query filter on `AppDbContext`; no manual `!IsDeleted` needed.
+- PostgreSQL-specific query behavior (e.g., case-insensitive ILIKE) should be visible in comments or documented in the calling service.
+- Paged results return `(IReadOnlyList<T> items, int totalCount)` tuple or a `PagedResult<T>` type.
+
+## Dependencies
+### Internal
+- `Data/AppDbContext.cs` (injected)
+- `AoDaiNhaUyen.Domain` (entity types returned)
+- `AoDaiNhaUyen.Application` (repository interfaces implemented)
+### External
+- EF Core, Npgsql
+
+<!-- MANUAL: -->

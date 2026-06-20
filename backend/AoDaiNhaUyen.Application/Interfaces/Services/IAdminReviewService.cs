@@ -18,6 +18,9 @@ public interface IAdminReviewService
   /// <summary>List recent comments across all products.</summary>
   Task<IReadOnlyList<AdminCommentItem>> GetRecentCommentsAsync(int limit = 10, CancellationToken ct = default);
 
+  /// <summary>Get bad review response coverage and first-response SLA stats.</summary>
+  Task<BadReviewRecoveryStats> GetBadReviewRecoveryStatsAsync(int days = 30, double slaHours = 4, CancellationToken ct = default);
+
   /// <summary>Reply to a comment/review as admin (creates child comment).</summary>
   Task<AdminReplyResult> ReplyToCommentAsync(
     Guid adminUserId, Guid commentId, Guid productId, string content, CancellationToken ct = default);
@@ -75,3 +78,15 @@ public sealed record AdminReviewModerationItem(
 public sealed record AdminReviewActionResult(
   bool Success,
   string Message);
+
+/// <summary>Bad review recovery action stats based on admin reply coverage, not true customer resolution.</summary>
+public sealed record BadReviewRecoveryStats(
+  int Days,
+  double SlaHours,
+  int TotalBadReviews,
+  int RespondedBadReviews,
+  int UnrespondedBadReviews,
+  int OverSlaBadReviews,
+  double RecoveryActionRate,
+  double SlaBreachRate,
+  double AverageFirstResponseHours);

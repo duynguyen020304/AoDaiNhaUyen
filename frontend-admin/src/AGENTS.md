@@ -1,41 +1,61 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-06-08 | Updated: 2026-07-14 -->
+<!-- Generated: 2026-06-19 | Updated: 2026-06-19 -->
 
 # frontend-admin/src
 
 ## Purpose
-Admin SPA source. Routes, guarded shell, typed API clients, Zustand stores, Tailwind UI, dashboards, Blog CMS, marketing, AI chat/Hermes, LLM logs, and risk config.
+Admin SPA source root. Contains the route tree (`App.tsx`), app entry (`main.tsx`), and all feature subdirectories: API clients, route guards, UI components, pages, Zustand stores, query hooks, types, utilities, and global styles.
 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `main.tsx` | StrictMode -> QueryClientProvider -> FeedbackProvider -> App; imports globals |
-| `App.tsx` | Route tree, `AdminRoute`, `GuestRoute`, `AdminLayout` wiring |
+| `main.tsx` | Entry: StrictMode → QueryClientProvider → FeedbackProvider → App; imports globals.css |
+| `App.tsx` | Route tree, wires `AdminRoute`, `GuestRoute`, `AdminLayout` |
 
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
-| `api/` | Fetch clients for auth/admin/blog/dashboard/email/inventory/llm/media |
-| `auth/` | Route guards |
+| `api/` | Typed fetch clients for all backend domains |
+| `auth/` | `AdminRoute` and `GuestRoute` guards |
 | `components/` | Layout, modals, dashboard widgets, AI chat, blog editor, LLM logs, UI primitives |
 | `pages/` | Route-level admin screens |
-| `stores/` | Zustand stores for auth/products/categories/users/roles/dashboard/blog/email/AI/logs/promos |
-| `styles/` | Tailwind v4 globals/theme |
-| `types/` | Admin/auth/blog/dashboard/AI/log DTO types |
-| `lib/` | Utilities, query helpers, email preview helpers |
+| `queries/` | TanStack Query option factories and custom hooks |
+| `stores/` | Zustand stores for all domain state |
+| `styles/` | Tailwind v4 globals and theme |
+| `types/` | DTO and domain type definitions |
+| `lib/` | `cn` helper, `queryClient`, email preview utilities |
+| `assets/` | Static images (hero, logos) |
 
 ## Route Areas
 | Area | Pages |
 |------|-------|
 | Auth | `LoginPage` |
-| Core admin | Dashboard, products, categories, users, roles, media, orders, promos |
+| Core admin | Dashboard, Products, Categories, Orders, Promos, Media, Users, Roles |
 | Blog CMS | `BlogListPage`, `BlogFormPage` |
-| Marketing | `MarketingDashboardPage`, `EmailTemplatesPage`, `SubscribersPage`, `EmailQueuePage` |
-| AI/governance | `AiChatPage`, `LlmLogsPage`, `ToolRiskPage` |
+| Email marketing | `MarketingDashboardPage`, `EmailTemplatesPage`, `SubscribersPage`, `EmailQueuePage` |
+| AI/Hermes | `AiChatPage`, `HermesPage`, `HermesReportsPage`, `HermesMonitorPage`, `HermesLiveMonitorPage` |
+| Governance | `ToolRiskPage`, `AiTryOnFeedbackPage` |
+| Reviews | `ReviewsPage` |
 
-## Local Conventions
-- Tailwind only; no CSS Modules.
-- Stores use `create<State>((set, get) => ({ ... }))` and Vietnamese `error` strings.
-- Mutations generally refetch affected lists and invalidate dashboard queries when relevant.
-- Use `feedback` provider/components for admin toasts/messages.
-- Security/risk pages should keep explicit confirmations for destructive or sensitive actions.
+## For AI Agents
+### Working In This Directory
+- `main.tsx` is the single provider stack — add providers here, not in `App.tsx`.
+- `App.tsx` owns all route declarations; every protected route must nest inside `<AdminRoute>`.
+- Tailwind only — no CSS Modules.
+
+### Common Patterns
+- Stores use `create<State>((set, get) => ({ ... }))` with Vietnamese `error` strings.
+- Mutations generally refetch affected lists and call `invalidateAdminDashboardQueries()` when relevant.
+- Use `useFeedback()` (from `FeedbackContext`) for toasts and confirmation dialogs.
+- Destructive actions need explicit `confirm()` before executing.
+
+## Dependencies
+### Internal
+- All subdirs depend on `@/types/*` for shared DTOs
+- `@/api/client` is the base for all HTTP calls
+
+### External
+- react-router-dom 7 (route tree)
+- TanStack Query 5 (`QueryClientProvider` in `main.tsx`)
+
+<!-- MANUAL: -->

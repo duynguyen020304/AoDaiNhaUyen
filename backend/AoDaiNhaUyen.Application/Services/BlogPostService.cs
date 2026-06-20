@@ -203,6 +203,36 @@ public sealed class BlogPostService(
     return await MapPostAsync(updated, cancellationToken);
   }
 
+  public async Task<BlogPostDto> UpdateSeoAsync(Guid id, UpdateBlogPostSeoRequest request, CancellationToken cancellationToken = default)
+  {
+    ValidateSeoRequest(request.CanonicalUrl);
+    var post = await blogPostRepository.GetByIdAsync(id, true, cancellationToken)
+      ?? throw new InvalidOperationException("Không tìm thấy bài viết.");
+
+    if (request.MetaTitle is not null) post.MetaTitle = NormalizeOptional(request.MetaTitle);
+    if (request.MetaDescription is not null) post.MetaDescription = NormalizeOptional(request.MetaDescription);
+    if (request.CanonicalUrl is not null) post.CanonicalUrl = NormalizeOptional(request.CanonicalUrl);
+    if (request.ReviewedBy is not null) post.ReviewedBy = NormalizeOptional(request.ReviewedBy);
+    if (request.InformationGain is not null) post.InformationGain = NormalizeOptional(request.InformationGain);
+    if (request.Tags is not null) post.Tags = JsonSerializer.Serialize(NormalizeTags(request.Tags), JsonOptions);
+
+    post.UpdatedAt = DateTime.UtcNow;
+    post.IsDeleted = false;
+    post.DeletedAt = null;
+
+    await blogPostRepository.UpdateAsync(post, cancellationToken);
+    await cache.RemoveByTagAsync(CacheTags.Blog, cancellationToken);
+    var updated = await blogPostRepository.GetByIdAsync(post.Id, false, cancellationToken) ?? post;
+    await hermesEvents.EnqueueAdminContentEventAsync(
+      "content_updated",
+      post.Id,
+      new { contentId = post.Id, title = post.Title, slug = post.Slug, status = post.Status.ToString(), type = "blog_post", action = "seo_updated" },
+      $"content_seo_updated:Content:{post.Id:N}:{post.UpdatedAt.Ticks}",
+      cancellationToken);
+    await EnqueueBlogSeoOpportunityAsync(post, cancellationToken);
+    return await MapPostAsync(updated, cancellationToken);
+  }
+
   public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
   {
     await blogPostRepository.SoftDeleteAsync(id, cancellationToken);
@@ -241,6 +271,14 @@ public sealed class BlogPostService(
         slug = post.Slug,
         status = post.Status.ToString(),
         type = "blog_post",
+        excerpt = post.Excerpt,
+        metaTitle = post.MetaTitle,
+        metaDescription = post.MetaDescription,
+        canonicalUrl = post.CanonicalUrl,
+        informationGain = post.InformationGain,
+        reviewedBy = post.ReviewedBy,
+        featuredImage = post.FeaturedImage,
+        seoUpdatePath = $"/api/v1/admin/blog/{post.Id}/seo",
         hasMetaTitle,
         hasMetaDescription,
         hasKeywords,
@@ -452,6 +490,15 @@ public sealed class BlogPostService(
         element.WriteTo(writer);
         break;
     }
+  }
+
+  private static void ValidateSeoRequest(string? canonicalUrl)
+  {
+    if (string.IsNullOrWhiteSpace(canonicalUrl)) return;
+    if (!Uri.TryCreate(canonicalUrl, UriKind.Absolute, out var canonicalUri))
+      throw new ArgumentException("Canonical URL không hợp lệ.");
+    if (!string.Equals(canonicalUri.Host, "aodainhauyen.io.vn", StringComparison.OrdinalIgnoreCase))
+      throw new ArgumentException("Canonical URL phải thuộc aodainhauyen.io.vn.");
   }
 
   private static void ValidateRequest(string title, string excerpt, JsonElement content, string? canonicalUrl)

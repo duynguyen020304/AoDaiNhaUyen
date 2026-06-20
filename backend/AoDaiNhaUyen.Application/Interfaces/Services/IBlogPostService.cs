@@ -13,6 +13,7 @@ public interface IBlogPostService
   Task<IReadOnlyList<string>> GetTagsAsync(CancellationToken cancellationToken = default);
   Task<BlogPostDto> CreateAsync(CreateBlogPostRequest request, CancellationToken cancellationToken = default);
   Task<BlogPostDto> UpdateAsync(Guid id, UpdateBlogPostRequest request, CancellationToken cancellationToken = default);
+  Task<BlogPostDto> UpdateSeoAsync(Guid id, UpdateBlogPostSeoRequest request, CancellationToken cancellationToken = default);
   Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
   Task<string> BuildBlogSitemapAsync(string siteBaseUrl, CancellationToken cancellationToken = default);
   Task<string> BuildLlmsTextAsync(string siteBaseUrl, CancellationToken cancellationToken = default);

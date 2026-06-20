@@ -11,6 +11,22 @@ public sealed record ConsentRecord(string Channel, bool IsOptIn, string Source, 
 public sealed record ImportSubscribersRequest(IReadOnlyList<string> Emails, string Source);
 public sealed record ImportSubscribersResult(int Imported, int Skipped);
 
+public sealed record QueueSingleEmailJobRequest(
+  string? ToEmail,
+  Guid? CustomerId,
+  Guid? OrderId,
+  string TemplateKey,
+  string Subject,
+  string? Preheader,
+  string? Intro,
+  string? Body,
+  string? CtaLabel,
+  string? CtaUrl,
+  string Purpose,
+  DateTime? ScheduledAt,
+  string IdempotencyKey);
+public sealed record QueueSingleEmailJobResponse(Guid JobId, string ToEmail, string TemplateKey, DateTime ScheduledAt, bool AlreadyQueued);
+
 public sealed record EmailJobListItem(Guid Id, string ToEmail, string TemplateKey, string Status, int RetryCount, DateTime ScheduledAt, DateTime? SentAt, string? ErrorMessage);
 public sealed record EmailJobDetail(Guid Id, string ToEmail, string TemplateKey, string PayloadJson, string Status, int RetryCount, DateTime ScheduledAt, DateTime? SentAt, string? ErrorMessage, IReadOnlyList<SendLogRecord> Logs);
 public sealed record SendLogRecord(string Status, DateTime? SentAt, DateTime? FailedAt, string? ErrorMessage);

@@ -24,6 +24,7 @@ public interface IAdminEmailJobService
 {
   Task<(IReadOnlyList<EmailJobListItem> Items, int TotalItem)> GetListAsync(string? status, int page, int pageSize, CancellationToken cancellationToken = default);
   Task<EmailJobDetail?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+  Task<QueueSingleEmailJobResponse> QueueSingleAsync(QueueSingleEmailJobRequest request, CancellationToken cancellationToken = default);
   Task<bool> RetryAsync(Guid id, CancellationToken cancellationToken = default);
   Task<bool> CancelAsync(Guid id, CancellationToken cancellationToken = default);
 }

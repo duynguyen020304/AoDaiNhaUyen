@@ -30,6 +30,16 @@ public sealed class StockService(
       .Select(v => new { v.Id, v.Sku, v.StockQty, v.ProductId, ProductName = v.Product.Name })
       .FirstOrDefaultAsync(cancellationToken);
 
+    if (variant is not null && variant.StockQty == 0)
+    {
+      await hermesEvents.EnqueueAdminInventoryEventAsync(
+        "stock_out_critical",
+        variant.Id,
+        new { variantId = variant.Id, variant.ProductId, variant.Sku, variant.ProductName, stockQty = variant.StockQty, soldOutAt = DateTimeOffset.UtcNow },
+        $"stock_out_critical:Inventory:{variant.Id:N}:{DateTime.UtcNow.Date.Ticks}",
+        cancellationToken);
+    }
+
     if (variant is not null && variant.StockQty <= threshold)
     {
       await hermesEvents.EnqueueAdminInventoryEventAsync(

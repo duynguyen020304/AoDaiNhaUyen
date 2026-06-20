@@ -25,6 +25,22 @@ export interface HermesReportDetail {
   createdAt: string
 }
 
+export type HermesRawActionRisk = 'low' | 'medium' | 'high' | string
+
+export type HermesRawActionMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | string
+
+export interface HermesRawAction {
+  id?: string
+  actionType?: string
+  title: string
+  reason?: string
+  risk: HermesRawActionRisk
+  method: HermesRawActionMethod
+  path: string
+  body?: unknown
+  executionMode?: string
+}
+
 export interface HermesReportFilters {
   page: number
   pageSize: number

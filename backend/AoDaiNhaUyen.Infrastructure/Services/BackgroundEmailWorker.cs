@@ -41,6 +41,7 @@ public sealed class BackgroundEmailWorker(IServiceScopeFactory scopeFactory, ILo
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
     var templateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
+    var hermesEvents = scope.ServiceProvider.GetRequiredService<IHermesEventOutboxPublisher>();
 
     await RequeueStaleSendingJobsAsync(dbContext, cancellationToken);
 
@@ -65,7 +66,7 @@ public sealed class BackgroundEmailWorker(IServiceScopeFactory scopeFactory, ILo
     foreach (var jobId in claimedJobIds)
     {
       var job = await dbContext.EmailJobs.FirstAsync(x => x.Id == jobId, cancellationToken);
-      await ProcessJobAsync(dbContext, emailService, templateService, job, cancellationToken);
+      await ProcessJobAsync(dbContext, emailService, templateService, hermesEvents, job, cancellationToken);
     }
   }
 
@@ -92,6 +93,7 @@ public sealed class BackgroundEmailWorker(IServiceScopeFactory scopeFactory, ILo
     AppDbContext dbContext,
     IEmailService emailService,
     IEmailTemplateService templateService,
+    IHermesEventOutboxPublisher hermesEvents,
     EmailJob job,
     CancellationToken cancellationToken)
   {
@@ -131,6 +133,52 @@ public sealed class BackgroundEmailWorker(IServiceScopeFactory scopeFactory, ILo
       });
     }
 
+    if (job.Status == "dead")
+    {
+      await hermesEvents.EnqueueAdminEmailEventAsync(
+        "critical_email_dead",
+        job.Id,
+        new
+        {
+          jobId = job.Id,
+          maskedToEmail = MaskEmail(job.ToEmail),
+          job.TemplateKey,
+          retryCount = job.RetryCount,
+          errorCategory = ClassifyEmailError(job.ErrorMessage),
+          lastError = Truncate(job.ErrorMessage, 300),
+          detectedAt = DateTimeOffset.UtcNow
+        },
+        $"critical_email_dead:Email:{job.Id:N}:{job.RetryCount}",
+        cancellationToken);
+    }
+
     await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private static string MaskEmail(string? email)
+  {
+    if (string.IsNullOrWhiteSpace(email)) return string.Empty;
+    var trimmed = email.Trim();
+    var at = trimmed.IndexOf('@');
+    if (at <= 1) return "***";
+    return $"{trimmed[0]}***{trimmed[at..]}";
+  }
+
+  private static string ClassifyEmailError(string? error)
+  {
+    if (string.IsNullOrWhiteSpace(error)) return "unknown";
+    var lower = error.ToLowerInvariant();
+    if (lower.Contains("auth", StringComparison.Ordinal) || lower.Contains("credential", StringComparison.Ordinal) || lower.Contains("login", StringComparison.Ordinal)) return "auth";
+    if (lower.Contains("timeout", StringComparison.Ordinal) || lower.Contains("timed out", StringComparison.Ordinal)) return "timeout";
+    if (lower.Contains("smtp", StringComparison.Ordinal)) return "smtp";
+    if (lower.Contains("rate", StringComparison.Ordinal) || lower.Contains("quota", StringComparison.Ordinal) || lower.Contains("limit", StringComparison.Ordinal)) return "quota";
+    return "delivery";
+  }
+
+  private static string Truncate(string? value, int maxLength)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+    var trimmed = value.Trim();
+    return trimmed.Length <= maxLength ? trimmed : trimmed[..Math.Max(0, maxLength - 1)] + "…";
   }
 }

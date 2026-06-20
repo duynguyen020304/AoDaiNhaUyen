@@ -243,8 +243,13 @@ public sealed class AdminSubscriberService(
   private static string Token() => Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
 }
 
-public sealed class AdminEmailJobService(AppDbContext dbContext) : IAdminEmailJobService
+public sealed class AdminEmailJobService(
+  AppDbContext dbContext,
+  IOptions<EmailSettings> emailSettings,
+  IHermesEventOutboxPublisher hermesEvents) : IAdminEmailJobService
 {
+  private readonly EmailSettings emailSettings = emailSettings.Value;
+
   public async Task<(IReadOnlyList<EmailJobListItem> Items, int TotalItem)> GetListAsync(string? status, int page, int pageSize, CancellationToken cancellationToken = default)
   {
     var query = dbContext.EmailJobs.AsNoTracking().AsQueryable();
@@ -264,6 +269,59 @@ public sealed class AdminEmailJobService(AppDbContext dbContext) : IAdminEmailJo
       .FirstOrDefaultAsync(cancellationToken);
   }
 
+  public async Task<QueueSingleEmailJobResponse> QueueSingleAsync(QueueSingleEmailJobRequest request, CancellationToken cancellationToken = default)
+  {
+    ValidateSingleEmail(request);
+    var idempotencyKey = request.IdempotencyKey.Trim();
+    var existing = await FindExistingByIdempotencyKeyAsync(idempotencyKey, cancellationToken);
+    if (existing is not null)
+      return new QueueSingleEmailJobResponse(existing.Id, existing.ToEmail, existing.TemplateKey, existing.ScheduledAt, true);
+
+    var recipient = await ResolveRecipientAsync(request, cancellationToken);
+    var templateKey = request.TemplateKey.Trim();
+    var hasTemplate = await dbContext.EmailTemplates.AnyAsync(x => x.Key == templateKey && x.IsActive && !x.IsDeleted, cancellationToken);
+    if (!hasTemplate && templateKey != "hermes.single_email") throw new InvalidOperationException("Mẫu email chưa hoạt động hoặc không tồn tại.");
+    if (request.Purpose.Trim().Equals("survey", StringComparison.OrdinalIgnoreCase) && !recipient.HasEmailConsent)
+      throw new InvalidOperationException("Khách hàng chưa opt-in email survey/marketing.");
+
+    var scheduledAt = request.ScheduledAt?.ToUniversalTime() ?? DateTime.UtcNow;
+    var job = new EmailJob
+    {
+      Id = Guid.NewGuid(),
+      ToEmail = recipient.Email,
+      TemplateKey = templateKey,
+      PayloadJson = System.Text.Json.JsonSerializer.Serialize(new
+      {
+        subject = request.Subject.Trim(),
+        preheader = Normalize(request.Preheader),
+        intro = Normalize(request.Intro),
+        body = Normalize(request.Body),
+        ctaLabel = Normalize(request.CtaLabel),
+        ctaUrl = Normalize(request.CtaUrl),
+        purpose = request.Purpose.Trim().ToLowerInvariant(),
+        scheduledAt = scheduledAt.ToString("O"),
+        idempotencyKey,
+        customerId = recipient.CustomerId,
+        orderId = recipient.OrderId,
+        unsubscribeUrl = recipient.UnsubscribeToken is null ? null : BuildFrontendUrl($"/unsubscribe?token={Uri.EscapeDataString(recipient.UnsubscribeToken)}")
+      }),
+      Status = "queued",
+      ScheduledAt = scheduledAt,
+      CreatedAt = DateTime.UtcNow,
+      UpdatedAt = DateTime.UtcNow
+    };
+
+    dbContext.EmailJobs.Add(job);
+    await dbContext.SaveChangesAsync(cancellationToken);
+    await hermesEvents.EnqueueAdminEmailEventAsync(
+      "single_email_job_created",
+      job.Id,
+      new { jobId = job.Id, toEmail = MaskEmail(job.ToEmail), job.TemplateKey, purpose = request.Purpose.Trim().ToLowerInvariant(), scheduledAt, recipient.CustomerId, recipient.OrderId },
+      $"single_email_job_created:Email:{idempotencyKey}",
+      cancellationToken);
+    return new QueueSingleEmailJobResponse(job.Id, job.ToEmail, job.TemplateKey, job.ScheduledAt, false);
+  }
+
   public async Task<bool> RetryAsync(Guid id, CancellationToken cancellationToken = default)
   {
     var job = await dbContext.EmailJobs.FirstOrDefaultAsync(x => x.Id == id && (x.Status == "queued" || x.Status == "dead" || x.Status == "failed" || x.Status == "cancelled"), cancellationToken);
@@ -277,6 +335,80 @@ public sealed class AdminEmailJobService(AppDbContext dbContext) : IAdminEmailJo
     return true;
   }
 
+  private async Task<EmailJob?> FindExistingByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken)
+  {
+    var needle = $"\"idempotencyKey\":\"{idempotencyKey}\"";
+    return await dbContext.EmailJobs.AsNoTracking().Where(x => x.PayloadJson.Contains(needle)).OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync(cancellationToken);
+  }
+
+  private async Task<SingleEmailRecipient> ResolveRecipientAsync(QueueSingleEmailJobRequest request, CancellationToken cancellationToken)
+  {
+    if (!request.CustomerId.HasValue && !request.OrderId.HasValue) throw new ArgumentException("Cần customerId hoặc orderId để xác minh email người nhận.");
+    Guid? customerId = request.CustomerId;
+    Guid? orderId = request.OrderId;
+    string? email = null;
+
+    if (request.OrderId.HasValue)
+    {
+      var order = await dbContext.Orders.AsNoTracking().Include(x => x.User).FirstOrDefaultAsync(x => x.Id == request.OrderId.Value, cancellationToken)
+        ?? throw new ArgumentException("Không tìm thấy đơn hàng nguồn.");
+      orderId = order.Id;
+      customerId = order.UserId;
+      email = order.User.Email;
+    }
+
+    if (request.CustomerId.HasValue)
+    {
+      if (customerId.HasValue && customerId.Value != request.CustomerId.Value) throw new ArgumentException("customerId không khớp với orderId.");
+      var user = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.CustomerId.Value, cancellationToken)
+        ?? throw new ArgumentException("Không tìm thấy khách hàng.");
+      customerId = user.Id;
+      email ??= user.Email;
+    }
+
+    if (string.IsNullOrWhiteSpace(email) || !IsEmailLike(email.Trim().ToLowerInvariant())) throw new ArgumentException("Khách hàng nguồn không có email hợp lệ.");
+    var normalizedEmail = email.Trim().ToLowerInvariant();
+    if (!string.IsNullOrWhiteSpace(request.ToEmail) && !string.Equals(request.ToEmail.Trim(), normalizedEmail, StringComparison.OrdinalIgnoreCase))
+      throw new ArgumentException("toEmail không khớp email của khách hàng nguồn.");
+
+    var subscriber = await dbContext.Subscribers.AsNoTracking().Include(x => x.Consents)
+      .Where(x => !x.IsDeleted && x.Email == normalizedEmail)
+      .OrderByDescending(x => x.UpdatedAt)
+      .FirstOrDefaultAsync(cancellationToken);
+    var hasEmailConsent = subscriber is not null && subscriber.Status == "active" && subscriber.Consents.Any(x => x.Channel == "email" && x.IsOptIn && x.RevokedAt == null);
+    return new SingleEmailRecipient(normalizedEmail, customerId, orderId, hasEmailConsent, subscriber?.UnsubscribeToken);
+  }
+
+  private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+  private static bool IsEmailLike(string value) => value.Length <= 150 && value.Contains('@') && value.Contains('.');
+
+  private static void ValidateSingleEmail(QueueSingleEmailJobRequest request)
+  {
+    if (!string.IsNullOrWhiteSpace(request.ToEmail) && !IsEmailLike(request.ToEmail.Trim().ToLowerInvariant())) throw new ArgumentException("Email người nhận không hợp lệ.");
+    if (string.IsNullOrWhiteSpace(request.TemplateKey) || request.TemplateKey.Length > 120) throw new ArgumentException("Template key không hợp lệ.");
+    if (string.IsNullOrWhiteSpace(request.Subject) || request.Subject.Length > 255) throw new ArgumentException("Tiêu đề email không hợp lệ.");
+    if (string.IsNullOrWhiteSpace(request.Purpose) || request.Purpose.Trim().ToLowerInvariant() is not ("transactional" or "survey" or "thank_you")) throw new ArgumentException("Purpose phải là transactional, survey hoặc thank_you.");
+    if (string.IsNullOrWhiteSpace(request.IdempotencyKey) || request.IdempotencyKey.Length > 160) throw new ArgumentException("IdempotencyKey bắt buộc và tối đa 160 ký tự.");
+    if (request.Body is { Length: > 4000 }) throw new ArgumentException("Nội dung email tối đa 4000 ký tự.");
+    var ctaUrl = Normalize(request.CtaUrl);
+    if (ctaUrl is not null && (!Uri.TryCreate(ctaUrl, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https"))) throw new ArgumentException("CTA URL phải là http/https hợp lệ.");
+    if (request.ScheduledAt.HasValue && request.ScheduledAt.Value.ToUniversalTime() < DateTime.UtcNow.AddMinutes(-5)) throw new ArgumentException("Thời gian gửi không được nằm trong quá khứ.");
+    if (request.ScheduledAt.HasValue && request.ScheduledAt.Value.ToUniversalTime() > DateTime.UtcNow.AddDays(180)) throw new ArgumentException("Chỉ được lên lịch email trong 180 ngày tới.");
+  }
+
+  private string BuildFrontendUrl(string path)
+  {
+    var baseUrl = string.IsNullOrWhiteSpace(emailSettings.FrontendBaseUrl) ? "https://aodainhauyen.com" : emailSettings.FrontendBaseUrl.TrimEnd('/');
+    return $"{baseUrl}/{path.TrimStart('/')}";
+  }
+
+  private static string MaskEmail(string email)
+  {
+    var parts = email.Split('@', 2);
+    if (parts.Length != 2 || parts[0].Length == 0) return "***";
+    return $"{parts[0][0]}***@{parts[1]}";
+  }
+
   public async Task<bool> CancelAsync(Guid id, CancellationToken cancellationToken = default)
   {
     var job = await dbContext.EmailJobs.FirstOrDefaultAsync(x => x.Id == id && (x.Status == "queued" || x.Status == "dead" || x.Status == "failed"), cancellationToken);
@@ -286,6 +418,8 @@ public sealed class AdminEmailJobService(AppDbContext dbContext) : IAdminEmailJo
     await dbContext.SaveChangesAsync(cancellationToken);
     return true;
   }
+
+  private sealed record SingleEmailRecipient(string Email, Guid? CustomerId, Guid? OrderId, bool HasEmailConsent, string? UnsubscribeToken);
 }
 
 public sealed class AdminMarketingStatsService(AppDbContext dbContext) : IAdminMarketingStatsService

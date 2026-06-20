@@ -95,6 +95,13 @@ public sealed class HermesAdminApiDescriptionRegistry
     // Inventory
     Get("/api/admin/inventory/low-stock", "Lấy danh sách sản phẩm sắp hết hàng.", "LowStockAlertDto[]", query: [Param("threshold", "int", false, "Ngưỡng tồn kho, mặc định 5")]),
 
+    // Reviews
+    Get("/api/admin/reviews", "List đánh giá để Hermes kiểm tra nội dung, rating, productId và reviewId trước khi phản hồi.", "Paginated AdminReviewModerationItem[]", query: [Param("search", "string", false, "Từ khóa nội dung/khách/sản phẩm/email"), Param("rating", "int", false, "Số sao 1-5"), Param("isVisible", "bool", false, "Trạng thái hiển thị"), Param("page", "int", false, "Trang"), Param("pageSize", "int", false, "Kích thước trang, tối đa 100")]),
+    Get("/api/admin/reviews/recovery-stats", "Thống kê chăm sóc đánh giá xấu: tỷ lệ đã phản hồi, thời gian phản hồi đầu tiên, số quá SLA. Đây là recovery action/response coverage, không phải true resolution.", "BadReviewRecoveryStats", query: [Param("days", "int", false, "Khoảng ngày, mặc định 30"), Param("slaHours", "double", false, "SLA phản hồi tính theo giờ, mặc định 4")]),
+    Post("/api/admin/reviews/{id}/reply", "Trả lời một đánh giá/bình luận bằng tài khoản Hermes admin; tạo child comment công khai.", "AdminReplyResult", ReviewReplyBody(), path: [Id("id", "ID review/comment gốc")], notes: ["Risk: low/medium brand impact. Chỉ phản hồi khi có reviewId/commentId và productId thật.", "Nội dung phản hồi phải lịch sự, đúng giọng Áo Dài Nhà Uyên, không hứa hoàn tiền/khuyến mãi nếu chưa có policy rõ.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
+    Patch("/api/admin/reviews/{id}/visibility", "Ẩn/hiển thị đánh giá cho moderation.", "AdminReviewActionResult", Body([Field("isVisible", "bool", true, "true để hiển thị, false để ẩn")], new { isVisible = true }), path: [Id("id", "ID review")]),
+    Delete("/api/admin/reviews/{id}", "Xóa đánh giá/bình luận khỏi hệ thống.", "AdminReviewActionResult", path: [Id("id", "ID review")]),
+
     // LLM logs
     Get("/api/admin/llm-logs", "Tìm kiếm nhật ký LLM.", "Paginated LlmAuditLogListItemDto[]", query: [Param("search", "string", false, "Từ khóa"), Param("provider", "string", false, "Nhà cung cấp"), Param("model", "string", false, "Model"), Param("from", "datetime", false, "Từ ngày"), Param("to", "datetime", false, "Đến ngày"), Param("page", "int", false, "Trang"), Param("pageSize", "int", false, "Kích thước trang")]),
     Get("/api/admin/llm-logs/stats", "Thống kê nhật ký LLM.", "LlmAuditLogStatsDto", query: [Param("from", "datetime", false, "Từ ngày"), Param("to", "datetime", false, "Đến ngày")]),
@@ -143,9 +150,13 @@ public sealed class HermesAdminApiDescriptionRegistry
     // Marketing: email jobs
     Get("/api/admin/email-jobs", "List email jobs.", "Paginated EmailJobAdminDto[]", query: [Param("status", "string", false, "Trạng thái"), Param("page", "int", false, "Trang"), Param("pageSize", "int", false, "Kích thước trang")]),
     Get("/api/admin/email-jobs/{id}", "Chi tiết email job.", "EmailJobAdminDto", path: [Id("id", "ID job")]),
+    Post("/api/admin/email-jobs", "Tạo một email job cho một khách hàng; dùng để gửi cảm ơn ngay hoặc lên lịch khảo sát sau 14 ngày.", "QueueSingleEmailJobResponse", SingleEmailJobBody(), notes: ["Risk: medium vì gửi email ra ngoài hệ thống.", "Bắt buộc có customerId hoặc orderId để backend tự xác minh email; không gửi tới email tùy ý.", "toEmail nếu gửi phải khớp email của customer/order nguồn.", "Bắt buộc idempotencyKey ổn định để tránh gửi trùng khi Hermes retry.", "Dùng templateKey hermes.single_email nếu chưa có template riêng.", "Survey follow-up nên đặt scheduledAt = now + 14 days và purpose = survey; backend yêu cầu khách đã opt-in email.", "Không hứa mã giảm giá/hoàn tiền nếu không có policy rõ.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
     Patch("/api/admin/email-jobs/{id}/retry", "Retry email job.", "null", path: [Id("id", "ID job")]),
     Patch("/api/admin/email-jobs/{id}/cancel", "Hủy email job.", "null", path: [Id("id", "ID job")]),
     Get("/api/admin/marketing/stats", "Thống kê marketing.", "MarketingStatsDto"),
+
+    // Blog/content SEO
+    Put("/api/v1/admin/blog/{id}/seo", "Cập nhật metadata SEO/E-E-A-T cho một bài blog đã có. Dùng cho event blog_seo_opportunity; chỉ gửi field cần đổi.", "BlogPostDto", BlogSeoBody(), path: [Id("id", "ID bài blog")], notes: ["Risk: medium vì thay đổi nội dung SEO public.", "Endpoint partial-update: field null/không gửi sẽ giữ nguyên giá trị hiện tại.", "Không bịa route khác; dùng đúng /api/v1/admin/blog/{id}/seo cho UPDATE_BLOG_SEO.", "Nếu thiếu postId/contentId thật từ event payload thì actions phải là [].", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
 
     // Hermes reports
     Get("/api/admin/hermes/reports", "List báo cáo Hermes đã lưu.", "Paginated HermesReportListItemResponse[]", query: [Param("severity", "string", false, "info/warning/high/critical"), Param("type", "string", false, "Loại báo cáo"), Param("status", "string", false, "Trạng thái"), Param("q", "string", false, "Từ khóa"), Param("page", "int", false, "Trang"), Param("pageSize", "int", false, "Kích thước trang")]),
@@ -181,8 +192,8 @@ public sealed class HermesAdminApiDescriptionRegistry
   private static HermesAdminApiDescription Post(string route, string purpose, string dataShape, HermesBodyDescription? body = null, IReadOnlyList<HermesParamDescription>? path = null, IReadOnlyList<string>? notes = null) =>
     Desc("POST", route, purpose, dataShape, body, path, null, notes);
 
-  private static HermesAdminApiDescription Put(string route, string purpose, string dataShape, HermesBodyDescription? body = null, IReadOnlyList<HermesParamDescription>? path = null) =>
-    Desc("PUT", route, purpose, dataShape, body, path, null);
+  private static HermesAdminApiDescription Put(string route, string purpose, string dataShape, HermesBodyDescription? body = null, IReadOnlyList<HermesParamDescription>? path = null, IReadOnlyList<string>? notes = null) =>
+    Desc("PUT", route, purpose, dataShape, body, path, null, notes);
 
   private static HermesAdminApiDescription Patch(string route, string purpose, string dataShape, HermesBodyDescription? body = null, IReadOnlyList<HermesParamDescription>? path = null) =>
     Desc("PATCH", route, purpose, dataShape, body, path, null);
@@ -206,6 +217,29 @@ public sealed class HermesAdminApiDescriptionRegistry
   private static HermesBodyDescription MultipartBody(string fieldName, string description) =>
     new("multipart/form-data", true, new Dictionary<string, HermesFieldDescription> { [fieldName] = new("file", true, description) }, null);
 
+  private static HermesBodyDescription SingleEmailJobBody() =>
+    Body([
+      Field("toEmail", "string", false, "Email khách hàng; nếu gửi phải khớp customerId/orderId"),
+      Field("customerId", "guid", false, "ID khách hàng nguồn; bắt buộc nếu không có orderId"),
+      Field("orderId", "guid", false, "ID đơn hàng nguồn; bắt buộc nếu không có customerId"),
+      Field("templateKey", "string", true, "Dùng hermes.single_email nếu không có template riêng"),
+      Field("subject", "string", true, "Tiêu đề email"),
+      Field("preheader", "string", false, "Preview text"),
+      Field("intro", "string", false, "Lời mở đầu"),
+      Field("body", "string", false, "Nội dung text, tối đa 4000 ký tự"),
+      Field("ctaLabel", "string", false, "Nhãn CTA"),
+      Field("ctaUrl", "string", false, "URL CTA"),
+      Field("purpose", "string", true, "transactional/survey/thank_you"),
+      Field("scheduledAt", "datetime", false, "UTC ISO time; bỏ trống để gửi ngay, +14 ngày cho survey"),
+      Field("idempotencyKey", "string", true, "Khóa ổn định, ví dụ hermes:thank-you:{orderId}")
+    ], new { toEmail = "khach@example.com", customerId = "00000000-0000-0000-0000-000000000000", orderId = (string?)null, templateKey = "hermes.single_email", subject = "Cảm ơn chị đã tin yêu Áo Dài Nhã Uyên", preheader = "Nhà Uyên rất trân trọng trải nghiệm của chị", intro = "Chào chị,", body = "Cảm ơn chị đã lựa chọn Áo Dài Nhã Uyên. Nhà Uyên hy vọng sản phẩm mang lại trải nghiệm thật đẹp và thoải mái cho chị.", ctaLabel = "Chia sẻ cảm nhận", ctaUrl = "https://aodainhauyen.com", purpose = "thank_you", scheduledAt = (string?)null, idempotencyKey = "hermes:thank-you:00000000000000000000000000000000" });
+
+  private static HermesBodyDescription ReviewReplyBody() =>
+    Body([
+      Field("productId", "guid", true, "ID sản phẩm chứa review/comment gốc"),
+      Field("content", "string", true, "Nội dung phản hồi công khai, tiếng Việt, lịch sự/ấm/chuyên nghiệp")
+    ], new { productId = "00000000-0000-0000-0000-000000000000", content = "Cảm ơn chị đã chia sẻ trải nghiệm với Áo Dài Nhà Uyên. Nhà Uyên rất vui khi sản phẩm hợp ý chị ạ!" });
+
   private static HermesBodyDescription HermesReportBody() =>
     Body([
       Field("reportType", "string", true, "Loại báo cáo, ví dụ daily_summary/order_anomaly/provider_health"),
@@ -220,6 +254,16 @@ public sealed class HermesAdminApiDescriptionRegistry
 
   private static HermesBodyDescription AdminChatBody() =>
     Body([Field("message", "string", false, "Tin nhắn mới, tối đa 4000 ký tự"), Field("conversationId", "string", false, "ID cuộc trò chuyện để tiếp tục thread cũ")], new { message = "Tóm tắt tình hình cửa hàng hôm nay", conversationId = (string?)null });
+
+  private static HermesBodyDescription BlogSeoBody() =>
+    Body([
+      Field("metaTitle", "string", false, "Meta title SEO, nên <= 60 ký tự"),
+      Field("metaDescription", "string", false, "Meta description SEO, nên khoảng 150-160 ký tự"),
+      Field("canonicalUrl", "string", false, "Canonical URL tuyệt đối thuộc aodainhauyen.io.vn"),
+      Field("reviewedBy", "string", false, "Tên người/role reviewer E-E-A-T"),
+      Field("informationGain", "string", false, "Điểm độc đáo/thông tin mới của bài viết"),
+      Field("tags", "string[]", false, "Keyword/topic cluster liên quan")
+    ], new { metaTitle = "Áo dài Việt Nam - Biểu tượng văn hóa", metaDescription = "Khám phá ý nghĩa áo dài Việt Nam, cách mặc và giá trị văn hóa dành cho du khách quốc tế.", canonicalUrl = "https://aodainhauyen.io.vn/blog/ao-dai-viet-nam", reviewedBy = "Biên tập Áo Dài Nhã Uyên", informationGain = "Góc nhìn từ nghệ nhân và ngữ cảnh văn hóa Việt.", tags = new[] { "áo dài", "văn hóa Việt", "áo dài du khách" } });
 
   private static HermesBodyDescription CategoryBody(bool create) =>
     Body([Field("name", "string", create, "Tên danh mục"), Field("slug", "string", false, "Slug"), Field("description", "string", false, "Mô tả"), Field("parentId", "guid", false, "Danh mục cha")], new { name = "Áo dài cưới", slug = "ao-dai-cuoi", description = "Danh mục áo dài cưới", parentId = (Guid?)null });
