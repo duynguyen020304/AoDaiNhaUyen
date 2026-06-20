@@ -72,6 +72,22 @@ public static class ServiceRegistration
         settings => Uri.TryCreate(settings.RedirectUri, UriKind.Absolute, out _),
         "ZaloOAuth:RedirectUri must be a valid absolute URI.")
       .ValidateOnStart();
+    services
+      .AddOptions<ZernioSettings>()
+      .Bind(configuration.GetSection(ZernioSettings.SectionName))
+      .ValidateDataAnnotations()
+      .Validate(
+        settings => Uri.TryCreate(settings.ApiUrl, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https",
+        "Zernio:ApiUrl must be a valid absolute URI.")
+      .ValidateOnStart();
+    services
+      .AddOptions<FacebookApiSettings>()
+      .Bind(configuration.GetSection(FacebookApiSettings.SectionName))
+      .ValidateDataAnnotations()
+      .Validate(
+        settings => settings.GraphApiVersion.StartsWith('v') || Version.TryParse(settings.GraphApiVersion, out _),
+        "FacebookApi:GraphApiVersion must be like v25.0 or 25.0.")
+      .ValidateOnStart();
     services.Configure<HermesAgentOptions>(configuration.GetSection(HermesAgentOptions.SectionName));
     services.Configure<HermesAdminAuthOptions>(configuration.GetSection(HermesAdminAuthOptions.SectionName));
     services.Configure<HermesOutboxOptions>(configuration.GetSection(HermesOutboxOptions.SectionName));
@@ -244,6 +260,8 @@ public static class ServiceRegistration
     services.AddScoped<IEmailService, SmtpEmailService>();
     services.AddScoped<IGoogleOAuthService, GoogleOAuthService>();
     services.AddScoped<IZaloOAuthService, ZaloOAuthService>();
+    services.AddScoped<ISocialService, ZernioService>();
+    services.AddScoped<IFacebookService, FacebookService>();
     services.AddScoped<IAuthService, AuthService>();
     services.AddScoped<ICatalogStylingService, CatalogStylingService>();
     services.AddScoped<ICatalogTryOnService, CatalogTryOnService>();
