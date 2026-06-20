@@ -183,7 +183,7 @@ public sealed class ZernioService(
     }
 
     var response = await SendAsync<JsonElement>(HttpMethod.Post, "posts", null, body, cancellationToken);
-    return MapPost(ExtractObject(response, "post", "data") ?? response);
+    return MapPost(ExtractObject(response, "post", "existingPost", "data") ?? response);
   }
 
   public async Task<SocialPostListDto> GetPostsAsync(
@@ -227,6 +227,296 @@ public sealed class ZernioService(
       .ToList();
 
     return new SocialPostListDto(posts, Math.Max(page, 1), Math.Clamp(limit, 1, 100));
+  }
+
+  public async Task<SocialPostDto> GetPostAsync(
+    string postId,
+    CancellationToken cancellationToken = default)
+  {
+    var normalizedPostId = NormalizeRequired(postId, "postId");
+    var response = await SendAsync<JsonElement>(HttpMethod.Get, $"posts/{Uri.EscapeDataString(normalizedPostId)}", null, null, cancellationToken);
+    return MapPost(ExtractObject(response, "post", "existingPost", "data") ?? response);
+  }
+
+  public async Task<SocialPostDto> UpdatePostAsync(
+    string postId,
+    UpdateSocialPostRequest request,
+    CancellationToken cancellationToken = default)
+  {
+    var normalizedPostId = NormalizeRequired(postId, "postId");
+    var body = new Dictionary<string, object?>();
+
+    if (request.Content is not null)
+    {
+      body["content"] = request.Content.Trim();
+    }
+
+    if (request.PublishNow.HasValue)
+    {
+      body["publishNow"] = request.PublishNow.Value;
+    }
+
+    if (request.ScheduledFor.HasValue)
+    {
+      body["scheduledFor"] = request.ScheduledFor.Value.ToUniversalTime().ToString("O");
+      body["publishNow"] = false;
+    }
+
+    if (request.MediaUrls is not null)
+    {
+      var mediaUrls = request.MediaUrls
+        .Where(url => !string.IsNullOrWhiteSpace(url))
+        .Select(url => url.Trim())
+        .ToList();
+      body["mediaUrls"] = mediaUrls;
+      body["mediaItems"] = mediaUrls.Select(url => new
+      {
+        type = IsVideoUrl(url) ? "video" : "image",
+        url
+      }).ToArray();
+    }
+
+    if (request.AccountIds is { Count: > 0 })
+    {
+      var accounts = await dbContext.SocialAccountConnections
+        .AsNoTracking()
+        .Where(x => request.AccountIds.Contains(x.Id) && x.IsActive)
+        .ToListAsync(cancellationToken);
+
+      if (accounts.Count != request.AccountIds.Count)
+      {
+        throw new ZernioApiException("Một hoặc nhiều fanpage không còn hoạt động.", "zernio_account_inactive", 400);
+      }
+
+      body["platforms"] = accounts.Select(account => new
+      {
+        platform = account.Platform,
+        accountId = account.ZernioAccountId
+      }).ToArray();
+    }
+
+    var response = await SendAsync<JsonElement>(HttpMethod.Put, $"posts/{Uri.EscapeDataString(normalizedPostId)}", null, body, cancellationToken);
+    return MapPost(ExtractObject(response, "post", "data") ?? response);
+  }
+
+  public async Task DeletePostAsync(
+    string postId,
+    CancellationToken cancellationToken = default)
+  {
+    var normalizedPostId = NormalizeRequired(postId, "postId");
+    await SendAsync<JsonElement>(HttpMethod.Delete, $"posts/{Uri.EscapeDataString(normalizedPostId)}", null, null, cancellationToken);
+  }
+
+  public async Task<SocialPostActionResultDto> UnpublishPostAsync(
+    string postId,
+    UnpublishSocialPostRequest request,
+    CancellationToken cancellationToken = default)
+  {
+    var normalizedPostId = NormalizeRequired(postId, "postId");
+    var platform = NormalizePlatform(request.Platform);
+    var response = await SendAsync<JsonElement>(
+      HttpMethod.Post,
+      $"posts/{Uri.EscapeDataString(normalizedPostId)}/unpublish",
+      null,
+      new { platform },
+      cancellationToken);
+
+    return new SocialPostActionResultDto(
+      GetBool(response, "success"),
+      GetString(response, "message"));
+  }
+
+  public async Task<SocialAnalyticsDto> GetAnalyticsAsync(
+    string platform,
+    DateOnly fromDate,
+    DateOnly toDate,
+    CancellationToken cancellationToken = default)
+  {
+    if (toDate < fromDate)
+    {
+      throw new ZernioApiException("Khoảng ngày thống kê không hợp lệ.", "zernio_validation_error", 400);
+    }
+
+    var normalizedPlatform = NormalizePlatform(platform);
+    var query = new Dictionary<string, string>
+    {
+      ["platform"] = normalizedPlatform,
+      ["fromDate"] = fromDate.ToString("yyyy-MM-dd"),
+      ["toDate"] = toDate.ToString("yyyy-MM-dd")
+    };
+
+    var response = await SendAsync<JsonElement>(HttpMethod.Get, "analytics", query, null, cancellationToken);
+    var data = ExtractObject(response, "data");
+    var postsValue = ExtractValue(response, "posts")
+      ?? (data.HasValue ? ExtractValue(data.Value, "posts") : null);
+    var metricsSource = ExtractObject(response, "posts")
+      ?? (data.HasValue ? ExtractObject(data.Value, "posts") : null)
+      ?? data
+      ?? response;
+
+    return new SocialAnalyticsDto(
+      normalizedPlatform,
+      fromDate,
+      toDate,
+      postsValue.HasValue && postsValue.Value.ValueKind == JsonValueKind.Array
+        ? SumPostAnalytics(postsValue.Value)
+        : ReadAnalyticsMetrics(metricsSource));
+  }
+
+  public async Task<SocialCommentedPostListDto> GetCommentedPostsAsync(
+    string? platform = "facebook",
+    string? accountId = null,
+    string? profileId = null,
+    string? cursor = null,
+    int limit = 25,
+    CancellationToken cancellationToken = default)
+  {
+    var query = BuildInboxQuery(platform, accountId, profileId, cursor, limit);
+    var response = await SendAsync<JsonElement>(HttpMethod.Get, "inbox/comments", query, null, cancellationToken);
+    return new SocialCommentedPostListDto(
+      ExtractArray(response, "data", "items", "posts").Select(MapCommentedPost).ToList(),
+      GetPaginationCursor(response),
+      GetPaginationHasMore(response));
+  }
+
+  public async Task<SocialCommentListDto> GetCommentsAsync(
+    string postId,
+    string accountId,
+    string? cursor = null,
+    int limit = 50,
+    CancellationToken cancellationToken = default)
+  {
+    var query = new Dictionary<string, string>
+    {
+      ["accountId"] = NormalizeRequired(accountId, "accountId"),
+      ["limit"] = Math.Clamp(limit, 1, 100).ToString()
+    };
+    if (!string.IsNullOrWhiteSpace(cursor)) query["cursor"] = cursor.Trim();
+
+    var response = await SendAsync<JsonElement>(HttpMethod.Get, $"inbox/comments/{Uri.EscapeDataString(NormalizeRequired(postId, "postId"))}", query, null, cancellationToken);
+    return new SocialCommentListDto(
+      ExtractArray(response, "comments", "data", "items").Select(MapComment).ToList(),
+      GetPaginationCursor(response),
+      GetPaginationHasMore(response));
+  }
+
+  public async Task<SocialActionResultDto> ReplyToCommentAsync(
+    string postId,
+    CreateSocialCommentReplyRequest request,
+    CancellationToken cancellationToken = default)
+  {
+    var body = new Dictionary<string, object?>
+    {
+      ["accountId"] = NormalizeRequired(request.AccountId, "accountId"),
+      ["message"] = NormalizeRequired(request.Message, "message")
+    };
+    if (!string.IsNullOrWhiteSpace(request.CommentId)) body["commentId"] = request.CommentId.Trim();
+
+    var response = await SendAsync<JsonElement>(HttpMethod.Post, $"inbox/comments/{Uri.EscapeDataString(NormalizeRequired(postId, "postId"))}", null, body, cancellationToken);
+    var data = ExtractObject(response, "data") ?? response;
+    return new SocialActionResultDto(GetBool(response, "success") || GetBool(data, "success"), GetString(response, "message") ?? GetString(data, "message"), GetString(data, "commentId", "id"));
+  }
+
+  public async Task<SocialActionResultDto> DeleteCommentAsync(
+    string postId,
+    string accountId,
+    string commentId,
+    CancellationToken cancellationToken = default)
+  {
+    var query = new Dictionary<string, string>
+    {
+      ["accountId"] = NormalizeRequired(accountId, "accountId"),
+      ["commentId"] = NormalizeRequired(commentId, "commentId")
+    };
+    var response = await SendAsync<JsonElement>(HttpMethod.Delete, $"inbox/comments/{Uri.EscapeDataString(NormalizeRequired(postId, "postId"))}", query, null, cancellationToken);
+    return new SocialActionResultDto(GetBool(response, "success"), GetString(response, "message"), commentId);
+  }
+
+  public async Task<SocialActionResultDto> ToggleCommentHiddenAsync(
+    string postId,
+    string accountId,
+    string commentId,
+    bool isHidden,
+    CancellationToken cancellationToken = default)
+  {
+    var normalizedPostId = Uri.EscapeDataString(NormalizeRequired(postId, "postId"));
+    var normalizedCommentId = Uri.EscapeDataString(NormalizeRequired(commentId, "commentId"));
+    var path = isHidden ? $"inbox/comments/{normalizedPostId}/{normalizedCommentId}/hide" : $"inbox/comments/{normalizedPostId}/{normalizedCommentId}/hide";
+    var method = isHidden ? HttpMethod.Post : HttpMethod.Delete;
+    var body = isHidden ? new { accountId = NormalizeRequired(accountId, "accountId") } : null;
+    var query = isHidden ? null : new Dictionary<string, string> { ["accountId"] = NormalizeRequired(accountId, "accountId") };
+    var response = await SendAsync<JsonElement>(method, path, query, body, cancellationToken);
+    return new SocialActionResultDto(GetBool(response, "success") || true, isHidden ? "Đã ẩn bình luận." : "Đã hiện bình luận.", commentId);
+  }
+
+  public async Task<SocialConversationListDto> GetConversationsAsync(
+    string? platform = "facebook",
+    string? accountId = null,
+    string? profileId = null,
+    string? cursor = null,
+    int limit = 25,
+    CancellationToken cancellationToken = default)
+  {
+    var query = BuildInboxQuery(platform, accountId, profileId, cursor, limit);
+    var response = await SendAsync<JsonElement>(HttpMethod.Get, "inbox/conversations", query, null, cancellationToken);
+    return new SocialConversationListDto(
+      ExtractArray(response, "data", "items", "conversations").Select(MapConversation).ToList(),
+      GetPaginationCursor(response),
+      GetPaginationHasMore(response));
+  }
+
+  public async Task<SocialMessageListDto> GetConversationMessagesAsync(
+    string conversationId,
+    string accountId,
+    string? cursor = null,
+    int limit = 50,
+    CancellationToken cancellationToken = default)
+  {
+    var query = new Dictionary<string, string>
+    {
+      ["accountId"] = NormalizeRequired(accountId, "accountId"),
+      ["limit"] = Math.Clamp(limit, 1, 100).ToString(),
+      ["sortOrder"] = "asc"
+    };
+    if (!string.IsNullOrWhiteSpace(cursor)) query["cursor"] = cursor.Trim();
+
+    var response = await SendAsync<JsonElement>(HttpMethod.Get, $"inbox/conversations/{Uri.EscapeDataString(NormalizeRequired(conversationId, "conversationId"))}/messages", query, null, cancellationToken);
+    return new SocialMessageListDto(
+      ExtractArray(response, "messages", "data", "items").Select(MapMessage).ToList(),
+      GetPaginationCursor(response),
+      GetPaginationHasMore(response));
+  }
+
+  public async Task<SocialActionResultDto> SendMessageAsync(
+    string conversationId,
+    SendSocialMessageRequest request,
+    CancellationToken cancellationToken = default)
+  {
+    if (string.IsNullOrWhiteSpace(request.Message) && string.IsNullOrWhiteSpace(request.AttachmentUrl))
+    {
+      throw new ZernioApiException("Tin nhắn cần có nội dung hoặc media.", "zernio_message_empty", 400);
+    }
+
+    var body = new Dictionary<string, object?>
+    {
+      ["accountId"] = NormalizeRequired(request.AccountId, "accountId")
+    };
+    if (!string.IsNullOrWhiteSpace(request.Message)) body["message"] = request.Message.Trim();
+    if (!string.IsNullOrWhiteSpace(request.AttachmentUrl)) body["attachmentUrl"] = NormalizeAbsoluteUri(request.AttachmentUrl, "attachmentUrl");
+    if (!string.IsNullOrWhiteSpace(request.AttachmentType)) body["attachmentType"] = request.AttachmentType.Trim();
+    var response = await SendAsync<JsonElement>(HttpMethod.Post, $"inbox/conversations/{Uri.EscapeDataString(NormalizeRequired(conversationId, "conversationId"))}/messages", null, body, cancellationToken);
+    var data = ExtractObject(response, "data") ?? response;
+    return new SocialActionResultDto(GetBool(response, "success") || GetBool(data, "success"), GetString(response, "message") ?? GetString(data, "message"), GetString(data, "messageId", "id"));
+  }
+
+  public async Task<SocialActionResultDto> MarkConversationReadAsync(
+    string conversationId,
+    string accountId,
+    CancellationToken cancellationToken = default)
+  {
+    var body = new { accountId = NormalizeRequired(accountId, "accountId") };
+    var response = await SendAsync<JsonElement>(HttpMethod.Post, $"inbox/conversations/{Uri.EscapeDataString(NormalizeRequired(conversationId, "conversationId"))}/read", null, body, cancellationToken);
+    return new SocialActionResultDto(GetBool(response, "success") || true, "Đã đánh dấu đã đọc.", conversationId);
   }
 
   public async Task<SocialMediaPresignDto> GetMediaPresignAsync(
@@ -305,6 +595,120 @@ public sealed class ZernioService(
     }
 
     await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private static Dictionary<string, string> BuildInboxQuery(string? platform, string? accountId, string? profileId, string? cursor, int limit)
+  {
+    var query = new Dictionary<string, string>
+    {
+      ["platform"] = string.IsNullOrWhiteSpace(platform) ? "facebook" : NormalizePlatform(platform),
+      ["limit"] = Math.Clamp(limit, 1, 100).ToString(),
+      ["sortOrder"] = "desc"
+    };
+    if (!string.IsNullOrWhiteSpace(accountId)) query["accountId"] = accountId.Trim();
+    if (!string.IsNullOrWhiteSpace(profileId)) query["profileId"] = profileId.Trim();
+    if (!string.IsNullOrWhiteSpace(cursor)) query["cursor"] = cursor.Trim();
+    return query;
+  }
+
+  private static string? GetPaginationCursor(JsonElement response)
+  {
+    var pagination = ExtractObject(response, "pagination");
+    return pagination.HasValue ? GetString(pagination.Value, "nextCursor", "cursor") : null;
+  }
+
+  private static bool GetPaginationHasMore(JsonElement response)
+  {
+    var pagination = ExtractObject(response, "pagination");
+    return pagination.HasValue && GetBool(pagination.Value, "hasMore");
+  }
+
+  private static SocialCommentedPostDto MapCommentedPost(JsonElement post)
+  {
+    return new SocialCommentedPostDto(
+      GetString(post, "id") ?? string.Empty,
+      GetString(post, "platform") ?? "facebook",
+      GetString(post, "accountId", "account_id") ?? string.Empty,
+      GetString(post, "accountUsername", "account_username"),
+      GetString(post, "content", "message", "text"),
+      GetString(post, "picture", "image", "thumbnail"),
+      GetString(post, "permalink", "url", "link"),
+      ParseDate(GetString(post, "createdTime", "createdAt", "created_time")),
+      (int)GetLong(post, "commentCount", "comments"),
+      (int)GetLong(post, "likeCount", "likes"));
+  }
+
+  private static SocialCommentDto MapComment(JsonElement comment)
+  {
+    return new SocialCommentDto(
+      GetString(comment, "id", "commentId") ?? string.Empty,
+      GetString(comment, "parentId", "parentCommentId"),
+      MapCommentAuthor(ExtractObject(comment, "from", "author")),
+      GetString(comment, "message", "text", "content"),
+      ParseDate(GetString(comment, "createdTime", "createdAt", "created_time")),
+      (int)GetLong(comment, "likeCount", "likes"),
+      (int)GetLong(comment, "replyCount", "commentCount", "repliesCount"),
+      GetString(comment, "platform"),
+      GetString(comment, "url", "permalink"),
+      GetBool(comment, "canReply"),
+      GetBool(comment, "canDelete", "canRemove"),
+      GetBool(comment, "canHide"),
+      GetBool(comment, "isHidden"),
+      ExtractArray(comment, "replies", "comments").Select(MapComment).ToList());
+  }
+
+  private static SocialCommentAuthorDto? MapCommentAuthor(JsonElement? author)
+  {
+    return author.HasValue
+      ? new SocialCommentAuthorDto(
+        GetString(author.Value, "id"),
+        GetString(author.Value, "name"),
+        GetString(author.Value, "username"),
+        GetString(author.Value, "picture", "avatarUrl", "profilePicture"),
+        GetBool(author.Value, "isOwner"))
+      : null;
+  }
+
+  private static SocialConversationDto MapConversation(JsonElement conversation)
+  {
+    return new SocialConversationDto(
+      GetString(conversation, "id", "conversationId") ?? string.Empty,
+      GetString(conversation, "platform") ?? "facebook",
+      GetString(conversation, "accountId", "account_id") ?? string.Empty,
+      GetString(conversation, "accountUsername", "account_username"),
+      GetString(conversation, "participantId"),
+      GetString(conversation, "participantName"),
+      GetString(conversation, "participantPicture", "participantAvatar"),
+      GetString(conversation, "lastMessage", "snippet"),
+      ParseDate(GetString(conversation, "updatedTime", "updatedAt", "updated_time")),
+      GetString(conversation, "status"),
+      (int?)GetLong(conversation, "unreadCount"),
+      GetString(conversation, "url", "link"));
+  }
+
+  private static SocialMessageDto MapMessage(JsonElement message)
+  {
+    return new SocialMessageDto(
+      GetString(message, "id", "messageId") ?? string.Empty,
+      GetString(message, "conversationId") ?? string.Empty,
+      GetString(message, "accountId") ?? string.Empty,
+      GetString(message, "platform"),
+      GetString(message, "message", "text"),
+      GetString(message, "senderId"),
+      GetString(message, "senderName"),
+      GetString(message, "direction") ?? "incoming",
+      ParseDate(GetString(message, "createdAt", "sentAt", "createdTime")),
+      ExtractArray(message, "attachments", "media").Select(MapMessageAttachment).ToList());
+  }
+
+  private static SocialMessageAttachmentDto MapMessageAttachment(JsonElement attachment)
+  {
+    return new SocialMessageAttachmentDto(
+      GetString(attachment, "id"),
+      GetString(attachment, "type"),
+      GetString(attachment, "url"),
+      GetString(attachment, "filename", "fileName", "name"),
+      GetString(attachment, "previewUrl", "thumbnail"));
   }
 
   private async Task<T> SendAsync<T>(
@@ -400,17 +804,87 @@ public sealed class ZernioService(
         GetString(platform, "platform") ?? "facebook",
         GetString(platform, "accountId", "account_id", "id") ?? string.Empty,
         GetString(platform, "status"),
-        GetString(platform, "platformPostUrl", "url", "permalinkUrl")))
+        GetString(platform, "platformPostId", "postId", "platform_post_id"),
+        ParseDate(GetString(platform, "publishedAt", "published_at")),
+        GetString(platform, "platformPostUrl", "url", "permalinkUrl", "permalink", "link"),
+        GetString(platform, "errorMessage", "error_message", "error")))
       .ToList();
+
+    var publishedAt = ParseDate(GetString(post, "publishedAt", "published_at"))
+      ?? platforms
+        .Where(platform => platform.PublishedAt.HasValue)
+        .OrderByDescending(platform => platform.PublishedAt)
+        .Select(platform => platform.PublishedAt)
+        .FirstOrDefault();
+    var platformPostUrl = GetString(post, "platformPostUrl", "url", "permalinkUrl", "permalink", "link")
+      ?? platforms.FirstOrDefault(platform => !string.IsNullOrWhiteSpace(platform.PlatformPostUrl))?.PlatformPostUrl;
 
     return new SocialPostDto(
       GetString(post, "_id", "id") ?? string.Empty,
       GetString(post, "content", "message", "text"),
       GetString(post, "status"),
       ParseDate(GetString(post, "scheduledFor", "scheduled_for")),
-      ParseDate(GetString(post, "publishedAt", "published_at")),
-      GetString(post, "platformPostUrl", "url", "permalinkUrl"),
-      platforms);
+      publishedAt,
+      platformPostUrl,
+      platforms,
+      MapMediaItems(post));
+  }
+
+  private static IReadOnlyList<SocialPostMediaDto> MapMediaItems(JsonElement post)
+  {
+    return ExtractArray(post, "mediaItems", "media", "attachments", "mediaUrls", "images")
+      .Select(media => media.ValueKind == JsonValueKind.String
+        ? new SocialPostMediaDto(IsVideoUrl(media.GetString() ?? string.Empty) ? "video" : "image", media.GetString() ?? string.Empty)
+        : new SocialPostMediaDto(
+          GetString(media, "type", "mediaType", "kind"),
+          GetString(media, "url", "mediaUrl", "src", "publicUrl") ?? string.Empty))
+      .Where(media => !string.IsNullOrWhiteSpace(media.Url))
+      .ToList();
+  }
+
+  private static SocialAnalyticsMetricsDto SumPostAnalytics(JsonElement posts)
+  {
+    long impressions = 0;
+    long likes = 0;
+    long comments = 0;
+    long shares = 0;
+    long clicks = 0;
+    long views = 0;
+
+    foreach (var post in posts.EnumerateArray())
+    {
+      var analytics = ExtractObject(post, "analytics") ?? post;
+      impressions += GetLong(analytics, "impressions");
+      likes += GetLong(analytics, "likes");
+      comments += GetLong(analytics, "comments");
+      shares += GetLong(analytics, "shares");
+      clicks += GetLong(analytics, "clicks");
+      views += GetLong(analytics, "views");
+    }
+
+    return new SocialAnalyticsMetricsDto(impressions, likes, comments, shares, clicks, views);
+  }
+
+  private static SocialAnalyticsMetricsDto ReadAnalyticsMetrics(JsonElement metrics)
+  {
+    return new SocialAnalyticsMetricsDto(
+      GetLong(metrics, "impressions"),
+      GetLong(metrics, "likes"),
+      GetLong(metrics, "comments"),
+      GetLong(metrics, "shares"),
+      GetLong(metrics, "clicks"),
+      GetLong(metrics, "views"));
+  }
+
+  private static JsonElement? ExtractValue(JsonElement root, params string[] names)
+  {
+    if (root.ValueKind != JsonValueKind.Object) return null;
+    foreach (var name in names)
+    {
+      if (root.TryGetProperty(name, out var value)) return value;
+    }
+
+    return null;
   }
 
   private static JsonElement? ExtractObject(JsonElement root, params string[] names)
@@ -457,6 +931,32 @@ public sealed class ZernioService(
     }
 
     return null;
+  }
+
+  private static long GetLong(JsonElement element, params string[] names)
+  {
+    if (element.ValueKind != JsonValueKind.Object) return 0;
+    foreach (var name in names)
+    {
+      if (!element.TryGetProperty(name, out var value)) continue;
+      if (value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number)) return number;
+      if (value.ValueKind == JsonValueKind.String && long.TryParse(value.GetString(), out var parsed)) return parsed;
+    }
+
+    return 0;
+  }
+
+  private static bool GetBool(JsonElement element, params string[] names)
+  {
+    if (element.ValueKind != JsonValueKind.Object) return false;
+    foreach (var name in names)
+    {
+      if (!element.TryGetProperty(name, out var value)) continue;
+      if (value.ValueKind is JsonValueKind.True or JsonValueKind.False) return value.GetBoolean();
+      if (value.ValueKind == JsonValueKind.String && bool.TryParse(value.GetString(), out var parsed)) return parsed;
+    }
+
+    return false;
   }
 
   private static string? SanitizeMetadata(JsonElement account)

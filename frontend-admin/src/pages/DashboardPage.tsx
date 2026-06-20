@@ -1,14 +1,16 @@
 import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useDashboardQueries } from '@/queries/dashboardQueries'
 import { queryKeys } from '@/queries/queryKeys'
+import { getSocialAnalytics } from '@/api/social'
 import { StatsCardGrid } from '@/components/dashboard/StatsCardGrid'
 import { RevenueChart } from '@/components/dashboard/RevenueChart'
 import { OrdersByStatusChart } from '@/components/dashboard/OrdersByStatusChart'
 import { RecentOrdersTable } from '@/components/dashboard/RecentOrdersTable'
 import { TopProductsList } from '@/components/dashboard/TopProductsList'
+import { SocialAnalyticsChart } from '@/components/dashboard/SocialAnalyticsChart'
 import { UserGrowthChart } from '@/components/dashboard/UserGrowthChart'
 import { LowStockAlerts } from '@/components/dashboard/LowStockAlerts'
 import { Button } from '@/components/ui/button'
@@ -21,13 +23,33 @@ const PERIOD_OPTIONS: { value: Period; label: string }[] = [
   { value: 90, label: '90 ngày' },
 ]
 
+function toDateInputValue(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
+
+function getDateRange(period: Period) {
+  const end = new Date()
+  const start = new Date()
+  start.setDate(end.getDate() - period + 1)
+  return {
+    fromDate: toDateInputValue(start),
+    toDate: toDateInputValue(end),
+  }
+}
+
 export function DashboardPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [period, setPeriod] = useState<Period>(30)
+  const dateRange = getDateRange(period)
   const dashboard = useDashboardQueries(period)
+  const socialAnalytics = useQuery({
+    queryKey: queryKeys.dashboard.socialAnalytics(period),
+    queryFn: () => getSocialAnalytics('facebook', dateRange.fromDate, dateRange.toDate),
+    staleTime: 120_000,
+  })
   const loading = dashboard.isPending
-  const refreshing = dashboard.isFetching
+  const refreshing = dashboard.isFetching || socialAnalytics.isFetching
   const error = dashboard.error instanceof Error ? dashboard.error.message : null
 
   const revenueRef = useRef<HTMLDivElement>(null)
@@ -105,6 +127,9 @@ export function DashboardPage() {
         </div>
         <OrdersByStatusChart data={dashboard.ordersByStatus.data ?? null} loading={loading} />
       </div>
+
+      {/* Social analytics */}
+      <SocialAnalyticsChart data={socialAnalytics.data ?? null} loading={socialAnalytics.isPending} />
 
       {/* Tables row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -13,6 +13,7 @@ export const queryKeys = {
     recentOrders: (limit: number) => ['dashboard', 'recent-orders', { limit }] as const,
     topProducts: (limit: number) => ['dashboard', 'top-products', { limit }] as const,
     userGrowth: (period: DashboardPeriod) => ['dashboard', 'user-growth', { period }] as const,
+    socialAnalytics: (period: DashboardPeriod) => ['dashboard', 'social-analytics', { period }] as const,
   },
   products: {
     root: ['products'] as const,

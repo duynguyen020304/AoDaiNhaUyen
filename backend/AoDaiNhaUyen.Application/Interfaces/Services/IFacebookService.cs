@@ -74,4 +74,58 @@ public interface IFacebookService
   Task<FacebookDeleteResultDto> DeletePostAsync(
     string postId,
     CancellationToken cancellationToken = default);
+
+  Task<FacebookPostCommentListDto> GetPostCommentsAsync(
+    string pageId,
+    string postId,
+    string? after = null,
+    int limit = 25,
+    CancellationToken cancellationToken = default);
+
+  Task<FacebookCommentActionResultDto> CommentOnPostAsync(
+    string pageId,
+    string postId,
+    CreateFacebookCommentRequest request,
+    CancellationToken cancellationToken = default);
+
+  Task<FacebookCommentActionResultDto> ReplyToCommentAsync(
+    string pageId,
+    string commentId,
+    ReplyFacebookCommentRequest request,
+    CancellationToken cancellationToken = default);
+
+  Task<FacebookCommentActionResultDto> ToggleCommentHiddenAsync(
+    string pageId,
+    string commentId,
+    ToggleFacebookCommentHiddenRequest request,
+    CancellationToken cancellationToken = default);
+
+  Task<FacebookDeleteResultDto> DeleteCommentAsync(
+    string pageId,
+    string commentId,
+    CancellationToken cancellationToken = default);
+
+  Task<FacebookConversationListDto> GetConversationsAsync(
+    string pageId,
+    string? after = null,
+    int limit = 25,
+    CancellationToken cancellationToken = default);
+
+  Task<FacebookMessageListDto> GetConversationMessagesAsync(
+    string pageId,
+    string conversationId,
+    string? before = null,
+    int limit = 50,
+    CancellationToken cancellationToken = default);
+
+  Task<FacebookMessageSendResultDto> SendMessageAsync(
+    string pageId,
+    string conversationId,
+    SendFacebookMessageRequest request,
+    CancellationToken cancellationToken = default);
+
+  Task<MarkConversationReadResultDto> MarkConversationReadAsync(
+    string pageId,
+    string conversationId,
+    CancellationToken cancellationToken = default);
 }
