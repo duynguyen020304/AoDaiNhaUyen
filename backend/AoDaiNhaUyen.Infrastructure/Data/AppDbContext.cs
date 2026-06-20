@@ -63,6 +63,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<HermesMonitorLink> HermesMonitorLinks => Set<HermesMonitorLink>();
   public DbSet<HermesAgentTraceStep> HermesAgentTraceSteps => Set<HermesAgentTraceStep>();
   public DbSet<SocialAccountConnection> SocialAccountConnections => Set<SocialAccountConnection>();
+  public DbSet<SocialInboxConversation> SocialInboxConversations => Set<SocialInboxConversation>();
+  public DbSet<SocialInboxMessage> SocialInboxMessages => Set<SocialInboxMessage>();
+  public DbSet<SocialInboxComment> SocialInboxComments => Set<SocialInboxComment>();
+  public DbSet<SocialInboxSyncCursor> SocialInboxSyncCursors => Set<SocialInboxSyncCursor>();
   public DbSet<FacebookPageConnection> FacebookPageConnections => Set<FacebookPageConnection>();
   public DbSet<OrderPromoCostSnapshot> OrderPromoCostSnapshots => Set<OrderPromoCostSnapshot>();
 
@@ -978,6 +982,88 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => new { x.Provider, x.ZernioAccountId }).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_social_accounts_provider_account_unique");
       builder.HasIndex(x => new { x.Platform, x.IsActive, x.DisplayName }).HasDatabaseName("idx_social_accounts_platform_active_name");
       builder.HasIndex(x => x.ZernioProfileId).HasDatabaseName("idx_social_accounts_zernio_profile_id");
+    });
+
+    modelBuilder.Entity<SocialInboxConversation>(builder =>
+    {
+      builder.ToTable("social_inbox_conversations");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Platform).HasMaxLength(50).HasDefaultValue("facebook").IsRequired();
+      builder.Property(x => x.AccountId).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.AccountUsername).HasMaxLength(255);
+      builder.Property(x => x.ProfileId).HasMaxLength(120);
+      builder.Property(x => x.ConversationId).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.ParticipantId).HasMaxLength(200);
+      builder.Property(x => x.ParticipantName).HasMaxLength(255);
+      builder.Property(x => x.ParticipantPicture).HasMaxLength(1000);
+      builder.Property(x => x.LastMessage).HasColumnType("text");
+      builder.Property(x => x.Status).HasMaxLength(50);
+      builder.Property(x => x.Url).HasMaxLength(1000);
+      builder.Property(x => x.RawJson).HasColumnType("jsonb");
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.Platform, x.AccountId, x.ConversationId }).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_social_inbox_conversations_unique");
+      builder.HasIndex(x => new { x.Platform, x.AccountId, x.UpdatedTime }).HasDatabaseName("idx_social_inbox_conversations_account_updated");
+      builder.HasIndex(x => new { x.Status, x.UpdatedTime }).HasDatabaseName("idx_social_inbox_conversations_status_updated");
+    });
+
+    modelBuilder.Entity<SocialInboxMessage>(builder =>
+    {
+      builder.ToTable("social_inbox_messages");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Platform).HasMaxLength(50).HasDefaultValue("facebook").IsRequired();
+      builder.Property(x => x.AccountId).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.ConversationId).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.MessageId).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.SenderId).HasMaxLength(200);
+      builder.Property(x => x.SenderName).HasMaxLength(255);
+      builder.Property(x => x.Direction).HasMaxLength(30).HasDefaultValue("incoming").IsRequired();
+      builder.Property(x => x.Text).HasColumnType("text");
+      builder.Property(x => x.AttachmentsJson).HasColumnType("jsonb");
+      builder.Property(x => x.DeliveryStatus).HasMaxLength(50);
+      builder.Property(x => x.RawJson).HasColumnType("jsonb");
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.Platform, x.AccountId, x.MessageId }).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_social_inbox_messages_unique");
+      builder.HasIndex(x => new { x.Platform, x.AccountId, x.ConversationId, x.CreatedAt }).HasDatabaseName("idx_social_inbox_messages_thread_created");
+    });
+
+    modelBuilder.Entity<SocialInboxComment>(builder =>
+    {
+      builder.ToTable("social_inbox_comments");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Platform).HasMaxLength(50).HasDefaultValue("facebook").IsRequired();
+      builder.Property(x => x.AccountId).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.PostId).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.CommentId).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.ParentCommentId).HasMaxLength(200);
+      builder.Property(x => x.AuthorId).HasMaxLength(200);
+      builder.Property(x => x.AuthorName).HasMaxLength(255);
+      builder.Property(x => x.AuthorUsername).HasMaxLength(255);
+      builder.Property(x => x.AuthorPicture).HasMaxLength(1000);
+      builder.Property(x => x.Message).HasColumnType("text");
+      builder.Property(x => x.Url).HasMaxLength(1000);
+      builder.Property(x => x.RawJson).HasColumnType("jsonb");
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.Platform, x.AccountId, x.CommentId }).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_social_inbox_comments_unique");
+      builder.HasIndex(x => new { x.Platform, x.AccountId, x.PostId, x.CreatedTime }).HasDatabaseName("idx_social_inbox_comments_post_created");
+      builder.HasIndex(x => x.ParentCommentId).HasDatabaseName("idx_social_inbox_comments_parent");
+    });
+
+    modelBuilder.Entity<SocialInboxSyncCursor>(builder =>
+    {
+      builder.ToTable("social_inbox_sync_cursors");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Resource).HasMaxLength(80).IsRequired();
+      builder.Property(x => x.Platform).HasMaxLength(50).HasDefaultValue("facebook").IsRequired();
+      builder.Property(x => x.AccountId).HasMaxLength(120).HasDefaultValue(string.Empty).IsRequired();
+      builder.Property(x => x.ProfileId).HasMaxLength(120).HasDefaultValue(string.Empty).IsRequired();
+      builder.Property(x => x.Cursor).HasColumnType("text");
+      builder.Property(x => x.LastError).HasColumnType("text");
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.Resource, x.Platform, x.AccountId, x.ProfileId }).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_social_inbox_sync_cursors_unique");
     });
 
     modelBuilder.Entity<FacebookPageConnection>(builder =>

@@ -1,8 +1,13 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs.Social;
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Application.Options;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace AoDaiNhaUyen.Api.Controllers;
 
@@ -11,8 +16,11 @@ namespace AoDaiNhaUyen.Api.Controllers;
 [Authorize(Policy = "RequireAdminRole")]
 public sealed class SocialController(
   ISocialService socialService,
-  IStorageService storageService) : ControllerBase
+  IStorageService storageService,
+  IOptions<ZernioSettings> zernioOptions) : ControllerBase
 {
+  private readonly ZernioSettings zernioSettings = zernioOptions.Value;
+
   [HttpGet("accounts")]
   public async Task<IActionResult> GetAccounts(
     [FromQuery] string? platform,
@@ -216,6 +224,46 @@ public sealed class SocialController(
     return Ok(ApiResponseFactory.Success(result, "Đã đánh dấu đã đọc qua Zernio."));
   }
 
+  [HttpPost("~/api/webhooks/zernio")]
+  [AllowAnonymous]
+  public async Task<IActionResult> IngestZernioWebhook(CancellationToken cancellationToken)
+  {
+    if (string.IsNullOrWhiteSpace(zernioSettings.WebhookSecret))
+    {
+      return StatusCode(StatusCodes.Status503ServiceUnavailable, ApiResponseFactory.Failure(
+        "Webhook chưa được cấu hình",
+        "webhook_secret_missing",
+        "Vui lòng cấu hình Zernio webhook secret trước khi nhận sự kiện."));
+    }
+
+    using var reader = new StreamReader(Request.Body, Encoding.UTF8);
+    var rawBody = await reader.ReadToEndAsync(cancellationToken);
+    if (!VerifyZernioWebhookSignature(rawBody, zernioSettings.WebhookSecret, Request.Headers))
+    {
+      return Unauthorized(ApiResponseFactory.Failure(
+        "Chữ ký webhook không hợp lệ",
+        "invalid_webhook_signature",
+        "Không thể xác thực webhook Zernio."));
+    }
+
+    JsonElement payload;
+    try
+    {
+      using var document = JsonDocument.Parse(rawBody);
+      payload = document.RootElement.Clone();
+    }
+    catch (JsonException)
+    {
+      return BadRequest(ApiResponseFactory.Failure(
+        "Payload webhook không hợp lệ",
+        "invalid_webhook_payload",
+        "Nội dung webhook không phải JSON hợp lệ."));
+    }
+
+    await socialService.IngestZernioWebhookAsync(payload, cancellationToken);
+    return Ok(ApiResponseFactory.Success(new { ingested = true }, "Đã nhận webhook Zernio."));
+  }
+
   [HttpPost("media/upload")]
   [Consumes("multipart/form-data")]
   public async Task<IActionResult> UploadMedia([FromForm] IFormFile file, CancellationToken cancellationToken = default)
@@ -233,6 +281,48 @@ public sealed class SocialController(
       upload.FileSize);
 
     return Ok(ApiResponseFactory.Success(result, "Tải media lên thành công."));
+  }
+
+  private static bool VerifyZernioWebhookSignature(string rawBody, string secret, IHeaderDictionary headers)
+  {
+    var provided = GetWebhookSignature(headers);
+    if (string.IsNullOrWhiteSpace(provided)) return false;
+
+    provided = provided.Trim();
+    if (provided.StartsWith("sha256=", StringComparison.OrdinalIgnoreCase))
+    {
+      provided = provided[7..];
+    }
+
+    var bodyBytes = Encoding.UTF8.GetBytes(rawBody);
+    var secretBytes = Encoding.UTF8.GetBytes(secret);
+    using var hmac = new HMACSHA256(secretBytes);
+    var signatureBytes = hmac.ComputeHash(bodyBytes);
+    var expectedHex = Convert.ToHexString(signatureBytes).ToLowerInvariant();
+    var expectedBase64 = Convert.ToBase64String(signatureBytes);
+
+    return FixedTimeEquals(provided, expectedHex) || FixedTimeEquals(provided, expectedBase64);
+  }
+
+  private static string? GetWebhookSignature(IHeaderDictionary headers)
+  {
+    foreach (var headerName in new[] { "X-Zernio-Signature", "X-Hub-Signature-256", "X-Signature" })
+    {
+      if (headers.TryGetValue(headerName, out var value) && !string.IsNullOrWhiteSpace(value.FirstOrDefault()))
+      {
+        return value.FirstOrDefault();
+      }
+    }
+
+    return null;
+  }
+
+  private static bool FixedTimeEquals(string provided, string expected)
+  {
+    var providedBytes = Encoding.UTF8.GetBytes(provided);
+    var expectedBytes = Encoding.UTF8.GetBytes(expected);
+    return providedBytes.Length == expectedBytes.Length &&
+      CryptographicOperations.FixedTimeEquals(providedBytes, expectedBytes);
   }
 
   private static IActionResult? ValidateSocialMedia(IFormFile? file)
