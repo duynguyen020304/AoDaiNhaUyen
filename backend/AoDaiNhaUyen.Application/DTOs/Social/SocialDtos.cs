@@ -61,6 +61,20 @@ public sealed record SocialPostListDto(
   int Page,
   int Limit);
 
+public sealed record SocialAnalyticsMetricsDto(
+  long Impressions,
+  long Likes,
+  long Comments,
+  long Shares,
+  long Clicks,
+  long Views);
+
+public sealed record SocialAnalyticsDto(
+  string Platform,
+  DateOnly FromDate,
+  DateOnly ToDate,
+  SocialAnalyticsMetricsDto Posts);
+
 public sealed record SocialMediaUploadDto(
   string PublicUrl,
   string ObjectKey,

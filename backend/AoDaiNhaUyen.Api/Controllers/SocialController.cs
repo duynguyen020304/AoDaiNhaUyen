@@ -72,6 +72,19 @@ public sealed class SocialController(
     return Ok(ApiResponseFactory.Success(posts));
   }
 
+  [HttpGet("analytics")]
+  public async Task<IActionResult> GetAnalytics(
+    [FromQuery] string platform = "facebook",
+    [FromQuery] DateOnly? fromDate = null,
+    [FromQuery] DateOnly? toDate = null,
+    CancellationToken cancellationToken = default)
+  {
+    var end = toDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+    var start = fromDate ?? end.AddDays(-29);
+    var analytics = await socialService.GetAnalyticsAsync(platform, start, end, cancellationToken);
+    return Ok(ApiResponseFactory.Success(analytics));
+  }
+
   [HttpPost("media/upload")]
   [Consumes("multipart/form-data")]
   public async Task<IActionResult> UploadMedia([FromForm] IFormFile file, CancellationToken cancellationToken = default)

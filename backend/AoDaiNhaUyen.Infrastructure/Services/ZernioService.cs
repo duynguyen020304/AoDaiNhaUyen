@@ -229,6 +229,43 @@ public sealed class ZernioService(
     return new SocialPostListDto(posts, Math.Max(page, 1), Math.Clamp(limit, 1, 100));
   }
 
+  public async Task<SocialAnalyticsDto> GetAnalyticsAsync(
+    string platform,
+    DateOnly fromDate,
+    DateOnly toDate,
+    CancellationToken cancellationToken = default)
+  {
+    if (toDate < fromDate)
+    {
+      throw new ZernioApiException("Khoảng ngày thống kê không hợp lệ.", "zernio_validation_error", 400);
+    }
+
+    var normalizedPlatform = NormalizePlatform(platform);
+    var query = new Dictionary<string, string>
+    {
+      ["platform"] = normalizedPlatform,
+      ["fromDate"] = fromDate.ToString("yyyy-MM-dd"),
+      ["toDate"] = toDate.ToString("yyyy-MM-dd")
+    };
+
+    var response = await SendAsync<JsonElement>(HttpMethod.Get, "analytics", query, null, cancellationToken);
+    var data = ExtractObject(response, "data");
+    var postsValue = ExtractValue(response, "posts")
+      ?? (data.HasValue ? ExtractValue(data.Value, "posts") : null);
+    var metricsSource = ExtractObject(response, "posts")
+      ?? (data.HasValue ? ExtractObject(data.Value, "posts") : null)
+      ?? data
+      ?? response;
+
+    return new SocialAnalyticsDto(
+      normalizedPlatform,
+      fromDate,
+      toDate,
+      postsValue.HasValue && postsValue.Value.ValueKind == JsonValueKind.Array
+        ? SumPostAnalytics(postsValue.Value)
+        : ReadAnalyticsMetrics(metricsSource));
+  }
+
   public async Task<SocialMediaPresignDto> GetMediaPresignAsync(
     SocialMediaPresignRequest request,
     CancellationToken cancellationToken = default)
@@ -413,6 +450,51 @@ public sealed class ZernioService(
       platforms);
   }
 
+  private static SocialAnalyticsMetricsDto SumPostAnalytics(JsonElement posts)
+  {
+    long impressions = 0;
+    long likes = 0;
+    long comments = 0;
+    long shares = 0;
+    long clicks = 0;
+    long views = 0;
+
+    foreach (var post in posts.EnumerateArray())
+    {
+      var analytics = ExtractObject(post, "analytics") ?? post;
+      impressions += GetLong(analytics, "impressions");
+      likes += GetLong(analytics, "likes");
+      comments += GetLong(analytics, "comments");
+      shares += GetLong(analytics, "shares");
+      clicks += GetLong(analytics, "clicks");
+      views += GetLong(analytics, "views");
+    }
+
+    return new SocialAnalyticsMetricsDto(impressions, likes, comments, shares, clicks, views);
+  }
+
+  private static SocialAnalyticsMetricsDto ReadAnalyticsMetrics(JsonElement metrics)
+  {
+    return new SocialAnalyticsMetricsDto(
+      GetLong(metrics, "impressions"),
+      GetLong(metrics, "likes"),
+      GetLong(metrics, "comments"),
+      GetLong(metrics, "shares"),
+      GetLong(metrics, "clicks"),
+      GetLong(metrics, "views"));
+  }
+
+  private static JsonElement? ExtractValue(JsonElement root, params string[] names)
+  {
+    if (root.ValueKind != JsonValueKind.Object) return null;
+    foreach (var name in names)
+    {
+      if (root.TryGetProperty(name, out var value)) return value;
+    }
+
+    return null;
+  }
+
   private static JsonElement? ExtractObject(JsonElement root, params string[] names)
   {
     if (root.ValueKind != JsonValueKind.Object) return null;
@@ -457,6 +539,19 @@ public sealed class ZernioService(
     }
 
     return null;
+  }
+
+  private static long GetLong(JsonElement element, params string[] names)
+  {
+    if (element.ValueKind != JsonValueKind.Object) return 0;
+    foreach (var name in names)
+    {
+      if (!element.TryGetProperty(name, out var value)) continue;
+      if (value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number)) return number;
+      if (value.ValueKind == JsonValueKind.String && long.TryParse(value.GetString(), out var parsed)) return parsed;
+    }
+
+    return 0;
   }
 
   private static string? SanitizeMetadata(JsonElement account)

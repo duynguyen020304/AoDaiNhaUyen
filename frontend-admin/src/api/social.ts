@@ -69,6 +69,22 @@ export interface SocialPostList {
   limit: number
 }
 
+export interface SocialAnalyticsMetrics {
+  impressions: number
+  likes: number
+  comments: number
+  shares: number
+  clicks: number
+  views: number
+}
+
+export interface SocialAnalytics {
+  platform: string
+  fromDate: string
+  toDate: string
+  posts: SocialAnalyticsMetrics
+}
+
 export const getSocialAccounts = (platform = 'facebook', sync = false, profileId?: string) =>
   request<SocialAccountConnection[]>(`/api/admin/social/accounts?${qs({ platform, sync, profileId })}`)
 
@@ -92,6 +108,9 @@ export const createSocialPost = (data: CreateSocialPostRequest) =>
 
 export const getSocialPosts = (platform = 'facebook', accountId?: string, profileId?: string, page = 1, limit = 25) =>
   request<SocialPostList>(`/api/admin/social/posts?${qs({ platform, accountId, profileId, page, limit })}`)
+
+export const getSocialAnalytics = (platform = 'facebook', fromDate?: string, toDate?: string) =>
+  request<SocialAnalytics>(`/api/admin/social/analytics?${qs({ platform, fromDate, toDate })}`)
 
 export interface SocialMediaUpload {
   publicUrl: string

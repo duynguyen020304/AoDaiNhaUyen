@@ -34,6 +34,12 @@ public interface ISocialService
     int limit = 25,
     CancellationToken cancellationToken = default);
 
+  Task<SocialAnalyticsDto> GetAnalyticsAsync(
+    string platform,
+    DateOnly fromDate,
+    DateOnly toDate,
+    CancellationToken cancellationToken = default);
+
   Task<SocialMediaPresignDto> GetMediaPresignAsync(
     SocialMediaPresignRequest request,
     CancellationToken cancellationToken = default);
