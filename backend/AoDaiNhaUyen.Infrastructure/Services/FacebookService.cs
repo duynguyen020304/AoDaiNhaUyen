@@ -24,7 +24,10 @@ public sealed class FacebookService(
   ILogger<FacebookService> logger) : IFacebookService
 {
   private const string PostFields = "id,message,created_time,updated_time,permalink_url,full_picture,is_published,scheduled_publish_time,status_type,type";
-  private const string OAuthScopes = "pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_metadata";
+  private const string CommentFields = "id,parent,from{id,name,picture},message,created_time,like_count,comment_count,can_comment,can_remove,is_hidden,comments.limit(25){id,parent,from{id,name,picture},message,created_time,like_count,comment_count,can_comment,can_remove,is_hidden}";
+  private const string ConversationFields = "id,updated_time,message_count,unread_count,snippet,link,participants{id,name,email}";
+  private const string MessageFields = "id,created_time,from{id,name},to{id,name},message,attachments";
+  private const string OAuthScopes = "pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_metadata,pages_messaging";
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
   private readonly FacebookApiSettings facebookApiSettings = facebookApiSettings.Value;
   private readonly IDataProtector tokenProtector = dataProtectionProvider.CreateProtector("AoDaiNhaUyen.Facebook.PageAccessToken.v1");
@@ -261,6 +264,236 @@ public sealed class FacebookService(
     var token = await GetAnyActiveTokenAsync(cancellationToken);
     var response = await SendFormAsync<FacebookSuccessResponse>(HttpMethod.Delete, postId, token, new Dictionary<string, string>(), cancellationToken);
     return new FacebookDeleteResultDto(response.Success);
+  }
+
+  public async Task<FacebookPostCommentListDto> GetPostCommentsAsync(
+    string pageId,
+    string postId,
+    string? after = null,
+    int limit = 25,
+    CancellationToken cancellationToken = default)
+  {
+    pageId = NormalizeRequired(pageId, "pageId");
+    postId = NormalizeRequired(postId, "postId");
+    var token = await GetPageTokenAsync(pageId, cancellationToken);
+    var query = new Dictionary<string, string>
+    {
+      ["fields"] = CommentFields,
+      ["filter"] = "stream",
+      ["order"] = "chronological",
+      ["limit"] = Math.Clamp(limit, 1, 100).ToString()
+    };
+
+    if (!string.IsNullOrWhiteSpace(after))
+    {
+      query["after"] = after.Trim();
+    }
+
+    var response = await SendGetAsync<FacebookListResponse<FacebookCommentResponse>>($"{postId}/comments", token, query, cancellationToken);
+    return new FacebookPostCommentListDto(
+      response.Data.Select(comment => MapComment(comment, postId)).ToList(),
+      response.Paging?.Cursors?.Before,
+      response.Paging?.Cursors?.After,
+      response.Paging?.Next);
+  }
+
+  public async Task<FacebookCommentActionResultDto> CommentOnPostAsync(
+    string pageId,
+    string postId,
+    CreateFacebookCommentRequest request,
+    CancellationToken cancellationToken = default)
+  {
+    pageId = NormalizeRequired(pageId, "pageId");
+    postId = NormalizeRequired(postId, "postId");
+    var message = NormalizeRequired(request.Message, "message");
+    var token = await GetPageTokenAsync(pageId, cancellationToken);
+    var response = await SendFormAsync<FacebookPublishResponse>(HttpMethod.Post, $"{postId}/comments", token, new Dictionary<string, string> { ["message"] = message }, cancellationToken);
+    return new FacebookCommentActionResultDto(true, response.Id, "Đã bình luận bài viết.");
+  }
+
+  public async Task<FacebookCommentActionResultDto> ReplyToCommentAsync(
+    string pageId,
+    string commentId,
+    ReplyFacebookCommentRequest request,
+    CancellationToken cancellationToken = default)
+  {
+    pageId = NormalizeRequired(pageId, "pageId");
+    commentId = NormalizeRequired(commentId, "commentId");
+    var message = NormalizeRequired(request.Message, "message");
+    var token = await GetPageTokenAsync(pageId, cancellationToken);
+    var response = await SendFormAsync<FacebookPublishResponse>(HttpMethod.Post, $"{commentId}/comments", token, new Dictionary<string, string> { ["message"] = message }, cancellationToken);
+    return new FacebookCommentActionResultDto(true, response.Id, "Đã trả lời bình luận.");
+  }
+
+  public async Task<FacebookCommentActionResultDto> ToggleCommentHiddenAsync(
+    string pageId,
+    string commentId,
+    ToggleFacebookCommentHiddenRequest request,
+    CancellationToken cancellationToken = default)
+  {
+    pageId = NormalizeRequired(pageId, "pageId");
+    commentId = NormalizeRequired(commentId, "commentId");
+    var token = await GetPageTokenAsync(pageId, cancellationToken);
+    var response = await SendFormAsync<FacebookSuccessResponse>(HttpMethod.Post, commentId, token, new Dictionary<string, string> { ["is_hidden"] = request.IsHidden ? "true" : "false" }, cancellationToken);
+    return new FacebookCommentActionResultDto(response.Success, commentId, request.IsHidden ? "Đã ẩn bình luận." : "Đã hiện bình luận.");
+  }
+
+  public async Task<FacebookDeleteResultDto> DeleteCommentAsync(
+    string pageId,
+    string commentId,
+    CancellationToken cancellationToken = default)
+  {
+    pageId = NormalizeRequired(pageId, "pageId");
+    commentId = NormalizeRequired(commentId, "commentId");
+    var token = await GetPageTokenAsync(pageId, cancellationToken);
+    var response = await SendFormAsync<FacebookSuccessResponse>(HttpMethod.Delete, commentId, token, new Dictionary<string, string>(), cancellationToken);
+    return new FacebookDeleteResultDto(response.Success);
+  }
+
+  public async Task<FacebookConversationListDto> GetConversationsAsync(
+    string pageId,
+    string? after = null,
+    int limit = 25,
+    CancellationToken cancellationToken = default)
+  {
+    pageId = NormalizeRequired(pageId, "pageId");
+    var token = await GetPageTokenAsync(pageId, cancellationToken);
+    var query = new Dictionary<string, string>
+    {
+      ["fields"] = ConversationFields,
+      ["limit"] = Math.Clamp(limit, 1, 100).ToString()
+    };
+
+    if (!string.IsNullOrWhiteSpace(after))
+    {
+      query["after"] = after.Trim();
+    }
+
+    var response = await SendGetAsync<FacebookListResponse<FacebookConversationResponse>>($"{pageId}/conversations", token, query, cancellationToken);
+    return new FacebookConversationListDto(
+      response.Data.Select(conversation => MapConversation(conversation, pageId)).ToList(),
+      response.Paging?.Cursors?.Before,
+      response.Paging?.Cursors?.After,
+      response.Paging?.Next);
+  }
+
+  public async Task<FacebookMessageListDto> GetConversationMessagesAsync(
+    string pageId,
+    string conversationId,
+    string? before = null,
+    int limit = 50,
+    CancellationToken cancellationToken = default)
+  {
+    pageId = NormalizeRequired(pageId, "pageId");
+    conversationId = NormalizeRequired(conversationId, "conversationId");
+    var token = await GetPageTokenAsync(pageId, cancellationToken);
+    var query = new Dictionary<string, string>
+    {
+      ["fields"] = MessageFields,
+      ["limit"] = Math.Clamp(limit, 1, 100).ToString()
+    };
+
+    if (!string.IsNullOrWhiteSpace(before))
+    {
+      query["before"] = before.Trim();
+    }
+
+    var response = await SendGetAsync<FacebookListResponse<FacebookMessageResponse>>($"{conversationId}/messages", token, query, cancellationToken);
+    return new FacebookMessageListDto(
+      response.Data.Select(message => MapMessage(message, conversationId, pageId)).ToList(),
+      response.Paging?.Cursors?.Before,
+      response.Paging?.Cursors?.After,
+      response.Paging?.Next);
+  }
+
+  public async Task<FacebookMessageSendResultDto> SendMessageAsync(
+    string pageId,
+    string conversationId,
+    SendFacebookMessageRequest request,
+    CancellationToken cancellationToken = default)
+  {
+    pageId = NormalizeRequired(pageId, "pageId");
+    conversationId = NormalizeRequired(conversationId, "conversationId");
+    var hasText = !string.IsNullOrWhiteSpace(request.Text);
+    var hasAttachment = !string.IsNullOrWhiteSpace(request.AttachmentUrl);
+    if (!hasText && !hasAttachment)
+    {
+      throw new FacebookApiException("Tin nhắn cần có nội dung hoặc media.", "facebook_message_empty", 400);
+    }
+
+    var token = await GetPageTokenAsync(pageId, cancellationToken);
+    var recipientId = await GetConversationCustomerIdAsync(pageId, conversationId, token, cancellationToken);
+    var messagePayload = hasAttachment
+      ? new Dictionary<string, object?>
+      {
+        ["attachment"] = new Dictionary<string, object?>
+        {
+          ["type"] = NormalizeAttachmentType(request.AttachmentType),
+          ["payload"] = new Dictionary<string, object?> { ["url"] = NormalizeAbsoluteUri(request.AttachmentUrl, "attachmentUrl") }
+        }
+      }
+      : new Dictionary<string, object?> { ["text"] = request.Text!.Trim() };
+
+    var response = await SendFormAsync<FacebookMessengerSendResponse>(
+      HttpMethod.Post,
+      $"{pageId}/messages",
+      token,
+      new Dictionary<string, string>
+      {
+        ["recipient"] = JsonSerializer.Serialize(new Dictionary<string, string> { ["id"] = recipientId }, JsonOptions),
+        ["message"] = JsonSerializer.Serialize(messagePayload, JsonOptions)
+      },
+      cancellationToken);
+
+    return new FacebookMessageSendResultDto(!string.IsNullOrWhiteSpace(response.MessageId), response.MessageId);
+  }
+
+  public async Task<MarkConversationReadResultDto> MarkConversationReadAsync(
+    string pageId,
+    string conversationId,
+    CancellationToken cancellationToken = default)
+  {
+    pageId = NormalizeRequired(pageId, "pageId");
+    conversationId = NormalizeRequired(conversationId, "conversationId");
+    var token = await GetPageTokenAsync(pageId, cancellationToken);
+    var recipientId = await GetConversationCustomerIdAsync(pageId, conversationId, token, cancellationToken);
+    var response = await SendFormAsync<FacebookMessengerSendResponse>(
+      HttpMethod.Post,
+      $"{pageId}/messages",
+      token,
+      new Dictionary<string, string>
+      {
+        ["recipient"] = JsonSerializer.Serialize(new Dictionary<string, string> { ["id"] = recipientId }, JsonOptions),
+        ["sender_action"] = "mark_seen"
+      },
+      cancellationToken);
+
+    return new MarkConversationReadResultDto(!string.IsNullOrWhiteSpace(response.RecipientId));
+  }
+
+  private async Task<string> GetConversationCustomerIdAsync(
+    string pageId,
+    string conversationId,
+    string token,
+    CancellationToken cancellationToken)
+  {
+    var conversation = await SendGetAsync<FacebookConversationResponse>(
+      conversationId,
+      token,
+      new Dictionary<string, string> { ["fields"] = ConversationFields },
+      cancellationToken);
+    var participant = conversation.Participants?.Data?.FirstOrDefault(item =>
+      !string.IsNullOrWhiteSpace(item.Id) && !string.Equals(item.Id, pageId, StringComparison.Ordinal));
+
+    return NormalizeRequired(participant?.Id, "recipientId");
+  }
+
+  private static string NormalizeAttachmentType(string? value)
+  {
+    var type = string.IsNullOrWhiteSpace(value) ? "image" : value.Trim().ToLowerInvariant();
+    return type is "image" or "video" or "audio" or "file"
+      ? type
+      : throw new FacebookApiException("Loại media không hỗ trợ.", "facebook_invalid_attachment_type", 400);
   }
 
   private async Task<FacebookPublishResultDto> PublishMediaAsync(
@@ -605,6 +838,82 @@ public sealed class FacebookService(
       post.Type);
   }
 
+  private static FacebookCommentDto MapComment(FacebookCommentResponse comment, string? fallbackPostId)
+  {
+    var parentId = comment.Parent?.Id;
+    return new FacebookCommentDto(
+      comment.Id,
+      fallbackPostId,
+      parentId,
+      MapAuthor(comment.From),
+      comment.Message,
+      ParseFacebookDate(comment.CreatedTime),
+      comment.LikeCount,
+      comment.CommentCount,
+      comment.CanComment,
+      comment.CanRemove,
+      comment.CanRemove,
+      comment.IsHidden,
+      (comment.Comments?.Data ?? Array.Empty<FacebookCommentResponse>()).Select(reply => MapComment(reply, fallbackPostId)).ToList());
+  }
+
+  private static FacebookCommentAuthorDto? MapAuthor(FacebookActorResponse? actor)
+  {
+    return actor is null
+      ? null
+      : new FacebookCommentAuthorDto(actor.Id, actor.Name, actor.Picture?.Data?.Url);
+  }
+
+  private static FacebookConversationDto MapConversation(FacebookConversationResponse conversation, string pageId)
+  {
+    var participants = (conversation.Participants?.Data ?? Array.Empty<FacebookParticipantResponse>())
+      .Select(participant => new FacebookParticipantDto(
+        participant.Id,
+        participant.Name,
+        participant.Email,
+        string.Equals(participant.Id, pageId, StringComparison.Ordinal)))
+      .ToList();
+    var customer = participants.FirstOrDefault(participant => !participant.IsPage);
+
+    return new FacebookConversationDto(
+      conversation.Id,
+      pageId,
+      customer?.Id,
+      customer?.Name,
+      null,
+      conversation.Snippet,
+      ParseFacebookDate(conversation.UpdatedTime),
+      conversation.UnreadCount,
+      conversation.MessageCount,
+      conversation.Link,
+      participants);
+  }
+
+  private static FacebookMessageDto MapMessage(FacebookMessageResponse message, string conversationId, string pageId)
+  {
+    return new FacebookMessageDto(
+      message.Id,
+      conversationId,
+      message.From?.Id,
+      message.From?.Name,
+      string.Equals(message.From?.Id, pageId, StringComparison.Ordinal),
+      message.Message,
+      ParseFacebookDate(message.CreatedTime),
+      MapAttachments(message.Attachments));
+  }
+
+  private static IReadOnlyList<FacebookMessageAttachmentDto> MapAttachments(FacebookAttachmentListResponse? attachments)
+  {
+    return (attachments?.Data ?? Array.Empty<FacebookAttachmentResponse>())
+      .Select(attachment => new FacebookMessageAttachmentDto(
+        attachment.MimeType?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true ? "image" : attachment.Type,
+        attachment.ImageData?.Url ?? attachment.VideoData?.Url ?? attachment.FileUrl,
+        attachment.Name,
+        attachment.MimeType,
+        attachment.Size))
+      .ToList();
+  }
+
   private static DateTimeOffset? ParseFacebookDate(string? value)
   {
     return DateTimeOffset.TryParse(value, out var parsed) ? parsed : null;
@@ -720,6 +1029,68 @@ public sealed class FacebookService(
     [property: JsonPropertyName("scheduled_publish_time")] string? ScheduledPublishTime,
     [property: JsonPropertyName("status_type")] string? StatusType,
     [property: JsonPropertyName("type")] string? Type);
+
+  private sealed record FacebookCommentResponse(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("parent")] FacebookIdResponse? Parent,
+    [property: JsonPropertyName("from")] FacebookActorResponse? From,
+    [property: JsonPropertyName("message")] string? Message,
+    [property: JsonPropertyName("created_time")] string? CreatedTime,
+    [property: JsonPropertyName("like_count")] int? LikeCount,
+    [property: JsonPropertyName("comment_count")] int? CommentCount,
+    [property: JsonPropertyName("can_comment")] bool? CanComment,
+    [property: JsonPropertyName("can_remove")] bool? CanRemove,
+    [property: JsonPropertyName("is_hidden")] bool? IsHidden,
+    [property: JsonPropertyName("comments")] FacebookListResponse<FacebookCommentResponse>? Comments);
+
+  private sealed record FacebookIdResponse([property: JsonPropertyName("id")] string? Id);
+
+  private sealed record FacebookActorResponse(
+    [property: JsonPropertyName("id")] string? Id,
+    [property: JsonPropertyName("name")] string? Name,
+    [property: JsonPropertyName("picture")] FacebookPictureResponse? Picture);
+
+  private sealed record FacebookPictureResponse([property: JsonPropertyName("data")] FacebookPictureDataResponse? Data);
+
+  private sealed record FacebookPictureDataResponse([property: JsonPropertyName("url")] string? Url);
+
+  private sealed record FacebookConversationResponse(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("updated_time")] string? UpdatedTime,
+    [property: JsonPropertyName("message_count")] int? MessageCount,
+    [property: JsonPropertyName("unread_count")] int? UnreadCount,
+    [property: JsonPropertyName("snippet")] string? Snippet,
+    [property: JsonPropertyName("link")] string? Link,
+    [property: JsonPropertyName("participants")] FacebookListResponse<FacebookParticipantResponse>? Participants);
+
+  private sealed record FacebookParticipantResponse(
+    [property: JsonPropertyName("id")] string? Id,
+    [property: JsonPropertyName("name")] string? Name,
+    [property: JsonPropertyName("email")] string? Email);
+
+  private sealed record FacebookMessageResponse(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("created_time")] string? CreatedTime,
+    [property: JsonPropertyName("from")] FacebookActorResponse? From,
+    [property: JsonPropertyName("message")] string? Message,
+    [property: JsonPropertyName("attachments")] FacebookAttachmentListResponse? Attachments);
+
+  private sealed record FacebookAttachmentListResponse([property: JsonPropertyName("data")] IReadOnlyList<FacebookAttachmentResponse> Data);
+
+  private sealed record FacebookAttachmentResponse(
+    [property: JsonPropertyName("type")] string? Type,
+    [property: JsonPropertyName("name")] string? Name,
+    [property: JsonPropertyName("mime_type")] string? MimeType,
+    [property: JsonPropertyName("size")] long? Size,
+    [property: JsonPropertyName("file_url")] string? FileUrl,
+    [property: JsonPropertyName("image_data")] FacebookAttachmentMediaResponse? ImageData,
+    [property: JsonPropertyName("video_data")] FacebookAttachmentMediaResponse? VideoData);
+
+  private sealed record FacebookAttachmentMediaResponse([property: JsonPropertyName("url")] string? Url);
+
+  private sealed record FacebookMessengerSendResponse(
+    [property: JsonPropertyName("recipient_id")] string? RecipientId,
+    [property: JsonPropertyName("message_id")] string? MessageId);
 
   private sealed record FacebookErrorEnvelope([property: JsonPropertyName("error")] FacebookError? Error);
 

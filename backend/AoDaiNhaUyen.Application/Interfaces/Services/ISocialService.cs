@@ -34,6 +34,24 @@ public interface ISocialService
     int limit = 25,
     CancellationToken cancellationToken = default);
 
+  Task<SocialPostDto> GetPostAsync(
+    string postId,
+    CancellationToken cancellationToken = default);
+
+  Task<SocialPostDto> UpdatePostAsync(
+    string postId,
+    UpdateSocialPostRequest request,
+    CancellationToken cancellationToken = default);
+
+  Task DeletePostAsync(
+    string postId,
+    CancellationToken cancellationToken = default);
+
+  Task<SocialPostActionResultDto> UnpublishPostAsync(
+    string postId,
+    UnpublishSocialPostRequest request,
+    CancellationToken cancellationToken = default);
+
   Task<SocialAnalyticsDto> GetAnalyticsAsync(
     string platform,
     DateOnly fromDate,
@@ -42,5 +60,63 @@ public interface ISocialService
 
   Task<SocialMediaPresignDto> GetMediaPresignAsync(
     SocialMediaPresignRequest request,
+    CancellationToken cancellationToken = default);
+
+  Task<SocialCommentedPostListDto> GetCommentedPostsAsync(
+    string? platform = "facebook",
+    string? accountId = null,
+    string? profileId = null,
+    string? cursor = null,
+    int limit = 25,
+    CancellationToken cancellationToken = default);
+
+  Task<SocialCommentListDto> GetCommentsAsync(
+    string postId,
+    string accountId,
+    string? cursor = null,
+    int limit = 50,
+    CancellationToken cancellationToken = default);
+
+  Task<SocialActionResultDto> ReplyToCommentAsync(
+    string postId,
+    CreateSocialCommentReplyRequest request,
+    CancellationToken cancellationToken = default);
+
+  Task<SocialActionResultDto> DeleteCommentAsync(
+    string postId,
+    string accountId,
+    string commentId,
+    CancellationToken cancellationToken = default);
+
+  Task<SocialActionResultDto> ToggleCommentHiddenAsync(
+    string postId,
+    string accountId,
+    string commentId,
+    bool isHidden,
+    CancellationToken cancellationToken = default);
+
+  Task<SocialConversationListDto> GetConversationsAsync(
+    string? platform = "facebook",
+    string? accountId = null,
+    string? profileId = null,
+    string? cursor = null,
+    int limit = 25,
+    CancellationToken cancellationToken = default);
+
+  Task<SocialMessageListDto> GetConversationMessagesAsync(
+    string conversationId,
+    string accountId,
+    string? cursor = null,
+    int limit = 50,
+    CancellationToken cancellationToken = default);
+
+  Task<SocialActionResultDto> SendMessageAsync(
+    string conversationId,
+    SendSocialMessageRequest request,
+    CancellationToken cancellationToken = default);
+
+  Task<SocialActionResultDto> MarkConversationReadAsync(
+    string conversationId,
+    string accountId,
     CancellationToken cancellationToken = default);
 }

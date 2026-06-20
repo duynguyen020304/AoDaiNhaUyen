@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -324,19 +325,54 @@ public sealed class S3StorageService : IStorageService
 
   private static string SanitizeFileName(string fileName)
   {
+    var leafName = GetUploadLeafName(fileName);
+    leafName = leafName
+      .Replace('đ', 'd')
+      .Replace('Đ', 'D')
+      .Normalize(NormalizationForm.FormD);
     var invalidChars = Path.GetInvalidFileNameChars();
-    var sanitized = new StringBuilder(fileName.Length);
-    foreach (var c in fileName)
+    var sanitized = new StringBuilder(leafName.Length);
+    foreach (var c in leafName)
     {
-      sanitized.Append(invalidChars.Contains(c) ? '_' : c);
+      var category = CharUnicodeInfo.GetUnicodeCategory(c);
+      if (category == UnicodeCategory.NonSpacingMark)
+      {
+        continue;
+      }
+
+      if (invalidChars.Contains(c) || char.IsControl(c) || char.IsWhiteSpace(c))
+      {
+        sanitized.Append('_');
+      }
+      else if (c <= 0x7F)
+      {
+        sanitized.Append(c);
+      }
     }
-    return sanitized.ToString();
+
+    var result = sanitized
+      .ToString()
+      .Normalize(NormalizationForm.FormC)
+      .Trim('.', '_');
+
+    return string.IsNullOrWhiteSpace(result) ? "upload" : result;
   }
 
   private static string BuildContentDisposition(string fileName)
   {
-    var encodedFileName = Uri.EscapeDataString(fileName);
-    return $"inline; filename=\"{fileName}\"; filename*=UTF-8''{encodedFileName}";
+    var leafName = GetUploadLeafName(fileName);
+    var safeFallbackFileName = SanitizeFileName(leafName)
+      .Replace("\\", "\\\\", StringComparison.Ordinal)
+      .Replace("\"", "\\\"", StringComparison.Ordinal);
+    var encodedFileName = Uri.EscapeDataString(leafName);
+    return $"inline; filename=\"{safeFallbackFileName}\"; filename*=UTF-8''{encodedFileName}";
+  }
+
+  private static string GetUploadLeafName(string fileName)
+  {
+    var normalizedPath = fileName.Replace("\\", "/", StringComparison.Ordinal);
+    var leafName = Path.GetFileName(normalizedPath);
+    return string.IsNullOrWhiteSpace(leafName) ? "upload" : leafName;
   }
 
   private static string EncodeObjectKey(string objectKey)

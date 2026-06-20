@@ -72,6 +72,40 @@ public sealed class SocialController(
     return Ok(ApiResponseFactory.Success(posts));
   }
 
+  [HttpGet("posts/{postId}")]
+  public async Task<IActionResult> GetPost(string postId, CancellationToken cancellationToken)
+  {
+    var post = await socialService.GetPostAsync(postId, cancellationToken);
+    return Ok(ApiResponseFactory.Success(post));
+  }
+
+  [HttpPut("posts/{postId}")]
+  public async Task<IActionResult> UpdatePost(
+    string postId,
+    [FromBody] UpdateSocialPostRequest request,
+    CancellationToken cancellationToken)
+  {
+    var post = await socialService.UpdatePostAsync(postId, request, cancellationToken);
+    return Ok(ApiResponseFactory.Success(post, "Đã cập nhật bài viết Zernio."));
+  }
+
+  [HttpDelete("posts/{postId}")]
+  public async Task<IActionResult> DeletePost(string postId, CancellationToken cancellationToken)
+  {
+    await socialService.DeletePostAsync(postId, cancellationToken);
+    return Ok(ApiResponseFactory.Success(new { deleted = true }, "Đã xóa bài viết Zernio."));
+  }
+
+  [HttpPost("posts/{postId}/unpublish")]
+  public async Task<IActionResult> UnpublishPost(
+    string postId,
+    [FromBody] UnpublishSocialPostRequest request,
+    CancellationToken cancellationToken)
+  {
+    var result = await socialService.UnpublishPostAsync(postId, request, cancellationToken);
+    return Ok(ApiResponseFactory.Success(result, "Đã gỡ bài viết khỏi nền tảng."));
+  }
+
   [HttpGet("analytics")]
   public async Task<IActionResult> GetAnalytics(
     [FromQuery] string platform = "facebook",
@@ -83,6 +117,103 @@ public sealed class SocialController(
     var start = fromDate ?? end.AddDays(-29);
     var analytics = await socialService.GetAnalyticsAsync(platform, start, end, cancellationToken);
     return Ok(ApiResponseFactory.Success(analytics));
+  }
+
+  [HttpGet("comments")]
+  public async Task<IActionResult> GetCommentedPosts(
+    [FromQuery] string? platform = "facebook",
+    [FromQuery] string? accountId = null,
+    [FromQuery] string? profileId = null,
+    [FromQuery] string? cursor = null,
+    [FromQuery] int limit = 25,
+    CancellationToken cancellationToken = default)
+  {
+    var posts = await socialService.GetCommentedPostsAsync(platform, accountId, profileId, cursor, limit, cancellationToken);
+    return Ok(ApiResponseFactory.Success(posts));
+  }
+
+  [HttpGet("comments/{postId}")]
+  public async Task<IActionResult> GetComments(
+    string postId,
+    [FromQuery] string accountId,
+    [FromQuery] string? cursor = null,
+    [FromQuery] int limit = 50,
+    CancellationToken cancellationToken = default)
+  {
+    var comments = await socialService.GetCommentsAsync(postId, accountId, cursor, limit, cancellationToken);
+    return Ok(ApiResponseFactory.Success(comments));
+  }
+
+  [HttpPost("comments/{postId}")]
+  public async Task<IActionResult> ReplyToComment(string postId, [FromBody] CreateSocialCommentReplyRequest request, CancellationToken cancellationToken)
+  {
+    var result = await socialService.ReplyToCommentAsync(postId, request, cancellationToken);
+    return Ok(ApiResponseFactory.Success(result, "Đã gửi bình luận qua Zernio."));
+  }
+
+  [HttpDelete("comments/{postId}/{commentId}")]
+  public async Task<IActionResult> DeleteComment(
+    string postId,
+    string commentId,
+    [FromQuery] string accountId,
+    CancellationToken cancellationToken)
+  {
+    var result = await socialService.DeleteCommentAsync(postId, accountId, commentId, cancellationToken);
+    return Ok(ApiResponseFactory.Success(result, "Đã xóa bình luận qua Zernio."));
+  }
+
+  [HttpPatch("comments/{postId}/{commentId}/visibility")]
+  public async Task<IActionResult> ToggleCommentHidden(
+    string postId,
+    string commentId,
+    [FromQuery] string accountId,
+    [FromBody] ToggleSocialCommentHiddenRequest request,
+    CancellationToken cancellationToken)
+  {
+    var result = await socialService.ToggleCommentHiddenAsync(postId, accountId, commentId, request.IsHidden, cancellationToken);
+    return Ok(ApiResponseFactory.Success(result, request.IsHidden ? "Đã ẩn bình luận qua Zernio." : "Đã hiện bình luận qua Zernio."));
+  }
+
+  [HttpGet("conversations")]
+  public async Task<IActionResult> GetConversations(
+    [FromQuery] string? platform = "facebook",
+    [FromQuery] string? accountId = null,
+    [FromQuery] string? profileId = null,
+    [FromQuery] string? cursor = null,
+    [FromQuery] int limit = 25,
+    CancellationToken cancellationToken = default)
+  {
+    var conversations = await socialService.GetConversationsAsync(platform, accountId, profileId, cursor, limit, cancellationToken);
+    return Ok(ApiResponseFactory.Success(conversations));
+  }
+
+  [HttpGet("conversations/{conversationId}/messages")]
+  public async Task<IActionResult> GetConversationMessages(
+    string conversationId,
+    [FromQuery] string accountId,
+    [FromQuery] string? cursor = null,
+    [FromQuery] int limit = 50,
+    CancellationToken cancellationToken = default)
+  {
+    var messages = await socialService.GetConversationMessagesAsync(conversationId, accountId, cursor, limit, cancellationToken);
+    return Ok(ApiResponseFactory.Success(messages));
+  }
+
+  [HttpPost("conversations/{conversationId}/messages")]
+  public async Task<IActionResult> SendMessage(string conversationId, [FromBody] SendSocialMessageRequest request, CancellationToken cancellationToken)
+  {
+    var result = await socialService.SendMessageAsync(conversationId, request, cancellationToken);
+    return Ok(ApiResponseFactory.Success(result, "Đã gửi tin nhắn qua Zernio."));
+  }
+
+  [HttpPost("conversations/{conversationId}/read")]
+  public async Task<IActionResult> MarkConversationRead(
+    string conversationId,
+    [FromBody] MarkSocialConversationReadRequest request,
+    CancellationToken cancellationToken)
+  {
+    var result = await socialService.MarkConversationReadAsync(conversationId, request.AccountId, cancellationToken);
+    return Ok(ApiResponseFactory.Success(result, "Đã đánh dấu đã đọc qua Zernio."));
   }
 
   [HttpPost("media/upload")]

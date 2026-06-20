@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { CalendarClock, ExternalLink, Loader2, RefreshCcw, Search, Send, Trash2, Upload, UsersRound } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { CalendarClock, Edit3, ExternalLink, Loader2, MessageCircle, MessageSquareText, RefreshCcw, Search, Send, Trash2, Upload, UsersRound } from 'lucide-react'
 import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -7,10 +8,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
+import { FacebookCommentsTab } from '@/components/facebook/FacebookCommentsTab'
+import { FacebookMessagesTab } from '@/components/facebook/FacebookMessagesTab'
+import { useFeedback } from '@/components/ui/feedbackContext'
 import { HttpError } from '@/api/client'
 import {
   createSocialPost,
+  deleteSocialPost,
   disconnectSocialAccount,
+  unpublishSocialPost,
   getSocialAccounts,
   getSocialPosts,
   uploadSocialMedia,
@@ -19,7 +25,15 @@ import {
   type SocialPost,
 } from '@/api/social'
 
-type TabKey = 'fanpages' | 'composer' | 'history'
+type TabKey = 'fanpages' | 'composer' | 'history' | 'comments' | 'messages'
+
+const TAB_KEYS: TabKey[] = ['fanpages', 'composer', 'history', 'comments', 'messages']
+
+type PostDeleteTarget = {
+  id: string
+  content: string | null
+  status: string | null
+}
 
 type UploadedMedia = {
   id: string
@@ -32,6 +46,14 @@ type UploadedMedia = {
 
 const PROFILE_STORAGE_KEY = 'zernio_profile_id'
 const CONNECT_STATE_STORAGE_KEY = 'zernio_connect_state'
+const CLONE_DRAFT_STORAGE_KEY = 'facebook_clone_post_draft'
+
+type CloneDraft = {
+  content: string | null
+  mediaItems: Array<{ type: string | null; url: string }>
+  accountIds: string[]
+  sourcePostId: string
+}
 
 function formatDateTime(value: string | null) {
   if (!value) return '—'
@@ -39,9 +61,15 @@ function formatDateTime(value: string | null) {
 }
 
 function getErrorMessage(error: unknown) {
-  if (error instanceof HttpError) return error.message
-  if (error instanceof Error) return error.message
-  return 'Đã xảy ra lỗi. Vui lòng thử lại.'
+  const message = error instanceof HttpError
+    ? error.message
+    : error instanceof Error
+      ? error.message
+      : 'Đã xảy ra lỗi. Vui lòng thử lại.'
+  return message
+    .replaceAll('Zernio API lỗi:', 'Lỗi dịch vụ:')
+    .replaceAll('Lỗi Zernio', 'Lỗi dịch vụ')
+    .replaceAll('Zernio', 'dịch vụ')
 }
 
 function statusBadge(isActive: boolean) {
@@ -64,6 +92,50 @@ function postStatusBadge(status: string | null) {
     default:
       return <Badge variant="outline">{status || 'Không rõ'}</Badge>
   }
+}
+
+function getBestPostUrl(post: SocialPost) {
+  return post.platformPostUrl || (post.platforms ?? []).find((platform) => platform.platformPostUrl)?.platformPostUrl || null
+}
+
+function getBestPublishedAt(post: SocialPost) {
+  return post.publishedAt || (post.platforms ?? []).find((platform) => platform.publishedAt)?.publishedAt || null
+}
+
+function isPublishedPost(post: SocialPost) {
+  return post.status === 'published' || post.status === 'success'
+}
+
+function isVideoUrl(url: string) {
+  return /\.(mp4|mov|webm)(\?|$)/i.test(url)
+}
+
+function mediaFileName(url: string) {
+  try {
+    const pathname = new URL(url).pathname
+    return decodeURIComponent(pathname.split('/').filter(Boolean).pop() || url)
+  } catch {
+    return url.split('/').pop() || url
+  }
+}
+
+function cloneDraftMediaToUploadedMedia(draft: CloneDraft): UploadedMedia[] {
+  return (draft.mediaItems ?? [])
+    .filter((item) => item?.url)
+    .map((item) => ({
+      id: crypto.randomUUID(),
+      fileName: mediaFileName(item.url),
+      contentType: item.type?.includes('video') || isVideoUrl(item.url) ? 'video/mp4' : 'image/jpeg',
+      publicUrl: item.url,
+      progress: 100,
+      status: 'uploaded' as const,
+    }))
+}
+
+function getPlatformSummary(post: SocialPost) {
+  const platforms = post.platforms ?? []
+  if (platforms.length === 0) return null
+  return platforms.map((platform) => `${platform.platform}: ${platform.status || '—'}`).join(', ')
 }
 
 function redirectUrl() {
@@ -96,6 +168,8 @@ function clearStoredConnectState() {
 }
 
 export function FacebookPage() {
+  const navigate = useNavigate()
+  const { toast, confirm } = useFeedback()
   const [accounts, setAccounts] = useState<SocialAccountConnection[]>([])
   const [posts, setPosts] = useState<SocialPost[]>([])
   const [activeTab, setActiveTab] = useState<TabKey>('fanpages')
@@ -107,10 +181,10 @@ export function FacebookPage() {
   const [scheduledFor, setScheduledFor] = useState('')
   const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia[]>([])
   const [deleteTarget, setDeleteTarget] = useState<SocialAccountConnection | null>(null)
+  const [postDeleteTarget, setPostDeleteTarget] = useState<PostDeleteTarget | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
+  const [cloneDraftApplied, setCloneDraftApplied] = useState(false)
 
   const filteredAccounts = useMemo(() => {
     const keyword = searchInput.trim().toLowerCase()
@@ -132,30 +206,28 @@ export function FacebookPage() {
 
   const loadAccounts = useCallback(async (sync = false, targetProfileId = profileId) => {
     setLoading(true)
-    setError(null)
     try {
       const data = await getSocialAccounts('facebook', sync, targetProfileId || undefined)
       setAccounts(data)
       setSelectedAccountIds((current) => current.filter((id) => data.some((account) => account.id === id && account.isActive)))
     } catch (err) {
-      setError(getErrorMessage(err))
+      toast(getErrorMessage(err), 'error')
     } finally {
       setLoading(false)
     }
-  }, [profileId])
+  }, [profileId, toast])
 
   const loadPosts = useCallback(async () => {
     setLoading(true)
-    setError(null)
     try {
       const data = await getSocialPosts('facebook', undefined, profileId || undefined, 1, 25)
       setPosts(data.items)
     } catch (err) {
-      setError(getErrorMessage(err))
+      toast(getErrorMessage(err), 'error')
     } finally {
       setLoading(false)
     }
-  }, [profileId])
+  }, [profileId, toast])
 
   const handleCallback = useCallback(async () => {
     const url = new URL(window.location.href)
@@ -170,7 +242,7 @@ export function FacebookPage() {
     clearStoredConnectState()
 
     if (oauthError) {
-      setError(`Zernio từ chối kết nối: ${oauthError}`)
+      toast(`Không thể kết nối: ${oauthError}`, 'error')
       return
     }
 
@@ -180,7 +252,6 @@ export function FacebookPage() {
     }
 
     setLoading(true)
-    setError(null)
     try {
       if (pageId && tempToken) {
         await selectFacebookPage({
@@ -190,20 +261,20 @@ export function FacebookPage() {
           redirectUrl: redirectUrl(),
           userProfile: {
             id: url.searchParams.get('userProfileId') || 'zernio-user',
-            name: url.searchParams.get('userProfileName') || 'Zernio user',
-            profilePicture: url.searchParams.get('userProfilePicture') || 'https://zernio.com/favicon.ico',
+            name: url.searchParams.get('userProfileName') || 'Người dùng',
+            profilePicture: url.searchParams.get('userProfilePicture') || `${window.location.origin}/logo.svg`,
           },
         })
       }
 
       await loadAccounts(true, callbackProfileId || profileId)
-      setSuccess('Đã đồng bộ fanpage Facebook từ Zernio.')
+      toast('Đã đồng bộ fanpage Facebook.', 'success')
     } catch (err) {
-      setError(getErrorMessage(err))
+      toast(getErrorMessage(err), 'error')
     } finally {
       setLoading(false)
     }
-  }, [loadAccounts, profileId])
+  }, [loadAccounts, profileId, toast])
 
   useEffect(() => {
     const timeout = window.setTimeout(() => { void loadAccounts(false) }, 0)
@@ -215,6 +286,69 @@ export function FacebookPage() {
     return () => window.clearTimeout(timeout)
   }, [handleCallback])
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const tab = new URLSearchParams(window.location.search).get('tab')
+      if (TAB_KEYS.includes(tab as TabKey)) setActiveTab(tab as TabKey)
+    }, 0)
+    return () => window.clearTimeout(timeout)
+  }, [])
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      if (cloneDraftApplied) return
+      const rawDraft = window.sessionStorage.getItem(CLONE_DRAFT_STORAGE_KEY)
+      if (!rawDraft) return
+
+      let draft: CloneDraft
+      try {
+        draft = JSON.parse(rawDraft) as CloneDraft
+      } catch {
+        window.sessionStorage.removeItem(CLONE_DRAFT_STORAGE_KEY)
+        setCloneDraftApplied(true)
+        return
+      }
+
+      if ((draft.accountIds?.length ?? 0) > 0 && accounts.length === 0) return
+
+      const selectedIds = (draft.accountIds ?? [])
+        .map((externalId) => accounts.find((account) => account.zernioAccountId === externalId || account.id === externalId)?.id)
+        .filter((id): id is string => Boolean(id))
+
+      setActiveTab('composer')
+      setContent(draft.content ?? '')
+      setUploadedMedia(cloneDraftMediaToUploadedMedia(draft))
+      setPublishNow(true)
+      setScheduledFor('')
+      setSelectedAccountIds(selectedIds)
+      window.sessionStorage.removeItem(CLONE_DRAFT_STORAGE_KEY)
+      setCloneDraftApplied(true)
+
+      if ((draft.accountIds?.length ?? 0) > 0 && selectedIds.length === 0) {
+        toast('Không tự khớp được fanpage. Vui lòng chọn fanpage trước khi đăng.', 'error')
+      } else {
+        toast('Đã tạo bản sao. Bạn có thể chỉnh nội dung/ảnh rồi đăng bài mới.', 'success')
+      }
+    }, 0)
+    return () => window.clearTimeout(timeout)
+  }, [accounts, cloneDraftApplied, toast])
+
+  async function handleEditPost(post: SocialPost) {
+    if (!isPublishedPost(post)) {
+      navigate(`/admin/facebook/posts/${encodeURIComponent(post.id)}/edit`)
+      return
+    }
+
+    const accepted = await confirm({
+      title: 'Bài đã đăng không thể sửa trực tiếp',
+      message: 'Để chỉnh sửa, cần tạo bản sao, tải/chọn lại ảnh nếu cần rồi đăng thành bài mới. Sau đó bạn có thể xóa bài cũ nếu nền tảng cho phép.',
+      confirmText: 'Tạo bản sao',
+      cancelText: 'Hủy',
+    })
+    if (!accepted) return
+    navigate(`/admin/facebook/posts/${encodeURIComponent(post.id)}/edit?clone=1`)
+  }
+
   async function handleSync() {
     const normalizedProfileId = profileId.trim()
     if (normalizedProfileId) window.localStorage.setItem(PROFILE_STORAGE_KEY, normalizedProfileId)
@@ -225,15 +359,34 @@ export function FacebookPage() {
   async function handleDisconnect() {
     if (!deleteTarget) return
     setSaving(true)
-    setError(null)
-    setSuccess(null)
     try {
       await disconnectSocialAccount(deleteTarget.id)
       setDeleteTarget(null)
-      setSuccess('Đã ngắt kết nối fanpage.')
+      toast('Đã ngắt kết nối fanpage.', 'success')
       await loadAccounts(false)
     } catch (err) {
-      setError(getErrorMessage(err))
+      toast(getErrorMessage(err), 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDeletePost() {
+    if (!postDeleteTarget) return
+    setSaving(true)
+    try {
+      if (postDeleteTarget.status === 'published' || postDeleteTarget.status === 'success') {
+        await unpublishSocialPost(postDeleteTarget.id, 'facebook')
+        setPosts((current) => current.map((post) => post.id === postDeleteTarget.id ? { ...post, status: 'cancelled' } : post))
+        toast('Đã gỡ bài viết khỏi Facebook.', 'success')
+      } else {
+        await deleteSocialPost(postDeleteTarget.id)
+        setPosts((current) => current.filter((post) => post.id !== postDeleteTarget.id))
+        toast('Đã xóa bài viết.', 'success')
+      }
+      setPostDeleteTarget(null)
+    } catch (err) {
+      toast(getErrorMessage(err), 'error')
     } finally {
       setSaving(false)
     }
@@ -243,18 +396,16 @@ export function FacebookPage() {
     const selectedFiles = Array.from(files ?? [])
     if (selectedFiles.length === 0) return
 
-    setError(null)
-    setSuccess(null)
     for (const file of selectedFiles) {
       const isVideo = file.type.startsWith('video/')
       const maxBytes = isVideo ? 200 * 1024 * 1024 : 10 * 1024 * 1024
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/quicktime', 'video/webm']
       if (!allowedTypes.includes(file.type)) {
-        setError(`File ${file.name} không đúng định dạng. Chỉ hỗ trợ JPG, PNG, WEBP, GIF, MP4, MOV hoặc WEBM.`)
+        toast(`File ${file.name} không đúng định dạng. Chỉ hỗ trợ JPG, PNG, WEBP, GIF, MP4, MOV hoặc WEBM.`, 'error')
         continue
       }
       if (file.size <= 0 || file.size > maxBytes) {
-        setError(isVideo ? `Video ${file.name} vượt quá 200MB.` : `Ảnh ${file.name} vượt quá 10MB.`)
+        toast(isVideo ? `Video ${file.name} vượt quá 200MB.` : `Ảnh ${file.name} vượt quá 10MB.`, 'error')
         continue
       }
 
@@ -277,7 +428,7 @@ export function FacebookPage() {
         setUploadedMedia((current) => current.map((item) => item.id === mediaId
           ? { ...item, progress: 0, status: 'error' }
           : item))
-        setError(getErrorMessage(err))
+        toast(getErrorMessage(err), 'error')
       }
     }
   }
@@ -285,13 +436,11 @@ export function FacebookPage() {
   async function handleCreatePost(event: FormEvent) {
     event.preventDefault()
     if (selectedAccountIds.length === 0) {
-      setError('Vui lòng chọn ít nhất một fanpage.')
+      toast('Vui lòng chọn ít nhất một fanpage.', 'error')
       return
     }
 
     setSaving(true)
-    setError(null)
-    setSuccess(null)
     try {
       await createSocialPost({
         content: content.trim(),
@@ -304,22 +453,31 @@ export function FacebookPage() {
       setUploadedMedia([])
       setScheduledFor('')
       setPublishNow(true)
-      setSuccess(publishNow ? 'Đã gửi bài viết sang Zernio để đăng.' : 'Đã gửi lịch đăng sang Zernio.')
+      toast(publishNow ? 'Đã gửi bài viết để đăng.' : 'Đã gửi lịch đăng.', 'success')
       setActiveTab('history')
       await loadPosts()
     } catch (err) {
-      setError(getErrorMessage(err))
+      toast(getErrorMessage(err), 'error')
     } finally {
       setSaving(false)
     }
   }
+
+  const changeTab = useCallback((tab: TabKey) => {
+    setActiveTab(tab)
+    const url = new URL(window.location.href)
+    if (tab === 'fanpages') url.searchParams.delete('tab')
+    else url.searchParams.set('tab', tab)
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+    if (tab === 'history') void loadPosts()
+  }, [loadPosts])
 
   return (
     <div>
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-ink">Quản lý fanpage</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Đồng bộ Facebook qua Zernio, đăng bài và theo dõi lịch sử đăng.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Đồng bộ fanpage Facebook, đăng bài và theo dõi lịch sử đăng.</p>
         </div>
         <Button variant="outline" onClick={() => void handleSync()} disabled={loading || saving}>
           {loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCcw className="size-4" />}
@@ -327,34 +485,32 @@ export function FacebookPage() {
         </Button>
       </div>
 
-      {error && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          <span className="flex-1">{error}</span>
-          <button onClick={() => setError(null)} className="shrink-0 underline">Đóng</button>
+      <div className="mb-4 rounded-2xl border bg-white p-2 shadow-sm" role="tablist" aria-label="Facebook admin tabs">
+        <div className="flex flex-wrap gap-2">
+          {([
+            ['fanpages', UsersRound, 'Fanpage'],
+            ['composer', Send, 'Đăng bài'],
+            ['history', CalendarClock, 'Lịch sử'],
+            ['comments', MessageCircle, 'Bình luận'],
+            ['messages', MessageSquareText, 'Tin nhắn'],
+          ] as const).map(([key, Icon, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === key}
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${activeTab === key ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'}`}
+              onClick={() => changeTab(key)}
+            >
+              <Icon className="size-4" />
+              {label}
+            </button>
+          ))}
         </div>
-      )}
-      {success && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          <span className="flex-1">{success}</span>
-          <button onClick={() => setSuccess(null)} className="shrink-0 underline">Đóng</button>
-        </div>
-      )}
-
-      <div className="mb-4 flex flex-wrap gap-2">
-        {([
-          ['fanpages', UsersRound, 'Fanpage'],
-          ['composer', Send, 'Đăng bài'],
-          ['history', CalendarClock, 'Lịch sử'],
-        ] as const).map(([key, Icon, label]) => (
-          <Button key={key} type="button" variant={activeTab === key ? 'default' : 'outline'} onClick={() => { setActiveTab(key); if (key === 'history') void loadPosts() }}>
-            <Icon className="size-4" />
-            {label}
-          </Button>
-        ))}
       </div>
 
       {activeTab === 'fanpages' && (
-        <>
+        <div role="tabpanel">
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -367,7 +523,7 @@ export function FacebookPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Fanpage</TableHead>
-                  <TableHead>Zernio Account ID</TableHead>
+                  <TableHead>Account ID</TableHead>
                   <TableHead>Profile ID</TableHead>
                   <TableHead>Đồng bộ</TableHead>
                   <TableHead>Trạng thái</TableHead>
@@ -386,7 +542,7 @@ export function FacebookPage() {
                   <TableRow>
                     <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                       <UsersRound className="mx-auto mb-2 size-8 opacity-40" />
-                      Chưa có fanpage. Kết nối Zernio để đồng bộ danh sách.
+                      Chưa có fanpage. Hãy kết nối để đồng bộ danh sách.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -411,14 +567,14 @@ export function FacebookPage() {
               </TableBody>
             </Table>
           </Card>
-        </>
+        </div>
       )}
 
       {activeTab === 'composer' && (
-        <Card>
+        <Card role="tabpanel">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Send className="size-5" />Đăng bài Facebook</CardTitle>
-            <CardDescription>Zernio sẽ đăng ngay hoặc lên lịch cho fanpage đã chọn.</CardDescription>
+            <CardDescription>Đăng ngay hoặc lên lịch cho fanpage đã chọn.</CardDescription>
           </CardHeader>
           <CardContent>
             <form className="space-y-5" onSubmit={handleCreatePost}>
@@ -448,11 +604,11 @@ export function FacebookPage() {
               <div className="space-y-3">
                 <div>
                   <div className="text-sm font-medium">Ảnh/video đính kèm</div>
-                  <p className="mt-1 text-xs text-muted-foreground">Upload qua backend như ảnh sản phẩm, backend lưu lên S3 rồi trả URL public để gửi sang Zernio. Ảnh tối đa 10MB, video tối đa 200MB.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Tải ảnh/video lên hệ thống trước khi đăng. Ảnh tối đa 10MB, video tối đa 200MB.</p>
                 </div>
                 <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-6 text-sm font-medium text-primary transition hover:bg-primary/10">
                   <Upload className="size-4" />
-                  Tải ảnh/video lên S3
+                  Tải ảnh/video
                   <input
                     type="file"
                     className="hidden"
@@ -482,7 +638,7 @@ export function FacebookPage() {
                             <div className={`h-full ${item.status === 'error' ? 'bg-destructive' : 'bg-primary'}`} style={{ width: `${item.progress}%` }} />
                           </div>
                           <div className="mt-1 text-xs text-muted-foreground">
-                            {item.status === 'uploading' ? `Đang upload ${item.progress}%` : item.status === 'uploaded' ? 'Đã upload lên S3' : 'Upload lỗi'}
+                            {item.status === 'uploading' ? `Đang tải ${item.progress}%` : item.status === 'uploaded' ? 'Đã tải lên' : 'Tải lên lỗi'}
                           </div>
                         </div>
                         <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => setUploadedMedia((current) => current.filter((media) => media.id !== item.id))} aria-label="Xóa media">
@@ -507,7 +663,7 @@ export function FacebookPage() {
 
               <Button disabled={saving || hasUploadingMedia || !content.trim() || selectedAccountIds.length === 0 || (!publishNow && !scheduledFor)}>
                 {saving ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                {publishNow ? 'Đăng qua Zernio' : 'Lên lịch qua Zernio'}
+                {publishNow ? 'Đăng bài' : 'Lên lịch đăng'}
               </Button>
             </form>
           </CardContent>
@@ -515,7 +671,7 @@ export function FacebookPage() {
       )}
 
       {activeTab === 'history' && (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden" role="tabpanel">
           <Table>
             <TableHeader>
               <TableRow>
@@ -523,47 +679,75 @@ export function FacebookPage() {
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Lịch đăng</TableHead>
                 <TableHead>Đã đăng</TableHead>
-                <TableHead className="text-right">Link</TableHead>
+                <TableHead>Link</TableHead>
+                <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading && posts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                     <Loader2 className="mx-auto mb-2 size-6 animate-spin text-primary" />
                     Đang tải...
                   </TableCell>
                 </TableRow>
               ) : posts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                     <CalendarClock className="mx-auto mb-2 size-8 opacity-40" />
                     Chưa có lịch sử bài viết.
                   </TableCell>
                 </TableRow>
               ) : (
-                posts.map((post) => (
-                  <TableRow key={post.id}>
-                    <TableCell>
-                      <div className="line-clamp-2 max-w-xl text-sm text-ink">{post.content || '—'}</div>
-                      <div className="font-mono text-xs text-muted-foreground">{post.id}</div>
-                    </TableCell>
-                    <TableCell>{postStatusBadge(post.status)}</TableCell>
-                    <TableCell>{formatDateTime(post.scheduledFor)}</TableCell>
-                    <TableCell>{formatDateTime(post.publishedAt)}</TableCell>
-                    <TableCell className="text-right">
-                      {post.platformPostUrl ? (
-                        <Button variant="ghost" size="icon" className="size-8" onClick={() => window.open(post.platformPostUrl || '#', '_blank', 'noopener,noreferrer')} aria-label="Mở bài viết">
-                          <ExternalLink className="size-4" />
+                posts.map((post) => {
+                  const postUrl = getBestPostUrl(post)
+                  const publishedAt = getBestPublishedAt(post)
+                  return (
+                    <TableRow key={post.id}>
+                      <TableCell>
+                        <button type="button" className="line-clamp-2 max-w-xl text-left text-sm text-ink hover:text-primary" onClick={() => void handleEditPost(post)}>
+                          {post.content || '—'}
+                        </button>
+                        <div className="font-mono text-xs text-muted-foreground">{post.id}</div>
+                        {getPlatformSummary(post) && <div className="mt-1 text-xs text-muted-foreground">{getPlatformSummary(post)}</div>}
+                      </TableCell>
+                      <TableCell>{postStatusBadge(post.status)}</TableCell>
+                      <TableCell>{formatDateTime(post.scheduledFor)}</TableCell>
+                      <TableCell>{formatDateTime(publishedAt)}</TableCell>
+                      <TableCell>
+                        {postUrl ? (
+                          <Button variant="ghost" size="icon" className="size-8" onClick={() => window.open(postUrl, '_blank', 'noopener,noreferrer')} aria-label="Mở bài viết">
+                            <ExternalLink className="size-4" />
+                          </Button>
+                        ) : '—'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" className="size-8" onClick={() => void handleEditPost(post)} aria-label="Chỉnh sửa bài viết">
+                          <Edit3 className="size-4" />
                         </Button>
-                      ) : '—'}
-                    </TableCell>
-                  </TableRow>
-                ))
+                        <Button variant="ghost" size="icon" className="size-8 text-destructive hover:text-destructive" onClick={() => setPostDeleteTarget({ id: post.id, content: post.content, status: post.status })} aria-label="Xóa bài viết">
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
               )}
             </TableBody>
           </Table>
         </Card>
+      )}
+
+      {activeTab === 'comments' && (
+        <div role="tabpanel">
+          <FacebookCommentsTab accounts={accounts} profileId={profileId || undefined} onOpenFanpages={() => changeTab('fanpages')} />
+        </div>
+      )}
+
+      {activeTab === 'messages' && (
+        <div role="tabpanel">
+          <FacebookMessagesTab accounts={accounts} profileId={profileId || undefined} onOpenFanpages={() => changeTab('fanpages')} />
+        </div>
       )}
 
       <DeleteConfirmModal
@@ -572,6 +756,15 @@ export function FacebookPage() {
         onConfirm={handleDisconnect}
         title="Ngắt kết nối fanpage"
         message={`Ngắt kết nối "${deleteTarget?.displayName || deleteTarget?.username || deleteTarget?.zernioAccountId}" khỏi danh sách quản lý?`}
+      />
+      <DeleteConfirmModal
+        open={!!postDeleteTarget}
+        onClose={() => setPostDeleteTarget(null)}
+        onConfirm={handleDeletePost}
+        title={postDeleteTarget?.status === 'published' || postDeleteTarget?.status === 'success' ? 'Gỡ bài đã đăng' : 'Xóa bài viết'}
+        message={postDeleteTarget?.status === 'published' || postDeleteTarget?.status === 'success'
+          ? `Gỡ bài viết "${postDeleteTarget?.content || postDeleteTarget?.id}" khỏi Facebook? Bản ghi lịch sử vẫn được giữ.`
+          : `Xóa bài viết "${postDeleteTarget?.content || postDeleteTarget?.id}"?`}
       />
     </div>
   )

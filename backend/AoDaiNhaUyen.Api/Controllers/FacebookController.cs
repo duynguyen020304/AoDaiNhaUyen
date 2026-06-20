@@ -163,6 +163,105 @@ public sealed class FacebookController(IFacebookService facebookService) : Contr
     return NoContent();
   }
 
+  [HttpGet("{pageId}/posts/{postId}/comments")]
+  public async Task<IActionResult> GetPostComments(
+    string pageId,
+    string postId,
+    [FromQuery] string? after,
+    [FromQuery] int limit = 25,
+    CancellationToken cancellationToken = default)
+  {
+    var comments = await facebookService.GetPostCommentsAsync(pageId, postId, after, limit, cancellationToken);
+    return Ok(ApiResponseFactory.Success(comments));
+  }
+
+  [HttpPost("{pageId}/posts/{postId}/comments")]
+  public async Task<IActionResult> CommentOnPost(
+    string pageId,
+    string postId,
+    [FromBody] CreateFacebookCommentRequest request,
+    CancellationToken cancellationToken)
+  {
+    var result = await facebookService.CommentOnPostAsync(pageId, postId, request, cancellationToken);
+    return Created($"/api/admin/facebook/{pageId}/comments/{result.Id}", ApiResponseFactory.Success(result, "Đã bình luận bài viết."));
+  }
+
+  [HttpPost("{pageId}/comments/{commentId}/replies")]
+  public async Task<IActionResult> ReplyToComment(
+    string pageId,
+    string commentId,
+    [FromBody] ReplyFacebookCommentRequest request,
+    CancellationToken cancellationToken)
+  {
+    var result = await facebookService.ReplyToCommentAsync(pageId, commentId, request, cancellationToken);
+    return Created($"/api/admin/facebook/{pageId}/comments/{result.Id}", ApiResponseFactory.Success(result, "Đã trả lời bình luận."));
+  }
+
+  [HttpPatch("{pageId}/comments/{commentId}/visibility")]
+  public async Task<IActionResult> ToggleCommentVisibility(
+    string pageId,
+    string commentId,
+    [FromBody] ToggleFacebookCommentHiddenRequest request,
+    CancellationToken cancellationToken)
+  {
+    var result = await facebookService.ToggleCommentHiddenAsync(pageId, commentId, request, cancellationToken);
+    return Ok(ApiResponseFactory.Success(result, request.IsHidden ? "Đã ẩn bình luận." : "Đã hiện bình luận."));
+  }
+
+  [HttpDelete("{pageId}/comments/{commentId}")]
+  public async Task<IActionResult> DeleteComment(
+    string pageId,
+    string commentId,
+    CancellationToken cancellationToken)
+  {
+    await facebookService.DeleteCommentAsync(pageId, commentId, cancellationToken);
+    return NoContent();
+  }
+
+  [HttpGet("{pageId}/conversations")]
+  public async Task<IActionResult> GetConversations(
+    string pageId,
+    [FromQuery] string? after,
+    [FromQuery] int limit = 25,
+    CancellationToken cancellationToken = default)
+  {
+    var conversations = await facebookService.GetConversationsAsync(pageId, after, limit, cancellationToken);
+    return Ok(ApiResponseFactory.Success(conversations));
+  }
+
+  [HttpGet("{pageId}/conversations/{conversationId}/messages")]
+  public async Task<IActionResult> GetConversationMessages(
+    string pageId,
+    string conversationId,
+    [FromQuery] string? before,
+    [FromQuery] int limit = 50,
+    CancellationToken cancellationToken = default)
+  {
+    var messages = await facebookService.GetConversationMessagesAsync(pageId, conversationId, before, limit, cancellationToken);
+    return Ok(ApiResponseFactory.Success(messages));
+  }
+
+  [HttpPost("{pageId}/conversations/{conversationId}/messages")]
+  public async Task<IActionResult> SendMessage(
+    string pageId,
+    string conversationId,
+    [FromBody] SendFacebookMessageRequest request,
+    CancellationToken cancellationToken)
+  {
+    var result = await facebookService.SendMessageAsync(pageId, conversationId, request, cancellationToken);
+    return Ok(ApiResponseFactory.Success(result, "Đã gửi tin nhắn."));
+  }
+
+  [HttpPost("{pageId}/conversations/{conversationId}/read")]
+  public async Task<IActionResult> MarkConversationRead(
+    string pageId,
+    string conversationId,
+    CancellationToken cancellationToken)
+  {
+    var result = await facebookService.MarkConversationReadAsync(pageId, conversationId, cancellationToken);
+    return Ok(ApiResponseFactory.Success(result, "Đã đánh dấu đã đọc."));
+  }
+
   private static IActionResult? ValidateUpload(IFormFile? file, IReadOnlyCollection<string> allowedContentTypes, long maxBytes)
   {
     if (file is null || file.Length == 0)

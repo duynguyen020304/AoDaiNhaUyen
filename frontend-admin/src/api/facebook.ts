@@ -178,3 +178,142 @@ export const deleteFacebookPost = (postId: string) =>
   request<void>(`/api/admin/facebook/posts/${encodeURIComponent(postId)}`, {
     method: 'DELETE',
   })
+
+export interface FacebookCommentAuthor {
+  id: string | null
+  name: string | null
+  avatarUrl: string | null
+}
+
+export interface FacebookComment {
+  id: string
+  postId: string | null
+  parentId: string | null
+  author: FacebookCommentAuthor | null
+  message: string | null
+  createdTime: string | null
+  likeCount: number | null
+  commentCount: number | null
+  canReply: boolean | null
+  canHide: boolean | null
+  canDelete: boolean | null
+  isHidden: boolean | null
+  replies: FacebookComment[]
+}
+
+export interface FacebookCommentList {
+  items: FacebookComment[]
+  beforeCursor: string | null
+  afterCursor: string | null
+  nextUrl: string | null
+}
+
+export interface FacebookCommentActionResult {
+  success: boolean
+  id: string | null
+  message: string | null
+}
+
+export interface FacebookParticipant {
+  id: string | null
+  name: string | null
+  email: string | null
+  isPage: boolean
+}
+
+export interface FacebookConversation {
+  id: string
+  pageId: string
+  customerId: string | null
+  customerName: string | null
+  customerAvatarUrl: string | null
+  snippet: string | null
+  updatedTime: string | null
+  unreadCount: number | null
+  messageCount: number | null
+  link: string | null
+  participants: FacebookParticipant[]
+}
+
+export interface FacebookConversationList {
+  items: FacebookConversation[]
+  beforeCursor: string | null
+  afterCursor: string | null
+  nextUrl: string | null
+}
+
+export interface FacebookMessageAttachment {
+  type: string | null
+  url: string | null
+  name: string | null
+  mimeType: string | null
+  size: number | null
+}
+
+export interface FacebookMessage {
+  id: string
+  conversationId: string
+  senderId: string | null
+  senderName: string | null
+  isFromPage: boolean
+  text: string | null
+  createdTime: string | null
+  attachments: FacebookMessageAttachment[]
+}
+
+export interface FacebookMessageList {
+  items: FacebookMessage[]
+  beforeCursor: string | null
+  afterCursor: string | null
+  nextUrl: string | null
+}
+
+export interface SendFacebookMessageRequest {
+  text?: string | null
+  attachmentUrl?: string | null
+  attachmentType?: 'image' | 'video' | 'audio' | 'file' | null
+}
+
+export interface FacebookMessageSendResult {
+  success: boolean
+  messageId: string | null
+}
+
+export const getFacebookPostComments = (pageId: string, postId: string, after?: string | null, limit = 25) =>
+  request<FacebookCommentList>(`/api/admin/facebook/${encodeURIComponent(pageId)}/posts/${encodeURIComponent(postId)}/comments?${qs({ after, limit })}`)
+
+export const commentOnFacebookPost = (pageId: string, postId: string, message: string) =>
+  request<FacebookCommentActionResult>(`/api/admin/facebook/${encodeURIComponent(pageId)}/posts/${encodeURIComponent(postId)}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  })
+
+export const replyFacebookComment = (pageId: string, commentId: string, message: string) =>
+  request<FacebookCommentActionResult>(`/api/admin/facebook/${encodeURIComponent(pageId)}/comments/${encodeURIComponent(commentId)}/replies`, {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  })
+
+export const toggleFacebookCommentHidden = (pageId: string, commentId: string, isHidden: boolean) =>
+  request<FacebookCommentActionResult>(`/api/admin/facebook/${encodeURIComponent(pageId)}/comments/${encodeURIComponent(commentId)}/visibility`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isHidden }),
+  })
+
+export const deleteFacebookComment = (pageId: string, commentId: string) =>
+  request<void>(`/api/admin/facebook/${encodeURIComponent(pageId)}/comments/${encodeURIComponent(commentId)}`, { method: 'DELETE' })
+
+export const getFacebookConversations = (pageId: string, after?: string | null, limit = 25) =>
+  request<FacebookConversationList>(`/api/admin/facebook/${encodeURIComponent(pageId)}/conversations?${qs({ after, limit })}`)
+
+export const getFacebookConversationMessages = (pageId: string, conversationId: string, before?: string | null, limit = 50) =>
+  request<FacebookMessageList>(`/api/admin/facebook/${encodeURIComponent(pageId)}/conversations/${encodeURIComponent(conversationId)}/messages?${qs({ before, limit })}`)
+
+export const sendFacebookConversationMessage = (pageId: string, conversationId: string, data: SendFacebookMessageRequest) =>
+  request<FacebookMessageSendResult>(`/api/admin/facebook/${encodeURIComponent(pageId)}/conversations/${encodeURIComponent(conversationId)}/messages`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+
+export const markFacebookConversationRead = (pageId: string, conversationId: string) =>
+  request<{ success: boolean }>(`/api/admin/facebook/${encodeURIComponent(pageId)}/conversations/${encodeURIComponent(conversationId)}/read`, { method: 'POST' })
