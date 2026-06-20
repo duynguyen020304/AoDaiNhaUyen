@@ -149,6 +149,24 @@ public sealed class AdminEmailJobsController(IAdminEmailJobService service) : Co
       : Ok(ApiResponseFactory.Success(item));
   }
 
+  [HttpPost]
+  public async Task<IActionResult> QueueSingle(QueueSingleEmailJobRequest request, CancellationToken cancellationToken = default)
+  {
+    try
+    {
+      var result = await service.QueueSingleAsync(request, cancellationToken);
+      return Ok(ApiResponseFactory.Success(result, "Đã đưa email vào hàng đợi gửi."));
+    }
+    catch (ArgumentException ex)
+    {
+      return BadRequest(ApiResponseFactory.Failure("Dữ liệu email không hợp lệ.", "validation_error", ex.Message));
+    }
+    catch (InvalidOperationException ex)
+    {
+      return Conflict(ApiResponseFactory.Failure("Không thể tạo email job.", "conflict", ex.Message));
+    }
+  }
+
   [HttpPatch("{id:guid}/retry")]
   public async Task<IActionResult> Retry(Guid id, CancellationToken cancellationToken = default)
   {

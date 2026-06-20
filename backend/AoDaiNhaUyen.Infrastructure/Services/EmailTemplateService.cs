@@ -47,7 +47,7 @@ public sealed partial class EmailTemplateService(AppDbContext dbContext) : IEmai
 
   private static RenderedEmail BuiltInTemplate(string templateKey, IReadOnlyDictionary<string, string> values)
   {
-    var subject = HtmlEncoder.Default.Encode(values.GetValueOrDefault("subject", templateKey));
+    var subject = values.GetValueOrDefault("subject", templateKey);
     var trustedHtml = values.GetValueOrDefault("trustedHtmlBody", string.Empty);
     if (AllowsTrustedHtmlBody(templateKey) && !string.IsNullOrWhiteSpace(trustedHtml))
     {
@@ -60,8 +60,26 @@ public sealed partial class EmailTemplateService(AppDbContext dbContext) : IEmai
         "Xác nhận nhận tin từ Ao Dai Nha Uyen",
         $"<p>Chào bạn,</p><p>Vui lòng xác nhận đăng ký nhận tin:</p><p><a href=\"{values.GetValueOrDefault("confirmUrl", "#")}\">Xác nhận đăng ký</a></p>",
         null),
+      "hermes.single_email" => new RenderedEmail(
+        subject,
+        BuildSingleEmailHtml(values),
+        values.GetValueOrDefault("body", values.GetValueOrDefault("intro", subject))),
       _ => new RenderedEmail(subject, $"<p>{subject}</p>", null)
     };
+  }
+
+  private static string BuildSingleEmailHtml(IReadOnlyDictionary<string, string> values)
+  {
+    var intro = HtmlEncoder.Default.Encode(values.GetValueOrDefault("intro", string.Empty));
+    var body = HtmlEncoder.Default.Encode(values.GetValueOrDefault("body", string.Empty)).Replace("\n", "<br>", StringComparison.Ordinal);
+    var ctaLabel = HtmlEncoder.Default.Encode(values.GetValueOrDefault("ctaLabel", string.Empty));
+    var ctaUrl = HtmlEncoder.Default.Encode(values.GetValueOrDefault("ctaUrl", string.Empty));
+    var builder = new System.Text.StringBuilder();
+    if (!string.IsNullOrWhiteSpace(intro)) builder.Append("<p>").Append(intro).Append("</p>");
+    if (!string.IsNullOrWhiteSpace(body)) builder.Append("<p>").Append(body).Append("</p>");
+    if (!string.IsNullOrWhiteSpace(ctaLabel) && !string.IsNullOrWhiteSpace(ctaUrl))
+      builder.Append("<p style=\"margin:24px 0\"><a href=\"").Append(ctaUrl).Append("\" style=\"display:inline-block;background:#7f1d1d;color:#fff;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:700\">").Append(ctaLabel).Append("</a></p>");
+    return builder.Length == 0 ? $"<p>{HtmlEncoder.Default.Encode(values.GetValueOrDefault("subject", "Thông báo từ Áo Dài Nhã Uyên"))}</p>" : builder.ToString();
   }
 
   private static bool AllowsTrustedHtmlBody(string templateKey)
