@@ -268,6 +268,7 @@ public sealed class HermesEventProcessor(
     - High-risk actions (delete, role/security config, bulk campaign, large promo) chỉ report/đề xuất; không auto-execute nếu không có policy rõ.
     - Nếu thiếu dữ liệu: ghi rõ thiếu gì, không tạo executable action.
     - Khi cần schema, dùng describe request với X-Hermes-Describe: true; khi execute thật, bỏ header này và dùng X-Hermes-Admin-Key.
+    - Chỉ đề xuất API nếu endpoint tồn tại trong API description/describe response. Không bịa route như /api/admin/blog-posts/...; nếu thiếu endpoint rõ ràng thì actions phải là [].
     - Với POST/PUT/PATCH nếu schema hỗ trợ, dùng idempotencyKey ổn định dạng: hermes:{{eventType}}:{{eventId}}:{{actionType}}:{{targetId}}.
 
     Risk: low = reply/retry/cancel nhỏ; medium = order/shipment/status/single email; high = promo/template/bulk/delete/moderation/role/security config.

@@ -144,6 +144,14 @@ public sealed class BlogPostsController(
     return Ok(ApiResponseFactory.Success(new BlogImageUploadResponse(image.Id, url, image.ImageUrl, null, null), "Tải ảnh lên thành công"));
   }
 
+  [HttpPut("api/v1/admin/blog/{id:guid}/seo")]
+  [Authorize(Policy = "RequireAdminRole")]
+  public async Task<IActionResult> UpdateSeo(Guid id, [FromBody] UpdateBlogPostSeoRequest request, CancellationToken cancellationToken)
+  {
+    var post = await blogPostService.UpdateSeoAsync(id, request, cancellationToken);
+    return Ok(ApiResponseFactory.Success(post, "Cập nhật SEO bài viết thành công"));
+  }
+
   [HttpDelete("api/v1/admin/blog/{id:guid}")]
   [Authorize(Policy = "RequireAdminRole")]
   public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)

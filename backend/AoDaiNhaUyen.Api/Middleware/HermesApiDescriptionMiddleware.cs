@@ -42,6 +42,6 @@ public sealed class HermesApiDescriptionMiddleware(RequestDelegate next)
   }
 
   private static bool IsHermesDescriptionRequest(HttpContext context) =>
-    context.Request.Path.StartsWithSegments("/api/admin") &&
+    (context.Request.Path.StartsWithSegments("/api/admin") || context.Request.Path.StartsWithSegments("/api/v1/admin")) &&
     string.Equals(context.Request.Headers["X-Hermes-Describe"].FirstOrDefault(), "true", StringComparison.OrdinalIgnoreCase);
 }

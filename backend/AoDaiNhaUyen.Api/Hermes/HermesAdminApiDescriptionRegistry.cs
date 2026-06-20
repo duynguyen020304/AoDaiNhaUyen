@@ -155,6 +155,9 @@ public sealed class HermesAdminApiDescriptionRegistry
     Patch("/api/admin/email-jobs/{id}/cancel", "Hủy email job.", "null", path: [Id("id", "ID job")]),
     Get("/api/admin/marketing/stats", "Thống kê marketing.", "MarketingStatsDto"),
 
+    // Blog/content SEO
+    Put("/api/v1/admin/blog/{id}/seo", "Cập nhật metadata SEO/E-E-A-T cho một bài blog đã có. Dùng cho event blog_seo_opportunity; chỉ gửi field cần đổi.", "BlogPostDto", BlogSeoBody(), path: [Id("id", "ID bài blog")], notes: ["Risk: medium vì thay đổi nội dung SEO public.", "Endpoint partial-update: field null/không gửi sẽ giữ nguyên giá trị hiện tại.", "Không bịa route khác; dùng đúng /api/v1/admin/blog/{id}/seo cho UPDATE_BLOG_SEO.", "Nếu thiếu postId/contentId thật từ event payload thì actions phải là [].", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
+
     // Hermes reports
     Get("/api/admin/hermes/reports", "List báo cáo Hermes đã lưu.", "Paginated HermesReportListItemResponse[]", query: [Param("severity", "string", false, "info/warning/high/critical"), Param("type", "string", false, "Loại báo cáo"), Param("status", "string", false, "Trạng thái"), Param("q", "string", false, "Từ khóa"), Param("page", "int", false, "Trang"), Param("pageSize", "int", false, "Kích thước trang")]),
     Get("/api/admin/hermes/reports/{id}", "Chi tiết báo cáo Hermes.", "HermesReportResponse", path: [Id("id", "ID báo cáo")]),
@@ -189,8 +192,8 @@ public sealed class HermesAdminApiDescriptionRegistry
   private static HermesAdminApiDescription Post(string route, string purpose, string dataShape, HermesBodyDescription? body = null, IReadOnlyList<HermesParamDescription>? path = null, IReadOnlyList<string>? notes = null) =>
     Desc("POST", route, purpose, dataShape, body, path, null, notes);
 
-  private static HermesAdminApiDescription Put(string route, string purpose, string dataShape, HermesBodyDescription? body = null, IReadOnlyList<HermesParamDescription>? path = null) =>
-    Desc("PUT", route, purpose, dataShape, body, path, null);
+  private static HermesAdminApiDescription Put(string route, string purpose, string dataShape, HermesBodyDescription? body = null, IReadOnlyList<HermesParamDescription>? path = null, IReadOnlyList<string>? notes = null) =>
+    Desc("PUT", route, purpose, dataShape, body, path, null, notes);
 
   private static HermesAdminApiDescription Patch(string route, string purpose, string dataShape, HermesBodyDescription? body = null, IReadOnlyList<HermesParamDescription>? path = null) =>
     Desc("PATCH", route, purpose, dataShape, body, path, null);
@@ -251,6 +254,16 @@ public sealed class HermesAdminApiDescriptionRegistry
 
   private static HermesBodyDescription AdminChatBody() =>
     Body([Field("message", "string", false, "Tin nhắn mới, tối đa 4000 ký tự"), Field("conversationId", "string", false, "ID cuộc trò chuyện để tiếp tục thread cũ")], new { message = "Tóm tắt tình hình cửa hàng hôm nay", conversationId = (string?)null });
+
+  private static HermesBodyDescription BlogSeoBody() =>
+    Body([
+      Field("metaTitle", "string", false, "Meta title SEO, nên <= 60 ký tự"),
+      Field("metaDescription", "string", false, "Meta description SEO, nên khoảng 150-160 ký tự"),
+      Field("canonicalUrl", "string", false, "Canonical URL tuyệt đối thuộc aodainhauyen.io.vn"),
+      Field("reviewedBy", "string", false, "Tên người/role reviewer E-E-A-T"),
+      Field("informationGain", "string", false, "Điểm độc đáo/thông tin mới của bài viết"),
+      Field("tags", "string[]", false, "Keyword/topic cluster liên quan")
+    ], new { metaTitle = "Áo dài Việt Nam - Biểu tượng văn hóa", metaDescription = "Khám phá ý nghĩa áo dài Việt Nam, cách mặc và giá trị văn hóa dành cho du khách quốc tế.", canonicalUrl = "https://aodainhauyen.io.vn/blog/ao-dai-viet-nam", reviewedBy = "Biên tập Áo Dài Nhã Uyên", informationGain = "Góc nhìn từ nghệ nhân và ngữ cảnh văn hóa Việt.", tags = new[] { "áo dài", "văn hóa Việt", "áo dài du khách" } });
 
   private static HermesBodyDescription CategoryBody(bool create) =>
     Body([Field("name", "string", create, "Tên danh mục"), Field("slug", "string", false, "Slug"), Field("description", "string", false, "Mô tả"), Field("parentId", "guid", false, "Danh mục cha")], new { name = "Áo dài cưới", slug = "ao-dai-cuoi", description = "Danh mục áo dài cưới", parentId = (Guid?)null });
