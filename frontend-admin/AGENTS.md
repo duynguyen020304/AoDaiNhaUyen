@@ -4,7 +4,7 @@
 # frontend-admin
 
 ## Purpose
-React 19 + TypeScript + Vite admin SPA. Separate from the customer `frontend/`. Uses Tailwind CSS v4, Zustand stores, TanStack Query v5, hand-rolled shadcn-style UI primitives, dashboards/charts, Blog CMS, email marketing, AI chat (generic + Hermes agent), LLM audit logs, and tool-risk governance.
+React 19 + TypeScript + Vite admin SPA. Separate from the customer `frontend/`. Uses Tailwind CSS v4, Zustand stores, TanStack Query v5, hand-rolled shadcn-style UI primitives, dashboards/charts, Blog CMS, email marketing, AI chat (generic + Hermes agent), and tool-risk governance.
 
 ## Key Files
 | File | Description |

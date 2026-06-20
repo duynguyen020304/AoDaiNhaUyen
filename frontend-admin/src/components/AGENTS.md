@@ -19,7 +19,6 @@ All admin UI components: app shell layout, domain-specific forms/modals/tables, 
 | `blog/` | Block editor and blog preview components |
 | `dashboard/` | Dashboard widget cards: stats, charts, tables, alerts |
 | `hermes/` | Hermes report table, filters, detail drawer, reports panel |
-| `llm-logs/` | LLM audit log table, filters, stats cards, detail drawer |
 | `ui/` | shadcn-style primitives: Button, Card, Input, Label, Badge, Select, Sheet, Table, Textarea, Checkbox, Feedback |
 
 ## For AI Agents

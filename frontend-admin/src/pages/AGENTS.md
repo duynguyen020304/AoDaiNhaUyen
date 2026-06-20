@@ -31,7 +31,6 @@ Route-level admin screens. Each page is responsible for composing stores, query 
 | `HermesReportsPage.tsx` | Hermes-generated reports table with filters |
 | `HermesMonitorPage.tsx` | Hermes event monitor with detail view |
 | `HermesLiveMonitorPage.tsx` | Live SSE feed of Hermes activity |
-| `LlmLogsPage.tsx` | LLM audit log search, stats, and detail drawer |
 | `ToolRiskPage.tsx` | Tool risk/governance configuration |
 | `ReviewsPage.tsx` | Customer review moderation |
 

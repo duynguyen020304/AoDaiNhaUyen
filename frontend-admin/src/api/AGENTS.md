@@ -17,7 +17,6 @@ Typed fetch clients for all admin backend endpoints. `client.ts` provides the sh
 | `media.ts` | Admin media upload, list, delete |
 | `blog.ts` | Blog CMS list, create, update, publish |
 | `emailMarketing.ts` | Email templates, subscribers, email jobs, marketing dashboard |
-| `llmLogs.ts` | LLM audit log filters, detail, stats |
 | `hermes.ts` | Hermes reports, events, SSE feed URL, monitor links, monitor snapshots |
 
 ## For AI Agents

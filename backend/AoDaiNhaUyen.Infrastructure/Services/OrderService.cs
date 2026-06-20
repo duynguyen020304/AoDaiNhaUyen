@@ -39,6 +39,27 @@ public sealed class OrderService(
 
     if (newStatus is "confirmed") order.ConfirmedAt ??= now;
     if (newStatus is "completed") order.CompletedAt = now;
+    if (newStatus is "returned")
+    {
+      await hermesEvents.EnqueueAdminOrderEventAsync(
+        "cod_rts_alert",
+        order.Id,
+        new
+        {
+          orderId = order.Id,
+          orderCode = order.OrderCode,
+          oldStatus,
+          newStatus,
+          totalAmount = order.TotalAmount,
+          province = order.Province,
+          district = order.District,
+          phoneLast4 = Last4(order.RecipientPhone),
+          riskReason = "order_returned",
+          detectedAt = DateTimeOffset.UtcNow
+        },
+        $"cod_rts_alert:Order:{order.Id:N}:{oldStatus}:returned:{now.Date.Ticks}",
+        cancellationToken);
+    }
     if (newStatus is "cancelled")
     {
       order.CancelledAt = now;
@@ -98,7 +119,7 @@ public sealed class OrderService(
     await hermesEvents.EnqueueAdminOrderEventAsync(
       "shipment_created",
       order.Id,
-      new { orderId = order.Id, orderCode = order.OrderCode, shipmentId = shipment.Id, carrier, trackingNumber, shippingStatus = shipment.ShippingStatus },
+      new { orderId = order.Id, orderCode = order.OrderCode, shipmentId = shipment.Id, carrier, trackingNumberPresent = !string.IsNullOrWhiteSpace(trackingNumber), shippingStatus = shipment.ShippingStatus },
       $"shipment_created:Order:{order.Id:N}:{shipment.Id:N}:{now.Ticks}",
       cancellationToken);
 
@@ -144,6 +165,56 @@ public sealed class OrderService(
       $"shipment_status_changed:Order:{shipment.OrderId:N}:{shipment.Id:N}:{oldShippingStatus}:{newStatus}:{DateTime.UtcNow.Ticks}",
       cancellationToken);
 
+    if (string.Equals(newStatus, "failed", StringComparison.OrdinalIgnoreCase)
+      || string.Equals(newStatus, "returned", StringComparison.OrdinalIgnoreCase))
+    {
+      var order = await dbContext.Orders.AsNoTracking().FirstOrDefaultAsync(x => x.Id == shipment.OrderId, cancellationToken);
+      await hermesEvents.EnqueueAdminOrderEventAsync(
+        "cod_rts_alert",
+        shipment.OrderId,
+        new
+        {
+          orderId = shipment.OrderId,
+          orderCode = order?.OrderCode,
+          shipmentId = shipment.Id,
+          shipment.Carrier,
+          trackingNumberPresent = !string.IsNullOrWhiteSpace(shipment.TrackingNumber),
+          oldStatus = oldShippingStatus,
+          newStatus,
+          province = order?.Province,
+          district = order?.District,
+          phoneLast4 = Last4(order?.RecipientPhone),
+          riskReason = string.Equals(newStatus, "returned", StringComparison.OrdinalIgnoreCase) ? "shipment_returned" : "delivery_failed",
+          detectedAt = DateTimeOffset.UtcNow
+        },
+        $"cod_rts_alert:Order:{shipment.OrderId:N}:{shipment.Id:N}:{newStatus}:{DateTime.UtcNow.Date.Ticks}",
+        cancellationToken);
+    }
+
+    if (string.Equals(newStatus, "failed", StringComparison.OrdinalIgnoreCase))
+    {
+      var order = await dbContext.Orders.AsNoTracking().FirstOrDefaultAsync(x => x.Id == shipment.OrderId, cancellationToken);
+      await hermesEvents.EnqueueAdminOrderEventAsync(
+        "delivery_failed_alert",
+        shipment.OrderId,
+        new
+        {
+          orderId = shipment.OrderId,
+          orderCode = order?.OrderCode,
+          shipmentId = shipment.Id,
+          shipment.Carrier,
+          trackingNumberPresent = !string.IsNullOrWhiteSpace(shipment.TrackingNumber),
+          oldStatus = oldShippingStatus,
+          newStatus,
+          province = order?.Province,
+          district = order?.District,
+          phoneLast4 = Last4(order?.RecipientPhone),
+          detectedAt = DateTimeOffset.UtcNow
+        },
+        $"delivery_failed_alert:Order:{shipment.OrderId:N}:{shipment.Id:N}:{DateTime.UtcNow.Date.Ticks}",
+        cancellationToken);
+    }
+
     await dbContext.SaveChangesAsync(cancellationToken);
     return new OrderUpdateResult(true, null, null, shipment.OrderId, newStatus);
   }
@@ -187,6 +258,14 @@ public sealed class OrderService(
     {
       await stockService.ReleaseStockAsync(item.VariantId!.Value, item.Quantity, cancellationToken);
     }
+  }
+
+  private static string Last4(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+    var digits = new string(value.Where(char.IsDigit).ToArray());
+    if (digits.Length <= 4) return digits;
+    return digits[^4..];
   }
 
   private static OrderUpdateResult Fail(string code, string message, Guid orderId)

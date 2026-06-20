@@ -17,7 +17,6 @@ import { HermesPage } from '@/pages/HermesPage'
 import { OrdersPage } from '@/pages/OrdersPage'
 import { ReviewsPage } from '@/pages/ReviewsPage'
 import { ToolRiskPage } from '@/pages/ToolRiskPage'
-import { LlmLogsPage } from '@/pages/LlmLogsPage'
 import { PromosPage } from '@/pages/PromosPage'
 import { BlogListPage } from '@/pages/BlogListPage'
 import { BlogFormPage } from '@/pages/BlogFormPage'
@@ -83,7 +82,6 @@ export function App() {
             <Route path="ai-tryon-feedback" element={<AiTryOnFeedbackPage />} />
             <Route path="hermes" element={<HermesPage />} />
             <Route path="hermes/:chatId" element={<HermesPage />} />
-            <Route path="llm-logs" element={<LlmLogsPage />} />
             <Route path="tools-risk" element={<ToolRiskPage />} />
           </Route>
         </Route>

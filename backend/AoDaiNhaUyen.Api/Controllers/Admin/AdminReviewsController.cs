@@ -30,6 +30,16 @@ public sealed class AdminReviewsController(IAdminReviewService reviewService) : 
     return Ok(ApiResponseFactory.PaginatedSuccess(result.Items, page, pageSize, result.TotalCount));
   }
 
+  [HttpGet("recovery-stats")]
+  public async Task<IActionResult> GetRecoveryStats(
+    [FromQuery] int days = 30,
+    [FromQuery] double slaHours = 4,
+    CancellationToken cancellationToken = default)
+  {
+    var stats = await reviewService.GetBadReviewRecoveryStatsAsync(days, slaHours, cancellationToken);
+    return Ok(ApiResponseFactory.Success(stats, "Lấy thống kê chăm sóc đánh giá xấu thành công."));
+  }
+
   [HttpPatch("{id:guid}/visibility")]
   public async Task<IActionResult> SetVisibility(
     Guid id,

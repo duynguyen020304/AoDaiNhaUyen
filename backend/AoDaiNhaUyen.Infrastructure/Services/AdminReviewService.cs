@@ -143,6 +143,62 @@ public sealed class AdminReviewService(
     return comments;
   }
 
+  public async Task<BadReviewRecoveryStats> GetBadReviewRecoveryStatsAsync(
+    int days = 30, double slaHours = 4, CancellationToken ct = default)
+  {
+    var normalizedDays = Math.Clamp(days, 1, 365);
+    var normalizedSlaHours = slaHours is > 0 and <= 168 ? slaHours : 4;
+    var cutoff = DateTime.UtcNow.AddDays(-normalizedDays);
+    var now = DateTime.UtcNow;
+
+    var badReviews = await dbContext.Comments
+      .AsNoTracking()
+      .Where(c => c.Rating.HasValue
+        && c.Rating.Value <= 2
+        && c.ParentCommentId == null
+        && !c.IsDeleted
+        && c.CreatedAt >= cutoff)
+      .Select(c => new
+      {
+        c.Id,
+        c.CreatedAt,
+        FirstReplyAt = c.Replies
+          .Where(r => r.IsVisible && !r.IsDeleted)
+          .OrderBy(r => r.CreatedAt)
+          .Select(r => (DateTime?)r.CreatedAt)
+          .FirstOrDefault()
+      })
+      .ToListAsync(ct);
+
+    var totalBadReviews = badReviews.Count;
+    var respondedBadReviews = badReviews.Count(x => x.FirstReplyAt.HasValue);
+    var unrespondedBadReviews = totalBadReviews - respondedBadReviews;
+    var overSlaBadReviews = badReviews.Count(x =>
+    {
+      var end = x.FirstReplyAt ?? now;
+      return (end - x.CreatedAt).TotalHours > normalizedSlaHours;
+    });
+
+    var recoveryActionRate = totalBadReviews == 0 ? 100d : (double)respondedBadReviews / totalBadReviews * 100d;
+    var slaBreachRate = totalBadReviews == 0 ? 0d : (double)overSlaBadReviews / totalBadReviews * 100d;
+    var averageFirstResponseHours = respondedBadReviews == 0
+      ? 0d
+      : badReviews
+        .Where(x => x.FirstReplyAt.HasValue)
+        .Average(x => (x.FirstReplyAt!.Value - x.CreatedAt).TotalHours);
+
+    return new BadReviewRecoveryStats(
+      normalizedDays,
+      normalizedSlaHours,
+      totalBadReviews,
+      respondedBadReviews,
+      unrespondedBadReviews,
+      overSlaBadReviews,
+      Math.Round(recoveryActionRate, 2),
+      Math.Round(slaBreachRate, 2),
+      Math.Round(averageFirstResponseHours, 2));
+  }
+
   private async Task EnqueueReviewModerationEventAsync(Comment review, string action, CancellationToken ct)
   {
     await hermesEvents.EnqueueAdminEventAsync(
@@ -194,6 +250,27 @@ public sealed class AdminReviewService(
 
     dbContext.Comments.Add(reply);
     await dbContext.SaveChangesAsync(ct);
+
+    if (parentComment.Rating is <= 2)
+    {
+      await hermesEvents.EnqueueAdminEventAsync(
+        "review_recovery_initiated",
+        "Review",
+        parentComment.Id.ToString("N"),
+        new
+        {
+          reviewId = parentComment.Id,
+          productId = parentComment.ProductId,
+          rating = parentComment.Rating,
+          content = Truncate(parentComment.Content, 500),
+          replyId = reply.Id,
+          hasAdminReply = true,
+          recoveredAt = DateTimeOffset.UtcNow
+        },
+        $"review_recovery_initiated:Review:{parentComment.Id:N}:{reply.Id:N}",
+        parentComment.ProductId.ToString("N"),
+        ct);
+    }
 
     return new AdminReplyResult(true, $"Đã phản hồi bình luận. (ID: {reply.Id})", reply.Id);
   }

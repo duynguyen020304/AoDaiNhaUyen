@@ -173,9 +173,19 @@ public sealed class AdminProductService(
         await hermesEvents.EnqueueAdminInventoryEventAsync(
             "product_stock_changed",
             variant.Id,
-            new { productId, variantId, variant.Sku, productName = variant.Product.Name, oldStockQty, newStockQty = stockQty, delta = stockQty - oldStockQty },
+            new { productId, variantId, variant.Sku, variant.Size, variant.Color, productName = variant.Product.Name, oldStockQty, newStockQty = stockQty, delta = stockQty - oldStockQty },
             $"product_stock_changed:Inventory:{variant.Id:N}:{oldStockQty}:{stockQty}:{variant.UpdatedAt.Ticks}",
             cancellationToken);
+
+        if (oldStockQty == 0 && stockQty > 0)
+        {
+            await hermesEvents.EnqueueAdminInventoryEventAsync(
+                "stock_replenished",
+                variant.Id,
+                new { productId, variantId, variant.Sku, variant.Size, variant.Color, productName = variant.Product.Name, oldStockQty, newStockQty = stockQty, replenishedAt = DateTimeOffset.UtcNow },
+                $"stock_replenished:Inventory:{variant.Id:N}:{stockQty}:{DateTime.UtcNow.Date.Ticks}",
+                cancellationToken);
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 

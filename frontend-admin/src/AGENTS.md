@@ -34,7 +34,7 @@ Admin SPA source root. Contains the route tree (`App.tsx`), app entry (`main.tsx
 | Blog CMS | `BlogListPage`, `BlogFormPage` |
 | Email marketing | `MarketingDashboardPage`, `EmailTemplatesPage`, `SubscribersPage`, `EmailQueuePage` |
 | AI/Hermes | `AiChatPage`, `HermesPage`, `HermesReportsPage`, `HermesMonitorPage`, `HermesLiveMonitorPage` |
-| Governance | `LlmLogsPage`, `ToolRiskPage`, `AiTryOnFeedbackPage` |
+| Governance | `ToolRiskPage`, `AiTryOnFeedbackPage` |
 | Reviews | `ReviewsPage` |
 
 ## For AI Agents

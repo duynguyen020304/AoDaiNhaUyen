@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, FileSearch, Newspaper, Megaphone, Send, PanelLeftClose, PanelLeftOpen, MessageSquareText, Sparkles, Share2 } from 'lucide-react'
+import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, Newspaper, Megaphone, Send, PanelLeftClose, PanelLeftOpen, MessageSquareText, Sparkles, Share2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { Button } from '@/components/ui/button'
@@ -23,7 +23,6 @@ const NAV_ITEMS = [
   { to: '/admin/reviews', icon: MessageSquareText, label: 'Đánh giá', end: false },
   { to: '/admin/ai-tryon-feedback', icon: Sparkles, label: 'Đánh giá AI try-on', end: false },
   { to: '/admin/hermes', icon: Bot, label: 'AI Chat', end: false },
-  { to: '/admin/llm-logs', icon: FileSearch, label: 'Nhật ký LLM', end: false },
   { to: '/admin/tools-risk', icon: Settings2, label: 'Cấu hình AI', end: false },
 ] as const
 

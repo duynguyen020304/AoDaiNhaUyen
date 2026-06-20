@@ -474,6 +474,7 @@ public sealed class AdminAiSecurityTests
     public Task<AdminReviewActionResult> SetReviewVisibilityAsync(Guid id, bool isVisible, CancellationToken ct = default) => Task.FromResult(new AdminReviewActionResult(true, "OK"));
     public Task<AdminReviewActionResult> DeleteReviewAsync(Guid id, CancellationToken ct = default) => Task.FromResult(new AdminReviewActionResult(true, "OK"));
     public Task<IReadOnlyList<AdminCommentItem>> GetRecentCommentsAsync(int limit = 10, CancellationToken ct = default) => Task.FromResult((IReadOnlyList<AdminCommentItem>)[]);
+    public Task<BadReviewRecoveryStats> GetBadReviewRecoveryStatsAsync(int days = 30, double slaHours = 4, CancellationToken ct = default) => Task.FromResult(new BadReviewRecoveryStats(days, slaHours, 0, 0, 0, 0, 100, 0, 0));
     public Task<AdminReplyResult> ReplyToCommentAsync(Guid adminUserId, Guid commentId, Guid productId, string content, CancellationToken ct = default) => Task.FromResult(new AdminReplyResult(true, "OK", Guid.NewGuid()));
   }
 

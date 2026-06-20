@@ -12,7 +12,6 @@ Zustand stores for all admin domain async state. Each store calls `src/api/*` fu
 | `authStore.ts` | Admin session state: `status` (`loading`/`authenticated`/`anonymous`), `user`, `bootstrap()`, `login()`, `logout()`, `markAnonymous()` |
 | `adminAiStore.ts` | AI chat state: SSE streaming, tool calls, confirmations, chat history, Hermes mode, conversation persistence (localStorage + server) |
 | `hermesReportStore.ts` | Hermes reports list, filters, pagination, detail open/close; race-condition-safe via `requestSeq` |
-| `llmLogStore.ts` | LLM audit log list, filters, stats, pagination, detail open/close |
 | `blogStore.ts` | Blog CMS list, editor/draft state, publish actions |
 | `categoryStore.ts` | Category CRUD and tree/list state |
 | `dashboardStore.ts` | Dashboard metrics (legacy; most reads moved to `queries/`) |
@@ -28,7 +27,7 @@ Zustand stores for all admin domain async state. Each store calls `src/api/*` fu
 - Error strings are always in Vietnamese.
 - Keep store state serializable — no React nodes, classes, or functions except action methods.
 - Paginated stores hold a `filters` object; mutations call `setFilters({ page: 1 })` to reset on filter change.
-- Detail open/close pattern: `selectedId` + `selectedLog`/`selectedReport` + `loadingDetail`; close sets all to null/false.
+- Detail open/close pattern: `selectedId` + `selectedReport` + `loadingDetail`; close sets all to null/false.
 - `adminAiStore` uses raw `fetch` with `ReadableStream` for SSE (not `request()`); handles `text`, `tool_call`, `tool_result`, `confirmation`, `conversation`, and `error` chunk types.
 - After API shape changes: update `src/types/*`, then `src/api/*`, then the store — in that order.
 

@@ -213,12 +213,55 @@ public sealed class CheckoutService(
         }
       }
 
+      var customTailoringItemCount = order.Items.Count(x => x.IsCustomTailoring);
+      var customTailoringQuantity = order.Items.Where(x => x.IsCustomTailoring).Sum(x => x.Quantity);
+      var customTailoringAmount = order.Items.Where(x => x.IsCustomTailoring).Sum(x => x.LineTotal);
+      var averageItemValue = order.Items.Count == 0 ? 0m : order.TotalAmount / order.Items.Count;
+
       await hermesEvents.EnqueueAdminOrderEventAsync(
         "checkout_completed",
         order.Id,
-        new { orderId = order.Id, orderCode = order.OrderCode, itemCount = order.Items.Count, totalAmount = order.TotalAmount, promoCode = appliedPromoCode, province = order.Province, district = order.District },
+        new
+        {
+          orderId = order.Id,
+          orderCode = order.OrderCode,
+          itemCount = order.Items.Count,
+          quantity = order.Items.Sum(x => x.Quantity),
+          totalAmount = order.TotalAmount,
+          subtotal = order.Subtotal,
+          discountAmount = order.DiscountAmount,
+          averageItemValue,
+          promoCode = appliedPromoCode,
+          paymentMethod = request.PaymentMethod,
+          province = order.Province,
+          district = order.District,
+          customTailoringItemCount,
+          customTailoringQuantity,
+          customTailoringAmount,
+          hasCustomTailoring = customTailoringItemCount > 0
+        },
         $"checkout_completed:Order:{order.Id:N}:{now.Ticks}",
         cancellationToken);
+
+      if (customTailoringItemCount > 0)
+      {
+        await hermesEvents.EnqueueAdminOrderEventAsync(
+          "custom_tailoring_order_completed",
+          order.Id,
+          new
+          {
+            orderId = order.Id,
+            orderCode = order.OrderCode,
+            customTailoringItemCount,
+            customTailoringQuantity,
+            customTailoringAmount,
+            totalAmount = order.TotalAmount,
+            province = order.Province,
+            district = order.District
+          },
+          $"custom_tailoring_order_completed:Order:{order.Id:N}:{now.Ticks}",
+          cancellationToken);
+      }
 
       var highValueThreshold = hermesOutboxOptions.Value.HighValueOrderThreshold;
       if (order.TotalAmount >= highValueThreshold)
@@ -231,6 +274,96 @@ public sealed class CheckoutService(
           cancellationToken);
       }
 
+      if (IsCod(request.PaymentMethod) && order.TotalAmount >= Math.Max(2_000_000m, highValueThreshold))
+      {
+        await hermesEvents.EnqueueAdminOrderEventAsync(
+          "cod_high_risk_flagged",
+          order.Id,
+          new
+          {
+            orderId = order.Id,
+            order.OrderCode,
+            totalAmount = order.TotalAmount,
+            order.Province,
+            order.District,
+            phoneLast4 = Last4(order.RecipientPhone),
+            riskReason = "high_value_cod"
+          },
+          $"cod_high_risk_flagged:Order:{order.Id:N}:{now.Ticks}",
+          cancellationToken);
+      }
+
+      var completedOrderCount = await dbContext.Orders
+        .AsNoTracking()
+        .CountAsync(x => x.UserId == userId && x.OrderStatus == "completed", cancellationToken);
+      var lifetimeValue = await dbContext.Orders
+        .AsNoTracking()
+        .Where(x => x.UserId == userId && (x.OrderStatus == "completed" || x.Id == order.Id))
+        .SumAsync(x => x.TotalAmount, cancellationToken);
+      var projectedOrderCount = completedOrderCount + 1;
+      if (lifetimeValue >= 15_000_000m || projectedOrderCount is 2 or 3)
+      {
+        await hermesEvents.EnqueueAdminOrderEventAsync(
+          "vip_status_achieved",
+          order.Id,
+          new
+          {
+            userId,
+            orderId = order.Id,
+            order.OrderCode,
+            lifetimeValue,
+            orderCount = projectedOrderCount,
+            tierReason = lifetimeValue >= 15_000_000m ? "lifetime_value_threshold" : "repeat_purchase_milestone"
+          },
+          $"vip_status_achieved:User:{userId:N}:{projectedOrderCount}:{now.Date.Ticks}",
+          cancellationToken);
+      }
+
+      var promoSnapshot = await dbContext.OrderPromoCostSnapshots
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x => x.OrderId == order.Id, cancellationToken);
+      if (promoSnapshot is not null && order.Subtotal > 0 && order.DiscountAmount / order.Subtotal >= 0.2m)
+      {
+        await hermesEvents.EnqueueAdminOrderEventAsync(
+          "discount_threshold_exceeded",
+          order.Id,
+          new
+          {
+            orderId = order.Id,
+            order.OrderCode,
+            promoCode = promoSnapshot.Code,
+            subtotal = order.Subtotal,
+            discountAmount = order.DiscountAmount,
+            discountRatio = Math.Round(order.DiscountAmount / order.Subtotal, 4),
+            estimatedGrossProfitAfterPromo = promoSnapshot.EstimatedGrossProfitAfterPromo,
+            marginLoss = promoSnapshot.MarginLoss
+          },
+          $"discount_threshold_exceeded:Order:{order.Id:N}:{now.Date.Ticks}",
+          cancellationToken);
+      }
+
+      if (promoSnapshot is not null && promoSnapshot.EstimatedGrossProfitAfterPromo <= 0)
+      {
+        await hermesEvents.EnqueueAdminOrderEventAsync(
+          "margin_negative_profit_warning",
+          order.Id,
+          new
+          {
+            orderId = order.Id,
+            order.OrderCode,
+            promoCode = promoSnapshot.Code,
+            subtotal = order.Subtotal,
+            discountAmount = order.DiscountAmount,
+            shippingSubsidy = promoSnapshot.ShippingSubsidy,
+            estimatedCostOfGoods = promoSnapshot.EstimatedCostOfGoods,
+            estimatedGrossProfitAfterPromo = promoSnapshot.EstimatedGrossProfitAfterPromo,
+            marginLoss = promoSnapshot.MarginLoss
+          },
+          $"margin_negative_profit_warning:Order:{order.Id:N}:{now.Ticks}",
+          cancellationToken);
+      }
+
+      await dbContext.SaveChangesAsync(cancellationToken);
       return AuthResult<CheckoutResultDto>.Success(result);
     }
     catch (Exception ex)
@@ -238,6 +371,18 @@ public sealed class CheckoutService(
       await transaction.RollbackAsync(cancellationToken);
       return AuthResult<CheckoutResultDto>.Failure("checkout_failed", $"Thanh toán thất bại: {ex.Message}");
     }
+  }
+
+  private static bool IsCod(string? paymentMethod) =>
+    string.Equals(paymentMethod, "cod", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(paymentMethod, "cash", StringComparison.OrdinalIgnoreCase);
+
+  private static string Last4(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+    var digits = new string(value.Where(char.IsDigit).ToArray());
+    if (digits.Length <= 4) return digits;
+    return digits[^4..];
   }
 
   private static string GenerateOrderCode(DateTime now)

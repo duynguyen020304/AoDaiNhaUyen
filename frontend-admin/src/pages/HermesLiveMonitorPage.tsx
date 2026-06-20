@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { AlertTriangle, Bot, Clock3, FileText, Radio, Store } from 'lucide-react'
+import { Bot, Radio, Store } from 'lucide-react'
 import { HERMES_FEED_SSE_URL, getHermesFeedSnapshot } from '@/api/hermes'
 import type { HermesFeedHeartbeat, HermesFeedHermesMessage, HermesFeedItem, HermesFeedSnapshot } from '@/types/hermes'
 
@@ -168,10 +168,6 @@ export function HermesLiveMonitorPanel() {
   const items = useMemo(() => snapshot?.items ?? [], [snapshot?.items])
   const heartbeat = snapshot?.heartbeat ?? null
   const hermesMessages = useMemo(() => flattenHermesMessages(items), [items])
-  const reportCount = hermesMessages.filter(({ message }) => message.kind === 'report').length
-  const riskCount = hermesMessages.filter(({ message }) => message.kind === 'report' && ['warning', 'high', 'critical'].includes(message.severity ?? '')).length
-  const pendingCount = items.filter((item) => ['pending', 'processing', 'failed'].includes(item.eventStatus)).length
-
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f4f4f5]">
       <header className="shrink-0 border-b border-zinc-200 bg-white px-4 py-4 lg:px-6">
@@ -189,13 +185,6 @@ export function HermesLiveMonitorPanel() {
         {error && <div className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">{error}</div>}
       </header>
 
-      <section className="shrink-0 border-b border-zinc-200 bg-zinc-50 px-4 py-3 lg:px-6" aria-label="Tóm tắt trạng thái Hermes">
-        <div className="grid gap-3 md:grid-cols-3">
-          <MetricCard icon={<FileText className="size-4" />} label="Báo cáo đã tạo" value={reportCount} helper="Phải tăng khi có event mới" tone="emerald" />
-          <MetricCard icon={<AlertTriangle className="size-4" />} label="Rủi ro cần xem" value={riskCount} helper="Warning, high, critical" tone="amber" />
-          <MetricCard icon={<Clock3 className="size-4" />} label="Event chưa xong" value={pendingCount} helper="Pending, processing, failed" tone="zinc" />
-        </div>
-      </section>
 
       <main className="grid min-h-0 flex-1 gap-0 lg:grid-cols-2">
         <ChatPanel title="Cửa hàng" subtitle="Sự kiện đang xảy ra" icon={<Store className="size-5" />} tone="store">
@@ -210,26 +199,6 @@ export function HermesLiveMonitorPanel() {
   )
 }
 
-function MetricCard({ icon, label, value, helper, tone }: { icon: React.ReactNode; label: string; value: number; helper: string; tone: 'emerald' | 'amber' | 'zinc' }) {
-  const toneClass = {
-    emerald: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
-    amber: 'bg-amber-50 text-amber-800 ring-amber-200',
-    zinc: 'bg-white text-zinc-800 ring-zinc-200',
-  }[tone]
-
-  return (
-    <div className={`rounded-2xl px-4 py-3 ring-1 ${toneClass}`}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-current/70">
-          {icon}
-          {label}
-        </div>
-        <div className="text-2xl font-black tabular-nums">{value}</div>
-      </div>
-      <p className="mt-1 text-xs font-medium text-current/65">{helper}</p>
-    </div>
-  )
-}
 
 function StatusBar({ connection, heartbeat, count, generatedAt }: { connection: ConnectionState; heartbeat: HermesFeedHeartbeat | null; count: number; generatedAt: string | null }) {
   const live = connection === 'live'
