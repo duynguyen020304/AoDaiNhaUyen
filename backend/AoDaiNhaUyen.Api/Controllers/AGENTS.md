@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-19 | Updated: 2026-07-14 -->
+<!-- Generated: 2026-04-19 | Updated: 2026-06-19 -->
 
 # Controllers
 
@@ -46,6 +46,12 @@ HTTP presentation layer. Controllers parse/validate requests, shape API envelope
 | `AdminHermesController.cs` | `api/admin/hermes` | Hermes control plane |
 | `AdminLlmLogsController.cs` | `api/admin/llm-logs` | LLM audit log search/detail |
 | `AdminToolRiskController.cs` | `api/admin/tools-risk` | AI tool risk config |
+
+## Subdirectories
+| Directory | Purpose |
+|-----------|---------|
+| `Admin/` | Admin-only endpoints requiring `RequireAdminRole` policy (see `Admin/AGENTS.md`) |
+| `Public/` | Unauthenticated public endpoints (see `Public/AGENTS.md`) |
 
 ## Local Conventions
 - Use `[ApiController]`, `[Route(...)]`, primary constructor DI.

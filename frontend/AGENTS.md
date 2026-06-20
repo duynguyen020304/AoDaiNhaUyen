@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-19 | Updated: 2026-07-14 -->
+<!-- Generated: 2026-06-19 | Updated: 2026-06-19 -->
 
 # frontend
 

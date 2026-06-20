@@ -1,5 +1,5 @@
 <!-- Parent: ../AGENTS.md -->
-<!-- Generated: 2026-04-19 | Updated: 2026-07-14 -->
+<!-- Generated: 2026-04-19 | Updated: 2026-06-19 -->
 
 # AoDaiNhaUyen.Api
 
@@ -17,10 +17,13 @@ ASP.NET Core 10 API host. Owns `Program.cs`, HTTP controllers, API response enve
 ## Subdirectories
 | Directory | Purpose |
 |-----------|---------|
-| `Controllers/` | Customer + admin endpoints (see `Controllers/AGENTS.md`) |
-| `Middleware/` | Exception handling, cache headers, Hermes API description |
-| `Responses/` | API envelope records/factory/errors |
-| `Services/` | API-host services such as SMTP email |
+| `Authentication/` | Hermes API key auth scheme and options (see `Authentication/AGENTS.md`) |
+| `Configuration/` | `AddBackendServices()` DI wiring for all services (see `Configuration/AGENTS.md`) |
+| `Controllers/` | Customer + admin HTTP endpoints (see `Controllers/AGENTS.md`) |
+| `Hermes/` | API description records and registry for Hermes self-describe feature (see `Hermes/AGENTS.md`) |
+| `Middleware/` | Exception handling, cache headers, Hermes API description (see `Middleware/AGENTS.md`) |
+| `Responses/` | API envelope records/factory/errors (see `Responses/AGENTS.md`) |
+| `Services/` | API-host services such as SMTP email (see `Services/AGENTS.md`) |
 | `HttpTests/` | `.http` endpoint test files |
 | `upload/` | Legacy/static local assets; curated try-on files still resolved here |
 

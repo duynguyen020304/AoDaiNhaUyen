@@ -217,7 +217,7 @@ public sealed class HermesEventProcessor(
   }
 
   private static string BuildInput(HermesEventOutbox item) =>
-    $"""
+    $$$"""
     ĐÂY LÀ SỰ KIỆN LIVE từ cửa hàng áo dài Nhã Uyên.
 
     <store_context>
@@ -232,17 +232,45 @@ public sealed class HermesEventProcessor(
     </store_context>
 
     <event_metadata>
-    eventId: {item.Id}
-    eventType: {item.EventType}
-    aggregateType: {item.AggregateType}
-    aggregateId: {item.AggregateId}
-    correlationId: {item.CorrelationId}
-    occurredAt: {item.OccurredAt:O}
+    eventId: {{{item.Id}}}
+    eventType: {{{item.EventType}}}
+    aggregateType: {{{item.AggregateType}}}
+    aggregateId: {{{item.AggregateId}}}
+    correlationId: {{{item.CorrelationId}}}
+    occurredAt: {{{item.OccurredAt:O}}}
     </event_metadata>
 
     <event_payload>
-    {item.PayloadJson}
+    {{{item.PayloadJson}}}
     </event_payload>
+
+    <output_contract>
+    Viết báo cáo tiếng Việt, giọng lịch sự/ấm/chuyên nghiệp của Áo Dài Nhà Uyên.
+    Luôn dùng các mục: Nhận định, Hành động, Ưu tiên, API đề xuất.
+    Nếu đủ dữ liệu thật, thêm đúng một fenced JSON block trong mục API đề xuất với schema:
+    ```json
+    {{
+      "actions": [
+        {{
+          "id": "local-1",
+          "actionType": "REPLY_TO_REVIEW",
+          "title": "Trả lời đánh giá khách hàng",
+          "reason": "Lý do kinh doanh rõ ràng.",
+          "risk": "low",
+          "method": "POST",
+          "path": "/api/admin/reviews/{{reviewId}}/reply",
+          "body": {{ "productId": "{{productId}}", "content": "..." }},
+          "executionMode": "agent_can_execute"
+        }}
+      ]
+    }}
+    ```
+    Chỉ dùng ID/email/endpoint có thật từ event payload hoặc lookup/API description rõ ràng.
+    Không bịa GUID, email, endpoint, tracking number, discount, hoặc payload bắt buộc.
+    Nếu thiếu dữ liệu: ghi rõ thiếu gì, không tạo executable action.
+    Risk: low = reply/retry/cancel nhỏ; medium = order/shipment/status/single email; high = promo/template/bulk/delete/moderation nặng.
+    Khi cần schema, dùng describe request với X-Hermes-Describe: true; khi execute thật, bỏ header này và dùng X-Hermes-Admin-Key.
+    </output_contract>
     """;
 
   private bool IsApiConfigured() =>

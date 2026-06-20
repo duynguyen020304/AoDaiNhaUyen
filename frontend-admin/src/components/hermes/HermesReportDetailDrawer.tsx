@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { HermesReportDetail } from '@/types/hermes'
+import type { HermesRawAction, HermesReportDetail } from '@/types/hermes'
 
 interface Props {
   open: boolean
@@ -9,6 +9,14 @@ interface Props {
   report: HermesReportDetail | null
   onClose: () => void
 }
+
+interface ParsedActionsResult {
+  actions: HermesRawAction[]
+  error: string | null
+}
+
+const validMethods = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'])
+const validRisks = new Set(['low', 'medium', 'high'])
 
 function Field({ label, value }: { label: string; value: unknown }) {
   return (
@@ -30,16 +38,116 @@ function SafeText({ title, value }: { title: string; value: string | null }) {
   )
 }
 
-function formatJson(value: string | null) {
-  if (!value) return null
+function formatJson(value: unknown) {
+  if (value === null || value === undefined) return null
+  if (typeof value === 'string') {
+    try {
+      return JSON.stringify(JSON.parse(value), null, 2)
+    } catch {
+      return value
+    }
+  }
+
   try {
-    return JSON.stringify(JSON.parse(value), null, 2)
+    return JSON.stringify(value, null, 2)
   } catch {
-    return value
+    return String(value)
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function normalizeAction(value: unknown, index: number): HermesRawAction | null {
+  if (!isRecord(value)) return null
+
+  const method = typeof value.method === 'string' ? value.method.toUpperCase() : ''
+  const path = typeof value.path === 'string' ? value.path.trim() : ''
+  const title = typeof value.title === 'string' ? value.title.trim() : ''
+  const risk = typeof value.risk === 'string' ? value.risk.toLowerCase() : ''
+
+  if (!title || !validMethods.has(method) || !path.startsWith('/api/admin/') || !validRisks.has(risk)) return null
+
+  return {
+    id: typeof value.id === 'string' && value.id.trim() ? value.id.trim() : `local-${index + 1}`,
+    actionType: typeof value.actionType === 'string' ? value.actionType : undefined,
+    title,
+    reason: typeof value.reason === 'string' ? value.reason : undefined,
+    risk,
+    method,
+    path,
+    body: value.body,
+    executionMode: typeof value.executionMode === 'string' ? value.executionMode : undefined,
+  }
+}
+
+function parseHermesActions(summary: string | null): ParsedActionsResult {
+  if (!summary) return { actions: [], error: null }
+
+  const jsonBlocks = [...summary.matchAll(/```json\s*([\s\S]*?)```/gi)]
+  for (const block of jsonBlocks) {
+    try {
+      const parsed = JSON.parse(block[1].trim())
+      if (!isRecord(parsed) || !Array.isArray(parsed.actions)) continue
+
+      const actions = parsed.actions
+        .map((action, index) => normalizeAction(action, index))
+        .filter((action): action is HermesRawAction => action !== null)
+
+      return actions.length > 0
+        ? { actions, error: null }
+        : { actions: [], error: 'JSON actions thiếu method/path/title/risk hợp lệ.' }
+    } catch {
+      return { actions: [], error: 'Không đọc được JSON hành động Hermes.' }
+    }
+  }
+
+  return { actions: [], error: null }
+}
+
+function riskClassName(risk: string) {
+  if (risk === 'high') return 'border-red-200 bg-red-50 text-red-700'
+  if (risk === 'medium') return 'border-amber-200 bg-amber-50 text-amber-700'
+  return 'border-emerald-200 bg-emerald-50 text-emerald-700'
+}
+
+function HermesActionCard({ action }: { action: HermesRawAction }) {
+  const bodyPreview = formatJson(action.body) ?? '{}'
+
+  return (
+    <article className="space-y-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-sm font-semibold text-zinc-900">{action.title}</h4>
+            <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${riskClassName(action.risk)}`}>
+              {action.risk}
+            </span>
+          </div>
+          {action.reason ? <p className="text-xs text-zinc-600">{action.reason}</p> : null}
+          {action.actionType ? <p className="text-xs text-zinc-500">Loại: {action.actionType}</p> : null}
+        </div>
+        <span className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
+          Hermes runner tự thực thi bằng X-Hermes-Admin-Key
+        </span>
+      </div>
+
+      <div className="rounded-lg border border-zinc-200 bg-zinc-950 p-3 font-mono text-xs text-zinc-100">
+        <span className="text-emerald-300">{action.method}</span> {action.path}
+      </div>
+
+      <details className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+        <summary className="cursor-pointer text-xs font-semibold text-zinc-700">Xem payload</summary>
+        <pre className="mt-3 max-h-56 overflow-auto whitespace-pre-wrap text-xs text-zinc-700">{bodyPreview}</pre>
+      </details>
+    </article>
+  )
+}
+
 export function HermesReportDetailDrawer({ open, loading, report, onClose }: Props) {
+  const parsedActions = useMemo(() => parseHermesActions(report?.summary ?? null), [report?.summary])
+
   useEffect(() => {
     if (!open) return
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -84,6 +192,23 @@ export function HermesReportDetailDrawer({ open, loading, report, onClose }: Pro
               </dl>
 
               <SafeText title={report.title} value={report.summary} />
+
+              {parsedActions.actions.length > 0 ? (
+                <section className="space-y-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-zinc-800">Hành động gợi ý</h3>
+                    <p className="text-xs text-zinc-500">UI chỉ hiển thị. Hermes runner tự gọi API bằng X-Hermes-Admin-Key.</p>
+                  </div>
+                  {parsedActions.actions.map((action) => (
+                    <HermesActionCard key={action.id ?? `${action.method}:${action.path}:${action.title}`} action={action} />
+                  ))}
+                </section>
+              ) : parsedActions.error ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+                  {parsedActions.error}
+                </div>
+              ) : null}
+
               <SafeText title="Payload JSON" value={formatJson(report.payloadJson)} />
             </div>
           ) : (
