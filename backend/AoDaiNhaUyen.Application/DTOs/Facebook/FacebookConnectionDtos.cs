@@ -5,6 +5,23 @@ public sealed record ConnectFacebookPageRequest(
   string PageAccessToken,
   string? PageName);
 
+public sealed record ConnectFacebookOAuthPageRequest(
+  string PageId,
+  string ConnectToken);
+
+public sealed record FacebookOAuthPagesRequest(
+  string Code,
+  string RedirectUri);
+
+public sealed record FacebookOAuthUrlDto(string Url);
+
+public sealed record FacebookOAuthPageDto(
+  string PageId,
+  string Name,
+  string? Category,
+  IReadOnlyList<string> Tasks,
+  string ConnectToken);
+
 public sealed record FacebookConnectionDto(
   string PageId,
   string? PageName,

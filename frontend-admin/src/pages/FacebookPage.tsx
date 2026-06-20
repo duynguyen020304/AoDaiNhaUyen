@@ -1,31 +1,41 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CalendarClock, ExternalLink, ImageUp, Loader2, Pencil, Plug, RefreshCcw, Send, Share2, Trash2, Video } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { CalendarClock, ExternalLink, Loader2, RefreshCcw, Search, Send, Trash2, Upload, UsersRound } from 'lucide-react'
+import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  connectFacebookPage,
-  deleteFacebookPost,
-  disconnectFacebookPage,
-  getFacebookConnections,
-  getFacebookPosts,
-  publishFacebookPhoto,
-  publishFacebookPost,
-  publishFacebookVideo,
-  updateFacebookPost,
-  type FacebookConnection,
-  type FacebookPost,
-} from '@/api/facebook'
 import { HttpError } from '@/api/client'
+import {
+  createSocialPost,
+  disconnectSocialAccount,
+  getSocialAccounts,
+  getSocialPosts,
+  uploadSocialMedia,
+  selectFacebookPage,
+  type SocialAccountConnection,
+  type SocialPost,
+} from '@/api/social'
+
+type TabKey = 'fanpages' | 'composer' | 'history'
+
+type UploadedMedia = {
+  id: string
+  fileName: string
+  contentType: string
+  publicUrl: string
+  progress: number
+  status: 'uploading' | 'uploaded' | 'error'
+}
+
+const PROFILE_STORAGE_KEY = 'zernio_profile_id'
+const CONNECT_STATE_STORAGE_KEY = 'zernio_connect_state'
 
 function formatDateTime(value: string | null) {
   if (!value) return '—'
   return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value))
-}
-
-function toIsoOrUndefined(value: string) {
-  return value ? new Date(value).toISOString() : undefined
 }
 
 function getErrorMessage(error: unknown) {
@@ -34,169 +44,269 @@ function getErrorMessage(error: unknown) {
   return 'Đã xảy ra lỗi. Vui lòng thử lại.'
 }
 
-type ComposerMode = 'text' | 'photo' | 'video'
+function statusBadge(isActive: boolean) {
+  return isActive
+    ? <Badge variant="success">Đang kết nối</Badge>
+    : <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-500">Đã ngắt</Badge>
+}
+
+function postStatusBadge(status: string | null) {
+  switch (status) {
+    case 'published':
+    case 'success':
+      return <Badge variant="success">Đã đăng</Badge>
+    case 'scheduled':
+    case 'pending':
+      return <Badge variant="warning">Đã lên lịch</Badge>
+    case 'failed':
+    case 'error':
+      return <Badge variant="outline" className="border-destructive/40 text-destructive">Lỗi</Badge>
+    default:
+      return <Badge variant="outline">{status || 'Không rõ'}</Badge>
+  }
+}
+
+function redirectUrl() {
+  return `${window.location.origin}/admin/facebook`
+}
+
+function clearCallbackQuery() {
+  const url = new URL(window.location.href)
+  ;[
+    'connected',
+    'profileId',
+    'accountId',
+    'username',
+    'pageId',
+    'tempToken',
+    'userProfileId',
+    'userProfileName',
+    'userProfilePicture',
+    'state',
+    'error',
+    'error_description',
+  ].forEach((key) => {
+    url.searchParams.delete(key)
+  })
+  window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+}
+
+function clearStoredConnectState() {
+  window.sessionStorage.removeItem(CONNECT_STATE_STORAGE_KEY)
+}
 
 export function FacebookPage() {
-  const [connections, setConnections] = useState<FacebookConnection[]>([])
-  const [selectedPageId, setSelectedPageId] = useState('')
-  const [posts, setPosts] = useState<FacebookPost[]>([])
-  const [afterCursor, setAfterCursor] = useState<string | null>(null)
-  const [pageId, setPageId] = useState('')
-  const [pageName, setPageName] = useState('')
-  const [pageAccessToken, setPageAccessToken] = useState('')
-  const [message, setMessage] = useState('')
-  const [link, setLink] = useState('')
-  const [scheduledAt, setScheduledAt] = useState('')
-  const [published, setPublished] = useState(true)
-  const [mode, setMode] = useState<ComposerMode>('text')
-  const [mediaFile, setMediaFile] = useState<File | null>(null)
-  const [editingPost, setEditingPost] = useState<FacebookPost | null>(null)
-  const [editMessage, setEditMessage] = useState('')
+  const [accounts, setAccounts] = useState<SocialAccountConnection[]>([])
+  const [posts, setPosts] = useState<SocialPost[]>([])
+  const [activeTab, setActiveTab] = useState<TabKey>('fanpages')
+  const [profileId, setProfileId] = useState(() => window.localStorage.getItem(PROFILE_STORAGE_KEY) ?? '')
+  const [searchInput, setSearchInput] = useState('')
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([])
+  const [content, setContent] = useState('')
+  const [publishNow, setPublishNow] = useState(true)
+  const [scheduledFor, setScheduledFor] = useState('')
+  const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia[]>([])
+  const [deleteTarget, setDeleteTarget] = useState<SocialAccountConnection | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const selectedConnection = useMemo(
-    () => connections.find((connection) => connection.pageId === selectedPageId) ?? null,
-    [connections, selectedPageId],
-  )
+  const filteredAccounts = useMemo(() => {
+    const keyword = searchInput.trim().toLowerCase()
+    if (!keyword) return accounts
+    return accounts.filter((account) =>
+      (account.displayName ?? '').toLowerCase().includes(keyword)
+      || (account.username ?? '').toLowerCase().includes(keyword)
+      || account.zernioAccountId.toLowerCase().includes(keyword)
+    )
+  }, [accounts, searchInput])
 
-  const loadConnections = useCallback(async () => {
+  const activeAccounts = useMemo(() => accounts.filter((account) => account.isActive), [accounts])
+
+  const mediaUrls = useMemo(() => uploadedMedia
+    .filter((item) => item.status === 'uploaded')
+    .map((item) => item.publicUrl), [uploadedMedia])
+
+  const hasUploadingMedia = uploadedMedia.some((item) => item.status === 'uploading')
+
+  const loadAccounts = useCallback(async (sync = false, targetProfileId = profileId) => {
     setLoading(true)
     setError(null)
     try {
-      const data = await getFacebookConnections()
-      setConnections(data)
-      if (!selectedPageId && data[0]) setSelectedPageId(data[0].pageId)
+      const data = await getSocialAccounts('facebook', sync, targetProfileId || undefined)
+      setAccounts(data)
+      setSelectedAccountIds((current) => current.filter((id) => data.some((account) => account.id === id && account.isActive)))
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
-  }, [selectedPageId])
+  }, [profileId])
 
-  const loadPosts = useCallback(async (targetPageId = selectedPageId, cursor?: string | null) => {
-    if (!targetPageId) return
+  const loadPosts = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await getFacebookPosts(targetPageId, cursor)
-      setPosts((currentPosts) => (cursor ? [...currentPosts, ...data.items] : data.items))
-      setAfterCursor(data.afterCursor)
+      const data = await getSocialPosts('facebook', undefined, profileId || undefined, 1, 25)
+      setPosts(data.items)
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
-  }, [selectedPageId])
+  }, [profileId])
 
-  useEffect(() => {
-    const timeout = window.setTimeout(() => { void loadConnections() }, 0)
-    return () => window.clearTimeout(timeout)
-  }, [loadConnections])
+  const handleCallback = useCallback(async () => {
+    const url = new URL(window.location.href)
+    const oauthError = url.searchParams.get('error_description') || url.searchParams.get('error')
+    const connected = url.searchParams.get('connected')
+    const callbackProfileId = url.searchParams.get('profileId')
+    const pageId = url.searchParams.get('pageId')
+    const tempToken = url.searchParams.get('tempToken')
+    if (!oauthError && !connected && !pageId && !tempToken) return
 
-  useEffect(() => {
-    if (!selectedPageId) return undefined
-    const timeout = window.setTimeout(() => { void loadPosts(selectedPageId) }, 0)
-    return () => window.clearTimeout(timeout)
-  }, [selectedPageId, loadPosts])
+    clearCallbackQuery()
+    clearStoredConnectState()
 
-  async function handleConnect(event: React.FormEvent) {
-    event.preventDefault()
-    setSaving(true)
-    setError(null)
-    setSuccess(null)
-    try {
-      const connection = await connectFacebookPage({ pageId, pageName: pageName || undefined, pageAccessToken })
-      setPageAccessToken('')
-      setPageId('')
-      setPageName('')
-      setSuccess('Đã kết nối Facebook Page. Token chỉ được lưu mã hóa trên backend.')
-      setConnections(connections.filter((item) => item.pageId !== connection.pageId).concat(connection))
-      setSelectedPageId(connection.pageId)
-    } catch (err) {
-      setError(getErrorMessage(err))
-    } finally {
-      setSaving(false)
+    if (oauthError) {
+      setError(`Zernio từ chối kết nối: ${oauthError}`)
+      return
     }
-  }
 
-  async function handlePublish(event: React.FormEvent) {
-    event.preventDefault()
-    if (!selectedPageId) return
-    setSaving(true)
+    if (callbackProfileId) {
+      setProfileId(callbackProfileId)
+      window.localStorage.setItem(PROFILE_STORAGE_KEY, callbackProfileId)
+    }
+
+    setLoading(true)
     setError(null)
-    setSuccess(null)
     try {
-      const schedule = toIsoOrUndefined(scheduledAt)
-      if (mode === 'photo') {
-        if (!mediaFile) throw new Error('Vui lòng chọn ảnh.')
-        await publishFacebookPhoto(selectedPageId, mediaFile, message, schedule, published)
-      } else if (mode === 'video') {
-        if (!mediaFile) throw new Error('Vui lòng chọn video.')
-        await publishFacebookVideo(selectedPageId, mediaFile, message, schedule, published)
-      } else {
-        await publishFacebookPost(selectedPageId, { message, link: link || undefined, scheduledPublishTime: schedule, published })
+      if (pageId && tempToken) {
+        await selectFacebookPage({
+          profileId: callbackProfileId || profileId,
+          pageId,
+          tempToken,
+          redirectUrl: redirectUrl(),
+          userProfile: {
+            id: url.searchParams.get('userProfileId') || 'zernio-user',
+            name: url.searchParams.get('userProfileName') || 'Zernio user',
+            profilePicture: url.searchParams.get('userProfilePicture') || 'https://zernio.com/favicon.ico',
+          },
+        })
       }
-      setMessage('')
-      setLink('')
-      setScheduledAt('')
-      setPublished(true)
-      setMediaFile(null)
-      setSuccess(schedule ? 'Đã lên lịch bài viết Facebook.' : 'Đã gửi bài viết lên Facebook.')
-      await loadPosts(selectedPageId)
-    } catch (err) {
-      setError(getErrorMessage(err))
-    } finally {
-      setSaving(false)
-    }
-  }
 
-  async function handleUpdatePost(event: React.FormEvent) {
-    event.preventDefault()
-    if (!editingPost) return
-    setSaving(true)
-    setError(null)
-    try {
-      await updateFacebookPost(editingPost.id, { message: editMessage })
-      setEditingPost(null)
-      setEditMessage('')
-      setSuccess('Đã cập nhật bài viết Facebook.')
-      await loadPosts(selectedPageId)
+      await loadAccounts(true, callbackProfileId || profileId)
+      setSuccess('Đã đồng bộ fanpage Facebook từ Zernio.')
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {
-      setSaving(false)
+      setLoading(false)
     }
-  }
+  }, [loadAccounts, profileId])
 
-  async function handleDeletePost(postId: string) {
-    if (!window.confirm('Xóa bài viết Facebook này? Hành động này không thể hoàn tác trên Facebook.')) return
-    setSaving(true)
-    setError(null)
-    try {
-      await deleteFacebookPost(postId)
-      setSuccess('Đã xóa bài viết Facebook.')
-      await loadPosts(selectedPageId)
-    } catch (err) {
-      setError(getErrorMessage(err))
-    } finally {
-      setSaving(false)
-    }
+  useEffect(() => {
+    const timeout = window.setTimeout(() => { void loadAccounts(false) }, 0)
+    return () => window.clearTimeout(timeout)
+  }, [loadAccounts])
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => { void handleCallback() }, 0)
+    return () => window.clearTimeout(timeout)
+  }, [handleCallback])
+
+  async function handleSync() {
+    const normalizedProfileId = profileId.trim()
+    if (normalizedProfileId) window.localStorage.setItem(PROFILE_STORAGE_KEY, normalizedProfileId)
+    await loadAccounts(true, normalizedProfileId)
+    await loadPosts()
   }
 
   async function handleDisconnect() {
-    if (!selectedPageId) return
-    if (!window.confirm('Ngắt kết nối Page này? Token đã lưu sẽ bị xóa mềm khỏi hệ thống.')) return
+    if (!deleteTarget) return
     setSaving(true)
     setError(null)
+    setSuccess(null)
     try {
-      await disconnectFacebookPage(selectedPageId)
-      setPosts([])
-      setSelectedPageId('')
-      setSuccess('Đã ngắt kết nối Facebook Page.')
-      await loadConnections()
+      await disconnectSocialAccount(deleteTarget.id)
+      setDeleteTarget(null)
+      setSuccess('Đã ngắt kết nối fanpage.')
+      await loadAccounts(false)
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleMediaUpload(files: FileList | null) {
+    const selectedFiles = Array.from(files ?? [])
+    if (selectedFiles.length === 0) return
+
+    setError(null)
+    setSuccess(null)
+    for (const file of selectedFiles) {
+      const isVideo = file.type.startsWith('video/')
+      const maxBytes = isVideo ? 200 * 1024 * 1024 : 10 * 1024 * 1024
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'video/mp4', 'video/quicktime', 'video/webm']
+      if (!allowedTypes.includes(file.type)) {
+        setError(`File ${file.name} không đúng định dạng. Chỉ hỗ trợ JPG, PNG, WEBP, GIF, MP4, MOV hoặc WEBM.`)
+        continue
+      }
+      if (file.size <= 0 || file.size > maxBytes) {
+        setError(isVideo ? `Video ${file.name} vượt quá 200MB.` : `Ảnh ${file.name} vượt quá 10MB.`)
+        continue
+      }
+
+      const mediaId = crypto.randomUUID()
+      setUploadedMedia((current) => current.concat({
+        id: mediaId,
+        fileName: file.name,
+        contentType: file.type,
+        publicUrl: '',
+        progress: 0,
+        status: 'uploading',
+      }))
+
+      try {
+        const upload = await uploadSocialMedia(file)
+        setUploadedMedia((current) => current.map((item) => item.id === mediaId
+          ? { ...item, publicUrl: upload.publicUrl, progress: 100, status: 'uploaded' }
+          : item))
+      } catch (err) {
+        setUploadedMedia((current) => current.map((item) => item.id === mediaId
+          ? { ...item, progress: 0, status: 'error' }
+          : item))
+        setError(getErrorMessage(err))
+      }
+    }
+  }
+
+  async function handleCreatePost(event: FormEvent) {
+    event.preventDefault()
+    if (selectedAccountIds.length === 0) {
+      setError('Vui lòng chọn ít nhất một fanpage.')
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      await createSocialPost({
+        content: content.trim(),
+        accountIds: selectedAccountIds,
+        publishNow,
+        scheduledFor: publishNow || !scheduledFor ? null : new Date(scheduledFor).toISOString(),
+        mediaUrls,
+      })
+      setContent('')
+      setUploadedMedia([])
+      setScheduledFor('')
+      setPublishNow(true)
+      setSuccess(publishNow ? 'Đã gửi bài viết sang Zernio để đăng.' : 'Đã gửi lịch đăng sang Zernio.')
+      setActiveTab('history')
+      await loadPosts()
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {
@@ -205,150 +315,264 @@ export function FacebookPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Quản lý Facebook</h1>
-          <p className="text-sm text-muted-foreground mt-1">Kết nối Facebook Page, đăng bài, lên lịch và quản lý nội dung đã đăng.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">Quản lý fanpage</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Đồng bộ Facebook qua Zernio, đăng bài và theo dõi lịch sử đăng.</p>
         </div>
-        <Button variant="outline" onClick={() => void loadConnections()} disabled={loading}>
-          <RefreshCcw className="size-4" /> Làm mới
+        <Button variant="outline" onClick={() => void handleSync()} disabled={loading || saving}>
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCcw className="size-4" />}
+          Đồng bộ
         </Button>
       </div>
 
-      {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-      {success && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{success}</div>}
-
-      <div className="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
-        <div className="space-y-5">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Plug className="size-5" />Kết nối Page</CardTitle>
-              <CardDescription>Nhập Page ID và Page Access Token. Token không hiển thị lại sau khi lưu.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-3" onSubmit={handleConnect}>
-                <label className="block text-sm font-medium">Page ID<Input className="mt-1" value={pageId} onChange={(e) => setPageId(e.target.value)} required /></label>
-                <label className="block text-sm font-medium">Tên Page (tuỳ chọn)<Input className="mt-1" value={pageName} onChange={(e) => setPageName(e.target.value)} /></label>
-                <label className="block text-sm font-medium">Page Access Token<Input className="mt-1" type="password" value={pageAccessToken} onChange={(e) => setPageAccessToken(e.target.value)} required /></label>
-                <Button className="w-full" disabled={saving || !pageId || !pageAccessToken}>{saving ? <Loader2 className="size-4 animate-spin" /> : <Share2 className="size-4" />}Kết nối</Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Page đang quản lý</CardTitle>
-              <CardDescription>Chọn Page để đăng bài và tải danh sách bài viết.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {connections.length === 0 ? <p className="text-sm text-muted-foreground">Chưa có Page nào được kết nối.</p> : (
-                <div className="space-y-2">
-                  {connections.map((connection) => (
-                    <button key={connection.pageId} type="button" className={`w-full rounded-lg border p-3 text-left transition ${selectedPageId === connection.pageId ? 'border-gold bg-gold/10' : 'hover:bg-muted/60'}`} onClick={() => setSelectedPageId(connection.pageId)}>
-                      <div className="font-semibold">{connection.pageName || connection.pageId}</div>
-                      <div className="text-xs text-muted-foreground">ID: {connection.pageId} · Token ****{connection.tokenLast4}</div>
-                      <div className="text-xs text-muted-foreground">Xác thực: {formatDateTime(connection.lastValidatedAt)}</div>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {selectedConnection && <Button variant="outline" className="w-full text-destructive" onClick={handleDisconnect} disabled={saving}><Trash2 className="size-4" />Ngắt kết nối Page này</Button>}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-5">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Send className="size-5" />Soạn bài Facebook</CardTitle>
-              <CardDescription>Hỗ trợ text/link, ảnh, video và lịch đăng.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-4" onSubmit={handlePublish}>
-                <div className="flex flex-wrap gap-2">
-                  {([
-                    ['text', Send, 'Bài viết'],
-                    ['photo', ImageUp, 'Ảnh'],
-                    ['video', Video, 'Video'],
-                  ] as const).map(([value, Icon, label]) => (
-                    <Button key={value} type="button" variant={mode === value ? 'default' : 'outline'} onClick={() => setMode(value)}><Icon className="size-4" />{label}</Button>
-                  ))}
-                </div>
-                <label className="block text-sm font-medium">Nội dung / caption<Textarea className="mt-1 min-h-32" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Nhập nội dung tiếng Việt..." /></label>
-                {mode === 'text' ? (
-                  <label className="block text-sm font-medium">Link đính kèm (tuỳ chọn)<Input className="mt-1" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://..." /></label>
-                ) : (
-                  <label className="block text-sm font-medium">File {mode === 'photo' ? 'ảnh' : 'video'}<Input className="mt-1" type="file" accept={mode === 'photo' ? 'image/*' : 'video/*'} onChange={(e) => setMediaFile(e.target.files?.[0] ?? null)} /></label>
-                )}
-                <div className="grid gap-3 md:grid-cols-2">
-                  <label className="block text-sm font-medium">Lên lịch (tuỳ chọn)<Input className="mt-1" type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} /></label>
-                  <label className="flex items-center gap-2 rounded-lg border p-3 text-sm font-medium md:mt-6"><input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} />Đăng công khai nếu không lên lịch</label>
-                </div>
-                <Button disabled={!selectedPageId || saving || (!message.trim() && !link.trim() && mode === 'text')}>{saving ? <Loader2 className="size-4 animate-spin" /> : <CalendarClock className="size-4" />}{scheduledAt ? 'Lên lịch' : 'Đăng bài'}</Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex-row items-center justify-between gap-3">
-              <div>
-                <CardTitle>Danh sách bài viết</CardTitle>
-                <CardDescription>Bài viết lấy từ Facebook Graph API feed.</CardDescription>
-              </div>
-              <Button variant="outline" onClick={() => void loadPosts(selectedPageId)} disabled={!selectedPageId || loading}>{loading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCcw className="size-4" />}Tải lại</Button>
-            </CardHeader>
-            <CardContent>
-              {!selectedPageId ? <p className="text-sm text-muted-foreground">Chọn hoặc kết nối Page để xem bài viết.</p> : posts.length === 0 ? <p className="text-sm text-muted-foreground">Chưa có dữ liệu bài viết.</p> : (
-                <div className="space-y-3">
-                  {posts.map((post) => (
-                    <article key={post.id} className="rounded-xl border bg-white p-4 shadow-sm">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="text-xs text-muted-foreground">{post.id} · {formatDateTime(post.createdTime)}</div>
-                          <p className="mt-2 whitespace-pre-wrap text-sm text-gray-800">{post.message || '(Không có nội dung)'}</p>
-                          {post.fullPicture && <img src={post.fullPicture} alt="Facebook post" className="mt-3 max-h-56 rounded-lg border object-cover" />}
-                        </div>
-                        <div className="flex gap-1">
-                          {post.permalinkUrl && <Button variant="ghost" size="icon" className="size-8" onClick={() => window.open(post.permalinkUrl || '#', '_blank', 'noopener,noreferrer')} aria-label="Mở trên Facebook"><ExternalLink className="size-4" /></Button>}
-                          <Button variant="ghost" size="icon" className="size-8" onClick={() => { setEditingPost(post); setEditMessage(post.message || '') }} aria-label="Sửa bài viết"><Pencil className="size-4" /></Button>
-                          <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => void handleDeletePost(post.id)} aria-label="Xóa bài viết"><Trash2 className="size-4" /></Button>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                        <span className="rounded-full bg-muted px-2 py-1">{post.type || 'post'}</span>
-                        <span className="rounded-full bg-muted px-2 py-1">{post.isPublished === false ? 'Chưa xuất bản' : 'Đã xuất bản'}</span>
-                        {post.scheduledPublishTime && <span className="rounded-full bg-muted px-2 py-1">Lịch: {formatDateTime(post.scheduledPublishTime)}</span>}
-                      </div>
-                    </article>
-                  ))}
-                  {afterCursor && <Button variant="outline" className="w-full" onClick={() => void loadPosts(selectedPageId, afterCursor)} disabled={loading}>Tải thêm</Button>}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {editingPost && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <Card className="w-full max-w-2xl">
-            <CardHeader>
-              <CardTitle>Sửa bài viết Facebook</CardTitle>
-              <CardDescription>Facebook chỉ cho phép sửa một số loại bài viết do Page/app tạo.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-4" onSubmit={handleUpdatePost}>
-                <Textarea className="min-h-40" value={editMessage} onChange={(e) => setEditMessage(e.target.value)} />
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setEditingPost(null)}>Hủy</Button>
-                  <Button disabled={saving || !editMessage.trim()}>{saving ? <Loader2 className="size-4 animate-spin" /> : null}Lưu</Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+      {error && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <span className="flex-1">{error}</span>
+          <button onClick={() => setError(null)} className="shrink-0 underline">Đóng</button>
         </div>
       )}
+      {success && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <span className="flex-1">{success}</span>
+          <button onClick={() => setSuccess(null)} className="shrink-0 underline">Đóng</button>
+        </div>
+      )}
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        {([
+          ['fanpages', UsersRound, 'Fanpage'],
+          ['composer', Send, 'Đăng bài'],
+          ['history', CalendarClock, 'Lịch sử'],
+        ] as const).map(([key, Icon, label]) => (
+          <Button key={key} type="button" variant={activeTab === key ? 'default' : 'outline'} onClick={() => { setActiveTab(key); if (key === 'history') void loadPosts() }}>
+            <Icon className="size-4" />
+            {label}
+          </Button>
+        ))}
+      </div>
+
+      {activeTab === 'fanpages' && (
+        <>
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input className="w-72 pl-9" placeholder="Tìm fanpage..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
+            </div>
+          </div>
+
+          <Card className="overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fanpage</TableHead>
+                  <TableHead>Zernio Account ID</TableHead>
+                  <TableHead>Profile ID</TableHead>
+                  <TableHead>Đồng bộ</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="text-right">Thao tác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading && accounts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                      <Loader2 className="mx-auto mb-2 size-6 animate-spin text-primary" />
+                      Đang tải...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredAccounts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                      <UsersRound className="mx-auto mb-2 size-8 opacity-40" />
+                      Chưa có fanpage. Kết nối Zernio để đồng bộ danh sách.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredAccounts.map((account) => (
+                    <TableRow key={account.id} className={!account.isActive ? 'bg-muted/30 opacity-60' : ''}>
+                      <TableCell>
+                        <div className="font-medium text-ink">{account.displayName || account.username || 'Facebook Page'}</div>
+                        <div className="text-xs text-muted-foreground">{account.username || '—'}</div>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{account.zernioAccountId}</TableCell>
+                      <TableCell className="font-mono text-xs">{account.zernioProfileId}</TableCell>
+                      <TableCell>{formatDateTime(account.lastSyncedAt)}</TableCell>
+                      <TableCell>{statusBadge(account.isActive)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" className="size-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(account)} aria-label="Ngắt kết nối">
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </Card>
+        </>
+      )}
+
+      {activeTab === 'composer' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Send className="size-5" />Đăng bài Facebook</CardTitle>
+            <CardDescription>Zernio sẽ đăng ngay hoặc lên lịch cho fanpage đã chọn.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form className="space-y-5" onSubmit={handleCreatePost}>
+              <div className="grid gap-3 md:grid-cols-2">
+                {activeAccounts.map((account) => (
+                  <label key={account.id} className="flex items-start gap-3 rounded-lg border bg-white p-3 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={selectedAccountIds.includes(account.id)}
+                      onChange={(e) => setSelectedAccountIds((current) => e.target.checked ? current.concat(account.id) : current.filter((id) => id !== account.id))}
+                    />
+                    <span>
+                      <span className="block font-medium text-ink">{account.displayName || account.username || account.zernioAccountId}</span>
+                      <span className="block font-mono text-xs text-muted-foreground">{account.zernioAccountId}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {activeAccounts.length === 0 && <p className="text-sm text-muted-foreground">Chưa có fanpage để đăng bài.</p>}
+
+              <label className="block text-sm font-medium">
+                Nội dung
+                <Textarea className="mt-1 min-h-36" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Nhập nội dung bài viết..." required />
+              </label>
+
+              <div className="space-y-3">
+                <div>
+                  <div className="text-sm font-medium">Ảnh/video đính kèm</div>
+                  <p className="mt-1 text-xs text-muted-foreground">Upload qua backend như ảnh sản phẩm, backend lưu lên S3 rồi trả URL public để gửi sang Zernio. Ảnh tối đa 10MB, video tối đa 200MB.</p>
+                </div>
+                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 py-6 text-sm font-medium text-primary transition hover:bg-primary/10">
+                  <Upload className="size-4" />
+                  Tải ảnh/video lên S3
+                  <input
+                    type="file"
+                    className="hidden"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
+                    disabled={saving || hasUploadingMedia}
+                    onChange={(event) => {
+                      void handleMediaUpload(event.target.files)
+                      event.target.value = ''
+                    }}
+                  />
+                </label>
+                {uploadedMedia.length > 0 && (
+                  <div className="space-y-2">
+                    {uploadedMedia.map((item) => (
+                      <div key={item.id} className="flex items-center gap-3 rounded-lg border bg-white p-3 text-sm">
+                        {item.publicUrl && item.contentType.startsWith('image/') ? (
+                          <img src={item.publicUrl} alt="" className="size-12 rounded-md object-cover" />
+                        ) : (
+                          <div className="flex size-12 items-center justify-center rounded-md bg-muted text-xs uppercase text-muted-foreground">
+                            {item.contentType.startsWith('video/') ? 'VID' : 'IMG'}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-medium text-ink">{item.fileName}</div>
+                          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                            <div className={`h-full ${item.status === 'error' ? 'bg-destructive' : 'bg-primary'}`} style={{ width: `${item.progress}%` }} />
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {item.status === 'uploading' ? `Đang upload ${item.progress}%` : item.status === 'uploaded' ? 'Đã upload lên S3' : 'Upload lỗi'}
+                          </div>
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => setUploadedMedia((current) => current.filter((media) => media.id !== item.id))} aria-label="Xóa media">
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="flex items-center gap-2 rounded-lg border p-3 text-sm font-medium">
+                  <input type="checkbox" checked={publishNow} onChange={(e) => setPublishNow(e.target.checked)} />
+                  Đăng ngay
+                </label>
+                <label className="block text-sm font-medium">
+                  Lên lịch
+                  <Input className="mt-1" type="datetime-local" value={scheduledFor} disabled={publishNow} onChange={(e) => setScheduledFor(e.target.value)} />
+                </label>
+              </div>
+
+              <Button disabled={saving || hasUploadingMedia || !content.trim() || selectedAccountIds.length === 0 || (!publishNow && !scheduledFor)}>
+                {saving ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                {publishNow ? 'Đăng qua Zernio' : 'Lên lịch qua Zernio'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeTab === 'history' && (
+        <Card className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Bài viết</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead>Lịch đăng</TableHead>
+                <TableHead>Đã đăng</TableHead>
+                <TableHead className="text-right">Link</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading && posts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                    <Loader2 className="mx-auto mb-2 size-6 animate-spin text-primary" />
+                    Đang tải...
+                  </TableCell>
+                </TableRow>
+              ) : posts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-12 text-center text-muted-foreground">
+                    <CalendarClock className="mx-auto mb-2 size-8 opacity-40" />
+                    Chưa có lịch sử bài viết.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                posts.map((post) => (
+                  <TableRow key={post.id}>
+                    <TableCell>
+                      <div className="line-clamp-2 max-w-xl text-sm text-ink">{post.content || '—'}</div>
+                      <div className="font-mono text-xs text-muted-foreground">{post.id}</div>
+                    </TableCell>
+                    <TableCell>{postStatusBadge(post.status)}</TableCell>
+                    <TableCell>{formatDateTime(post.scheduledFor)}</TableCell>
+                    <TableCell>{formatDateTime(post.publishedAt)}</TableCell>
+                    <TableCell className="text-right">
+                      {post.platformPostUrl ? (
+                        <Button variant="ghost" size="icon" className="size-8" onClick={() => window.open(post.platformPostUrl || '#', '_blank', 'noopener,noreferrer')} aria-label="Mở bài viết">
+                          <ExternalLink className="size-4" />
+                        </Button>
+                      ) : '—'}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDisconnect}
+        title="Ngắt kết nối fanpage"
+        message={`Ngắt kết nối "${deleteTarget?.displayName || deleteTarget?.username || deleteTarget?.zernioAccountId}" khỏi danh sách quản lý?`}
+      />
     </div>
   )
 }

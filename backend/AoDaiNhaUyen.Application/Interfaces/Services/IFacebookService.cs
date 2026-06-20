@@ -10,6 +10,19 @@ public interface IFacebookService
     ConnectFacebookPageRequest request,
     CancellationToken cancellationToken = default);
 
+  Task<FacebookOAuthUrlDto> GetOAuthUrlAsync(
+    string redirectUri,
+    string state,
+    CancellationToken cancellationToken = default);
+
+  Task<IReadOnlyList<FacebookOAuthPageDto>> GetOAuthPagesAsync(
+    FacebookOAuthPagesRequest request,
+    CancellationToken cancellationToken = default);
+
+  Task<FacebookConnectionDto> ConnectOAuthPageAsync(
+    ConnectFacebookOAuthPageRequest request,
+    CancellationToken cancellationToken = default);
+
   Task DisconnectPageAsync(
     string pageId,
     CancellationToken cancellationToken = default);

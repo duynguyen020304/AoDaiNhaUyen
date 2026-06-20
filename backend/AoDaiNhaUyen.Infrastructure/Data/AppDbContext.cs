@@ -62,6 +62,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<HermesEventOutbox> HermesEventOutbox => Set<HermesEventOutbox>();
   public DbSet<HermesMonitorLink> HermesMonitorLinks => Set<HermesMonitorLink>();
   public DbSet<HermesAgentTraceStep> HermesAgentTraceSteps => Set<HermesAgentTraceStep>();
+  public DbSet<SocialAccountConnection> SocialAccountConnections => Set<SocialAccountConnection>();
   public DbSet<FacebookPageConnection> FacebookPageConnections => Set<FacebookPageConnection>();
   public DbSet<OrderPromoCostSnapshot> OrderPromoCostSnapshots => Set<OrderPromoCostSnapshot>();
 
@@ -957,6 +958,26 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => new { x.SubscriberId, x.Channel, x.IsOptIn });
       builder.HasOne(x => x.Subscriber).WithMany(x => x.Consents).HasForeignKey(x => x.SubscriberId).OnDelete(DeleteBehavior.Cascade);
       builder.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.SetNull);
+    });
+
+    modelBuilder.Entity<SocialAccountConnection>(builder =>
+    {
+      builder.ToTable("social_account_connections");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Provider).HasMaxLength(50).HasDefaultValue("zernio").IsRequired();
+      builder.Property(x => x.Platform).HasMaxLength(50).HasDefaultValue("facebook").IsRequired();
+      builder.Property(x => x.ZernioProfileId).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.ZernioAccountId).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.DisplayName).HasMaxLength(255);
+      builder.Property(x => x.Username).HasMaxLength(255);
+      builder.Property(x => x.AvatarUrl).HasMaxLength(1000);
+      builder.Property(x => x.LastSyncedAt);
+      builder.Property(x => x.MetadataJson).HasColumnType("jsonb");
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.Provider, x.ZernioAccountId }).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_social_accounts_provider_account_unique");
+      builder.HasIndex(x => new { x.Platform, x.IsActive, x.DisplayName }).HasDatabaseName("idx_social_accounts_platform_active_name");
+      builder.HasIndex(x => x.ZernioProfileId).HasDatabaseName("idx_social_accounts_zernio_profile_id");
     });
 
     modelBuilder.Entity<FacebookPageConnection>(builder =>

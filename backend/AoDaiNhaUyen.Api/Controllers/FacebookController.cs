@@ -26,6 +26,30 @@ public sealed class FacebookController(IFacebookService facebookService) : Contr
     return Ok(ApiResponseFactory.Success(result, "Kết nối Facebook Page thành công."));
   }
 
+  [HttpGet("oauth-url")]
+  public async Task<IActionResult> GetOAuthUrl(
+    [FromQuery] string redirectUri,
+    [FromQuery] string state,
+    CancellationToken cancellationToken)
+  {
+    var result = await facebookService.GetOAuthUrlAsync(redirectUri, state, cancellationToken);
+    return Ok(ApiResponseFactory.Success(result));
+  }
+
+  [HttpPost("oauth/pages")]
+  public async Task<IActionResult> GetOAuthPages([FromBody] FacebookOAuthPagesRequest request, CancellationToken cancellationToken)
+  {
+    var result = await facebookService.GetOAuthPagesAsync(request, cancellationToken);
+    return Ok(ApiResponseFactory.Success(result));
+  }
+
+  [HttpPost("connections/oauth")]
+  public async Task<IActionResult> ConnectOAuthPage([FromBody] ConnectFacebookOAuthPageRequest request, CancellationToken cancellationToken)
+  {
+    var result = await facebookService.ConnectOAuthPageAsync(request, cancellationToken);
+    return Ok(ApiResponseFactory.Success(result, "Kết nối Facebook Page thành công."));
+  }
+
   [HttpDelete("connections/{pageId}")]
   public async Task<IActionResult> DisconnectPage(string pageId, CancellationToken cancellationToken)
   {

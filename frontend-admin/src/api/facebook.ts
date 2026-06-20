@@ -14,6 +14,28 @@ export interface ConnectFacebookPageRequest {
   pageName?: string
 }
 
+export interface ConnectFacebookOAuthPageRequest {
+  pageId: string
+  connectToken: string
+}
+
+export interface FacebookOAuthPagesRequest {
+  code: string
+  redirectUri: string
+}
+
+export interface FacebookOAuthUrl {
+  url: string
+}
+
+export interface FacebookOAuthPage {
+  pageId: string
+  name: string
+  category: string | null
+  tasks: string[]
+  connectToken: string
+}
+
 export interface FacebookConnection {
   pageId: string
   pageName: string | null
@@ -72,6 +94,21 @@ export const getFacebookConnections = () =>
 
 export const connectFacebookPage = (data: ConnectFacebookPageRequest) =>
   request<FacebookConnection>('/api/admin/facebook/connections', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+
+export const getFacebookOAuthUrl = (redirectUri: string, state: string) =>
+  request<FacebookOAuthUrl>(`/api/admin/facebook/oauth-url?${qs({ redirectUri, state })}`)
+
+export const getFacebookOAuthPages = (data: FacebookOAuthPagesRequest) =>
+  request<FacebookOAuthPage[]>('/api/admin/facebook/oauth/pages', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+
+export const connectFacebookOAuthPage = (data: ConnectFacebookOAuthPageRequest) =>
+  request<FacebookConnection>('/api/admin/facebook/connections/oauth', {
     method: 'POST',
     body: JSON.stringify(data),
   })

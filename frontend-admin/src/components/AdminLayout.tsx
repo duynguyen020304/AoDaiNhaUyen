@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { to: '/admin/promos', icon: Tag, label: 'Mã giảm giá', end: false },
   { to: '/admin/blog', icon: Newspaper, label: 'Bài đăng', end: false },
   { to: '/admin/marketing', icon: Megaphone, label: 'Marketing', end: true },
-  { to: '/admin/facebook', icon: Share2, label: 'Facebook', end: false },
+  { to: '/admin/facebook', icon: Share2, label: 'Fanpage', end: true },
   { to: '/admin/email-queue', icon: Send, label: 'Hàng đợi email', end: false },
   { to: '/admin/users', icon: Users, label: 'Người dùng', end: false },
   { to: '/admin/roles', icon: Shield, label: 'Vai trò', end: false },

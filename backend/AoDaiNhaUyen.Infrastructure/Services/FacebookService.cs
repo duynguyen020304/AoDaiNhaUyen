@@ -24,9 +24,11 @@ public sealed class FacebookService(
   ILogger<FacebookService> logger) : IFacebookService
 {
   private const string PostFields = "id,message,created_time,updated_time,permalink_url,full_picture,is_published,scheduled_publish_time,status_type,type";
+  private const string OAuthScopes = "pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_metadata";
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
   private readonly FacebookApiSettings facebookApiSettings = facebookApiSettings.Value;
   private readonly IDataProtector tokenProtector = dataProtectionProvider.CreateProtector("AoDaiNhaUyen.Facebook.PageAccessToken.v1");
+  private readonly IDataProtector oauthConnectTokenProtector = dataProtectionProvider.CreateProtector("AoDaiNhaUyen.Facebook.OAuthConnectToken.v1");
 
   public async Task<IReadOnlyList<FacebookConnectionDto>> GetConnectionsAsync(CancellationToken cancellationToken = default)
   {
@@ -50,44 +52,80 @@ public sealed class FacebookService(
     var pageId = NormalizeRequired(request.PageId, "pageId");
     var token = NormalizeRequired(request.PageAccessToken, "pageAccessToken");
     var pageInfo = await GetPageInfoWithTokenAsync(pageId, token, cancellationToken);
+    return await UpsertPageConnectionAsync(pageId, request.PageName, pageInfo.Name, token, null, cancellationToken);
+  }
 
-    var connection = await dbContext.FacebookPageConnections
-      .IgnoreQueryFilters()
-      .FirstOrDefaultAsync(x => x.PageId == pageId, cancellationToken);
+  public Task<FacebookOAuthUrlDto> GetOAuthUrlAsync(
+    string redirectUri,
+    string state,
+    CancellationToken cancellationToken = default)
+  {
+    _ = cancellationToken;
+    redirectUri = NormalizeAbsoluteUri(redirectUri, "redirectUri");
+    state = NormalizeRequired(state, "state");
 
-    if (connection is null)
+    var query = new Dictionary<string, string>
     {
-      connection = new FacebookPageConnection
-      {
-        PageId = pageId,
-        EncryptedPageAccessToken = tokenProtector.Protect(token),
-        TokenLast4 = Last4(token),
-        PageName = string.IsNullOrWhiteSpace(request.PageName) ? pageInfo.Name : request.PageName.Trim(),
-        LastValidatedAt = DateTimeOffset.UtcNow
-      };
-      dbContext.FacebookPageConnections.Add(connection);
-    }
-    else
+      ["client_id"] = NormalizeRequired(facebookApiSettings.AppId, "FacebookApi:AppId"),
+      ["redirect_uri"] = redirectUri,
+      ["state"] = state,
+      ["scope"] = OAuthScopes,
+      ["response_type"] = "code"
+    };
+
+    return Task.FromResult(new FacebookOAuthUrlDto(BuildDialogUri("oauth", query).ToString()));
+  }
+
+  public async Task<IReadOnlyList<FacebookOAuthPageDto>> GetOAuthPagesAsync(
+    FacebookOAuthPagesRequest request,
+    CancellationToken cancellationToken = default)
+  {
+    var redirectUri = NormalizeAbsoluteUri(request.RedirectUri, "redirectUri");
+    var code = NormalizeRequired(request.Code, "code");
+    var appAccessToken = $"{NormalizeRequired(facebookApiSettings.AppId, "FacebookApi:AppId")}|{NormalizeRequired(facebookApiSettings.AppSecret, "FacebookApi:AppSecret")}";
+    var shortLivedToken = await ExchangeCodeForUserTokenAsync(code, redirectUri, cancellationToken);
+    var longLivedToken = await ExchangeForLongLivedUserTokenAsync(shortLivedToken, cancellationToken);
+    var pages = await SendGetAsync<FacebookListResponse<FacebookOAuthAccountResponse>>(
+      "me/accounts",
+      longLivedToken,
+      new Dictionary<string, string> { ["fields"] = "id,name,category,access_token,tasks" },
+      cancellationToken);
+
+    var result = new List<FacebookOAuthPageDto>();
+    foreach (var page in pages.Data)
     {
-      connection.EncryptedPageAccessToken = tokenProtector.Protect(token);
-      connection.TokenLast4 = Last4(token);
-      connection.PageName = string.IsNullOrWhiteSpace(request.PageName) ? pageInfo.Name : request.PageName.Trim();
-      connection.LastValidatedAt = DateTimeOffset.UtcNow;
-      connection.IsActive = true;
-      connection.IsDeleted = false;
-      connection.DeletedAt = null;
-      connection.UpdatedAt = DateTime.UtcNow;
+      if (string.IsNullOrWhiteSpace(page.AccessToken)) continue;
+
+      var (pageToken, tokenExpiresAt) = await ValidatePageTokenAsync(page.AccessToken, appAccessToken, cancellationToken);
+      result.Add(new FacebookOAuthPageDto(
+        page.Id,
+        page.Name,
+        page.Category,
+        page.Tasks ?? Array.Empty<string>(),
+        ProtectOAuthConnectToken(page.Id, page.Name, pageToken, tokenExpiresAt)));
     }
 
-    await dbContext.SaveChangesAsync(cancellationToken);
+    return result;
+  }
 
-    return new FacebookConnectionDto(
-      connection.PageId,
-      connection.PageName,
-      connection.TokenLast4,
-      connection.ExpiresAt,
-      connection.LastValidatedAt,
-      connection.IsActive);
+  public async Task<FacebookConnectionDto> ConnectOAuthPageAsync(
+    ConnectFacebookOAuthPageRequest request,
+    CancellationToken cancellationToken = default)
+  {
+    var pageId = NormalizeRequired(request.PageId, "pageId");
+    var payload = UnprotectOAuthConnectToken(request.ConnectToken);
+    if (!string.Equals(payload.PageId, pageId, StringComparison.Ordinal))
+    {
+      throw new FacebookApiException("Token không khớp fanpage đã chọn.", "facebook_oauth_token_mismatch", 400);
+    }
+
+    return await UpsertPageConnectionAsync(
+      payload.PageId,
+      payload.PageName,
+      payload.PageName,
+      payload.PageAccessToken,
+      payload.TokenExpiresAt,
+      cancellationToken);
   }
 
   public async Task DisconnectPageAsync(string pageId, CancellationToken cancellationToken = default)
@@ -266,6 +304,149 @@ public sealed class FacebookService(
     return new FacebookPublishResultDto(response.Id, response.PostId, null);
   }
 
+  private async Task<FacebookConnectionDto> UpsertPageConnectionAsync(
+    string pageId,
+    string? requestedPageName,
+    string fallbackPageName,
+    string token,
+    DateTimeOffset? expiresAt,
+    CancellationToken cancellationToken)
+  {
+    var connection = await dbContext.FacebookPageConnections
+      .IgnoreQueryFilters()
+      .FirstOrDefaultAsync(x => x.PageId == pageId, cancellationToken);
+
+    var pageName = string.IsNullOrWhiteSpace(requestedPageName) ? fallbackPageName : requestedPageName.Trim();
+    if (connection is null)
+    {
+      connection = new FacebookPageConnection
+      {
+        PageId = pageId,
+        EncryptedPageAccessToken = tokenProtector.Protect(token),
+        TokenLast4 = Last4(token),
+        PageName = pageName,
+        ExpiresAt = expiresAt,
+        LastValidatedAt = DateTimeOffset.UtcNow
+      };
+      dbContext.FacebookPageConnections.Add(connection);
+    }
+    else
+    {
+      connection.EncryptedPageAccessToken = tokenProtector.Protect(token);
+      connection.TokenLast4 = Last4(token);
+      connection.PageName = pageName;
+      connection.ExpiresAt = expiresAt;
+      connection.LastValidatedAt = DateTimeOffset.UtcNow;
+      connection.IsActive = true;
+      connection.IsDeleted = false;
+      connection.DeletedAt = null;
+      connection.UpdatedAt = DateTime.UtcNow;
+    }
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+
+    return new FacebookConnectionDto(
+      connection.PageId,
+      connection.PageName,
+      connection.TokenLast4,
+      connection.ExpiresAt,
+      connection.LastValidatedAt,
+      connection.IsActive);
+  }
+
+  private async Task<string> ExchangeCodeForUserTokenAsync(
+    string code,
+    string redirectUri,
+    CancellationToken cancellationToken)
+  {
+    var response = await SendGetWithoutAccessTokenAsync<FacebookOAuthAccessTokenResponse>(
+      "oauth/access_token",
+      new Dictionary<string, string>
+      {
+        ["client_id"] = NormalizeRequired(facebookApiSettings.AppId, "FacebookApi:AppId"),
+        ["client_secret"] = NormalizeRequired(facebookApiSettings.AppSecret, "FacebookApi:AppSecret"),
+        ["redirect_uri"] = redirectUri,
+        ["code"] = code
+      },
+      cancellationToken);
+
+    return NormalizeRequired(response.AccessToken, "access_token");
+  }
+
+  private async Task<string> ExchangeForLongLivedUserTokenAsync(string shortLivedToken, CancellationToken cancellationToken)
+  {
+    var response = await SendGetWithoutAccessTokenAsync<FacebookOAuthAccessTokenResponse>(
+      "oauth/access_token",
+      new Dictionary<string, string>
+      {
+        ["grant_type"] = "fb_exchange_token",
+        ["client_id"] = NormalizeRequired(facebookApiSettings.AppId, "FacebookApi:AppId"),
+        ["client_secret"] = NormalizeRequired(facebookApiSettings.AppSecret, "FacebookApi:AppSecret"),
+        ["fb_exchange_token"] = shortLivedToken
+      },
+      cancellationToken);
+
+    return NormalizeRequired(response.AccessToken, "access_token");
+  }
+
+  private async Task<(string Token, DateTimeOffset? ExpiresAt)> ValidatePageTokenAsync(
+    string pageAccessToken,
+    string appAccessToken,
+    CancellationToken cancellationToken)
+  {
+    var debug = await SendGetAsync<FacebookDebugTokenEnvelope>(
+      "debug_token",
+      appAccessToken,
+      new Dictionary<string, string> { ["input_token"] = pageAccessToken },
+      cancellationToken);
+
+    if (debug.Data?.IsValid is false)
+    {
+      throw new FacebookApiException("Page Access Token không hợp lệ.", "facebook_invalid_page_token", 400);
+    }
+
+    var expiresAt = debug.Data?.ExpiresAt is > 0
+      ? DateTimeOffset.FromUnixTimeSeconds(debug.Data.ExpiresAt.Value)
+      : (DateTimeOffset?)null;
+
+    return (pageAccessToken, expiresAt);
+  }
+
+  private string ProtectOAuthConnectToken(string pageId, string pageName, string pageAccessToken, DateTimeOffset? tokenExpiresAt)
+  {
+    var payload = new FacebookOAuthConnectTokenPayload(
+      pageId,
+      pageName,
+      pageAccessToken,
+      tokenExpiresAt,
+      DateTimeOffset.UtcNow.AddMinutes(15));
+    return oauthConnectTokenProtector.Protect(JsonSerializer.Serialize(payload, JsonOptions));
+  }
+
+  private FacebookOAuthConnectTokenPayload UnprotectOAuthConnectToken(string connectToken)
+  {
+    try
+    {
+      var json = oauthConnectTokenProtector.Unprotect(NormalizeRequired(connectToken, "connectToken"));
+      var payload = JsonSerializer.Deserialize<FacebookOAuthConnectTokenPayload>(json, JsonOptions)
+        ?? throw new FacebookApiException("Token kết nối Facebook không hợp lệ.", "facebook_oauth_token_invalid", 400);
+      if (payload.ExpiresAt <= DateTimeOffset.UtcNow)
+      {
+        throw new FacebookApiException("Token kết nối Facebook đã hết hạn. Vui lòng lấy lại danh sách fanpage.", "facebook_oauth_token_expired", 400);
+      }
+
+      return payload;
+    }
+    catch (FacebookApiException)
+    {
+      throw;
+    }
+    catch (Exception ex)
+    {
+      throw new FacebookApiException("Token kết nối Facebook không hợp lệ.", "facebook_oauth_token_invalid", 400, innerException: ex);
+    }
+  }
+
   private async Task<FacebookPageInfoDto> GetPageInfoWithTokenAsync(string pageId, string token, CancellationToken cancellationToken)
   {
     var response = await SendGetAsync<FacebookPageInfoResponse>(
@@ -315,6 +496,15 @@ public sealed class FacebookService(
     }
   }
 
+  private async Task<T> SendGetWithoutAccessTokenAsync<T>(
+    string path,
+    Dictionary<string, string> query,
+    CancellationToken cancellationToken)
+  {
+    using var request = new HttpRequestMessage(HttpMethod.Get, BuildUri(path, null, query));
+    return await SendAsync<T>(request, cancellationToken);
+  }
+
   private async Task<T> SendGetAsync<T>(
     string path,
     string accessToken,
@@ -354,15 +544,25 @@ public sealed class FacebookService(
       ?? throw new FacebookApiException("Facebook trả về dữ liệu rỗng.", "facebook_empty_response", (int)response.StatusCode);
   }
 
-  private Uri BuildUri(string path, string accessToken, Dictionary<string, string>? query)
+  private Uri BuildUri(string path, string? accessToken, Dictionary<string, string>? query)
   {
     var version = NormalizeVersion(facebookApiSettings.GraphApiVersion);
     var builder = new UriBuilder($"https://graph.facebook.com/{version}/{path.TrimStart('/')}");
-    var parameters = new Dictionary<string, string>(query ?? new Dictionary<string, string>())
+    var parameters = new Dictionary<string, string>(query ?? new Dictionary<string, string>());
+    if (!string.IsNullOrWhiteSpace(accessToken))
     {
-      ["access_token"] = accessToken
-    };
+      parameters["access_token"] = accessToken;
+    }
+
     builder.Query = string.Join("&", parameters.Select(kvp => $"{WebUtility.UrlEncode(kvp.Key)}={WebUtility.UrlEncode(kvp.Value)}"));
+    return builder.Uri;
+  }
+
+  private Uri BuildDialogUri(string path, Dictionary<string, string> query)
+  {
+    var version = NormalizeVersion(facebookApiSettings.GraphApiVersion);
+    var builder = new UriBuilder($"https://www.facebook.com/{version}/dialog/{path.TrimStart('/')}");
+    builder.Query = string.Join("&", query.Select(kvp => $"{WebUtility.UrlEncode(kvp.Key)}={WebUtility.UrlEncode(kvp.Value)}"));
     return builder.Uri;
   }
 
@@ -437,6 +637,17 @@ public sealed class FacebookService(
     return value.Trim();
   }
 
+  private static string NormalizeAbsoluteUri(string? value, string field)
+  {
+    var uri = NormalizeRequired(value, field);
+    if (!Uri.TryCreate(uri, UriKind.Absolute, out var parsed) || parsed.Scheme is not ("http" or "https"))
+    {
+      throw new FacebookApiException($"{field} không hợp lệ.", "facebook_validation_error", 400);
+    }
+
+    return parsed.ToString();
+  }
+
   private static string NormalizeVersion(string version)
   {
     if (string.IsNullOrWhiteSpace(version)) return "v25.0";
@@ -448,6 +659,31 @@ public sealed class FacebookService(
   {
     return value.Length <= 4 ? value : value[^4..];
   }
+
+  private sealed record FacebookOAuthConnectTokenPayload(
+    string PageId,
+    string PageName,
+    string PageAccessToken,
+    DateTimeOffset? TokenExpiresAt,
+    DateTimeOffset ExpiresAt);
+
+  private sealed record FacebookOAuthAccessTokenResponse(
+    [property: JsonPropertyName("access_token")] string AccessToken,
+    [property: JsonPropertyName("token_type")] string? TokenType,
+    [property: JsonPropertyName("expires_in")] int? ExpiresIn);
+
+  private sealed record FacebookOAuthAccountResponse(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("category")] string? Category,
+    [property: JsonPropertyName("access_token")] string? AccessToken,
+    [property: JsonPropertyName("tasks")] IReadOnlyList<string>? Tasks);
+
+  private sealed record FacebookDebugTokenEnvelope([property: JsonPropertyName("data")] FacebookDebugTokenData? Data);
+
+  private sealed record FacebookDebugTokenData(
+    [property: JsonPropertyName("is_valid")] bool IsValid,
+    [property: JsonPropertyName("expires_at")] long? ExpiresAt);
 
   private sealed record FacebookPublishResponse(
     [property: JsonPropertyName("id")] string Id,

@@ -23,6 +23,14 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
           facebookApiException.ErrorCode,
           facebookApiException.StatusCode);
       }
+      else if (ex is ZernioApiException zernioApiException)
+      {
+        logger.LogWarning(
+          zernioApiException,
+          "Zernio API error while processing request. Code={ErrorCode} Status={StatusCode}",
+          zernioApiException.ErrorCode,
+          zernioApiException.StatusCode);
+      }
       else
       {
         logger.LogError(ex, "Unhandled exception while processing request");
@@ -34,28 +42,43 @@ public sealed class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Ex
         return;
       }
 
-      var statusCode = ex is FacebookApiException facebookException
-        ? Math.Clamp(facebookException.StatusCode ?? (int)HttpStatusCode.BadGateway, 400, 599)
-        : (int)HttpStatusCode.InternalServerError;
+      var statusCode = ex switch
+      {
+        FacebookApiException facebookException => Math.Clamp(facebookException.StatusCode ?? (int)HttpStatusCode.BadGateway, 400, 599),
+        ZernioApiException zernioException => Math.Clamp(zernioException.StatusCode ?? (int)HttpStatusCode.BadGateway, 400, 599),
+        _ => (int)HttpStatusCode.InternalServerError
+      };
 
       context.Response.StatusCode = statusCode;
       context.Response.ContentType = "application/json";
 
-      if (ex is FacebookApiException withRetryAfter && withRetryAfter.RetryAfter.HasValue)
+      var retryAfter = ex switch
       {
-        context.Response.Headers.RetryAfter = Math.Ceiling(withRetryAfter.RetryAfter.Value.TotalSeconds).ToString();
+        FacebookApiException facebookRetry when facebookRetry.RetryAfter.HasValue => facebookRetry.RetryAfter,
+        ZernioApiException zernioRetry when zernioRetry.RetryAfter.HasValue => zernioRetry.RetryAfter,
+        _ => null
+      };
+      if (retryAfter.HasValue)
+      {
+        context.Response.Headers.RetryAfter = Math.Ceiling(retryAfter.Value.TotalSeconds).ToString();
       }
 
       var payload = JsonSerializer.Serialize(
-        ex is FacebookApiException facebookError
-          ? ApiResponseFactory.Failure(
+        ex switch
+        {
+          FacebookApiException facebookError => ApiResponseFactory.Failure(
             "Lỗi Facebook",
             facebookError.ErrorCode,
-            facebookError.Message)
-          : ApiResponseFactory.Failure(
+            facebookError.Message),
+          ZernioApiException zernioError => ApiResponseFactory.Failure(
+            "Lỗi Zernio",
+            zernioError.ErrorCode,
+            zernioError.Message),
+          _ => ApiResponseFactory.Failure(
             "Có lỗi xảy ra",
             "internal_server_error",
-            "An unexpected error occurred."),
+            "An unexpected error occurred.")
+        },
         new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
       await context.Response.WriteAsync(payload);
