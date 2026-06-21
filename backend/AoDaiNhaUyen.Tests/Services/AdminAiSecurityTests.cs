@@ -23,6 +23,24 @@ public sealed class AdminAiSecurityTests
   private static readonly Guid ProductId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
   [Fact]
+  public async Task StreamChatAsync_InjectsRecentShopEventContext()
+  {
+    var llm = new ScriptedLlmProvider(new LlmChunk("text", "done"));
+    var service = CreateService(
+      llm,
+      eventContext: new FakeAdminShopEventContextService("NGỮ CẢNH SỰ KIỆN LIVE CỬA HÀNG: checkout_completed Order/AD-TEST"));
+
+    await service.StreamChatAsync(new AdminAiChatRequest("Có gì mới?", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    var firstHistory = Assert.Single(llm.HistorySnapshots);
+    Assert.Contains(firstHistory, message =>
+      message.Role == AdminLlmRole.User &&
+      message.Content.Contains("TRUSTED_APP_CONTEXT_BEGIN", StringComparison.Ordinal) &&
+      message.Content.Contains("checkout_completed", StringComparison.Ordinal) &&
+      message.Content.Contains("TRUSTED_APP_CONTEXT_END", StringComparison.Ordinal));
+  }
+
+  [Fact]
   public async Task HighRiskTool_IsNotExecuted_BeforeConfirmation()
   {
     var llm = new ScriptedLlmProvider(
@@ -291,7 +309,8 @@ public sealed class AdminAiSecurityTests
     IAdminLlmProvider llm,
     FakeProductService? products = null,
     IAutoModeStore? autoMode = null,
-    FakeMarketingCampaignService? marketing = null)
+    FakeMarketingCampaignService? marketing = null,
+    IAdminShopEventContextService? eventContext = null)
   {
     return new AdminAgentService(
       llm,
@@ -312,7 +331,14 @@ public sealed class AdminAiSecurityTests
       NullLogger<AdminAgentService>.Instance,
       new PendingActionStore(),
       new ConversationStore(),
-      new FakeAdminChatPersistence());
+      new FakeAdminChatPersistence(),
+      eventContext ?? new FakeAdminShopEventContextService());
+  }
+
+  private sealed class FakeAdminShopEventContextService(string? context = null) : IAdminShopEventContextService
+  {
+    public Task<string?> GetRecentContextAsync(CancellationToken cancellationToken = default)
+      => Task.FromResult(context);
   }
 
   private sealed class FakeAdminChatPersistence : IAdminChatPersistence

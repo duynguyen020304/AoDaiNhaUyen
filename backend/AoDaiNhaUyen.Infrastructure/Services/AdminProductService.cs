@@ -157,6 +157,56 @@ public sealed class AdminProductService(
         return (await GetByIdAsync(product.Id, cancellationToken))!;
     }
 
+    public async Task<AdminProductDetailResponse?> CreateVariantAsync(Guid productId, CreateVariantRequest request, CancellationToken cancellationToken = default)
+    {
+        var product = await dbContext.Products
+            .Include(p => p.Variants)
+            .FirstOrDefaultAsync(p => p.Id == productId, cancellationToken);
+
+        if (product is null) return null;
+
+        var now = DateTime.UtcNow;
+        var isDefault = request.IsDefault || product.Variants.Count == 0;
+        var variant = new Domain.Entities.ProductVariant
+        {
+            Id = Guid.NewGuid(),
+            ProductId = productId,
+            Product = product,
+            Sku = request.Sku.Trim(),
+            VariantName = string.IsNullOrWhiteSpace(request.VariantName) ? null : request.VariantName.Trim(),
+            Size = string.IsNullOrWhiteSpace(request.Size) ? null : request.Size.Trim(),
+            Color = string.IsNullOrWhiteSpace(request.Color) ? null : request.Color.Trim(),
+            Price = request.Price,
+            SalePrice = request.SalePrice,
+            StockQty = request.StockQty,
+            IsDefault = isDefault,
+            Status = request.Status.Trim().ToLowerInvariant(),
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        if (isDefault)
+        {
+            await dbContext.ProductVariants
+                .Where(v => v.ProductId == productId && v.IsDefault)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(v => v.IsDefault, false), cancellationToken);
+        }
+
+        product.Variants.Add(variant);
+        product.UpdatedAt = now;
+
+        await hermesEvents.EnqueueAdminInventoryEventAsync(
+            "product_variant_created",
+            variant.Id,
+            new { productId, variantId = variant.Id, variant.Sku, variant.Size, variant.Color, variant.Price, variant.SalePrice, variant.StockQty, variant.Status, variant.IsDefault },
+            $"product_variant_created:Inventory:{variant.Id:N}:{variant.CreatedAt.Ticks}",
+            cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Admin created variant {VariantId} for product {ProductId}", variant.Id, productId);
+        return await GetByIdAsync(productId, cancellationToken);
+    }
+
     public async Task<AdminProductDetailResponse?> UpdateVariantAsync(Guid productId, Guid variantId, UpdateVariantRequest request, CancellationToken cancellationToken = default)
     {
         var variant = await dbContext.ProductVariants

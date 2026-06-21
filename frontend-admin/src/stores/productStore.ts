@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { AdminProductListItem, AdminProductDetail, CreateProductRequest, UpdateProductRequest, UpdateVariantRequest } from '@/types/admin'
+import type { AdminProductListItem, AdminProductDetail, CreateProductRequest, UpdateProductRequest, CreateVariantRequest, UpdateVariantRequest } from '@/types/admin'
 import * as adminApi from '@/api/admin'
 import { invalidateAdminDashboardQueries } from '@/queries/invalidateAdminQueries'
 
@@ -18,6 +18,7 @@ interface ProductState {
   getProduct: (id: string) => Promise<AdminProductDetail>
   createProduct: (data: CreateProductRequest) => Promise<void>
   updateProduct: (id: string, data: UpdateProductRequest) => Promise<void>
+  createVariant: (productId: string, data: CreateVariantRequest) => Promise<AdminProductDetail>
   updateVariant: (productId: string, variantId: string, data: UpdateVariantRequest) => Promise<AdminProductDetail>
   updateVariantStock: (productId: string, variantId: string, stockQty: number) => Promise<AdminProductDetail>
   deleteProduct: (id: string) => Promise<void>
@@ -98,6 +99,21 @@ export const useProductStore = create<ProductState>((set, get) => ({
       invalidateAdminDashboardQueries()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể cập nhật sản phẩm.'
+      set({ error: message })
+      throw err
+    }
+  },
+
+
+  createVariant: async (productId: string, data: CreateVariantRequest) => {
+    set({ error: null })
+    try {
+      const product = await adminApi.createVariant(productId, data)
+      await get().fetchProducts()
+      invalidateAdminDashboardQueries()
+      return product
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể tạo biến thể.'
       set({ error: message })
       throw err
     }

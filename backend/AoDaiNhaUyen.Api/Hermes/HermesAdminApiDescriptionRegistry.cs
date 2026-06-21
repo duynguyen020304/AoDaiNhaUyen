@@ -102,6 +102,9 @@ public sealed class HermesAdminApiDescriptionRegistry
     Patch("/api/admin/reviews/{id}/visibility", "Ẩn/hiển thị đánh giá cho moderation.", "AdminReviewActionResult", Body([Field("isVisible", "bool", true, "true để hiển thị, false để ẩn")], new { isVisible = true }), path: [Id("id", "ID review")]),
     Delete("/api/admin/reviews/{id}", "Xóa đánh giá/bình luận khỏi hệ thống.", "AdminReviewActionResult", path: [Id("id", "ID review")]),
 
+    // Social
+    Get("/api/admin/social/analytics", "Lấy thống kê social đã kết nối qua Zernio. Dùng cho event social_metrics_snapshot_created/social_engagement_anomaly; không chứa token, PII người bình luận hay nội dung tin nhắn.", "SocialAnalyticsDto", query: [Param("platform", "string", false, "facebook/instagram/tiktok, mặc định facebook"), Param("fromDate", "date", false, "Ngày bắt đầu yyyy-MM-dd"), Param("toDate", "date", false, "Ngày kết thúc yyyy-MM-dd")], notes: ["Risk: medium vì là KPI marketing nội bộ.", "Không công khai raw impressions/clicks/CTR/spend cho customer chat.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
+
     // LLM logs
     Get("/api/admin/llm-logs", "Tìm kiếm nhật ký LLM.", "Paginated LlmAuditLogListItemDto[]", query: [Param("search", "string", false, "Từ khóa"), Param("provider", "string", false, "Nhà cung cấp"), Param("model", "string", false, "Model"), Param("from", "datetime", false, "Từ ngày"), Param("to", "datetime", false, "Đến ngày"), Param("page", "int", false, "Trang"), Param("pageSize", "int", false, "Kích thước trang")]),
     Get("/api/admin/llm-logs/stats", "Thống kê nhật ký LLM.", "LlmAuditLogStatsDto", query: [Param("from", "datetime", false, "Từ ngày"), Param("to", "datetime", false, "Đến ngày")]),
@@ -186,8 +189,8 @@ public sealed class HermesAdminApiDescriptionRegistry
     Get("/api/admin/ai/store-health", "Lấy điểm sức khỏe cửa hàng.", "StoreHealthScoreDto")
   ];
 
-  private static HermesAdminApiDescription Get(string route, string purpose, string dataShape, IReadOnlyList<HermesParamDescription>? path = null, IReadOnlyList<HermesParamDescription>? query = null) =>
-    Desc("GET", route, purpose, dataShape, null, path, query);
+  private static HermesAdminApiDescription Get(string route, string purpose, string dataShape, IReadOnlyList<HermesParamDescription>? path = null, IReadOnlyList<HermesParamDescription>? query = null, IReadOnlyList<string>? notes = null) =>
+    Desc("GET", route, purpose, dataShape, null, path, query, notes);
 
   private static HermesAdminApiDescription Post(string route, string purpose, string dataShape, HermesBodyDescription? body = null, IReadOnlyList<HermesParamDescription>? path = null, IReadOnlyList<string>? notes = null) =>
     Desc("POST", route, purpose, dataShape, body, path, null, notes);

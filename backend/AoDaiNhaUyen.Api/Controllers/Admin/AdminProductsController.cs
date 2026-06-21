@@ -91,6 +91,30 @@ public sealed class AdminProductsController(
         return Ok(ApiResponseFactory.Success(product, "Cập nhật sản phẩm thành công."));
     }
 
+    /// <summary>Create a product variant.</summary>
+    [HttpPost("{productId:guid}/variants")]
+    public async Task<ActionResult<ApiResponse<AdminProductDetailResponse>>> CreateVariant(
+        Guid productId,
+        [FromBody] CreateVariantRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var product = await adminProductService.CreateVariantAsync(productId, request, cancellationToken);
+
+        if (product is null)
+        {
+            return NotFound(ApiResponseFactory.Failure(
+                "Không tìm thấy sản phẩm.",
+                "not_found",
+                "Sản phẩm không tồn tại hoặc đã bị xóa."));
+        }
+
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = productId },
+            ApiResponseFactory.Success(product, "Tạo biến thể thành công."));
+    }
+
     /// <summary>Update a product variant.</summary>
     [HttpPut("{productId:guid}/variants/{variantId:guid}")]
     public async Task<ActionResult<ApiResponse<AdminProductDetailResponse>>> UpdateVariant(
