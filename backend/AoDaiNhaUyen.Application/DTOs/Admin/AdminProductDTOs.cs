@@ -133,6 +133,36 @@ public sealed record UpdateProductRequest
     public bool IsFeatured { get; init; }
 }
 
+/// <summary>Payload for updating product variant details.</summary>
+public sealed record UpdateVariantRequest
+{
+    [Required, MaxLength(120)]
+    public required string Sku { get; init; }
+
+    [MaxLength(120)]
+    public string? VariantName { get; init; }
+
+    [MaxLength(80)]
+    public string? Size { get; init; }
+
+    [MaxLength(80)]
+    public string? Color { get; init; }
+
+    [Range(0, double.MaxValue)]
+    public required decimal Price { get; init; }
+
+    [Range(0, double.MaxValue)]
+    public decimal? SalePrice { get; init; }
+
+    [Range(0, int.MaxValue)]
+    public required int StockQty { get; init; }
+
+    public bool IsDefault { get; init; }
+
+    [Required]
+    public required string Status { get; init; }
+}
+
 /// <summary>Payload for updating product variant stock.</summary>
 public sealed record UpdateVariantStockRequest
 {

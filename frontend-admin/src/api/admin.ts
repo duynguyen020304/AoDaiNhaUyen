@@ -14,6 +14,7 @@ import type {
   UpdateUserStatusRequest,
   CreateProductRequest,
   UpdateProductRequest,
+  UpdateVariantRequest,
   UpdateVariantStockRequest,
   CreateCategoryRequest,
   UpdateCategoryRequest,
@@ -137,6 +138,13 @@ export async function createProduct(data: CreateProductRequest): Promise<AdminPr
 
 export async function updateProduct(id: string, data: UpdateProductRequest): Promise<AdminProductDetail> {
   return request<AdminProductDetail>(`/api/admin/products/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateVariant(productId: string, variantId: string, data: UpdateVariantRequest): Promise<AdminProductDetail> {
+  return request<AdminProductDetail>(`/api/admin/products/${productId}/variants/${variantId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })

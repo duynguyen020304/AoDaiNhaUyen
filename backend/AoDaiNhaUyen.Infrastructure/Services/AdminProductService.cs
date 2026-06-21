@@ -157,6 +157,45 @@ public sealed class AdminProductService(
         return (await GetByIdAsync(product.Id, cancellationToken))!;
     }
 
+    public async Task<AdminProductDetailResponse?> UpdateVariantAsync(Guid productId, Guid variantId, UpdateVariantRequest request, CancellationToken cancellationToken = default)
+    {
+        var variant = await dbContext.ProductVariants
+            .Include(v => v.Product)
+            .FirstOrDefaultAsync(v => v.Id == variantId && v.ProductId == productId, cancellationToken);
+
+        if (variant is null) return null;
+
+        variant.Sku = request.Sku.Trim();
+        variant.VariantName = string.IsNullOrWhiteSpace(request.VariantName) ? null : request.VariantName.Trim();
+        variant.Size = string.IsNullOrWhiteSpace(request.Size) ? null : request.Size.Trim();
+        variant.Color = string.IsNullOrWhiteSpace(request.Color) ? null : request.Color.Trim();
+        variant.Price = request.Price;
+        variant.SalePrice = request.SalePrice;
+        variant.StockQty = request.StockQty;
+        variant.IsDefault = request.IsDefault;
+        variant.Status = request.Status.Trim().ToLowerInvariant();
+        variant.UpdatedAt = DateTime.UtcNow;
+        variant.Product.UpdatedAt = DateTime.UtcNow;
+
+        if (variant.IsDefault)
+        {
+            await dbContext.ProductVariants
+                .Where(v => v.ProductId == productId && v.Id != variantId && v.IsDefault)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(v => v.IsDefault, false), cancellationToken);
+        }
+
+        await hermesEvents.EnqueueAdminInventoryEventAsync(
+            "product_variant_updated",
+            variant.Id,
+            new { productId, variantId, variant.Sku, variant.Size, variant.Color, variant.Price, variant.SalePrice, variant.StockQty, variant.Status, variant.IsDefault },
+            $"product_variant_updated:Inventory:{variant.Id:N}:{variant.UpdatedAt.Ticks}",
+            cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Admin updated variant {VariantId} for product {ProductId}", variantId, productId);
+        return await GetByIdAsync(productId, cancellationToken);
+    }
+
     public async Task<AdminProductDetailResponse?> UpdateVariantStockAsync(Guid productId, Guid variantId, int stockQty, CancellationToken cancellationToken = default)
     {
         var variant = await dbContext.ProductVariants

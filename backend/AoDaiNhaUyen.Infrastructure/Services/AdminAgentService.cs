@@ -24,6 +24,8 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IAdminReviewService _reviews;
   private readonly IAdminPromoService _promos;
   private readonly IBlogAiDraftService _blogAiDrafts;
+  private readonly IBlogPostService _blogPosts;
+  private readonly IAdminMarketingCampaignService _marketingCampaigns;
   private readonly IAutoModeStore _autoMode;
   private readonly ILogger<AdminAgentService> _logger;
 
@@ -49,6 +51,8 @@ public sealed class AdminAgentService : IAdminAgentService
     IAdminReviewService reviews,
     IAdminPromoService promos,
     IBlogAiDraftService blogAiDrafts,
+    IBlogPostService blogPosts,
+    IAdminMarketingCampaignService marketingCampaigns,
     IAutoModeStore autoMode,
     ILogger<AdminAgentService> logger,
     IPendingActionStore pendingStore,
@@ -67,6 +71,8 @@ public sealed class AdminAgentService : IAdminAgentService
     _reviews = reviews;
     _promos = promos;
     _blogAiDrafts = blogAiDrafts;
+    _blogPosts = blogPosts;
+    _marketingCampaigns = marketingCampaigns;
     _autoMode = autoMode;
     _logger = logger;
     _pendingStore = pendingStore;
@@ -109,19 +115,29 @@ public sealed class AdminAgentService : IAdminAgentService
         ("categoryId", O("string", "ID danh mục (GUID) (tùy chọn)")),
         ("productType", O("string", "Loại: ao_dai hoặc phu_kien. Mặc định: ao_dai")))),
 
-    T("update_product", "Cập nhật sản phẩm hiện có.",
+    T("update_product", "Cập nhật sản phẩm hiện có bằng patch một phần, giữ nguyên trường không gửi.",
       P(
         ("id", O("string", "ID sản phẩm (GUID)")),
         ("name", O("string", "Tên mới (tùy chọn)")),
-        ("description", O("string", "Mô tả mới (tùy chọn)")))),
+        ("slug", O("string", "Slug mới (tùy chọn)")),
+        ("description", O("string", "Mô tả mới (tùy chọn)")),
+        ("shortDescription", O("string", "Mô tả ngắn (tùy chọn)")),
+        ("material", O("string", "Chất liệu (tùy chọn)")),
+        ("brand", O("string", "Thương hiệu (tùy chọn)")),
+        ("origin", O("string", "Xuất xứ (tùy chọn)")),
+        ("careInstruction", O("string", "Hướng dẫn bảo quản (tùy chọn)")),
+        ("categoryId", O("string", "ID danh mục (GUID, tùy chọn)")),
+        ("productType", O("string", "Loại sản phẩm: ao_dai hoặc phu_kien (tùy chọn)")),
+        ("status", O("string", "Trạng thái: draft, active, inactive hoặc out_of_stock (tùy chọn)")),
+        ("isFeatured", O("boolean", "Đánh dấu nổi bật (tùy chọn)")))),
 
     T("delete_product", "Xóa mềm một sản phẩm.",
       P(("id", O("string", "ID sản phẩm (GUID)")))),
 
-    T("toggle_product_status", "Bật/tắt trạng thái sản phẩm (active/inactive).",
+    T("toggle_product_status", "Cập nhật trạng thái sản phẩm (draft/active/inactive/out_of_stock).",
       P(
         ("id", O("string", "ID sản phẩm (GUID)")),
-        ("status", O("string", "Trạng thái mới: active hoặc inactive")))),
+        ("status", O("string", "Trạng thái mới: draft, active, inactive hoặc out_of_stock")))),
 
     // Categories
     T("list_categories", "Liệt kê tất cả danh mục. Dùng trước khi tạo danh mục hoặc tạo sản phẩm cần categoryId.", P()),
@@ -160,6 +176,18 @@ public sealed class AdminAgentService : IAdminAgentService
         ("id", O("string", "ID người dùng (GUID)")),
         ("role", O("string", "Vai trò mới: admin hoặc customer")))),
 
+    T("update_user_profile", "Cập nhật thông tin người dùng: họ tên, email, số điện thoại.",
+      P(
+        ("id", O("string", "ID người dùng (GUID)")),
+        ("fullName", O("string", "Họ tên mới (tùy chọn)")),
+        ("email", O("string", "Email mới (tùy chọn)")),
+        ("phone", O("string", "SĐT mới (tùy chọn)")))),
+
+    T("create_role", "Tạo vai trò mới.",
+      P(
+        ("name", O("string", "Tên vai trò mới")),
+        ("description", O("string", "Mô tả vai trò (tùy chọn)")))),
+
     // Orders
     T("list_orders", "Liệt kê đơn hàng theo trạng thái/giới hạn. Nếu admin hỏi một đơn cụ thể, tìm ID rồi dùng get_order để xem chi tiết.",
       P(
@@ -182,6 +210,9 @@ public sealed class AdminAgentService : IAdminAgentService
         ("orderId", O("string", "ID đơn hàng (GUID)")),
         ("carrier", O("string", "Tên đơn vị vận chuyển (tùy chọn)")),
         ("trackingNumber", O("string", "Mã vận đơn (tùy chọn)")))),
+
+    T("complete_order", "Chuyển đơn đang giao (shipping) sang hoàn thành (completed).",
+      P(("orderId", O("string", "ID đơn hàng (GUID)")))),
 
     T("cancel_order", "Hủy đơn hàng và hoàn stock.",
       P(("orderId", O("string", "ID đơn hàng (GUID)")))),
@@ -234,6 +265,36 @@ public sealed class AdminAgentService : IAdminAgentService
         ("length", O("string", "short, standard, long")),
         ("includeFaq", O("boolean", "Có thêm FAQ hay không")),
         ("notes", O("string", "Ghi chú bổ sung từ admin")))),
+
+    T("save_blog_draft", "Tự động lưu bài viết ở trạng thái nháp.",
+      P(
+        ("title", O("string", "Tiêu đề bài viết")),
+        ("excerpt", O("string", "Tóm tắt")),
+        ("content", O("string", "JSON blocks hoặc nội dung text")),
+        ("featuredImage", O("string", "Ảnh nổi bật (tùy chọn)")),
+        ("tags", O("string", "Tags phân tách bằng dấu phẩy (tùy chọn)")))),
+
+    T("publish_blog_post", "Xuất bản bài viết: cập nhật bài hiện có nếu có id, hoặc tạo mới rồi xuất bản.",
+      P(
+        ("id", O("string", "ID bài viết (GUID, tùy chọn)")),
+        ("title", O("string", "Tiêu đề khi tạo mới")),
+        ("excerpt", O("string", "Tóm tắt khi tạo mới")),
+        ("content", O("string", "JSON blocks hoặc nội dung text khi tạo mới")),
+        ("featuredImage", O("string", "Ảnh nổi bật (tùy chọn)")),
+        ("tags", O("string", "Tags phân tách bằng dấu phẩy (tùy chọn)")))),
+
+    T("list_marketing_options", "Liệt kê nội dung marketing có thể gắn vào email.", P()),
+
+    T("send_marketing_campaign", "Tạo/gửi chiến dịch email marketing.",
+      P(
+        ("recipientMode", O("string", "all_active, selected, hoặc manual")),
+        ("manualEmails", O("string", "Email thủ công phân tách dấu phẩy")),
+        ("templateKey", O("string", "Key mẫu email")),
+        ("subject", O("string", "Tiêu đề email")),
+        ("intro", O("string", "Đoạn mở đầu")),
+        ("bodyHtml", O("string", "Nội dung HTML")),
+        ("ctaLabel", O("string", "Nhãn CTA (tùy chọn)")),
+        ("ctaUrl", O("string", "URL CTA (tùy chọn)")))),
 
     // Autonomy Mode
     T("toggle_autonomy", "Bật/tắt chế độ tự động cho AI. Khi bật, các hành động Medium risk được tự động thực hiện.",
@@ -749,7 +810,7 @@ public sealed class AdminAgentService : IAdminAgentService
         "update_product" => await UpdateProduct(args, ct),
         "delete_product" => await DeleteProduct(RequiredGuid(args, "id"), ct),
         "toggle_product_status" => await ToggleProductStatus(
-          RequiredGuid(args, "id"), RequiredEnum(args, "status", "active", "inactive"), ct),
+          RequiredGuid(args, "id"), RequiredEnum(args, "status", "draft", "active", "inactive", "out_of_stock"), ct),
 
         // Categories
         "list_categories" => await ListCategories(ct),
@@ -763,9 +824,11 @@ public sealed class AdminAgentService : IAdminAgentService
           GetStrArg(args, "search"), ct),
         "get_user" => await GetUser(RequiredGuid(args, "id"), ct),
         "update_user_status" => await UpdateUserStatus(
-          RequiredGuid(args, "id"), RequiredEnum(args, "status", "active", "inactive"), ct),
+          RequiredGuid(args, "id"), RequiredEnum(args, "status", "active", "inactive", "blocked"), adminUserId, ct),
         "update_user_role" => await UpdateUserRole(
-          RequiredGuid(args, "id"), RequiredEnum(args, "role", "admin", "customer"), ct),
+          RequiredGuid(args, "id"), RequiredString(args, "role", 80), adminUserId, ct),
+        "update_user_profile" => await UpdateUserProfile(args, ct),
+        "create_role" => await CreateRole(args, ct),
 
         // Orders
         "list_orders" => await ListOrders(OptionalEnum(args, "status", "pending", "confirmed", "processing", "shipping", "completed", "cancelled"), ClampInt(GetIntArg(args, "limit", 10), 1, 50), ct),
@@ -773,6 +836,7 @@ public sealed class AdminAgentService : IAdminAgentService
         "confirm_order" => await UpdateOrderStatus(RequiredGuid(args, "orderId"), "confirmed", ct),
         "start_processing_order" => await UpdateOrderStatus(RequiredGuid(args, "orderId"), "processing", ct),
         "ship_order" => await ShipOrder(args, ct),
+        "complete_order" => await UpdateOrderStatus(RequiredGuid(args, "orderId"), "completed", ct),
         "cancel_order" => await CancelOrder(RequiredGuid(args, "orderId"), ct),
 
         // Inventory & Store Health
@@ -799,6 +863,10 @@ public sealed class AdminAgentService : IAdminAgentService
 
         // Blog content
         "generate_blog_draft" => await GenerateBlogDraft(args, ct),
+        "save_blog_draft" => await SaveBlogPost(args, BlogPostStatus.Draft, ct),
+        "publish_blog_post" => await PublishBlogPost(args, ct),
+        "list_marketing_options" => await ListMarketingOptions(ct),
+        "send_marketing_campaign" => await SendMarketingCampaign(args, ct),
 
         // Autonomy Mode
         "toggle_autonomy" => ToggleAutonomy(adminUserId, args),
@@ -1085,21 +1153,37 @@ public sealed class AdminAgentService : IAdminAgentService
     if (existing is null) return "❌ Không tìm thấy sản phẩm.";
 
     var name = GetOptionalString(args, "name", 200) ?? existing.Name;
-    var description = GetOptionalString(args, "description", 2000) ?? existing.Description;
+    var description = GetOptionalString(args, "description", 4000) ?? existing.Description;
+    var shortDescription = GetOptionalString(args, "shortDescription", 500) ?? existing.ShortDescription;
+    var material = GetOptionalString(args, "material", 200) ?? existing.Material;
+    var brand = GetOptionalString(args, "brand", 200) ?? existing.Brand;
+    var origin = GetOptionalString(args, "origin", 200) ?? existing.Origin;
+    var careInstruction = GetOptionalString(args, "careInstruction", 2000) ?? existing.CareInstruction;
     var productType = OptionalEnum(args, "productType", "ao_dai", "phu_kien") ?? existing.ProductType;
+    var status = OptionalEnum(args, "status", "draft", "active", "inactive", "out_of_stock") ?? existing.Status;
+    var categoryId = TryGetGuidArg(args, "categoryId") ?? existing.CategoryId;
+    var isFeatured = GetOptionalBoolArg(args, "isFeatured") ?? existing.IsFeatured;
 
     var dto = new UpdateProductRequest
     {
       Name = name,
       Slug = name != existing.Name ? Slugify(name) : existing.Slug,
       ProductType = productType,
-      CategoryId = existing.CategoryId,
+      CategoryId = categoryId,
+      ShortDescription = shortDescription,
       Description = description,
-      Status = existing.Status
+      Material = material,
+      Brand = brand,
+      Origin = origin,
+      CareInstruction = careInstruction,
+      Status = status,
+      IsFeatured = isFeatured
     };
 
     var result = await _products.UpdateAsync(id, dto, ct);
-    return result is null ? "❌ Không tìm thấy sản phẩm." : $"✅ Đã cập nhật sản phẩm '{result.Name}'.";
+    return result is null
+      ? "❌ Không tìm thấy sản phẩm."
+      : $"✅ Đã cập nhật sản phẩm '{result.Name}'. Trạng thái: {result.Status}; nổi bật: {(result.IsFeatured ? "có" : "không")}.";
   }
 
   private async Task<string> DeleteProduct(Guid id, CancellationToken ct)
@@ -1125,7 +1209,13 @@ public sealed class AdminAgentService : IAdminAgentService
     var name = RequiredString(args, "name", 120);
     var description = GetStrArg(args, "description");
     var slug = Slugify(name);
-    var dto = new CreateCategoryRequest { Name = name, Slug = slug, Description = description };
+    var dto = new CreateCategoryRequest
+    {
+      Name = name,
+      Slug = slug,
+      Parent = TryGetGuidArg(args, "parent"),
+      Description = description
+    };
     var result = await _categories.CreateAsync(dto, ct);
     return $"✅ Đã tạo danh mục '{result.Name}' (ID: {result.Id}).";
   }
@@ -1138,14 +1228,20 @@ public sealed class AdminAgentService : IAdminAgentService
 
     var name = GetOptionalString(args, "name", 120) ?? existing.Name;
     var description = GetOptionalString(args, "description", 1000) ?? existing.Description;
+    var parent = args.TryGetProperty("parent", out var parentElement)
+      ? ReadNullableGuid(parentElement, "parent")
+      : existing.Parent;
     var dto = new UpdateCategoryRequest
     {
       Name = name,
       Slug = name != existing.Name ? Slugify(name) : existing.Slug,
-      Description = description
+      Parent = parent,
+      Description = description,
+      ImageUrl = existing.ImageUrl,
+      SortOrder = existing.SortOrder
     };
     var result = await _categories.UpdateAsync(id, dto, ct);
-    return result is null ? "❌ Không tìm thấy danh mục." : $"✅ Đã cập nhật danh mục '{result.Name}'.";
+    return result is null ? "❌ Không tìm thấy danh mục." : $"✅ Đã cập nhật danh mục '{result.Name}'. Danh mục cha: {(result.Parent?.ToString() ?? "không có")}.";
   }
 
   private async Task<string> DeleteCategory(Guid id, CancellationToken ct)
@@ -1167,22 +1263,50 @@ public sealed class AdminAgentService : IAdminAgentService
     return u is null ? "❌ Không tìm thấy người dùng." : JsonSerializer.Serialize(u);
   }
 
-  private async Task<string> UpdateUserStatus(Guid id, string status, CancellationToken ct)
+  private async Task<string> UpdateUserStatus(Guid id, string status, Guid adminUserId, CancellationToken ct)
   {
-    var result = await _users.UpdateUserStatusAsync(Guid.Empty, id, new UpdateUserStatusRequest { Status = status }, ct);
+    var result = await _users.UpdateUserStatusAsync(adminUserId, id, new UpdateUserStatusRequest { Status = status }, ct);
     return result.Succeeded ? $"✅ Đã chuyển trạng thái người dùng thành '{status}'." : $"❌ {result.ErrorMessage ?? "Không tìm thấy người dùng."}";
   }
 
-  private async Task<string> UpdateUserRole(Guid id, string role, CancellationToken ct)
+  private async Task<string> UpdateUserRole(Guid id, string role, Guid adminUserId, CancellationToken ct)
   {
-    // Map role name to role ID via existing role list
     var roles = await _roles.GetRolesAsync(ct);
-    var targetRole = roles.FirstOrDefault(r => r.Name?.Equals(role, StringComparison.OrdinalIgnoreCase) == true);
+    var targetRole = roles.FirstOrDefault(r => r.Name.Equals(role.Trim(), StringComparison.OrdinalIgnoreCase));
     if (targetRole is null)
       return $"❌ Không tìm thấy vai trò '{role}'. Các vai trò hiện có: {string.Join(", ", roles.Select(r => r.Name))}";
 
-    var result = await _users.UpdateUserRoleAsync(Guid.Empty, id, new UpdateUserRoleRequest { RoleId = targetRole.Id }, ct);
-    return result.Succeeded ? $"✅ Đã đổi vai trò người dùng thành '{role}'." : $"❌ {result.ErrorMessage ?? "Không tìm thấy người dùng."}";
+    var result = await _users.UpdateUserRoleAsync(adminUserId, id, new UpdateUserRoleRequest { RoleId = targetRole.Id }, ct);
+    return result.Succeeded ? $"✅ Đã đổi vai trò người dùng thành '{targetRole.Name}'." : $"❌ {result.ErrorMessage ?? "Không tìm thấy người dùng."}";
+  }
+
+  private async Task<string> UpdateUserProfile(JsonElement args, CancellationToken ct)
+  {
+    var id = RequiredGuid(args, "id");
+    var existing = await _users.GetUserByIdAsync(id, ct);
+    if (existing is null) return "❌ Không tìm thấy người dùng.";
+
+    var request = new UpdateUserRequest
+    {
+      FullName = GetOptionalString(args, "fullName", 100) ?? existing.FullName,
+      Email = GetOptionalString(args, "email", 255) ?? existing.Email,
+      Phone = GetOptionalString(args, "phone", 30) ?? existing.Phone
+    };
+
+    var updated = await _users.UpdateUserAsync(id, request, ct);
+    return updated is null ? "❌ Không tìm thấy người dùng." : $"✅ Đã cập nhật người dùng {updated.FullName}: {updated.Email ?? "chưa có email"}, {updated.Phone ?? "chưa có SĐT"}.";
+  }
+
+  private async Task<string> CreateRole(JsonElement args, CancellationToken ct)
+  {
+    var name = RequiredString(args, "name", 80).Trim();
+    var description = GetOptionalString(args, "description", 300);
+    var existing = await _roles.GetRolesAsync(ct);
+    if (existing.Any(r => r.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+      return $"❌ Vai trò '{name}' đã tồn tại.";
+
+    var role = await _roles.CreateRoleAsync(new CreateRoleRequest { Name = name, Description = description }, ct);
+    return $"✅ Đã tạo vai trò '{role.Name}' (ID: {role.Id}).";
   }
 
   // --- Order tools ---
@@ -1597,6 +1721,113 @@ TỔNG QUAN:
       message: "Đã tạo bản nháp blog AI.");
   }
 
+  private async Task<string> SaveBlogPost(JsonElement args, BlogPostStatus status, CancellationToken ct)
+  {
+    var request = BuildBlogPostRequest(args, status);
+    var post = await _blogPosts.CreateAsync(request, ct);
+    return $"✅ Đã lưu bài viết '{post.Title}' ở trạng thái {post.Status} (ID: {post.Id}).";
+  }
+
+  private async Task<string> PublishBlogPost(JsonElement args, CancellationToken ct)
+  {
+    if (TryGetGuidArg(args, "id") is { } id)
+    {
+      var existing = await _blogPosts.GetByIdAsync(id, true, ct);
+      if (existing is null) return "❌ Không tìm thấy bài viết.";
+
+      var contentJson = JsonSerializer.Serialize(existing.Content, ToolResultJsonOptions);
+      using var contentDoc = JsonDocument.Parse(contentJson);
+      var request = new UpdateBlogPostRequest
+      {
+        Title = existing.Title,
+        Slug = existing.Slug,
+        Excerpt = existing.Excerpt,
+        FeaturedImage = existing.FeaturedImage,
+        FeaturedImageWidth = existing.FeaturedImageWidth,
+        FeaturedImageHeight = existing.FeaturedImageHeight,
+        Template = existing.Template,
+        Content = contentDoc.RootElement.Clone(),
+        Tags = existing.Tags,
+        BlogCategoryId = existing.BlogCategoryId,
+        AuthorId = existing.AuthorId,
+        AuthorBio = existing.AuthorBio,
+        ReviewedBy = existing.ReviewedBy,
+        InformationGain = existing.InformationGain,
+        Status = BlogPostStatus.Published,
+        PublishedAt = DateTime.UtcNow,
+        MetaTitle = existing.MetaTitle,
+        MetaDescription = existing.MetaDescription,
+        CanonicalUrl = existing.CanonicalUrl
+      };
+
+      var post = await _blogPosts.UpdateAsync(id, request, ct);
+      return $"✅ Đã xuất bản bài viết '{post.Title}'.";
+    }
+
+    var create = BuildBlogPostRequest(args, BlogPostStatus.Published);
+    var created = await _blogPosts.CreateAsync(create, ct);
+    return $"✅ Đã tạo và xuất bản bài viết '{created.Title}' (ID: {created.Id}).";
+  }
+
+  private CreateBlogPostRequest BuildBlogPostRequest(JsonElement args, BlogPostStatus status)
+  {
+    var title = RequiredString(args, "title", 500);
+    var excerpt = GetOptionalString(args, "excerpt", 800) ?? title;
+    using var contentDoc = JsonDocument.Parse(NormalizeBlogContent(GetOptionalString(args, "content", 12000) ?? title));
+    return new CreateBlogPostRequest
+    {
+      Title = title,
+      Excerpt = excerpt,
+      FeaturedImage = GetOptionalString(args, "featuredImage", 1000),
+      Content = contentDoc.RootElement.Clone(),
+      Tags = ParseCsv(GetOptionalString(args, "tags", 1000)),
+      Status = status,
+      PublishedAt = status == BlogPostStatus.Published ? DateTime.UtcNow : null,
+      MetaTitle = GetOptionalString(args, "metaTitle", 200),
+      MetaDescription = GetOptionalString(args, "metaDescription", 500)
+    };
+  }
+
+  private static string NormalizeBlogContent(string value)
+  {
+    var text = value.Trim();
+    if (text.StartsWith("[") || text.StartsWith("{"))
+      return text;
+
+    return JsonSerializer.Serialize(new[]
+    {
+      new { type = "paragraph", text }
+    }, ToolResultJsonOptions);
+  }
+
+  private async Task<string> ListMarketingOptions(CancellationToken ct)
+  {
+    var options = await _marketingCampaigns.GetContentOptionsAsync(ct);
+    return SerializeToolResult(options, message: $"Tìm thấy {options.Count} nội dung marketing.");
+  }
+
+  private async Task<string> SendMarketingCampaign(JsonElement args, CancellationToken ct)
+  {
+    var mode = OptionalEnum(args, "recipientMode", "all_active", "selected", "manual") ?? "manual";
+    var manualEmails = ParseCsv(GetOptionalString(args, "manualEmails", 4000));
+    var request = new SendMarketingCampaignRequest(
+      mode,
+      null,
+      manualEmails,
+      RequiredString(args, "templateKey", 120),
+      RequiredString(args, "subject", 200),
+      GetOptionalString(args, "preheader", 200),
+      GetOptionalString(args, "intro", 1000),
+      GetOptionalString(args, "bodyHtml", 8000),
+      GetOptionalString(args, "ctaLabel", 80),
+      GetOptionalString(args, "ctaUrl", 1000),
+      null,
+      null);
+    var result = await _marketingCampaigns.QueueCampaignAsync(request, ct);
+    return $"✅ Đã xếp hàng chiến dịch marketing: {result.Queued} email, bỏ qua {result.Skipped}.";
+  }
+
+
   private async Task<string> GenerateProductDescription(JsonElement args, CancellationToken ct)
   {
     var id = RequiredGuid(args, "productId");
@@ -1736,6 +1967,46 @@ TOP 5 SẢN PHẨM:";
     if (args.TryGetProperty(name, out var el) && el.ValueKind is JsonValueKind.Number)
       return el.GetInt32();
     return defaultValue;
+  }
+
+  private static bool? GetOptionalBoolArg(JsonElement args, string name)
+  {
+    if (!args.TryGetProperty(name, out var el)) return null;
+    return el.ValueKind switch
+    {
+      JsonValueKind.True => true,
+      JsonValueKind.False => false,
+      JsonValueKind.String when bool.TryParse(el.GetString(), out var value) => value,
+      _ => null
+    };
+  }
+
+  private static Guid? TryGetGuidArg(JsonElement args, string name)
+  {
+    if (!args.TryGetProperty(name, out var el)) return null;
+    return ReadNullableGuid(el, name);
+  }
+
+  private static Guid? ReadNullableGuid(JsonElement el, string name)
+  {
+    if (el.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined) return null;
+    if (el.ValueKind == JsonValueKind.String)
+    {
+      var value = el.GetString();
+      if (string.IsNullOrWhiteSpace(value) || value.Equals("null", StringComparison.OrdinalIgnoreCase)) return null;
+      if (Guid.TryParse(value, out var guid)) return guid;
+    }
+
+    throw new ToolValidationException($"Sai định dạng GUID: {name}.");
+  }
+
+  private static IReadOnlyList<string> ParseCsv(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return [];
+    return value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+      .Where(x => !string.IsNullOrWhiteSpace(x))
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .ToList();
   }
 
   private static ToolDefinition T(string name, string desc, Dictionary<string, object?> parameters) =>

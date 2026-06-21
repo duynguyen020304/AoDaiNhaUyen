@@ -57,7 +57,7 @@ public sealed class AdminProductsController(
     /// <summary>Create a new product.</summary>
     [HttpPost]
     public async Task<ActionResult<ApiResponse<AdminProductDetailResponse>>> Create(
-        CreateProductRequest request,
+        [FromBody] CreateProductRequest request,
         CancellationToken cancellationToken = default)
     {
         var product = await adminProductService.CreateAsync(request, cancellationToken);
@@ -74,7 +74,7 @@ public sealed class AdminProductsController(
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<ApiResponse<AdminProductDetailResponse>>> Update(
         Guid id,
-        UpdateProductRequest request,
+        [FromBody] UpdateProductRequest request,
         CancellationToken cancellationToken = default)
     {
         var product = await adminProductService.UpdateAsync(id, request, cancellationToken);
@@ -91,12 +91,34 @@ public sealed class AdminProductsController(
         return Ok(ApiResponseFactory.Success(product, "Cập nhật sản phẩm thành công."));
     }
 
+    /// <summary>Update a product variant.</summary>
+    [HttpPut("{productId:guid}/variants/{variantId:guid}")]
+    public async Task<ActionResult<ApiResponse<AdminProductDetailResponse>>> UpdateVariant(
+        Guid productId,
+        Guid variantId,
+        [FromBody] UpdateVariantRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var product = await adminProductService.UpdateVariantAsync(productId, variantId, request, cancellationToken);
+
+        if (product is null)
+        {
+            return NotFound(ApiResponseFactory.Failure(
+                "Không tìm thấy biến thể sản phẩm.",
+                "not_found",
+                "Sản phẩm hoặc biến thể không tồn tại."));
+        }
+
+        await cacheInvalidation.InvalidateProductRelatedCacheAsync(CancellationToken.None);
+        return Ok(ApiResponseFactory.Success(product, "Cập nhật biến thể thành công."));
+    }
+
     /// <summary>Update stock quantity for a product variant.</summary>
     [HttpPatch("{productId:guid}/variants/{variantId:guid}/stock")]
     public async Task<ActionResult<ApiResponse<AdminProductDetailResponse>>> UpdateVariantStock(
         Guid productId,
         Guid variantId,
-        UpdateVariantStockRequest request,
+        [FromBody] UpdateVariantStockRequest request,
         CancellationToken cancellationToken = default)
     {
         var product = await adminProductService.UpdateVariantStockAsync(productId, variantId, request.StockQty, cancellationToken);
@@ -117,7 +139,7 @@ public sealed class AdminProductsController(
     [HttpPatch("{id:guid}/status")]
     public async Task<ActionResult<ApiResponse<object>>> ToggleStatus(
         Guid id,
-        ToggleProductStatusRequest request,
+        [FromBody] ToggleProductStatusRequest request,
         CancellationToken cancellationToken = default)
     {
         var success = await adminProductService.ToggleStatusAsync(id, request.Status, cancellationToken);

@@ -20,6 +20,7 @@ import { ToolRiskPage } from '@/pages/ToolRiskPage'
 import { PromosPage } from '@/pages/PromosPage'
 import { BlogListPage } from '@/pages/BlogListPage'
 import { BlogFormPage } from '@/pages/BlogFormPage'
+import { AiChatPage } from '@/pages/AiChatPage'
 import { AiTryOnFeedbackPage } from '@/pages/AiTryOnFeedbackPage'
 import { MarketingDashboardPage } from '@/pages/MarketingDashboardPage'
 import { EmailTemplatesPage } from '@/pages/EmailTemplatesPage'
@@ -82,6 +83,8 @@ export function App() {
             <Route path="orders" element={<OrdersPage />} />
             <Route path="reviews" element={<ReviewsPage />} />
             <Route path="ai-tryon-feedback" element={<AiTryOnFeedbackPage />} />
+            <Route path="ai-chat" element={<AiChatPage />} />
+            <Route path="ai-chat/:chatId" element={<AiChatPage />} />
             <Route path="hermes" element={<HermesPage />} />
             <Route path="hermes/:chatId" element={<HermesPage />} />
             <Route path="tools-risk" element={<ToolRiskPage />} />
