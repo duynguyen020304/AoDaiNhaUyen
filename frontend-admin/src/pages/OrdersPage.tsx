@@ -187,34 +187,62 @@ export function OrdersPage() {
                     </TableCell>
                     <TableCell className="text-muted-foreground">{formatDate(order.createdAt)}</TableCell>
                     <TableCell className="text-center">
-                      {order.status === 'processing' ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs gap-1"
-                          disabled={isProcessing}
-                          onClick={() => setShowShipModal(order)}
-                        >
-                          <Truck className="size-3.5" />
-                          Giao hàng
-                        </Button>
-                      ) : nextStatus ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs gap-1"
-                          disabled={isProcessing}
-                          onClick={() => handleAdvanceStatus(order.id, nextStatus)}
-                        >
-                          <ArrowRight className="size-3.5" />
-                          {STATUS_LABELS[nextStatus]}
-                        </Button>
-                      ) : order.status === 'completed' ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
-                          <CheckCircle2 className="size-3.5" />
-                          Xong
-                        </span>
-                      ) : null}
+                      <div className="flex justify-center items-center gap-2">
+                        {order.status === 'processing' ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs gap-1"
+                            disabled={isProcessing}
+                            onClick={() => setShowShipModal(order)}
+                          >
+                            <Truck className="size-3.5" />
+                            Giao hàng
+                          </Button>
+                        ) : nextStatus ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs gap-1"
+                            disabled={isProcessing}
+                            onClick={() => handleAdvanceStatus(order.id, nextStatus)}
+                          >
+                            <ArrowRight className="size-3.5" />
+                            {STATUS_LABELS[nextStatus]}
+                          </Button>
+                        ) : order.status === 'completed' ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+                            <CheckCircle2 className="size-3.5" />
+                            Xong
+                          </span>
+                        ) : null}
+
+                        {['pending', 'confirmed', 'processing'].includes(order.status) && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="text-xs"
+                            disabled={isProcessing}
+                            onClick={async () => {
+                              if (!confirm('Bạn có chắc muốn hủy đơn hàng này?')) return
+                              try {
+                                setProcessingId(order.id)
+                                await updateOrderStatus(order.id, 'cancelled')
+                                invalidateAdminDashboardQueries()
+                                setOrders((prev) =>
+                                  prev.map((o) => (o.id === order.id ? { ...o, status: 'cancelled' } : o))
+                                )
+                              } catch {
+                                // silent
+                              } finally {
+                                setProcessingId(null)
+                              }
+                            }}
+                          >
+                            Hủy
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 )

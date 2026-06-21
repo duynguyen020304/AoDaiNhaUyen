@@ -47,6 +47,17 @@ export function ProductFormPage() {
   const [variants, setVariants] = useState<AdminVariantResponse[]>([])
   const [stockInputs, setStockInputs] = useState<Record<string, string>>({})
   const [savingStockId, setSavingStockId] = useState<string | null>(null)
+  const [editingVariantId, setEditingVariantId] = useState<string | null>(null)
+  const [editSku, setEditSku] = useState('')
+  const [editVariantName, setEditVariantName] = useState('')
+  const [editSize, setEditSize] = useState('')
+  const [editColor, setEditColor] = useState('')
+  const [editPrice, setEditPrice] = useState('')
+  const [editSalePrice, setEditSalePrice] = useState('')
+  const [editStockQty, setEditStockQty] = useState('')
+  const [editStatus, setEditStatus] = useState('active')
+  const [editIsDefault, setEditIsDefault] = useState(false)
+  const [savingVariantId, setSavingVariantId] = useState<string | null>(null)
   const [images, setImages] = useState<AdminImageResponse[]>([])
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -121,6 +132,66 @@ export function ProductFormPage() {
       setError(err instanceof Error ? err.message : 'Không thể cập nhật tồn kho.')
     } finally {
       setSavingStockId(null)
+    }
+  }
+
+  const handleEditVariantClick = (variant: AdminVariantResponse) => {
+    setEditingVariantId(variant.id)
+    setEditSku(variant.sku)
+    setEditVariantName(variant.variantName ?? '')
+    setEditSize(variant.size ?? '')
+    setEditColor(variant.color ?? '')
+    setEditPrice(String(variant.price))
+    setEditSalePrice(variant.salePrice !== null ? String(variant.salePrice) : '')
+    setEditStockQty(String(variant.stockQty))
+    setEditStatus(variant.status)
+    setEditIsDefault(variant.isDefault)
+  }
+
+  const handleSaveVariant = async (variantId: string) => {
+    if (!id) return
+    if (!editSku.trim()) {
+      setError('SKU không được để trống.')
+      return
+    }
+    const priceVal = Number(editPrice)
+    if (isNaN(priceVal) || priceVal < 0) {
+      setError('Giá tiền không hợp lệ.')
+      return
+    }
+    const salePriceVal = editSalePrice.trim() ? Number(editSalePrice) : null
+    if (salePriceVal !== null && (isNaN(salePriceVal) || salePriceVal < 0)) {
+      setError('Giá khuyến mãi không hợp lệ.')
+      return
+    }
+    const stockQtyVal = Number(editStockQty)
+    if (isNaN(stockQtyVal) || !Number.isInteger(stockQtyVal) || stockQtyVal < 0) {
+      setError('Số lượng tồn kho không hợp lệ.')
+      return
+    }
+
+    setSavingVariantId(variantId)
+    setError(null)
+    try {
+      const payload = {
+        sku: editSku.trim(),
+        variantName: editVariantName.trim() || null,
+        size: editSize.trim() || null,
+        color: editColor.trim() || null,
+        price: priceVal,
+        salePrice: salePriceVal,
+        stockQty: stockQtyVal,
+        isDefault: editIsDefault,
+        status: editStatus
+      }
+      const product = await useProductStore.getState().updateVariant(id, variantId, payload)
+      setVariants(product.variants)
+      setStockInputs(Object.fromEntries(product.variants.map((item) => [item.id, String(item.stockQty)])))
+      setEditingVariantId(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể cập nhật biến thể.')
+    } finally {
+      setSavingVariantId(null)
     }
   }
 
@@ -370,6 +441,114 @@ export function ProductFormPage() {
               ) : (
                 <div className="space-y-3">
                   {variants.map((variant) => {
+                    const isEditing = editingVariantId === variant.id
+                    if (isEditing) {
+                      return (
+                        <div key={variant.id} className="space-y-3 border-b border-border/70 pb-4 last:border-b-0 last:pb-0">
+                          <div className="space-y-2">
+                            <Label htmlFor={`edit-name-${variant.id}`}>Tên biến thể</Label>
+                            <Input
+                              id={`edit-name-${variant.id}`}
+                              value={editVariantName}
+                              onChange={(e) => setEditVariantName(e.target.value)}
+                              placeholder="Mặc định"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-2">
+                              <Label htmlFor={`edit-sku-${variant.id}`}>SKU *</Label>
+                              <Input
+                                id={`edit-sku-${variant.id}`}
+                                value={editSku}
+                                onChange={(e) => setEditSku(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`edit-status-${variant.id}`}>Trạng thái</Label>
+                              <Select
+                                id={`edit-status-${variant.id}`}
+                                value={editStatus}
+                                onChange={(e) => setEditStatus(e.target.value)}
+                              >
+                                <option value="active">Đang bán</option>
+                                <option value="inactive">Ngừng bán</option>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-2">
+                              <Label htmlFor={`edit-size-${variant.id}`}>Kích thước</Label>
+                              <Input
+                                id={`edit-size-${variant.id}`}
+                                value={editSize}
+                                onChange={(e) => setEditSize(e.target.value)}
+                                placeholder="S, M, L..."
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`edit-color-${variant.id}`}>Màu sắc</Label>
+                              <Input
+                                id={`edit-color-${variant.id}`}
+                                value={editColor}
+                                onChange={(e) => setEditColor(e.target.value)}
+                                placeholder="Đỏ, Xanh..."
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-2">
+                              <Label htmlFor={`edit-price-${variant.id}`}>Giá tiền *</Label>
+                              <Input
+                                id={`edit-price-${variant.id}`}
+                                type="number"
+                                value={editPrice}
+                                onChange={(e) => setEditPrice(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`edit-saleprice-${variant.id}`}>Khuyến mãi</Label>
+                              <Input
+                                id={`edit-saleprice-${variant.id}`}
+                                type="number"
+                                value={editSalePrice}
+                                onChange={(e) => setEditSalePrice(e.target.value)}
+                                placeholder="Trống"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`edit-stock-${variant.id}`}>Tồn kho *</Label>
+                              <Input
+                                id={`edit-stock-${variant.id}`}
+                                type="number"
+                                min={0}
+                                step={1}
+                                value={editStockQty}
+                                onChange={(e) => setEditStockQty(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-end gap-2 pt-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingVariantId(null)}
+                            >
+                              Hủy
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleSaveVariant(variant.id)}
+                              disabled={savingVariantId === variant.id}
+                            >
+                              {savingVariantId === variant.id ? <Loader2 className="size-4 animate-spin" /> : 'Lưu'}
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    }
+
                     const stockValue = stockInputs[variant.id] ?? String(variant.stockQty)
                     const currentStock = Number(stockValue)
                     const isDirty = stockValue !== String(variant.stockQty)
@@ -383,14 +562,33 @@ export function ProductFormPage() {
                             <p className="text-xs text-muted-foreground">
                               {[variant.size, variant.color].filter(Boolean).join(' / ') || 'Mặc định'}
                             </p>
+                            <p className="text-xs font-semibold text-burgundy">
+                              {variant.price.toLocaleString('vi-VN')} ₫
+                              {variant.salePrice !== null && (
+                                <span className="line-through text-muted-foreground ml-2 font-normal">
+                                  {variant.salePrice.toLocaleString('vi-VN')} ₫
+                                </span>
+                              )}
+                            </p>
                           </div>
-                          <span className={`rounded-full px-2 py-1 text-xs font-medium shrink-0 ${variant.stockQty <= 0 ? 'bg-destructive/10 text-destructive' : variant.stockQty <= 5 ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
-                            {variant.stockQty <= 0 ? 'Hết hàng' : variant.stockQty <= 5 ? 'Sắp hết' : 'Còn hàng'}
-                          </span>
+                          <div className="flex flex-col items-end gap-2 shrink-0">
+                            <span className={`rounded-full px-2 py-1 text-xs font-medium ${variant.stockQty <= 0 ? 'bg-destructive/10 text-destructive' : variant.stockQty <= 5 ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                              {variant.stockQty <= 0 ? 'Hết hàng' : variant.stockQty <= 5 ? 'Sắp hết' : 'Còn hàng'}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs h-7 px-2"
+                              onClick={() => handleEditVariantClick(variant)}
+                            >
+                              Chỉnh sửa
+                            </Button>
+                          </div>
                         </div>
                         <div className="grid grid-cols-[1fr_auto] items-end gap-2">
                           <div className="space-y-2">
-                            <Label htmlFor={`stock-${variant.id}`}>Tồn kho</Label>
+                            <Label htmlFor={`stock-${variant.id}`}>Tồn kho nhanh</Label>
                             <Input
                               id={`stock-${variant.id}`}
                               type="number"
@@ -403,6 +601,7 @@ export function ProductFormPage() {
                             />
                           </div>
                           <Button
+                            type="button"
                             variant="outline"
                             onClick={() => handleSaveStock(variant)}
                             disabled={!isDirty || isInvalid || savingStockId === variant.id}
