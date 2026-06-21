@@ -13,9 +13,10 @@ interface PictureImgProps {
 }
 
 export function PictureImg({ src, alt, width, height, className, lazy = true, fetchPriority = 'auto', sizes = '(max-width: 768px) 100vw, 800px' }: PictureImgProps) {
-  const [useFallback, setUseFallback] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const resolved = resolveAssetUrl(src) ?? '/assets/footer-logo.png';
   const fallbackSrc = '/assets/footer-logo.png';
+  const useFallback = failedSrc === resolved;
   const imageSrc = useFallback ? fallbackSrc : resolved;
   const base = resolved.replace(/\.(jpe?g|png|webp|avif)(\?.*)?$/i, '');
   const isRemoteAsset = /^https?:\/\//i.test(resolved);
@@ -38,7 +39,7 @@ export function PictureImg({ src, alt, width, height, className, lazy = true, fe
         loading={lazy ? 'lazy' : 'eager'}
         decoding={lazy ? 'async' : 'sync'}
         fetchPriority={fetchPriority}
-        onError={() => setUseFallback(true)}
+        onError={() => setFailedSrc(resolved)}
       />
     </picture>
   );

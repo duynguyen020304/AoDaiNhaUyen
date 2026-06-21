@@ -114,13 +114,31 @@ export async function requestPaginated<T>(path: string, init?: RequestInit): Pro
   return payload;
 }
 
+function normalizeS3ObjectUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    const objectRootIndex = parts.findIndex((part) => part === 'public' || part === 'private');
+
+    if (objectRootIndex > 0 && parts[objectRootIndex - 1] !== 'aodainhauyen') {
+      parts.splice(objectRootIndex, 0, 'aodainhauyen');
+      parsed.pathname = `/${parts.map((part) => encodeURIComponent(part)).join('/')}`;
+      return parsed.toString();
+    }
+  } catch {
+    return url;
+  }
+
+  return url;
+}
+
 export function resolveAssetUrl(url: string | null): string | null {
   if (!url) {
     return null;
   }
 
   if (/^https?:\/\//i.test(url)) {
-    return url;
+    return normalizeS3ObjectUrl(url);
   }
 
   return `${API_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;

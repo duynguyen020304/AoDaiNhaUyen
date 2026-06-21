@@ -177,7 +177,8 @@ public sealed class S3StorageService : IStorageService
 
   public string BuildCanonicalUrl(string objectKey)
   {
-    var encodedKey = EncodeObjectKey(objectKey);
+    var normalizedKey = NormalizeObjectKey(objectKey);
+    var encodedKey = EncodeObjectKey(normalizedKey);
 
     if (!string.IsNullOrWhiteSpace(_settings.ServiceUrl))
     {

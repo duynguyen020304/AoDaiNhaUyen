@@ -14,16 +14,33 @@ function qs(params: BlogListParams = {}) {
 interface RawBlogBlock {
   type: string;
   data?: Record<string, unknown>;
+  src?: unknown;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isAbsoluteUrl(value: unknown): value is string {
+  return typeof value === 'string' && /^https?:\/\//i.test(value);
 }
 
 function normalizeBlogBlocks(blocks: RawBlogBlock[]): BlogBlock[] {
   if (!Array.isArray(blocks)) return [];
   return blocks.map((block) => {
-    if (block && block.data && typeof block.data === 'object') {
-      return {
+    if (block && isRecord(block.data)) {
+      const nestedData = isRecord(block.data.data) ? block.data.data : undefined;
+      const normalized = {
+        ...nestedData,
         ...block,
         ...block.data,
-      } as unknown as BlogBlock;
+      };
+
+      if (isAbsoluteUrl(block.src)) normalized.src = block.src;
+      if (isAbsoluteUrl(block.data.src)) normalized.src = block.data.src;
+      delete normalized.data;
+
+      return normalized as unknown as BlogBlock;
     }
     return block as unknown as BlogBlock;
   });
