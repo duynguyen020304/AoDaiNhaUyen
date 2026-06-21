@@ -74,8 +74,12 @@ public sealed class SubscriberService(
     var confirmUrl = $"{emailSettings.FrontendBaseUrl.TrimEnd('/')}/newsletter/confirm?token={Uri.EscapeDataString(subscriber.ConfirmationToken)}";
     emailQueueService.Enqueue(normalizedEmail, "marketing.confirm_subscription", new
     {
-      confirmUrl,
-      subject = "Xác nhận nhận tin từ Ao Dai Nha Uyen"
+      greeting = "Chào bạn",
+      body = "Cảm ơn bạn đã đăng ký nhận tin từ Áo Dài Nhã Uyên. Vui lòng xác nhận email để hoàn tất đăng ký.",
+      buttonText = "Xác nhận đăng ký",
+      info = "Nếu nút không hoạt động, vui lòng sao chép liên kết bên dưới:",
+      confirmUrl = confirmUrl,
+      subject = "Xác nhận đăng ký nhận tin từ Áo Dài Nhã Uyên"
     });
 
     await dbContext.SaveChangesAsync(cancellationToken);

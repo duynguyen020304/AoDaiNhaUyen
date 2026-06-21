@@ -114,6 +114,7 @@ public sealed class SeedDataService(
 
     await SeedRolesAsync();
     await SeedAdminAsync();
+    await SeedEmailTemplatesAsync();
 
     if (await HasExistingCatalogDataAsync())
     {
@@ -136,7 +137,6 @@ public sealed class SeedDataService(
     await SeedDemoReviewsAsync();
     await SeedBlogPostsAsync();
     await SeedToolRiskConfigsAsync();
-    await SeedEmailTemplatesAsync();
     await RemoveStaleCategoriesAsync();
   }
 
@@ -147,22 +147,134 @@ public sealed class SeedDataService(
 
   private async Task SeedEmailTemplatesAsync()
   {
-    if (await dbContext.EmailTemplates.AnyAsync(x => x.Key.StartsWith("marketing.")))
-    {
-      return;
-    }
-
     var now = DateTime.UtcNow;
     var templates = new[]
     {
-      new EmailTemplate { Id = Guid.NewGuid(), Key = "marketing.confirm_subscription", Name = "Xác nhận đăng ký nhận tin", Subject = "{{subject}}", Preheader = "Xác nhận để nhận bộ sưu tập mới và ưu đãi từ Ao Dai Nha Uyen", HtmlBody = "<h2>Xác nhận đăng ký nhận tin</h2><p>Chào bạn,</p><p>Cảm ơn bạn đã đăng ký nhận tin từ <strong>Ao Dai Nha Uyen</strong>. Chỉ còn một bước nữa.</p><p style=\"text-align:center;margin:24px 0;\"><a href=\"{{confirmUrl}}\" style=\"display:inline-block;background:#8B4513;color:#fff;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:600;\">Xác nhận đăng ký</a></p><p style=\"font-size:13px;color:#6b7280;\">Nếu nút không hoạt động, vui lòng sao chép link sau vào trình duyệt: {{confirmUrl}}</p><p>Bạn sẽ nhận được các thông tin về:</p><ul><li>Bộ sưu tập áo dài mới</li><li>Khuyến mãi đặc biệt</li><li>Sự kiện và workshop</li></ul>", TextBody = "Xác nhận đăng ký nhận tin tại: {{confirmUrl}}", Locale = "vi-VN", Version = 1, CreatedAt = now, UpdatedAt = now },
-      new EmailTemplate { Id = Guid.NewGuid(), Key = "marketing.welcome", Name = "Chào mừng đăng ký nhận tin", Subject = "Chào mừng bạn đến với Ao Dai Nha Uyen", Preheader = "Cảm ơn bạn đã gia nhập cộng đồng yêu áo dài", HtmlBody = "<h2>Chào mừng bạn, {{name}}!</h2><p>Cảm ơn bạn đã xác nhận đăng ký nhận tin từ <strong>Ao Dai Nha Uyen</strong>.</p><p>Chúng tôi sẽ gửi đến bạn:</p><ul><li>Bộ sưu tập áo dài mới nhất</li><li>Ưu đãi đặc biệt dành riêng cho thành viên</li><li>Lịch sự kiện và workshop</li><li>Mẹo phối đồ và bảo quản áo dài</li></ul><p style=\"text-align:center;margin:24px 0;\"><a href=\"{{shopUrl}}\" style=\"display:inline-block;background:#8B4513;color:#fff;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:600;\">Khám phá bộ sưu tập</a></p>", TextBody = "Chào mừng bạn đến với Ao Dai Nha Uyen. Khám phá bộ sưu tập tại {{shopUrl}}", Locale = "vi-VN", Version = 1, CreatedAt = now, UpdatedAt = now },
-      new EmailTemplate { Id = Guid.NewGuid(), Key = "marketing.promo", Name = "Khuyến mãi", Subject = "{{subject}}", Preheader = "Ưu đãi đặc biệt từ Ao Dai Nha Uyen", HtmlBody = "<h2>{{heading}}</h2><p>{{body}}</p><p style=\"text-align:center;margin:24px 0;\"><a href=\"{{ctaUrl}}\" style=\"display:inline-block;background:#8B4513;color:#fff;padding:12px 32px;border-radius:6px;text-decoration:none;font-weight:600;\">{{ctaText}}</a></p><p style=\"font-size:12px;color:#9ca3af;\">Áp dụng đến {{expiryDate}}. Điều kiện áp dụng.</p>", TextBody = "{{heading}}\n{{body}}\n{{ctaText}}: {{ctaUrl}}\nÁp dụng đến {{expiryDate}}.", Locale = "vi-VN", Version = 1, CreatedAt = now, UpdatedAt = now }
+      new DevEmailTemplateSeed(
+        Key: "marketing.promo",
+        Name: "Khuyến mãi",
+        Subject: "Ưu đãi áo dài dành riêng cho bạn",
+        Preheader: "Khám phá ưu đãi mới nhất từ Áo Dài Nhã Uyên",
+        TemplateType: "marketing.promo",
+        Config: new Dictionary<string, string>
+        {
+          ["heading"] = "Ưu đãi áo dài cuối tuần",
+          ["intro"] = "Một lựa chọn tinh tế cho những khoảnh khắc đặc biệt.",
+          ["body"] = "Nhận ưu đãi cho các thiết kế áo dài mới, chất liệu mềm mại và phom dáng tôn nét Việt.",
+          ["ctaText"] = "Xem ưu đãi",
+          ["ctaUrl"] = "https://aodainhauyen.io.vn/products",
+          ["footerNote"] = "Ưu đãi có thể kết thúc sớm khi hết số lượng."
+        }),
+      new DevEmailTemplateSeed(
+        Key: "marketing.newsletter",
+        Name: "Newsletter",
+        Subject: "Bản tin Áo Dài Nhã Uyên",
+        Preheader: "Cảm hứng mặc đẹp và câu chuyện áo dài mới nhất",
+        TemplateType: "marketing.newsletter",
+        Config: new Dictionary<string, string>
+        {
+          ["heading"] = "Cảm hứng áo dài trong tuần",
+          ["intro"] = "Những gợi ý phối áo dài, câu chuyện chất liệu và thiết kế mới.",
+          ["body"] = "Nhã Uyên chọn lọc các thiết kế trang nhã cho sự kiện gia đình, lễ hội và khoảnh khắc thường ngày.",
+          ["ctaText"] = "Đọc thêm",
+          ["ctaUrl"] = "https://aodainhauyen.io.vn/blog"
+        }),
+      new DevEmailTemplateSeed(
+        Key: "subscriber.welcome",
+        Name: "Chào mừng đăng ký nhận tin",
+        Subject: "Chào mừng bạn đến với Áo Dài Nhã Uyên",
+        Preheader: "Cảm ơn bạn đã gia nhập cộng đồng yêu áo dài",
+        TemplateType: "subscriber.welcome",
+        Config: new Dictionary<string, string>
+        {
+          ["heading"] = "Chào mừng bạn đến với Áo Dài Nhã Uyên",
+          ["intro"] = "Cảm ơn bạn đã đăng ký nhận tin.",
+          ["body"] = "Bạn sẽ nhận cảm hứng mặc đẹp, mẹo chăm sóc áo dài và ưu đãi riêng.",
+          ["ctaText"] = "Khám phá bộ sưu tập",
+          ["ctaUrl"] = "https://aodainhauyen.io.vn/products"
+        }),
+      new DevEmailTemplateSeed(
+        Key: "order.confirmation",
+        Name: "Xác nhận đơn hàng",
+        Subject: "Nhã Uyên đã nhận đơn hàng của bạn",
+        Preheader: "Thông tin đơn hàng và bước xử lý tiếp theo",
+        TemplateType: "order.confirmation",
+        Config: new Dictionary<string, string>
+        {
+          ["heading"] = "Xác nhận đơn hàng",
+          ["intro"] = "Cảm ơn bạn đã tin chọn Áo Dài Nhã Uyên.",
+          ["body"] = "Chúng tôi đã nhận được đơn hàng và sẽ liên hệ khi đơn được xử lý.",
+          ["ctaText"] = "Xem đơn hàng",
+          ["ctaUrl"] = "https://aodainhauyen.io.vn/account/orders",
+          ["orderCode"] = "ADNU-2026-0001"
+        })
     };
 
-    dbContext.EmailTemplates.AddRange(templates);
+    foreach (var seed in templates)
+    {
+      var existing = await dbContext.EmailTemplates
+        .FirstOrDefaultAsync(x => x.Key == seed.Key && x.Locale == "vi-VN" && x.Version == 1);
+
+      var configJson = JsonSerializer.Serialize(seed.Config);
+      if (existing is null)
+      {
+        dbContext.EmailTemplates.Add(new EmailTemplate
+        {
+          Id = Guid.NewGuid(),
+          Key = seed.Key,
+          Name = seed.Name,
+          Subject = seed.Subject,
+          Preheader = seed.Preheader,
+          HtmlBody = string.Empty,
+          TextBody = null,
+          TemplateType = seed.TemplateType,
+          ConfigJson = configJson,
+          IsSystem = true,
+          Locale = "vi-VN",
+          Version = 1,
+          IsActive = true,
+          IsDeleted = false,
+          CreatedAt = now,
+          UpdatedAt = now
+        });
+        continue;
+      }
+
+      existing.Name = seed.Name;
+      existing.Subject = seed.Subject;
+      existing.Preheader = seed.Preheader;
+      existing.HtmlBody = string.Empty;
+      existing.TextBody = null;
+      existing.TemplateType = seed.TemplateType;
+      existing.ConfigJson = configJson;
+      existing.IsSystem = true;
+      existing.IsActive = true;
+      existing.IsDeleted = false;
+      existing.DeletedAt = null;
+      existing.UpdatedAt = now;
+    }
+
+    var legacyWelcomeTemplates = await dbContext.EmailTemplates
+      .Where(x => x.Key == "marketing.welcome")
+      .ToListAsync();
+    foreach (var legacy in legacyWelcomeTemplates)
+    {
+      legacy.IsActive = false;
+      legacy.IsDeleted = true;
+      legacy.DeletedAt = now;
+      legacy.UpdatedAt = now;
+    }
+
     await dbContext.SaveChangesAsync();
   }
+
+  private sealed record DevEmailTemplateSeed(
+    string Key,
+    string Name,
+    string Subject,
+    string Preheader,
+    string TemplateType,
+    IReadOnlyDictionary<string, string> Config);
 
   private void ValidateS3Configuration()
   {

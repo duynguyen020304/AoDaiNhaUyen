@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, UsersRound, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEmailMarketingStore } from "@/stores/emailMarketingStore";
+import { useFeedback } from "@/components/ui/feedbackContext";
 import { EmailTemplatesPage } from "@/pages/EmailTemplatesPage";
 import { MarketingSendPage } from "@/pages/MarketingSendPage";
 import { SubscribersPage } from "@/pages/SubscribersPage";
@@ -18,7 +19,7 @@ const tabs: Array<{ id: MarketingTab; label: string; description: string }> = [
   {
     id: "templates",
     label: "Mẫu email",
-    description: "Tạo và chỉnh nội dung HTML cho email.",
+    description: "Xem template React Email do dev lập trình sẵn.",
   },
   {
     id: "subscribers",
@@ -28,17 +29,26 @@ const tabs: Array<{ id: MarketingTab; label: string; description: string }> = [
 ];
 
 function normalizeTab(value: string | null): MarketingTab {
+  if (value === "template") return "templates";
   return tabs.some((tab) => tab.id === value) ? (value as MarketingTab) : "send";
 }
 
 export function MarketingDashboardPage() {
   const { stats, fetchStats, loading, error } = useEmailMarketingStore();
+  const { toast } = useFeedback();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const activeTab = normalizeTab(searchParams.get("tab"));
+  const prevError = useRef(error);
   useEffect(() => {
     fetchStats().catch(() => {});
   }, [fetchStats]);
+  useEffect(() => {
+    if (error && error !== prevError.current) {
+      toast(error, "error");
+    }
+    prevError.current = error;
+  }, [error, toast]);
   const cards = [
     ["Tổng đăng ký", stats?.totalSubscribers ?? 0, UsersRound],
     ["Đang nhận tin", stats?.activeSubscribers ?? 0, Mail],
@@ -52,11 +62,7 @@ export function MarketingDashboardPage() {
           Quản lý mẫu email và người đăng ký.
         </p>
       </div>
-      {error && (
-        <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {/* error displayed via toast */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map(([label, value, Icon]) => (
           <Card key={label} className="min-h-28">

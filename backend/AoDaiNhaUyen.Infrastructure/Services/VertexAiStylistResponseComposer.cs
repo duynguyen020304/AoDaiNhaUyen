@@ -246,7 +246,7 @@ public sealed class VertexAiStylistResponseComposer(
   {
     var builder = new StringBuilder();
     var styleVariant = PickStylePromptVariant();
-    builder.AppendLine("Bạn là stylist AI của Ao Dai Nha Uyen.");
+    builder.AppendLine("Bạn là stylist AI của Áo Dài Nhã Uyên.");
     builder.AppendLine("Nhiệm vụ: viết lại câu trả lời tiếng Việt tự nhiên, ngắn gọn, ấm áp nhưng chính xác.");
     builder.AppendLine(styleVariant);
     builder.AppendLine("Ràng buộc:");

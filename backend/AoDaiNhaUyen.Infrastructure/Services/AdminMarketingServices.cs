@@ -1,5 +1,7 @@
+using System.Data;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.Encodings.Web;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.Options;
@@ -17,6 +19,11 @@ public sealed class AdminEmailTemplateService(
 {
   public async Task<(IReadOnlyList<EmailTemplateListItem> Items, int TotalItem)> GetListAsync(string? search, bool includeDeleted, int page, int pageSize, CancellationToken cancellationToken = default)
   {
+    if (!await HasTemplateConfigColumnsAsync(cancellationToken))
+    {
+      return await GetLegacyListAsync(search, includeDeleted, page, pageSize, cancellationToken);
+    }
+
     var query = dbContext.EmailTemplates.AsNoTracking().AsQueryable();
     if (!includeDeleted) query = query.Where(x => !x.IsDeleted);
     if (!string.IsNullOrWhiteSpace(search))
@@ -28,19 +35,25 @@ public sealed class AdminEmailTemplateService(
     var total = await query.CountAsync(cancellationToken);
     var items = await query.OrderBy(x => x.Key).ThenByDescending(x => x.Version)
       .Skip((page - 1) * pageSize).Take(pageSize)
-      .Select(x => new EmailTemplateListItem(x.Id, x.Key, x.Name, x.Subject, x.Locale, x.Version, x.IsActive, x.IsDeleted, x.CreatedAt, x.UpdatedAt))
+      .Select(x => new EmailTemplateListItem(x.Id, x.Key, x.Name, x.Subject, x.TemplateType, x.Locale, x.Version, x.IsSystem, x.IsActive, x.IsDeleted, x.CreatedAt, x.UpdatedAt))
       .ToListAsync(cancellationToken);
     return (items, total);
   }
 
   public async Task<EmailTemplateDetail?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
   {
+    if (!await HasTemplateConfigColumnsAsync(cancellationToken))
+    {
+      return await GetLegacyByIdAsync(id, cancellationToken);
+    }
+
     return await dbContext.EmailTemplates.AsNoTracking().Where(x => x.Id == id).Select(x => ToDetail(x)).FirstOrDefaultAsync(cancellationToken);
   }
 
   public async Task<EmailTemplateDetail> CreateAsync(CreateEmailTemplateRequest request, CancellationToken cancellationToken = default)
   {
-    Validate(request.Key, request.Name, request.Subject, request.HtmlBody, request.Locale);
+    var configJson = NormalizeConfigJson(request.ConfigJson);
+    Validate(request.Key, request.Name, request.Subject, request.TemplateType, configJson, request.Locale);
     var key = request.Key.Trim();
     var locale = request.Locale.Trim();
     var exists = await dbContext.EmailTemplates.AnyAsync(x => x.Key == key && x.Locale == locale && x.Version == 1, cancellationToken);
@@ -54,8 +67,11 @@ public sealed class AdminEmailTemplateService(
       Name = request.Name.Trim(),
       Subject = request.Subject.Trim(),
       Preheader = Normalize(request.Preheader),
-      HtmlBody = request.HtmlBody.Trim(),
-      TextBody = Normalize(request.TextBody),
+      HtmlBody = string.Empty,
+      TextBody = null,
+      TemplateType = request.TemplateType.Trim(),
+      ConfigJson = configJson,
+      IsSystem = request.IsSystem,
       Locale = locale,
       Version = 1,
       IsActive = true,
@@ -75,14 +91,16 @@ public sealed class AdminEmailTemplateService(
 
   public async Task<EmailTemplateDetail?> UpdateAsync(Guid id, UpdateEmailTemplateRequest request, CancellationToken cancellationToken = default)
   {
-    Validate("existing", request.Name, request.Subject, request.HtmlBody, request.Locale);
+    var configJson = NormalizeConfigJson(request.ConfigJson);
+    Validate("existing", request.Name, request.Subject, request.TemplateType, configJson, request.Locale);
     var template = await dbContext.EmailTemplates.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     if (template is null) return null;
     template.Name = request.Name.Trim();
     template.Subject = request.Subject.Trim();
     template.Preheader = Normalize(request.Preheader);
-    template.HtmlBody = request.HtmlBody.Trim();
-    template.TextBody = Normalize(request.TextBody);
+    template.TemplateType = request.TemplateType.Trim();
+    template.ConfigJson = configJson;
+    template.IsSystem = request.IsSystem;
     template.Locale = request.Locale.Trim();
     template.IsActive = request.IsActive;
     template.UpdatedAt = DateTime.UtcNow;
@@ -134,14 +152,132 @@ public sealed class AdminEmailTemplateService(
     return true;
   }
 
-  private static EmailTemplateDetail ToDetail(EmailTemplate x) => new(x.Id, x.Key, x.Name, x.Subject, x.Preheader, x.HtmlBody, x.TextBody, x.Locale, x.Version, x.IsActive, x.IsDeleted, x.CreatedAt, x.UpdatedAt);
+  private sealed record LegacyTemplateRow(
+    Guid Id,
+    string Key,
+    string Name,
+    string Subject,
+    string? Preheader,
+    string Locale,
+    int Version,
+    bool IsActive,
+    bool IsDeleted,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
+
+  private async Task<bool> HasTemplateConfigColumnsAsync(CancellationToken cancellationToken)
+  {
+    if (!dbContext.Database.IsRelational()) return true;
+
+    var connection = dbContext.Database.GetDbConnection();
+    var shouldClose = connection.State != ConnectionState.Open;
+    try
+    {
+      if (shouldClose) await connection.OpenAsync(cancellationToken);
+      await using var command = connection.CreateCommand();
+      command.CommandText = """
+        SELECT COUNT(*)
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'email_templates'
+          AND column_name IN ('template_type', 'config_json', 'is_system')
+        """;
+      var result = await command.ExecuteScalarAsync(cancellationToken);
+      return Convert.ToInt32(result) == 3;
+    }
+    catch (Exception) when (!cancellationToken.IsCancellationRequested)
+    {
+      return true;
+    }
+    finally
+    {
+      if (shouldClose && connection.State == ConnectionState.Open) await connection.CloseAsync();
+    }
+  }
+
+  private async Task<(IReadOnlyList<EmailTemplateListItem> Items, int TotalItem)> GetLegacyListAsync(string? search, bool includeDeleted, int page, int pageSize, CancellationToken cancellationToken)
+  {
+    var query = dbContext.EmailTemplates.AsNoTracking().AsQueryable();
+    if (!includeDeleted) query = query.Where(x => !x.IsDeleted);
+    if (!string.IsNullOrWhiteSpace(search))
+    {
+      var term = $"%{search.Trim()}%";
+      query = query.Where(x => EF.Functions.ILike(x.Key, term) || EF.Functions.ILike(x.Name, term) || EF.Functions.ILike(x.Subject, term));
+    }
+
+    var total = await query.CountAsync(cancellationToken);
+    var rows = await query.OrderBy(x => x.Key).ThenByDescending(x => x.Version)
+      .Skip((page - 1) * pageSize).Take(pageSize)
+      .Select(x => new LegacyTemplateRow(x.Id, x.Key, x.Name, x.Subject, x.Preheader, x.Locale, x.Version, x.IsActive, x.IsDeleted, x.CreatedAt, x.UpdatedAt))
+      .ToListAsync(cancellationToken);
+    return (rows.Select(ToLegacyListItem).ToList(), total);
+  }
+
+  private async Task<EmailTemplateDetail?> GetLegacyByIdAsync(Guid id, CancellationToken cancellationToken)
+  {
+    var row = await dbContext.EmailTemplates.AsNoTracking()
+      .Where(x => x.Id == id)
+      .Select(x => new LegacyTemplateRow(x.Id, x.Key, x.Name, x.Subject, x.Preheader, x.Locale, x.Version, x.IsActive, x.IsDeleted, x.CreatedAt, x.UpdatedAt))
+      .FirstOrDefaultAsync(cancellationToken);
+    return row is null ? null : ToLegacyDetail(row);
+  }
+
+  private static EmailTemplateListItem ToLegacyListItem(LegacyTemplateRow x) => new(
+    x.Id,
+    x.Key,
+    x.Name,
+    x.Subject,
+    SafeEmailTemplateRenderer.ResolveType(x.Key) ?? "legacy.html",
+    x.Locale,
+    x.Version,
+    SafeEmailTemplateRenderer.IsCodeManagedKey(x.Key),
+    x.IsActive,
+    x.IsDeleted,
+    x.CreatedAt,
+    x.UpdatedAt);
+
+  private static EmailTemplateDetail ToLegacyDetail(LegacyTemplateRow x) => new(
+    x.Id,
+    x.Key,
+    x.Name,
+    x.Subject,
+    x.Preheader,
+    SafeEmailTemplateRenderer.ResolveType(x.Key) ?? "legacy.html",
+    "{}",
+    x.Locale,
+    x.Version,
+    SafeEmailTemplateRenderer.IsCodeManagedKey(x.Key),
+    x.IsActive,
+    x.IsDeleted,
+    x.CreatedAt,
+    x.UpdatedAt);
+
+  private static EmailTemplateDetail ToDetail(EmailTemplate x) => new(x.Id, x.Key, x.Name, x.Subject, x.Preheader, x.TemplateType, x.ConfigJson ?? "{}", x.Locale, x.Version, x.IsSystem, x.IsActive, x.IsDeleted, x.CreatedAt, x.UpdatedAt);
   private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-  private static void Validate(string key, string name, string subject, string htmlBody, string locale)
+
+  private static string NormalizeConfigJson(string? value)
+  {
+    var normalized = string.IsNullOrWhiteSpace(value) ? "{}" : value.Trim();
+    try
+    {
+      using var document = JsonDocument.Parse(normalized);
+      if (document.RootElement.ValueKind != JsonValueKind.Object) throw new ArgumentException("Cấu hình template phải là JSON object.");
+      return normalized;
+    }
+    catch (JsonException ex)
+    {
+      throw new ArgumentException("Cấu hình template phải là JSON hợp lệ.", ex);
+    }
+  }
+
+  private static void Validate(string key, string name, string subject, string templateType, string configJson, string locale)
   {
     if (string.IsNullOrWhiteSpace(key) || key.Length > 120) throw new ArgumentException("Khóa mẫu email không hợp lệ.");
+    if (!System.Text.RegularExpressions.Regex.IsMatch(key.Trim(), "^[a-z0-9._-]+$")) throw new ArgumentException("Khóa mẫu email chỉ dùng chữ thường, số, dấu chấm, gạch ngang hoặc gạch dưới.");
     if (string.IsNullOrWhiteSpace(name) || name.Length > 160) throw new ArgumentException("Tên mẫu email không hợp lệ.");
     if (string.IsNullOrWhiteSpace(subject) || subject.Length > 255) throw new ArgumentException("Tiêu đề email không hợp lệ.");
-    if (string.IsNullOrWhiteSpace(htmlBody)) throw new ArgumentException("Nội dung HTML không được trống.");
+    if (string.IsNullOrWhiteSpace(templateType) || templateType.Trim() is not ("marketing.promo" or "marketing.newsletter" or "subscriber.welcome" or "order.confirmation" or "legacy.html")) throw new ArgumentException("Loại template không được hỗ trợ.");
+    if (configJson.Length > 50_000) throw new ArgumentException("Cấu hình template tối đa 50.000 ký tự.");
     if (string.IsNullOrWhiteSpace(locale) || locale.Length > 20) throw new ArgumentException("Locale không hợp lệ.");
   }
 }
@@ -280,7 +416,7 @@ public sealed class AdminEmailJobService(
     var recipient = await ResolveRecipientAsync(request, cancellationToken);
     var templateKey = request.TemplateKey.Trim();
     var hasTemplate = await dbContext.EmailTemplates.AnyAsync(x => x.Key == templateKey && x.IsActive && !x.IsDeleted, cancellationToken);
-    if (!hasTemplate && templateKey != "hermes.single_email") throw new InvalidOperationException("Mẫu email chưa hoạt động hoặc không tồn tại.");
+    if (!hasTemplate && !SafeEmailTemplateRenderer.IsCodeManagedKey(templateKey) && templateKey != "hermes.single_email") throw new InvalidOperationException("Mẫu email chưa hoạt động hoặc không tồn tại.");
     if (request.Purpose.Trim().Equals("survey", StringComparison.OrdinalIgnoreCase) && !recipient.HasEmailConsent)
       throw new InvalidOperationException("Khách hàng chưa opt-in email survey/marketing.");
 
@@ -398,9 +534,9 @@ public sealed class AdminEmailJobService(
 
   private string BuildFrontendUrl(string path)
   {
-    var baseUrl = string.IsNullOrWhiteSpace(emailSettings.FrontendBaseUrl) ? "https://aodainhauyen.com" : emailSettings.FrontendBaseUrl.TrimEnd('/');
+    var baseUrl = string.IsNullOrWhiteSpace(emailSettings.FrontendBaseUrl) ? "https://aodainhauyen.io.vn" : emailSettings.FrontendBaseUrl.TrimEnd('/');
     if (baseUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase) || baseUrl.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase))
-      baseUrl = "https://aodainhauyen.com";
+      baseUrl = "https://aodainhauyen.io.vn";
     return $"{baseUrl}/{path.TrimStart('/')}";
   }
 
@@ -501,7 +637,7 @@ public sealed class AdminMarketingCampaignService(
   {
     ValidateCampaign(request);
     var templateKey = request.TemplateKey.Trim();
-    var templateExists = await dbContext.EmailTemplates.AnyAsync(x => x.Key == templateKey && x.IsActive && !x.IsDeleted, cancellationToken);
+    var templateExists = SafeEmailTemplateRenderer.IsCodeManagedKey(templateKey) || await dbContext.EmailTemplates.AnyAsync(x => x.Key == templateKey && x.IsActive && !x.IsDeleted, cancellationToken);
     if (!templateExists) throw new InvalidOperationException("Mẫu email chưa hoạt động hoặc không tồn tại.");
 
     var recipients = await ResolveRecipientsAsync(request, cancellationToken);
@@ -534,7 +670,7 @@ public sealed class AdminMarketingCampaignService(
           preheader = Normalize(request.Preheader),
           heading = request.Subject.Trim(),
           intro = Normalize(request.Intro),
-          body = BuildPlainBody(request, attachments),
+          body = Normalize(request.BodyHtml),
           bodyHtml,
           attachmentsHtml,
           ctaLabel = Normalize(request.CtaLabel),
@@ -618,7 +754,7 @@ public sealed class AdminMarketingCampaignService(
   {
     var parts = new List<string>();
     if (!string.IsNullOrWhiteSpace(request.Intro)) parts.Add(request.Intro.Trim());
-    if (!string.IsNullOrWhiteSpace(request.BodyHtml)) parts.Add(System.Text.RegularExpressions.Regex.Replace(request.BodyHtml, "<.*?>", string.Empty).Trim());
+    if (!string.IsNullOrWhiteSpace(request.BodyHtml)) parts.Add(request.BodyHtml.Trim());
     parts.AddRange(attachments.Select(x => $"{x.Title}: {x.Description ?? x.Url ?? string.Empty}"));
     return string.Join("\n\n", parts.Where(x => !string.IsNullOrWhiteSpace(x)));
   }
@@ -628,7 +764,7 @@ public sealed class AdminMarketingCampaignService(
     var builder = new StringBuilder();
     var intro = Normalize(request.Intro);
     if (intro is not null) builder.Append("<p>").Append(HtmlEncoder.Default.Encode(intro)).Append("</p>");
-    if (!string.IsNullOrWhiteSpace(request.BodyHtml)) builder.Append(request.BodyHtml.Trim());
+    if (!string.IsNullOrWhiteSpace(request.BodyHtml)) builder.Append("<p>").Append(HtmlEncoder.Default.Encode(request.BodyHtml.Trim()).Replace("\n", "<br>", StringComparison.Ordinal)).Append("</p>");
     if (!string.IsNullOrWhiteSpace(attachmentsHtml)) builder.Append(attachmentsHtml);
     var ctaUrl = Normalize(request.CtaUrl);
     var ctaLabel = Normalize(request.CtaLabel) ?? "Xem chi tiết";
@@ -666,9 +802,9 @@ public sealed class AdminMarketingCampaignService(
 
   private string BuildFrontendUrl(string path)
   {
-    var baseUrl = string.IsNullOrWhiteSpace(emailSettings.FrontendBaseUrl) ? "https://aodainhauyen.com" : emailSettings.FrontendBaseUrl.TrimEnd('/');
+    var baseUrl = string.IsNullOrWhiteSpace(emailSettings.FrontendBaseUrl) ? "https://aodainhauyen.io.vn" : emailSettings.FrontendBaseUrl.TrimEnd('/');
     if (baseUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase) || baseUrl.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase))
-      baseUrl = "https://aodainhauyen.com";
+      baseUrl = "https://aodainhauyen.io.vn";
     return $"{baseUrl}/{path.TrimStart('/')}";
   }
 
