@@ -222,7 +222,7 @@ public sealed class HermesEventProcessor(
 
     <store_context>
     store: Áo Dài Nhã Uyên
-    website: https://aodainhauyen.com
+    website: https://aodainhauyen.io.vn
     market: Premium Vietnamese áo dài e-commerce
     target_audience: Women 25-45, Vietnam + overseas Vietnamese
     revenue_model: Direct e-commerce sales + custom tailoring

@@ -97,7 +97,7 @@ export const emailTemplateRegistry: Record<EmailTemplateType, Def> = {
       intro: "Những gợi ý phối áo dài, câu chuyện chất liệu và thiết kế mới.",
       body: "Nhã Uyên chọn lọc các thiết kế trang nhã cho sự kiện gia đình, lễ hội và khoảnh khắc thường ngày.",
       ctaText: "Đọc thêm",
-      ctaUrl: "https://aodainhauyen.com/blog",
+      ctaUrl: "https://aodainhauyen.io.vn/blog",
     },
     fields,
   },
@@ -131,7 +131,7 @@ export const emailTemplateRegistry: Record<EmailTemplateType, Def> = {
       intro: "Cảm ơn bạn đã tin chọn Áo Dài Nhã Uyên.",
       body: "Chúng tôi đã nhận được đơn hàng và sẽ liên hệ khi đơn được xử lý.",
       ctaText: "Xem đơn hàng",
-      ctaUrl: "https://aodainhauyen.com/account/orders",
+      ctaUrl: "https://aodainhauyen.io.vn/account/orders",
       orderCode: "ADNU-2026-0001",
     },
     fields: [...fields, { key: "orderCode", label: "Mã đơn mẫu" }],
@@ -200,7 +200,7 @@ function TemplateEmail({
             {config.logoUrl ? (
               <Img
                 src={config.logoUrl}
-                alt="Ao Dai Nha Uyen"
+                alt="Áo Dài Nhã Uyên"
                 width="160"
                 style={s.logo}
               />

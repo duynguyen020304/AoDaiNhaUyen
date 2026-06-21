@@ -87,8 +87,13 @@ export default function Header({ onOpenAuth }: HeaderProps) {
   };
 
   async function handleLogout() {
-    await logout();
-    onOpenAuth();
+    try {
+      await logout();
+    } catch {
+      // ignore errors - still clear local state
+    } finally {
+      onOpenAuth();
+    }
   }
 
   return (

@@ -272,7 +272,7 @@ public sealed class IntentClassifier(
     string? previousAssistantMessage)
   {
     var builder = new StringBuilder();
-    builder.AppendLine("Bạn là bộ phân loại intent cho stylist AI Ao Dai Nha Uyen.");
+    builder.AppendLine("Bạn là bộ phân loại intent cho stylist AI Áo Dài Nhã Uyên.");
     builder.AppendLine("Mục tiêu: suy ra ý định hành động tốt nhất từ tin nhắn mới nhất, attachment hiện tại, memory và hội thoại gần đây.");
     builder.AppendLine("Ưu tiên hiểu mục tiêu thật sự của user theo ngữ nghĩa và ngữ cảnh follow-up, không dựa vào khớp cụm từ máy móc.");
     builder.AppendLine("Chỉ dùng các intent: catalog_lookup, outfit_recommendation, accessory_recommendation, product_description, product_comparison, tryon_prepare, tryon_execute, image_style_analysis, clarification, out_of_scope.");

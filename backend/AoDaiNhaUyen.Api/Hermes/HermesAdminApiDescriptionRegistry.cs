@@ -232,7 +232,7 @@ public sealed class HermesAdminApiDescriptionRegistry
       Field("purpose", "string", true, "transactional/survey/thank_you"),
       Field("scheduledAt", "datetime", false, "UTC ISO time; bỏ trống để gửi ngay, +14 ngày cho survey"),
       Field("idempotencyKey", "string", true, "Khóa ổn định, ví dụ hermes:thank-you:{orderId}")
-    ], new { toEmail = "khach@example.com", customerId = "00000000-0000-0000-0000-000000000000", orderId = (string?)null, templateKey = "hermes.single_email", subject = "Cảm ơn chị đã tin yêu Áo Dài Nhã Uyên", preheader = "Nhà Uyên rất trân trọng trải nghiệm của chị", intro = "Chào chị,", body = "Cảm ơn chị đã lựa chọn Áo Dài Nhã Uyên. Nhà Uyên hy vọng sản phẩm mang lại trải nghiệm thật đẹp và thoải mái cho chị.", ctaLabel = "Chia sẻ cảm nhận", ctaUrl = "https://aodainhauyen.com", purpose = "thank_you", scheduledAt = (string?)null, idempotencyKey = "hermes:thank-you:00000000000000000000000000000000" });
+    ], new { toEmail = "khach@example.com", customerId = "00000000-0000-0000-0000-000000000000", orderId = (string?)null, templateKey = "hermes.single_email", subject = "Cảm ơn chị đã tin yêu Áo Dài Nhã Uyên", preheader = "Nhà Uyên rất trân trọng trải nghiệm của chị", intro = "Chào chị,", body = "Cảm ơn chị đã lựa chọn Áo Dài Nhã Uyên. Nhà Uyên hy vọng sản phẩm mang lại trải nghiệm thật đẹp và thoải mái cho chị.", ctaLabel = "Chia sẻ cảm nhận", ctaUrl = "https://aodainhauyen.io.vn", purpose = "thank_you", scheduledAt = (string?)null, idempotencyKey = "hermes:thank-you:00000000000000000000000000000000" });
 
   private static HermesBodyDescription ReviewReplyBody() =>
     Body([

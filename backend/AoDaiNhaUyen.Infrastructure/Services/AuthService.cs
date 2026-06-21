@@ -144,15 +144,18 @@ public sealed class AuthService(
 
       var verificationToken = jwtTokenService.GenerateEmailVerificationToken(user.Id);
       var verifyLink = BuildVerifyLink(verificationToken);
-      var htmlBody = BuildEmailVerificationHtml(fullName, verifyLink);
 
       emailQueueService.Enqueue(
         normalizedEmail,
         "auth.verify_email",
         new
         {
-          subject = "Xác thực tài khoản Ao Dai Nha Uyen",
-          trustedHtmlBody = htmlBody
+          subject = "Xác thực tài khoản Áo Dài Nhã Uyên",
+          greeting = $"Xin chào {HtmlEncoder.Default.Encode(fullName)}",
+          body = "Cảm ơn bạn đã tạo tài khoản. Vui lòng xác thực email để kích hoạt và đăng nhập.",
+          buttonText = "Xác thực tài khoản",
+          expiryInfo = "Liên kết có hiệu lực trong 24 giờ. Nếu nút không hoạt động, hãy sao chép liên kết bên dưới:",
+          verifyLink = verifyLink
         });
 
       await dbContext.SaveChangesAsync(cancellationToken);
@@ -519,15 +522,19 @@ public sealed class AuthService(
       var signingKey = BuildPasswordResetSigningKey(account.PasswordHash);
       var token = jwtTokenService.GeneratePasswordResetToken(account.UserId, signingKey);
       var resetLink = BuildPasswordResetLink(account.UserId, token);
-      var htmlBody = BuildPasswordResetHtml(account.User.FullName, resetLink);
 
       await emailQueueService.QueueAsync(
         normalizedEmail,
         "auth.reset_password",
         new
         {
-          subject = "Đặt lại mật khẩu Ao Dai Nha Uyen",
-          trustedHtmlBody = htmlBody
+          subject = "Đặt lại mật khẩu Áo Dài Nhã Uyên",
+          greeting = $"Xin chào {HtmlEncoder.Default.Encode(account.User.FullName)}",
+          body = "Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.",
+          buttonText = "Đặt lại mật khẩu",
+          info1 = "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.",
+          info2 = "Liên kết đặt lại mật khẩu có hiệu lực trong 24 giờ.",
+          resetLink = resetLink
         },
         cancellationToken: cancellationToken);
     }
@@ -691,7 +698,7 @@ public sealed class AuthService(
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#fffaf5;border-radius:18px;overflow:hidden;">
                 <tr>
                   <td style="background:#5f0f12;padding:20px 28px;color:#f8e4cf;font-size:22px;font-weight:700;letter-spacing:0.04em;">
-                    AO DAI NHA UYEN
+                    Áo Dài Nhã Uyên
                   </td>
                 </tr>
                 <tr>
@@ -738,7 +745,7 @@ public sealed class AuthService(
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#fffaf5;border-radius:18px;overflow:hidden;">
                 <tr>
                   <td style="background:#5f0f12;padding:20px 28px;color:#f8e4cf;font-size:22px;font-weight:700;letter-spacing:0.04em;">
-                    AO DAI NHA UYEN
+                    Áo Dài Nhã Uyên
                   </td>
                 </tr>
                 <tr>

@@ -106,7 +106,7 @@ public sealed class SubscriberServiceTests
         SmtpUsername = "user",
         SmtpPassword = "password",
         FromEmail = "noreply@example.com",
-        FromName = "Ao Dai Nha Uyen",
+        FromName = "Áo Dài Nhã Uyên",
         ApiBaseUrl = "http://localhost:5043",
         FrontendBaseUrl = "http://localhost:5173"
       }));
