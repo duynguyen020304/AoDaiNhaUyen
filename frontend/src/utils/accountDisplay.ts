@@ -22,5 +22,5 @@ export function getAccountInitial(user: AccountIdentity): string {
 }
 
 export function getAccountRoleLabel(user: AccountIdentity): string {
-  return isAdminAccount(user) ? 'Quản trị viên Hà Uyên' : 'Khách hàng Hà Uyên';
+  return isAdminAccount(user) ? 'Quản trị viên' : 'Khách hàng';
 }

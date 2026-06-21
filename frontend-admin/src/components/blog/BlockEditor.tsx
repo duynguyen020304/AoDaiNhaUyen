@@ -1,4 +1,7 @@
-import { Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { useState, type ChangeEvent } from "react";
+import { Plus, Trash2, ArrowUp, ArrowDown, Upload } from "lucide-react";
+import { uploadBlogImage } from "@/api/blog";
+import { useFeedback } from "@/components/ui/feedbackContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,12 +66,33 @@ interface Props {
 }
 
 export function BlockEditor({ blocks, onChange }: Props) {
+  const { toast } = useFeedback();
+  const [uploadingBlock, setUploadingBlock] = useState<number | null>(null);
+
   function update(index: number, patch: Partial<BlogBlock>) {
     onChange(
       blocks.map((block, i) =>
         i === index ? ({ ...block, ...patch } as BlogBlock) : block,
       ),
     );
+  }
+
+  async function uploadImageForBlock(index: number, file: File | undefined) {
+    if (!file || uploadingBlock !== null) return;
+    setUploadingBlock(index);
+    try {
+      const result = await uploadBlogImage(file);
+      update(index, {
+        src: result.url,
+        widthPx: result.width ?? 1200,
+        heightPx: result.height ?? 800,
+      } as Partial<BlogBlock>);
+      toast("Đã tải ảnh lên S3.", "success");
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Không thể tải ảnh lên S3.", "error");
+    } finally {
+      setUploadingBlock(null);
+    }
   }
 
   function remove(index: number) {
@@ -92,6 +116,7 @@ export function BlockEditor({ blocks, onChange }: Props) {
             type="button"
             variant="outline"
             size="sm"
+            disabled={uploadingBlock !== null}
             onClick={() => onChange([...blocks, newBlock(type)])}
           >
             <Plus className="size-3" /> {type}
@@ -113,6 +138,7 @@ export function BlockEditor({ blocks, onChange }: Props) {
                 type="button"
                 size="icon"
                 variant="ghost"
+                disabled={uploadingBlock !== null}
                 onClick={() => move(index, -1)}
               >
                 <ArrowUp className="size-4" />
@@ -121,6 +147,7 @@ export function BlockEditor({ blocks, onChange }: Props) {
                 type="button"
                 size="icon"
                 variant="ghost"
+                disabled={uploadingBlock !== null}
                 onClick={() => move(index, 1)}
               >
                 <ArrowDown className="size-4" />
@@ -129,13 +156,14 @@ export function BlockEditor({ blocks, onChange }: Props) {
                 type="button"
                 size="icon"
                 variant="ghost"
+                disabled={uploadingBlock !== null}
                 onClick={() => remove(index)}
               >
                 <Trash2 className="size-4 text-destructive" />
               </Button>
             </div>
           </div>
-          {renderEditor(block, index, update)}
+          {renderEditor(block, index, update, uploadImageForBlock, uploadingBlock === index, uploadingBlock !== null)}
         </div>
       ))}
     </div>
@@ -146,6 +174,9 @@ function renderEditor(
   block: BlogBlock,
   index: number,
   update: (index: number, patch: Partial<BlogBlock>) => void,
+  uploadImageForBlock: (index: number, file: File | undefined) => Promise<void>,
+  isUploadingImage: boolean,
+  isAnyImageUploading: boolean,
 ) {
   switch (block.type) {
     case "heading":
@@ -176,31 +207,76 @@ function renderEditor(
       );
     case "image":
       return (
-        <div className="grid gap-2 md:grid-cols-2">
-          <Input
-            placeholder="URL ảnh"
-            value={block.src}
-            onChange={(e) => update(index, { src: e.target.value })}
-          />
-          <Input
-            placeholder="Alt text SEO"
-            value={block.alt}
-            onChange={(e) => update(index, { alt: e.target.value })}
-          />
-          <Input
-            placeholder="Caption"
-            value={block.caption ?? ""}
-            onChange={(e) => update(index, { caption: e.target.value })}
-          />
-          <Select
-            value={block.width ?? "contained"}
-            onChange={(e) =>
-              update(index, { width: e.target.value as "full" | "contained" })
-            }
-          >
-            <option value="contained">Contained</option>
-            <option value="full">Full</option>
-          </Select>
+        <div className="space-y-3">
+          {block.src ? (
+            <div className="overflow-hidden rounded-lg border bg-muted/40">
+              <img
+                src={block.src}
+                alt={block.alt || "Preview ảnh nội dung"}
+                className="max-h-64 w-full object-contain"
+              />
+            </div>
+          ) : (
+            <div className="flex min-h-36 items-center justify-center rounded-lg border border-dashed bg-muted/30 text-sm text-muted-foreground">
+              Chưa có ảnh preview. Upload ảnh hoặc dán URL.
+            </div>
+          )}
+
+          <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+            <Input
+              placeholder="URL ảnh S3"
+              value={block.src}
+              onChange={(e) => update(index, { src: e.target.value })}
+            />
+            <label className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-lg border border-input bg-white px-3 text-sm font-medium transition-colors hover:bg-muted has-disabled:pointer-events-none has-disabled:opacity-50">
+              <Upload className="size-4" />
+              {isUploadingImage ? "Đang tải..." : "Upload"}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={isAnyImageUploading}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                  void uploadImageForBlock(index, event.target.files?.[0]);
+                  event.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-2">
+            <Input
+              placeholder="Alt text SEO"
+              value={block.alt}
+              onChange={(e) => update(index, { alt: e.target.value })}
+            />
+            <Input
+              placeholder="Caption"
+              value={block.caption ?? ""}
+              onChange={(e) => update(index, { caption: e.target.value })}
+            />
+            <Input
+              type="number"
+              placeholder="Rộng (px)"
+              value={block.widthPx ?? ""}
+              onChange={(e) => update(index, { widthPx: Number(e.target.value) || undefined })}
+            />
+            <Input
+              type="number"
+              placeholder="Cao (px)"
+              value={block.heightPx ?? ""}
+              onChange={(e) => update(index, { heightPx: Number(e.target.value) || undefined })}
+            />
+            <Select
+              value={block.width ?? "contained"}
+              onChange={(e) =>
+                update(index, { width: e.target.value as "full" | "contained" })
+              }
+            >
+              <option value="contained">Contained</option>
+              <option value="full">Full</option>
+            </Select>
+          </div>
         </div>
       );
     case "gallery":

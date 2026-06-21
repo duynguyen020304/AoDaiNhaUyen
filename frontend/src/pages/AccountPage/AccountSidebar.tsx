@@ -40,7 +40,7 @@ export default function AccountSidebar({
           onClick={() => navigate('/')}
           aria-label="Về trang chủ"
         >
-          <img className={styles.logo} src="/assets/login/logo.svg" alt="Hà Uyên" />
+          <img className={styles.logo} src="/assets/login/logo.svg" alt="Nhã Uyên" />
         </button>
       </div>
       <div className={styles.avatarWrapper}>

@@ -22,10 +22,10 @@ export default function BlogDetailPage() {
   if (!post) return <main className={styles.page}><div className={styles.state}>Không tìm thấy bài viết.</div></main>;
 
   const canonical = post.canonicalUrl || `${SITE}/blog/${post.slug}/`;
-  const title = (post.metaTitle || `${post.title} | Áo Dài Nhà Uyên`).slice(0, 60);
+  const title = (post.metaTitle || `${post.title} | Áo Dài Nhã Uyên`).slice(0, 60);
   const description = desc(post);
   const image = resolveAssetUrl(post.featuredImage) ?? `${SITE}/assets/footer-logo.png`;
-  const author = post.authorName || 'Áo Dài Nhà Uyên';
+  const author = post.authorName || 'Áo Dài Nhã Uyên';
 
   // Template-specific processing: extract first video block to render at the top in VideoFeature
   const videoBlock = post.template === 'VideoFeature'
@@ -47,7 +47,7 @@ export default function BlogDetailPage() {
       author: { '@type': 'Person', name: author },
       publisher: {
         '@type': 'Organization',
-        name: 'Áo Dài Nhà Uyên',
+        name: 'Áo Dài Nhã Uyên',
         logo: { '@type': 'ImageObject', url: `${SITE}/logo.png` }
       },
       mainEntityOfPage: { '@type': 'WebPage', '@id': canonical }
