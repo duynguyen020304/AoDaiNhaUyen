@@ -1,3 +1,4 @@
+using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.User;
@@ -18,6 +19,7 @@ public sealed class UserOrderController(
     IUserService userService,
     IOrderService orderService,
     AppDbContext dbContext,
+    ICacheInvalidationService cacheInvalidation,
     ILogger<UserOrderController> logger) : ControllerBase
 {
     [HttpGet]
@@ -86,6 +88,7 @@ public sealed class UserOrderController(
                 result.ErrorMessage ?? "Lỗi hủy đơn hàng."));
         }
 
+        await cacheInvalidation.InvalidateOrderRelatedCacheAsync(cancellationToken);
         return Ok(ApiResponseFactory.Success(result, "Hủy đơn hàng thành công."));
     }
 

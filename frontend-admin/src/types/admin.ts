@@ -128,6 +128,18 @@ export interface UpdateProductRequest {
   isFeatured: boolean
 }
 
+export interface UpdateVariantRequest {
+  sku: string
+  variantName?: string | null
+  size?: string | null
+  color?: string | null
+  price: number
+  salePrice?: number | null
+  stockQty: number
+  isDefault: boolean
+  status: string
+}
+
 export interface UpdateVariantStockRequest {
   stockQty: number
 }

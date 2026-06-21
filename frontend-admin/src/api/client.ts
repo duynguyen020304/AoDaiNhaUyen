@@ -2,6 +2,8 @@ import type { ApiEnvelope, PaginatedApiEnvelope, ApiError } from '@/types/api'
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5043'
 
+type ApiErrorsPayload = ApiError[] | Record<string, string[]> | null | undefined
+
 export class HttpError extends Error {
   readonly status: number
   readonly errors: ApiError[] | null
@@ -19,6 +21,26 @@ export class HttpError extends Error {
     this.errors = errors
     this.requestInfo = requestInfo
   }
+}
+
+function normalizeApiErrors(errors: ApiErrorsPayload): ApiError[] {
+  if (!errors) return []
+
+  if (Array.isArray(errors)) {
+    return errors.filter((error): error is ApiError => Boolean(error?.message))
+  }
+
+  return Object.entries(errors).flatMap(([code, messages]) =>
+    (Array.isArray(messages) ? messages : [String(messages)]).map((message) => ({
+      code,
+      message,
+    })),
+  )
+}
+
+function buildErrorMessage(errors: ApiError[], fallback?: string): string {
+  const details = errors.map((error) => error.message).filter(Boolean)
+  return details.length > 0 ? details.join('\n') : fallback || 'Đã xảy ra lỗi.'
 }
 
 function shouldSetJsonContentType(body: BodyInit | null | undefined): boolean {
@@ -100,8 +122,8 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!response.ok || !payload.success) {
-    const message = payload.errors?.[0]?.message || payload.message || 'Đã xảy ra lỗi.'
-    throw new HttpError(message, response.status, payload.errors, {
+    const errors = normalizeApiErrors(payload.errors as ApiErrorsPayload)
+    throw new HttpError(buildErrorMessage(errors, payload.message), response.status, errors, {
       path,
       method: init?.method || 'GET',
     })
@@ -129,8 +151,8 @@ export async function requestPaginated<T>(path: string, init?: RequestInit): Pro
   }
 
   if (!response.ok || !payload.success) {
-    const message = payload.errors?.[0]?.message || payload.message || 'Đã xảy ra lỗi.'
-    throw new HttpError(message, response.status, payload.errors, {
+    const errors = normalizeApiErrors(payload.errors as ApiErrorsPayload)
+    throw new HttpError(buildErrorMessage(errors, payload.message), response.status, errors, {
       path,
       method: init?.method || 'GET',
     })

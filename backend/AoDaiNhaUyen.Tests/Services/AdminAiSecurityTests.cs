@@ -178,6 +178,56 @@ public sealed class AdminAiSecurityTests
     Assert.Equal("sig-123", call.ThoughtSignature);
   }
   [Fact]
+  public async Task GenericChat_Exposes_NewAdminParityTools()
+  {
+    var llm = new ScriptedLlmProvider(new LlmChunk("text", "done"));
+    var service = CreateService(llm);
+
+    await service.StreamChatAsync(new AdminAiChatRequest("Bạn làm được gì?", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    var tools = Assert.Single(llm.ToolSnapshots);
+    var names = tools.Select(t => t.Name).ToHashSet(StringComparer.Ordinal);
+    Assert.Contains("complete_order", names);
+    Assert.Contains("update_user_profile", names);
+    Assert.Contains("create_role", names);
+    Assert.Contains("save_blog_draft", names);
+    Assert.Contains("publish_blog_post", names);
+    Assert.Contains("list_marketing_options", names);
+    Assert.Contains("send_marketing_campaign", names);
+
+    var updateProduct = Assert.Single(tools, t => t.Name == "update_product");
+    var updateProductSchema = JsonSerializer.Serialize(updateProduct.Parameters);
+    Assert.Contains("shortDescription", updateProductSchema);
+    Assert.Contains("careInstruction", updateProductSchema);
+    Assert.Contains("isFeatured", updateProductSchema);
+
+    var toggle = Assert.Single(tools, t => t.Name == "toggle_product_status");
+    var serialized = JsonSerializer.Serialize(toggle.Parameters);
+    Assert.Contains("out_of_stock", serialized);
+  }
+
+  [Fact]
+  public async Task ListMarketingOptions_ToolExecutes_AsReadOnlyTool()
+  {
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", "{}", "list_marketing_options", "call-marketing"),
+      new LlmChunk("text", "done"));
+    var marketing = new FakeMarketingCampaignService
+    {
+      Options = [new MarketingContentOption(Guid.NewGuid(), "promo", "CHAOMUNG", "Giảm 15%", "https://aodainhauyen.com/products", "HSD", "<div>CHAOMUNG</div>")]
+    };
+    var service = CreateService(llm, marketing: marketing);
+
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Liệt kê lựa chọn marketing", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    Assert.DoesNotContain(chunks, c => c.Type == "confirmation");
+    Assert.Equal(1, marketing.GetContentOptionsCalls);
+    var replayHistory = Assert.Single(llm.HistorySnapshots, h => h.Any(m => m.Role == AdminLlmRole.ToolResponse));
+    var response = Assert.Single(replayHistory, m => m.Role == AdminLlmRole.ToolResponse && m.ToolName == "list_marketing_options");
+    Assert.Contains("CHAOMUNG", response.Content);
+  }
+
+  [Fact]
   public async Task AdminAiPersistence_ListsOnlyAdminAiThreads_ForOwner()
   {
     var persistence = new FakeAdminChatPersistence();
@@ -240,7 +290,8 @@ public sealed class AdminAiSecurityTests
   private static AdminAgentService CreateService(
     IAdminLlmProvider llm,
     FakeProductService? products = null,
-    IAutoModeStore? autoMode = null)
+    IAutoModeStore? autoMode = null,
+    FakeMarketingCampaignService? marketing = null)
   {
     return new AdminAgentService(
       llm,
@@ -255,6 +306,8 @@ public sealed class AdminAiSecurityTests
       new FakeReviewService(),
       new FakePromoService(),
       new FakeBlogAiDraftService(),
+      new FakeBlogPostService(),
+      marketing ?? new FakeMarketingCampaignService(),
       autoMode ?? new AutoModeStore(),
       NullLogger<AdminAgentService>.Instance,
       new PendingActionStore(),
@@ -336,6 +389,7 @@ public sealed class AdminAiSecurityTests
   {
     private int _calls;
     public List<List<AdminLlmMessage>> HistorySnapshots { get; } = [];
+    public List<IReadOnlyList<ToolDefinition>> ToolSnapshots { get; } = [];
 
     public async IAsyncEnumerable<LlmChunk> StreamChatAsync(
       List<AdminLlmMessage> history,
@@ -343,6 +397,7 @@ public sealed class AdminAiSecurityTests
       [EnumeratorCancellation] CancellationToken ct)
     {
       HistorySnapshots.Add(history.ToList());
+      ToolSnapshots.Add(tools.ToList());
       if (_calls < chunks.Length)
       {
         yield return chunks[_calls++];
@@ -364,6 +419,7 @@ public sealed class AdminAiSecurityTests
       "get_product" => RiskLevel.Read,
       "list_products" => RiskLevel.Read,
       "get_dashboard_summary" => RiskLevel.Read,
+      "list_marketing_options" => RiskLevel.Read,
       _ => RiskLevel.Medium
     };
 
@@ -389,6 +445,7 @@ public sealed class AdminAiSecurityTests
     public Task<AdminProductDetailResponse> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Product(ProductId));
     public Task<AdminProductDetailResponse?> UpdateAsync(Guid id, UpdateProductRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(id));
     public Task<AdminProductDetailResponse?> UpdateVariantStockAsync(Guid productId, Guid variantId, int stockQty, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
+    public Task<AdminProductDetailResponse?> UpdateVariantAsync(Guid productId, Guid variantId, UpdateVariantRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
     public Task<bool> ToggleStatusAsync(Guid id, string newStatus, CancellationToken cancellationToken = default) => Task.FromResult(true);
     public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default) { DeleteCalls++; return Task.FromResult(true); }
     public Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
@@ -410,6 +467,37 @@ public sealed class AdminAiSecurityTests
     10,
     false,
     DateTimeOffset.UtcNow);
+
+  private sealed class FakeBlogPostService : IBlogPostService
+  {
+    public Task<PagedResult<BlogPostListItemDto>> GetPostsAsync(BlogPostStatus? status, string? tag, string? categorySlug, string? search, int page, int pageSize, bool includeDeleted = false, CancellationToken cancellationToken = default) => Task.FromResult(new PagedResult<BlogPostListItemDto>([], 0, page, pageSize));
+    public Task<BlogPostDto?> GetBySlugAsync(string slug, bool includeDrafts = false, CancellationToken cancellationToken = default) => Task.FromResult<BlogPostDto?>(null);
+    public Task<BlogPostDto?> GetByIdAsync(Guid id, bool includeDeleted = false, CancellationToken cancellationToken = default) => Task.FromResult<BlogPostDto?>(null);
+    public Task<IReadOnlyList<BlogPostListItemDto>> GetRelatedAsync(string slug, int count, CancellationToken cancellationToken = default) => Task.FromResult((IReadOnlyList<BlogPostListItemDto>)[]);
+    public Task<IReadOnlyList<string>> GetTagsAsync(CancellationToken cancellationToken = default) => Task.FromResult((IReadOnlyList<string>)[]);
+    public Task<BlogPostDto> CreateAsync(CreateBlogPostRequest request, CancellationToken cancellationToken = default) => Task.FromResult(BlogPost(Guid.NewGuid(), request.Title, request.Slug ?? "bai-viet", request.Status));
+    public Task<BlogPostDto> UpdateAsync(Guid id, UpdateBlogPostRequest request, CancellationToken cancellationToken = default) => Task.FromResult(BlogPost(id, request.Title, request.Slug ?? "bai-viet", request.Status));
+    public Task<BlogPostDto> UpdateSeoAsync(Guid id, UpdateBlogPostSeoRequest request, CancellationToken cancellationToken = default) => Task.FromResult(BlogPost(id, request.MetaTitle ?? "Bài viết", request.CanonicalUrl ?? "bai-viet", BlogPostStatus.Draft));
+    public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task<string> BuildBlogSitemapAsync(string siteBaseUrl, CancellationToken cancellationToken = default) => Task.FromResult(string.Empty);
+    public Task<string> BuildLlmsTextAsync(string siteBaseUrl, CancellationToken cancellationToken = default) => Task.FromResult(string.Empty);
+
+    private static BlogPostDto BlogPost(Guid id, string title, string slug, BlogPostStatus status) => new(id, title, slug, string.Empty, null, null, null, BlogPostTemplate.StandardArticle, [], [], null, null, null, null, null, null, null, null, status, null, null, null, null, DateTime.UtcNow, DateTime.UtcNow);
+  }
+
+  private sealed class FakeMarketingCampaignService : IAdminMarketingCampaignService
+  {
+    public int GetContentOptionsCalls { get; private set; }
+    public IReadOnlyList<MarketingContentOption> Options { get; init; } = [];
+
+    public Task<IReadOnlyList<MarketingContentOption>> GetContentOptionsAsync(CancellationToken cancellationToken = default)
+    {
+      GetContentOptionsCalls++;
+      return Task.FromResult(Options);
+    }
+
+    public Task<MarketingCampaignSendResult> QueueCampaignAsync(SendMarketingCampaignRequest request, CancellationToken cancellationToken = default) => Task.FromResult(new MarketingCampaignSendResult(0, 0, []));
+  }
 
   private sealed class FakeCategoryService : IAdminCategoryService
   {

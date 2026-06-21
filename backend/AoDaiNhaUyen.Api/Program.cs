@@ -19,6 +19,7 @@ using System.Threading.RateLimiting;
 using AoDaiNhaUyen.Api.Hermes;
 using AoDaiNhaUyen.Api.Responses;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Mvc;
 
 var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env");
 if (File.Exists(envPath))
@@ -29,6 +30,25 @@ if (File.Exists(envPath))
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+  options.InvalidModelStateResponseFactory = context =>
+  {
+    var errors = context.ModelState
+      .Where(entry => entry.Value?.Errors.Count > 0)
+      .SelectMany(entry => entry.Value!.Errors.Select(error => new ApiError(
+        string.IsNullOrWhiteSpace(entry.Key) ? "validation_error" : entry.Key,
+        string.IsNullOrWhiteSpace(error.ErrorMessage) ? "Dữ liệu không hợp lệ." : error.ErrorMessage)))
+      .ToArray();
+
+    return new BadRequestObjectResult(new ApiResponse<object>(
+      false,
+      "Dữ liệu không hợp lệ.",
+      null,
+      errors,
+      DateTime.UtcNow));
+  };
+});
 var fusionCacheSettings = builder.Configuration.GetSection("FusionCache");
 builder.Services.Configure<FusionCacheSettings>(fusionCacheSettings);
 
@@ -144,7 +164,7 @@ builder.Services.AddRateLimiter(options =>
     GetClientPartitionKey(httpContext, includeGuestKey: false),
     _ => new FixedWindowRateLimiterOptions
     {
-      PermitLimit = 5,
+      PermitLimit = 500,
       Window = TimeSpan.FromMinutes(1),
       QueueLimit = 0,
       AutoReplenishment = true

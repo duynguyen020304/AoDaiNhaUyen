@@ -92,6 +92,7 @@ export default function OrderList() {
     try {
       setCancellingId(orderId);
       await cancelOrderMutation.mutateAsync(orderId);
+      setDetailOrder((current) => current?.id === orderId ? { ...current, orderStatus: 'cancelled' } : current);
       showToast('Hủy đơn hàng thành công.');
     } catch (value) {
       showToast(value instanceof Error ? value.message : 'Không thể hủy đơn hàng.', 'error');
@@ -125,6 +126,16 @@ export default function OrderList() {
               <p className={styles.detailDesc}>
                 Theo dõi tiến trình, thông tin giao hàng và toàn bộ sản phẩm trong đơn hàng.
               </p>
+              {canCancel(detailOrder.orderStatus) ? (
+                <button
+                  type="button"
+                  className={styles.cancelBtn}
+                  onClick={() => void handleCancel(detailOrder.id)}
+                  disabled={cancellingId === detailOrder.id}
+                >
+                  {cancellingId === detailOrder.id ? 'Đang hủy...' : 'Hủy đơn'}
+                </button>
+              ) : null}
             </div>
             <div className={styles.detailSummary}>
               <span className={styles.detailSummaryBadge}>{statusLabel(detailOrder.orderStatus)}</span>

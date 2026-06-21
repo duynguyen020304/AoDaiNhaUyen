@@ -6,6 +6,6 @@ namespace AoDaiNhaUyen.Application.DTOs.Admin;
 public sealed record UpdateUserStatusRequest
 {
     [Required(ErrorMessage = "Trạng thái là bắt buộc.")]
-    [RegularExpression("^(active|inactive|banned)$", ErrorMessage = "Trạng thái không hợp lệ.")]
+    [RegularExpression("^(active|inactive|blocked)$", ErrorMessage = "Trạng thái không hợp lệ. Cho phép: active, inactive, blocked.")]
     public required string Status { get; init; }
 }

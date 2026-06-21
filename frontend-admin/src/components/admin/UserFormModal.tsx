@@ -32,6 +32,11 @@ export function UserFormModal({ open, onClose, user }: Props) {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    if (password && password.length < 8) {
+      setError('Mật khẩu phải có ít nhất 8 ký tự.')
+      setLoading(false)
+      return
+    }
     try {
       if (isEdit && user) {
         const data: UpdateUserRequest = {
@@ -64,7 +69,7 @@ export function UserFormModal({ open, onClose, user }: Props) {
         <h2 className="text-lg font-semibold mb-4">
           {isEdit ? 'Chỉnh sửa người dùng' : 'Thêm người dùng'}
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="user-fullname">Họ tên *</Label>
             <Input
@@ -102,7 +107,9 @@ export function UserFormModal({ open, onClose, user }: Props) {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Để trống sẽ tạo tài khoản OAuth"
+                minLength={8}
+                maxLength={128}
+                placeholder="Ít nhất 8 ký tự; để trống sẽ tạo tài khoản OAuth"
               />
             </div>
           )}

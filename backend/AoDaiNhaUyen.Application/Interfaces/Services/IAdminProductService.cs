@@ -23,6 +23,9 @@ public interface IAdminProductService
     /// <summary>Update an existing product.</summary>
     Task<AdminProductDetailResponse?> UpdateAsync(Guid id, UpdateProductRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Update product variant details.</summary>
+    Task<AdminProductDetailResponse?> UpdateVariantAsync(Guid productId, Guid variantId, UpdateVariantRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>Update stock quantity for one product variant.</summary>
     Task<AdminProductDetailResponse?> UpdateVariantStockAsync(Guid productId, Guid variantId, int stockQty, CancellationToken cancellationToken = default);
 

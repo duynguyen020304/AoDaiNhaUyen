@@ -21,6 +21,8 @@ public sealed class BlogPostService(
   IFusionCacheService cache,
   IHermesEventOutboxPublisher hermesEvents) : IBlogPostService
 {
+  private const string BlogImagePrivatePrefix = "aodainhauyen/private/blog/";
+
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
   {
     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
@@ -399,29 +401,49 @@ public sealed class BlogPostService(
   {
     if (TryGetPrivateBlogKey(value, out var privateKey)) return privateKey;
     if (!TryGetPublicBlogKey(value, out var publicKey)) return value;
-    await storageService.DeleteAsync(publicKey, cancellationToken);
+
     var fileName = publicKey[(publicKey.LastIndexOf('/') + 1)..];
-    return $"aodainhauyen/private/blog/{fileName}";
+    var privateBlogKey = $"{BlogImagePrivatePrefix}{fileName}";
+    if (!await storageService.ExistsAsync(privateBlogKey, cancellationToken))
+    {
+      await using var publicStream = await storageService.DownloadAsync(publicKey, cancellationToken);
+      await storageService.PutObjectWithKeyAsync(privateBlogKey, publicStream, GuessImageContentType(fileName), cancellationToken);
+    }
+    await storageService.DeleteAsync(publicKey, cancellationToken);
+    return privateBlogKey;
   }
 
   private static bool TryGetPrivateBlogKey(string value, out string objectKey)
   {
-    objectKey = string.Empty;
-    var marker = "aodainhauyen/private/blog/";
-    var index = value.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
-    if (index < 0) return false;
-    objectKey = value[index..].Split('?', '#')[0].Trim('/');
-    return true;
+    return TryGetBlogKey(value, "private/blog/", out objectKey);
   }
 
   private static bool TryGetPublicBlogKey(string value, out string objectKey)
   {
+    return TryGetBlogKey(value, "public/blog/", out objectKey);
+  }
+
+  private static bool TryGetBlogKey(string value, string marker, out string objectKey)
+  {
     objectKey = string.Empty;
-    var marker = "aodainhauyen/public/blog/";
     var index = value.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
     if (index < 0) return false;
-    objectKey = value[index..].Split('?', '#')[0].Trim('/');
-    return true;
+    var keyStart = value.LastIndexOf('/', index);
+    objectKey = value[(keyStart + 1)..].Split('?', '#')[0].Trim('/');
+    return objectKey.StartsWith(marker, StringComparison.OrdinalIgnoreCase);
+  }
+
+  private static string GuessImageContentType(string fileName)
+  {
+    var extension = Path.GetExtension(fileName).ToLowerInvariant();
+    return extension switch
+    {
+      ".jpg" or ".jpeg" => "image/jpeg",
+      ".png" => "image/png",
+      ".webp" => "image/webp",
+      ".gif" => "image/gif",
+      _ => "application/octet-stream"
+    };
   }
 
   private async Task<string?> ResolveFeaturedImageAsync(string? value, BlogPostStatus status, CancellationToken cancellationToken)
@@ -536,7 +558,7 @@ public sealed class BlogPostService(
         break;
       case "image":
         RequiredString(block, "src", "Ảnh thiếu đường dẫn.");
-        ValidateAlt(RequiredString(block, "alt", "Ảnh thiếu alt text."));
+        ValidateAlt(OptionalString(block, "alt"));
         break;
       case "gallery":
         ValidateGallery(block);
@@ -594,7 +616,7 @@ public sealed class BlogPostService(
     foreach (var image in images.EnumerateArray())
     {
       RequiredString(image, "src", "Ảnh gallery thiếu đường dẫn.");
-      ValidateAlt(RequiredString(image, "alt", "Ảnh gallery thiếu alt text."));
+      ValidateAlt(OptionalString(image, "alt"));
     }
   }
 
@@ -610,7 +632,7 @@ public sealed class BlogPostService(
 
   private static void ValidateAlt(string alt)
   {
-    if (alt.Length is < 10 or > 125) throw new ArgumentException("Alt text ảnh phải dài 10-125 ký tự.");
+    if (alt.Length > 125) throw new ArgumentException("Alt text ảnh tối đa 125 ký tự.");
   }
 
   private static void ValidateAllowedUrl(string value, IReadOnlyList<string> prefixes, string message)
@@ -623,6 +645,15 @@ public sealed class BlogPostService(
     if (!element.TryGetProperty(propertyName, out var value) || value.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(value.GetString()))
       throw new ArgumentException(message);
     return value.GetString()!.Trim();
+  }
+
+  private static string OptionalString(JsonElement element, string propertyName)
+  {
+    if (!element.TryGetProperty(propertyName, out var value) || value.ValueKind == JsonValueKind.Null)
+      return string.Empty;
+    if (value.ValueKind != JsonValueKind.String)
+      throw new ArgumentException($"{propertyName} phải là chuỗi.");
+    return value.GetString()?.Trim() ?? string.Empty;
   }
 
   private static int RequiredInt(JsonElement element, string propertyName, string message)
