@@ -1,36 +1,84 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Package, Users, Shield, FolderTree, Layers, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, Newspaper, Megaphone, Send, PanelLeftClose, PanelLeftOpen, MessageSquareText, Sparkles, Share2 } from 'lucide-react'
+import { Package, Users, Shield, FolderTree, Layers, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, Newspaper, Megaphone, Send, PanelLeftClose, PanelLeftOpen, MessageSquareText, Sparkles, Share2, ChevronDown, ChevronRight } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetHeader, SheetTrigger } from '@/components/ui/sheet'
 import { AiChatSidebar } from '@/components/ai/AiChatSidebar'
 
-const NAV_ITEMS = [
-  { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Tổng quan', end: true },
-  { to: '/admin/products', icon: Package, label: 'Sản phẩm', end: false },
-  { to: '/admin/orders', icon: ClipboardList, label: 'Đơn hàng', end: false },
-  { to: '/admin/categories', icon: FolderTree, label: 'Danh mục', end: false },
-  { to: '/admin/collections', icon: Layers, label: 'Lookbook', end: false },
-  { to: '/admin/promos', icon: Tag, label: 'Mã giảm giá', end: false },
-  { to: '/admin/blog', icon: Newspaper, label: 'Bài đăng', end: false },
-  { to: '/admin/marketing', icon: Megaphone, label: 'Marketing', end: true },
-  { to: '/admin/facebook', icon: Share2, label: 'Fanpage', end: true },
-  { to: '/admin/email-queue', icon: Send, label: 'Hàng đợi email', end: false },
-  { to: '/admin/users', icon: Users, label: 'Người dùng', end: false },
-  { to: '/admin/roles', icon: Shield, label: 'Vai trò', end: false },
-  { to: '/admin/media', icon: Image, label: 'Hình ảnh', end: false },
-  { to: '/admin/reviews', icon: MessageSquareText, label: 'Đánh giá', end: false },
-  { to: '/admin/ai-tryon-feedback', icon: Sparkles, label: 'Đánh giá AI try-on', end: false },
-  { to: '/admin/hermes', icon: Bot, label: 'AI Chat', end: false },
-  { to: '/admin/tools-risk', icon: Settings2, label: 'Cấu hình AI', end: false },
+const NAV_GROUPS = [
+  {
+    label: 'Tổng quan',
+    items: [
+      { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Tổng quan', end: true },
+    ],
+  },
+  {
+    label: 'Bán hàng',
+    items: [
+      { to: '/admin/orders', icon: ClipboardList, label: 'Đơn hàng', end: false },
+      { to: '/admin/promos', icon: Tag, label: 'Mã giảm giá', end: false },
+    ],
+  },
+  {
+    label: 'Sản phẩm',
+    items: [
+      { to: '/admin/products', icon: Package, label: 'Sản phẩm', end: false },
+      { to: '/admin/categories', icon: FolderTree, label: 'Danh mục', end: false },
+      { to: '/admin/collections', icon: Layers, label: 'Lookbook', end: false },
+      { to: '/admin/media', icon: Image, label: 'Hình ảnh', end: false },
+    ],
+  },
+  {
+    label: 'Marketing & Nội dung',
+    items: [
+      { to: '/admin/marketing', icon: Megaphone, label: 'Marketing', end: true },
+      { to: '/admin/blog', icon: Newspaper, label: 'Bài đăng', end: false },
+      { to: '/admin/facebook', icon: Share2, label: 'Fanpage', end: true },
+    ],
+  },
+  {
+    label: 'Khách hàng',
+    items: [
+      { to: '/admin/users', icon: Users, label: 'Người dùng', end: false },
+      { to: '/admin/reviews', icon: MessageSquareText, label: 'Đánh giá', end: false },
+    ],
+  },
+  {
+    label: 'AI & Tự động hóa',
+    items: [
+      { to: '/admin/hermes', icon: Bot, label: 'AI Chat', end: false },
+      { to: '/admin/ai-tryon-feedback', icon: Sparkles, label: 'Đánh giá AI try-on', end: false },
+      { to: '/admin/tools-risk', icon: Settings2, label: 'Cấu hình AI', end: false },
+    ],
+  },
+  {
+    label: 'Hệ thống',
+    items: [
+      { to: '/admin/roles', icon: Shield, label: 'Vai trò', end: false },
+      { to: '/admin/email-queue', icon: Send, label: 'Hàng đợi email', end: false },
+    ],
+  },
 ] as const
 
 function SidebarContent({ onNavigate, collapsed = false, onToggle }: { onNavigate?: () => void; collapsed?: boolean; onToggle?: () => void }) {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() =>
+    NAV_GROUPS.reduce<Record<string, boolean>>((groups, group) => {
+      groups[group.label] = true
+      return groups
+    }, {})
+  )
+
+  function toggleGroup(label: string) {
+    setExpandedGroups((groups) => ({
+      ...groups,
+      [label]: !groups[label],
+    }))
+  }
 
   async function handleLogout() {
     await logout()
@@ -44,7 +92,7 @@ function SidebarContent({ onNavigate, collapsed = false, onToggle }: { onNavigat
           <img
             src="/logo.svg"
             alt="Nhã Uyên"
-            className={collapsed ? 'size-10 rounded-full bg-white/10 p-1' : 'size-11 rounded-xl bg-white/10 p-1.5'}
+            className={collapsed ? 'size-10 rounded-full p-1' : 'size-11 rounded-xl p-1.5'}
           />
           {!collapsed && (
             <div>
@@ -66,22 +114,45 @@ function SidebarContent({ onNavigate, collapsed = false, onToggle }: { onNavigat
           </Button>
         )}
       </div>
-      <nav className={`flex-1 space-y-1 overflow-y-auto ${collapsed ? 'p-3' : 'p-4'}`}>
-        {NAV_ITEMS.map(({ to, icon: Icon, label, end }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={end}
-            onClick={onNavigate}
-            title={collapsed ? label : undefined}
-            className={({ isActive }) =>
-              `flex items-center rounded-lg text-sm transition-colors ${collapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2'} ${isActive ? 'bg-wine/40 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`
-            }
-          >
-            <Icon className="size-5 shrink-0" />
-            {!collapsed && label}
-          </NavLink>
-        ))}
+      <nav className={`flex-1 overflow-y-auto ${collapsed ? 'space-y-3 p-3' : 'space-y-5 p-4'}`}>
+        {NAV_GROUPS.map((group) => {
+          const expanded = expandedGroups[group.label] !== false
+
+          return (
+            <div key={group.label} className={collapsed ? 'space-y-1.5' : 'space-y-2'}>
+              {!collapsed && (
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.label)}
+                  aria-expanded={expanded}
+                  className="flex w-full items-center justify-between rounded-md px-3 py-1 text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45 transition-colors hover:bg-white/5 hover:text-white/75"
+                >
+                  <span>{group.label}</span>
+                  {expanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                </button>
+              )}
+              {(collapsed || expanded) && (
+                <div className="space-y-1">
+                  {group.items.map(({ to, icon: Icon, label, end }) => (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      end={end}
+                      onClick={onNavigate}
+                      title={collapsed ? `${group.label} · ${label}` : undefined}
+                      className={({ isActive }) =>
+                        `flex items-center rounded-lg text-sm transition-colors ${collapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2'} ${isActive ? 'bg-wine/40 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`
+                      }
+                    >
+                      <Icon className="size-5 shrink-0" />
+                      {!collapsed && label}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </nav>
       <div className={`border-t border-white/10 ${collapsed ? 'p-3' : 'p-4'}`}>
         {user && !collapsed && (
