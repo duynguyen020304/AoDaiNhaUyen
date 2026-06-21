@@ -32,7 +32,7 @@ Blog content DTOs for the editorial system: blog post list items and full detail
 // Block-based post content:
 var blocks = new List<BlogBlockDto>
 {
-    new("heading", "Áo Dài Nhà Uyên"),
+    new("heading", "Áo Dài Nhã Uyên"),
     new("paragraph", "Giới thiệu về bộ sưu tập...")
 };
 ```
