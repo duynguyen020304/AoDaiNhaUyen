@@ -36,9 +36,14 @@ export default function AccountPage({
   const { openAuthModal } = useAuthModal();
 
   async function handleLogout() {
-    await logout();
-    onClose();
-    openAuthModal();
+    try {
+      await logout();
+    } catch {
+      // ignore errors - still clear local state
+    } finally {
+      onClose();
+      openAuthModal();
+    }
   }
 
   const handleClose = useCallback(() => {
