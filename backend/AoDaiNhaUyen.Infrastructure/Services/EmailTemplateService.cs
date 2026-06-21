@@ -146,10 +146,6 @@ public sealed partial class EmailTemplateService(AppDbContext dbContext) : IEmai
 
     return templateKey switch
     {
-      "marketing.confirm_subscription" => new RenderedEmail(
-        "Xác nhận nhận tin từ Ao Dai Nha Uyen",
-        $"<p>Chào bạn,</p><p>Vui lòng xác nhận đăng ký nhận tin:</p><p><a href=\"{values.GetValueOrDefault("confirmUrl", "#")}\">Xác nhận đăng ký</a></p>",
-        null),
       "hermes.single_email" => new RenderedEmail(
         subject,
         BuildSingleEmailHtml(values),
@@ -174,7 +170,7 @@ public sealed partial class EmailTemplateService(AppDbContext dbContext) : IEmai
 
   private static bool AllowsTrustedHtmlBody(string templateKey)
   {
-    return templateKey is "auth.verify_email" or "auth.reset_password" or "order.invoice";
+    return false; // All templates now use database-driven rendering
   }
 
   private static string ReplaceTokens(string template, IReadOnlyDictionary<string, string> values)

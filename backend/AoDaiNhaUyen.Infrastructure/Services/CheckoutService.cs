@@ -197,13 +197,48 @@ public sealed class CheckoutService(
       {
         try
         {
+          var encoder = HtmlEncoder.Default;
+          var wardPart = string.IsNullOrWhiteSpace(order.Ward) ? string.Empty : $", {encoder.Encode(order.Ward)}";
+          
+          // Generate items HTML for invoice template
+          var itemsHtmlBuilder = new StringBuilder();
+          foreach (var item in order.Items)
+          {
+            var variantLabel = string.Join(" / ", new[] { item.Size, item.Color }
+              .Where(value => !string.IsNullOrWhiteSpace(value)));
+            
+            itemsHtmlBuilder.Append("<tr>");
+            itemsHtmlBuilder.Append($"<td>{encoder.Encode(item.ProductName)}</td>");
+            itemsHtmlBuilder.Append($"<td>{(string.IsNullOrWhiteSpace(variantLabel) ? "-" : encoder.Encode(variantLabel))}</td>");
+            itemsHtmlBuilder.Append($"<td>{item.Quantity}</td>");
+            itemsHtmlBuilder.Append($"<td>{item.UnitPrice:N0} VND</td>");
+            itemsHtmlBuilder.Append($"<td>{item.LineTotal:N0} VND</td>");
+            itemsHtmlBuilder.Append("</tr>");
+          }
+          var itemsHtml = itemsHtmlBuilder.ToString();
+          
           await emailQueueService.QueueAsync(
             user.Email,
             "order.invoice",
             new
             {
               subject = $"Hóa đơn đơn hàng {order.OrderCode}",
-              trustedHtmlBody = BuildInvoiceEmail(order, "paid")
+              heading = "Hóa đơn đơn hàng",
+              statusLabelPaid = "Đã thanh toán",
+              statusLabelPending = "Chờ thanh toán",
+              recipientLabel = "Người nhận",
+              addressLabel = "Địa chỉ",
+              orderCode = order.OrderCode,
+              paymentStatus = "paid",
+              recipientName = order.RecipientName,
+              recipientPhone = order.RecipientPhone,
+              addressLine = order.AddressLine,
+              district = order.District,
+              province = order.Province,
+              subtotal = $"{order.Subtotal:N0} VND",
+              shippingFee = $"{order.ShippingFee:N0} VND",
+              totalAmount = $"{order.TotalAmount:N0} VND",
+              itemsHtml = itemsHtml
             },
             cancellationToken: cancellationToken);
         }

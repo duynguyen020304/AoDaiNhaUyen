@@ -214,7 +214,7 @@ public sealed class AdminAiSecurityTests
       new LlmChunk("text", "done"));
     var marketing = new FakeMarketingCampaignService
     {
-      Options = [new MarketingContentOption(Guid.NewGuid(), "promo", "CHAOMUNG", "Giảm 15%", "https://aodainhauyen.com/products", "HSD", "<div>CHAOMUNG</div>")]
+      Options = [new MarketingContentOption(Guid.NewGuid(), "promo", "CHAOMUNG", "Giảm 15%", "https://aodainhauyen.io.vn/products", "HSD", "<div>CHAOMUNG</div>")]
     };
     var service = CreateService(llm, marketing: marketing);
 

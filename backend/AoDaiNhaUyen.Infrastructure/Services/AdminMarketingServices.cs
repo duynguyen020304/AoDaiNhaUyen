@@ -534,9 +534,9 @@ public sealed class AdminEmailJobService(
 
   private string BuildFrontendUrl(string path)
   {
-    var baseUrl = string.IsNullOrWhiteSpace(emailSettings.FrontendBaseUrl) ? "https://aodainhauyen.com" : emailSettings.FrontendBaseUrl.TrimEnd('/');
+    var baseUrl = string.IsNullOrWhiteSpace(emailSettings.FrontendBaseUrl) ? "https://aodainhauyen.io.vn" : emailSettings.FrontendBaseUrl.TrimEnd('/');
     if (baseUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase) || baseUrl.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase))
-      baseUrl = "https://aodainhauyen.com";
+      baseUrl = "https://aodainhauyen.io.vn";
     return $"{baseUrl}/{path.TrimStart('/')}";
   }
 
@@ -802,9 +802,9 @@ public sealed class AdminMarketingCampaignService(
 
   private string BuildFrontendUrl(string path)
   {
-    var baseUrl = string.IsNullOrWhiteSpace(emailSettings.FrontendBaseUrl) ? "https://aodainhauyen.com" : emailSettings.FrontendBaseUrl.TrimEnd('/');
+    var baseUrl = string.IsNullOrWhiteSpace(emailSettings.FrontendBaseUrl) ? "https://aodainhauyen.io.vn" : emailSettings.FrontendBaseUrl.TrimEnd('/');
     if (baseUrl.Contains("localhost", StringComparison.OrdinalIgnoreCase) || baseUrl.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase))
-      baseUrl = "https://aodainhauyen.com";
+      baseUrl = "https://aodainhauyen.io.vn";
     return $"{baseUrl}/{path.TrimStart('/')}";
   }
 
