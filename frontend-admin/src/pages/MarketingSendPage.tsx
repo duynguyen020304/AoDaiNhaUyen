@@ -50,7 +50,7 @@ const steps: Array<{
   {
     id: "attachments",
     title: "Nội dung & đính kèm",
-    description: "Template, tiêu đề, CTA, nội dung kèm",
+    description: "Template tự động, nội dung đính kèm",
     icon: Paperclip,
   },
   {
@@ -134,24 +134,6 @@ export function MarketingSendPage() {
   const [templateType, setTemplateType] =
     useState<ReactEmailTemplateType>("marketing.promo");
   const [templateKey, setTemplateKey] = useState("");
-  const [subject, setSubject] = useState(
-    emailTemplateRegistry["marketing.promo"].defaultSubject
-  );
-  const [preheader, setPreheader] = useState(
-    emailTemplateRegistry["marketing.promo"].defaultPreheader
-  );
-  const [intro, setIntro] = useState(
-    emailTemplateRegistry["marketing.promo"].defaultConfig.intro
-  );
-  const [bodyText, setBodyText] = useState(
-    emailTemplateRegistry["marketing.promo"].defaultConfig.body
-  );
-  const [ctaLabel, setCtaLabel] = useState(
-    emailTemplateRegistry["marketing.promo"].defaultConfig.ctaText
-  );
-  const [ctaUrl, setCtaUrl] = useState(
-    emailTemplateRegistry["marketing.promo"].defaultConfig.ctaUrl
-  );
   const [scheduledAt, setScheduledAt] = useState("");
   const [selectedAttachmentIds, setSelectedAttachmentIds] = useState<
     Set<string>
@@ -178,12 +160,6 @@ export function MarketingSendPage() {
         const defaults = emailTemplateRegistry[initialType];
         setTemplateType(initialType);
         setTemplateKey(initialTemplate?.key ?? defaults.defaultKey);
-        setSubject(defaults.defaultSubject);
-        setPreheader(defaults.defaultPreheader);
-        setIntro(defaults.defaultConfig.intro);
-        setBodyText(defaults.defaultConfig.body);
-        setCtaLabel(defaults.defaultConfig.ctaText);
-        setCtaUrl(defaults.defaultConfig.ctaUrl);
       })
       .catch(() => {});
     getSubscribers("", "active", false, 1, 100)
@@ -202,6 +178,9 @@ export function MarketingSendPage() {
   const selectedTemplateType =
     selectedTemplate ? templateTypeOf(selectedTemplate) ?? templateType : templateType;
   const templateDef = emailTemplateRegistry[selectedTemplateType];
+  const subject = selectedTemplate?.subject || templateDef.defaultSubject;
+  const preheader = templateDef.defaultPreheader;
+  const templateConfig = templateDef.defaultConfig;
   const manualEmailList = splitEmails(manualEmails);
   const recipientCount =
     recipientMode === "all_active"
@@ -225,12 +204,6 @@ export function MarketingSendPage() {
     const defaults = emailTemplateRegistry[nextType];
     setTemplateType(nextType);
     setTemplateKey(nextTemplate?.key ?? defaults.defaultKey);
-    setSubject(defaults.defaultSubject);
-    setPreheader(defaults.defaultPreheader);
-    setIntro(defaults.defaultConfig.intro);
-    setBodyText(defaults.defaultConfig.body);
-    setCtaLabel(defaults.defaultConfig.ctaText);
-    setCtaUrl(defaults.defaultConfig.ctaUrl);
   }
 
   function validateRecipientStep() {
@@ -248,11 +221,7 @@ export function MarketingSendPage() {
 
   function validateContentStep() {
     if (!templateKey) return "Vui lòng chọn loại template.";
-    if (!subject.trim()) return "Vui lòng nhập tiêu đề email.";
-    if (!intro.trim()) return "Vui lòng nhập phần mở đầu.";
-    if (!bodyText.trim()) return "Vui lòng nhập nội dung email.";
-    if (!ctaLabel.trim()) return "Vui lòng nhập CTA text.";
-    if (!ctaUrl.trim()) return "Vui lòng nhập CTA URL.";
+    if (!subject.trim()) return "Template chưa có tiêu đề email hợp lệ.";
     return null;
   }
 
@@ -295,10 +264,10 @@ export function MarketingSendPage() {
       templateKey: selectedTemplate?.key ?? templateKey,
       subject: subject.trim(),
       preheader: preheader.trim() || null,
-      intro: intro.trim() || null,
-      bodyHtml: bodyText.trim() || null,
-      ctaLabel: ctaLabel.trim() || null,
-      ctaUrl: ctaUrl.trim() || null,
+      intro: templateConfig.intro,
+      bodyHtml: templateConfig.body,
+      ctaLabel: templateConfig.ctaText,
+      ctaUrl: templateConfig.ctaUrl,
       attachments: selectedAttachments,
       scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null,
     });
@@ -320,8 +289,8 @@ export function MarketingSendPage() {
               Gửi email marketing
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-gray-600">
-              Tạo chiến dịch theo từng bước: chọn người nhận, nhập nội dung mail
-              và đính kèm, xác nhận trước khi gửi.
+              Tạo chiến dịch theo từng bước: chọn người nhận, chọn template tự động
+              và đính kèm nội dung, xác nhận trước khi gửi.
             </p>
           </div>
           <div className="rounded-xl border bg-muted/30 px-4 py-3 text-sm">
@@ -522,60 +491,6 @@ export function MarketingSendPage() {
                 </div>
                 <p className="mt-1">{templateDef.description}</p>
               </div>
-              <div className="space-y-2">
-                <Label>Subject / tiêu đề inbox</Label>
-                <Input
-                  value={subject}
-                  onChange={(event) => setSubject(event.target.value)}
-                  placeholder={templateDef.defaultSubject}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Preheader</Label>
-                <Input
-                  value={preheader}
-                  onChange={(event) => setPreheader(event.target.value)}
-                  placeholder={templateDef.defaultPreheader}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Mở đầu email</Label>
-                <Textarea
-                  className="min-h-24"
-                  value={intro}
-                  onChange={(event) => setIntro(event.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>
-                  Nội dung chính
-                </Label>
-                <Textarea
-                  className="min-h-40"
-                  value={bodyText}
-                  onChange={(event) => setBodyText(event.target.value)}
-                />
-                <p className="text-xs text-gray-500">
-                  Chỉ nhập plain text. Backend sẽ encode và render bằng layout React Email an toàn.
-                </p>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>CTA text</Label>
-                  <Input
-                    value={ctaLabel}
-                    onChange={(event) => setCtaLabel(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>CTA URL</Label>
-                  <Input
-                    value={ctaUrl}
-                    onChange={(event) => setCtaUrl(event.target.value)}
-                    placeholder="https://..."
-                  />
-                </div>
-              </div>
             </CardContent>
           </Card>
 
@@ -728,7 +643,6 @@ export function MarketingSendPage() {
                   label="Loại template"
                   value={`${templateTypeLabels[selectedTemplateType]} (${selectedTemplate?.key ?? templateKey})`}
                 />
-                <ReviewTile label="Tiêu đề" value={subject} />
                 <ReviewTile
                   label="Lịch gửi"
                   value={
@@ -737,22 +651,6 @@ export function MarketingSendPage() {
                       : "Gửi ngay"
                   }
                 />
-              </div>
-              <div className="rounded-xl border bg-white p-4">
-                <div className="text-sm font-semibold text-burgundy">
-                  Preview nội dung
-                </div>
-                <div className="mt-3 space-y-2 text-sm text-gray-700">
-                  <p>
-                    <strong>Preheader:</strong> {preheader || "Không có"}
-                  </p>
-                  <p>
-                    <strong>Mở đầu:</strong> {intro || "Không có"}
-                  </p>
-                  <div className="rounded-lg bg-muted/40 p-3 text-xs text-gray-600">
-                    {bodyText || "Không có nội dung"}
-                  </div>
-                </div>
               </div>
               <div className="rounded-xl border bg-white p-4">
                 <div className="mb-3 text-sm font-semibold text-burgundy">
