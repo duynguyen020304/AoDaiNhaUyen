@@ -1,9 +1,9 @@
 namespace AoDaiNhaUyen.Application.DTOs.Admin;
 
-public sealed record EmailTemplateListItem(Guid Id, string Key, string Name, string Subject, string Locale, int Version, bool IsActive, bool IsDeleted, DateTime CreatedAt, DateTime UpdatedAt);
-public sealed record EmailTemplateDetail(Guid Id, string Key, string Name, string Subject, string? Preheader, string HtmlBody, string? TextBody, string Locale, int Version, bool IsActive, bool IsDeleted, DateTime CreatedAt, DateTime UpdatedAt);
-public sealed record CreateEmailTemplateRequest(string Key, string Name, string Subject, string? Preheader, string HtmlBody, string? TextBody, string Locale);
-public sealed record UpdateEmailTemplateRequest(string Name, string Subject, string? Preheader, string HtmlBody, string? TextBody, string Locale, bool IsActive);
+public sealed record EmailTemplateListItem(Guid Id, string Key, string Name, string Subject, string TemplateType, string Locale, int Version, bool IsSystem, bool IsActive, bool IsDeleted, DateTime CreatedAt, DateTime UpdatedAt);
+public sealed record EmailTemplateDetail(Guid Id, string Key, string Name, string Subject, string? Preheader, string TemplateType, string ConfigJson, string Locale, int Version, bool IsSystem, bool IsActive, bool IsDeleted, DateTime CreatedAt, DateTime UpdatedAt);
+public sealed record CreateEmailTemplateRequest(string Key, string Name, string Subject, string? Preheader, string TemplateType, string? ConfigJson, string Locale, bool IsSystem);
+public sealed record UpdateEmailTemplateRequest(string Name, string Subject, string? Preheader, string TemplateType, string? ConfigJson, string Locale, bool IsSystem, bool IsActive);
 
 public sealed record SubscriberListItem(Guid Id, string Email, string Status, DateTime? SubscribedAt, DateTime? UnsubscribedAt, DateTime? LastSentAt, Guid? UserId, bool IsDeleted);
 public sealed record SubscriberDetail(Guid Id, string Email, string Status, DateTime? SubscribedAt, DateTime? UnsubscribedAt, DateTime? LastSentAt, DateTime? LastOpenAt, DateTime? LastClickAt, Guid? UserId, bool IsDeleted, IReadOnlyList<ConsentRecord> Consents);

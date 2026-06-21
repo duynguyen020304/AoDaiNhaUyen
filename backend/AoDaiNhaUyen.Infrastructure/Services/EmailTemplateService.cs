@@ -1,3 +1,4 @@
+using System.Data;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -15,6 +16,13 @@ public sealed partial class EmailTemplateService(AppDbContext dbContext) : IEmai
     string locale = "vi-VN",
     CancellationToken cancellationToken = default)
   {
+    var values = ToDictionary(payloadJson);
+    if (!await HasTemplateConfigColumnsAsync(cancellationToken))
+    {
+      var legacyTemplate = await FindLegacyTemplateAsync(templateKey, locale, cancellationToken);
+      return legacyTemplate is null ? BuiltInTemplate(templateKey, values) : RenderLegacyTemplate(legacyTemplate, values);
+    }
+
     var template = await dbContext.EmailTemplates
       .AsNoTracking()
       .Where(x => x.Key == templateKey && x.IsActive && x.Locale == locale)
@@ -26,14 +34,87 @@ public sealed partial class EmailTemplateService(AppDbContext dbContext) : IEmai
         .OrderByDescending(x => x.Version)
         .FirstOrDefaultAsync(cancellationToken);
 
-    var values = ToDictionary(payloadJson);
     if (template is null)
     {
       return BuiltInTemplate(templateKey, values);
     }
 
+    var subject = ReplaceTokens(template.Subject, values);
+    var codeTemplateType = SafeEmailTemplateRenderer.ResolveType(template.Key, template.TemplateType);
+    if (codeTemplateType is not null)
+    {
+      return new RenderedEmail(
+        subject,
+        SafeEmailTemplateRenderer.Render(codeTemplateType, subject, template.Preheader, template.ConfigJson, values),
+        SafeEmailTemplateRenderer.RenderText(subject, template.ConfigJson, values));
+    }
+
     return new RenderedEmail(
-      ReplaceTokens(template.Subject, values),
+      subject,
+      ReplaceTokens(template.HtmlBody, values),
+      template.TextBody is null ? null : ReplaceTokens(template.TextBody, values));
+  }
+
+  private sealed record LegacyTemplateRow(string Key, string Subject, string? Preheader, string HtmlBody, string? TextBody);
+
+  private async Task<bool> HasTemplateConfigColumnsAsync(CancellationToken cancellationToken)
+  {
+    if (!dbContext.Database.IsRelational()) return true;
+
+    var connection = dbContext.Database.GetDbConnection();
+    var shouldClose = connection.State != ConnectionState.Open;
+    try
+    {
+      if (shouldClose) await connection.OpenAsync(cancellationToken);
+      await using var command = connection.CreateCommand();
+      command.CommandText = """
+        SELECT COUNT(*)
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'email_templates'
+          AND column_name IN ('template_type', 'config_json', 'is_system')
+        """;
+      var result = await command.ExecuteScalarAsync(cancellationToken);
+      return Convert.ToInt32(result) == 3;
+    }
+    catch (Exception) when (!cancellationToken.IsCancellationRequested)
+    {
+      return true;
+    }
+    finally
+    {
+      if (shouldClose && connection.State == ConnectionState.Open) await connection.CloseAsync();
+    }
+  }
+
+  private async Task<LegacyTemplateRow?> FindLegacyTemplateAsync(string templateKey, string locale, CancellationToken cancellationToken)
+  {
+    return await dbContext.EmailTemplates.AsNoTracking()
+      .Where(x => x.Key == templateKey && x.IsActive && x.Locale == locale)
+      .OrderByDescending(x => x.Version)
+      .Select(x => new LegacyTemplateRow(x.Key, x.Subject, x.Preheader, x.HtmlBody, x.TextBody))
+      .FirstOrDefaultAsync(cancellationToken)
+      ?? await dbContext.EmailTemplates.AsNoTracking()
+        .Where(x => x.Key == templateKey && x.IsActive)
+        .OrderByDescending(x => x.Version)
+        .Select(x => new LegacyTemplateRow(x.Key, x.Subject, x.Preheader, x.HtmlBody, x.TextBody))
+        .FirstOrDefaultAsync(cancellationToken);
+  }
+
+  private static RenderedEmail RenderLegacyTemplate(LegacyTemplateRow template, IReadOnlyDictionary<string, string> values)
+  {
+    var subject = ReplaceTokens(template.Subject, values);
+    var codeTemplateType = SafeEmailTemplateRenderer.ResolveType(template.Key);
+    if (codeTemplateType is not null)
+    {
+      return new RenderedEmail(
+        subject,
+        SafeEmailTemplateRenderer.Render(codeTemplateType, subject, template.Preheader, "{}", values),
+        SafeEmailTemplateRenderer.RenderText(subject, "{}", values));
+    }
+
+    return new RenderedEmail(
+      subject,
       ReplaceTokens(template.HtmlBody, values),
       template.TextBody is null ? null : ReplaceTokens(template.TextBody, values));
   }
@@ -52,6 +133,15 @@ public sealed partial class EmailTemplateService(AppDbContext dbContext) : IEmai
     if (AllowsTrustedHtmlBody(templateKey) && !string.IsNullOrWhiteSpace(trustedHtml))
     {
       return new RenderedEmail(subject, trustedHtml, null);
+    }
+
+    var codeTemplateType = SafeEmailTemplateRenderer.ResolveType(templateKey);
+    if (codeTemplateType is not null)
+    {
+      return new RenderedEmail(
+        subject,
+        SafeEmailTemplateRenderer.Render(codeTemplateType, subject, values.GetValueOrDefault("preheader", string.Empty), "{}", values),
+        SafeEmailTemplateRenderer.RenderText(subject, "{}", values));
     }
 
     return templateKey switch

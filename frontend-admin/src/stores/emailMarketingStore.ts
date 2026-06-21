@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import * as api from '@/api/emailMarketing'
-import type { CreateEmailTemplateRequest, EmailJobDetail, EmailJobListItem, EmailTemplateDetail, EmailTemplateListItem, ImportSubscribersRequest, MarketingCampaignSendResult, MarketingContentOption, MarketingStats, SendMarketingCampaignRequest, SubscriberDetail, SubscriberListItem, UpdateEmailTemplateRequest } from '@/types/admin'
+import type { EmailJobDetail, EmailJobListItem, EmailTemplateDetail, EmailTemplateListItem, ImportSubscribersRequest, MarketingCampaignSendResult, MarketingContentOption, MarketingStats, SendMarketingCampaignRequest, SubscriberDetail, SubscriberListItem } from '@/types/admin'
 
 interface EmailMarketingState {
   stats: MarketingStats | null
@@ -19,9 +19,6 @@ interface EmailMarketingState {
   fetchContentOptions: () => Promise<void>
   sendCampaign: (data: SendMarketingCampaignRequest) => Promise<MarketingCampaignSendResult>
   fetchTemplates: (search?: string, page?: number) => Promise<void>
-  saveTemplate: (data: CreateEmailTemplateRequest | UpdateEmailTemplateRequest, id?: string) => Promise<void>
-  deleteTemplate: (id: string) => Promise<void>
-  restoreTemplate: (id: string) => Promise<void>
   fetchSubscribers: (search?: string, status?: string, page?: number) => Promise<void>
   loadSubscriber: (id: string) => Promise<void>
   unsubscribe: (id: string) => Promise<void>
@@ -42,10 +39,7 @@ export const useEmailMarketingStore = create<EmailMarketingState>((set, get) => 
   fetchStats: async () => { set({ loading: true, error: null }); try { set({ stats: await api.getMarketingStats() }) } catch (e) { set({ error: message(e) }); throw e } finally { set({ loading: false }) } },
   fetchContentOptions: async () => { set({ error: null }); try { set({ contentOptions: await api.getMarketingContentOptions() }) } catch (e) { set({ error: message(e) }); throw e } },
   sendCampaign: async (data) => { set({ loading: true, error: null }); try { const result = await api.sendMarketingCampaign(data); await Promise.all([get().fetchStats(), get().fetchJobs('', 1)]); return result } catch (e) { set({ error: message(e) }); throw e } finally { set({ loading: false }) } },
-  fetchTemplates: async (search = '', page = 1) => { set({ loading: true, error: null }); try { const r = await api.getEmailTemplates(search, true, page); set({ templates: r.data, totalPages: r.totalPage, currentPage: page }) } catch (e) { set({ error: message(e) }); throw e } finally { set({ loading: false }) } },
-  saveTemplate: async (data, id) => { set({ error: null }); try { if (id) { await api.updateEmailTemplate(id, data as UpdateEmailTemplateRequest) } else { await api.createEmailTemplate(data as CreateEmailTemplateRequest) } await get().fetchTemplates('', get().currentPage) } catch (e) { set({ error: message(e) }); throw e } },
-  deleteTemplate: async (id) => { await api.deleteEmailTemplate(id); await get().fetchTemplates('', get().currentPage) },
-  restoreTemplate: async (id) => { await api.restoreEmailTemplate(id); await get().fetchTemplates('', get().currentPage) },
+  fetchTemplates: async (search = '', page = 1) => { set({ loading: true, error: null }); try { const r = await api.getEmailTemplates(search, false, page); set({ templates: r.data, totalPages: r.totalPage, currentPage: page }) } catch (e) { set({ error: message(e) }); throw e } finally { set({ loading: false }) } },
   fetchSubscribers: async (search = '', status = '', page = 1) => { set({ loading: true, error: null }); try { const r = await api.getSubscribers(search, status, false, page); set({ subscribers: r.data, totalPages: r.totalPage, currentPage: page }) } catch (e) { set({ error: message(e) }); throw e } finally { set({ loading: false }) } },
   loadSubscriber: async (id) => { set({ selectedSubscriber: await api.getSubscriber(id) }) },
   unsubscribe: async (id) => { await api.unsubscribeSubscriber(id); await get().fetchSubscribers('', '', get().currentPage) },

@@ -30,53 +30,27 @@ public sealed class AdminEmailTemplatesController(IAdminEmailTemplateService ser
   }
 
   [HttpPost]
-  public async Task<IActionResult> Create(CreateEmailTemplateRequest request, CancellationToken cancellationToken = default)
+  public IActionResult Create()
   {
-    try
-    {
-      var item = await service.CreateAsync(request, cancellationToken);
-      return CreatedAtAction(nameof(GetById), new { id = item.Id }, ApiResponseFactory.Success(item, "Tạo mẫu email thành công."));
-    }
-    catch (InvalidOperationException ex)
-    {
-      return Conflict(ApiResponseFactory.Failure("Không thể tạo mẫu email.", "conflict", ex.Message));
-    }
-    catch (ArgumentException ex)
-    {
-      return BadRequest(ApiResponseFactory.Failure("Dữ liệu mẫu email không hợp lệ.", "validation_error", ex.Message));
-    }
+    return StatusCode(StatusCodes.Status405MethodNotAllowed, ApiResponseFactory.Failure("Không thể tạo mẫu email.", "templates_code_managed", "Mẫu email được dev lập trình sẵn bằng React Email."));
   }
 
   [HttpPut("{id:guid}")]
-  public async Task<IActionResult> Update(Guid id, UpdateEmailTemplateRequest request, CancellationToken cancellationToken = default)
+  public IActionResult Update(Guid id)
   {
-    try
-    {
-      var item = await service.UpdateAsync(id, request, cancellationToken);
-      return item is null
-        ? NotFound(ApiResponseFactory.Failure("Không tìm thấy mẫu email.", "not_found", "Mẫu email không tồn tại."))
-        : Ok(ApiResponseFactory.Success(item, "Cập nhật mẫu email thành công."));
-    }
-    catch (ArgumentException ex)
-    {
-      return BadRequest(ApiResponseFactory.Failure("Dữ liệu mẫu email không hợp lệ.", "validation_error", ex.Message));
-    }
+    return StatusCode(StatusCodes.Status405MethodNotAllowed, ApiResponseFactory.Failure("Không thể cập nhật mẫu email.", "templates_code_managed", "Mẫu email được dev lập trình sẵn bằng React Email."));
   }
 
   [HttpDelete("{id:guid}")]
-  public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken = default)
+  public IActionResult Delete(Guid id)
   {
-    return await service.DeleteAsync(id, cancellationToken)
-      ? NoContent()
-      : NotFound(ApiResponseFactory.Failure("Không tìm thấy mẫu email.", "not_found", "Mẫu email không tồn tại hoặc đã bị xóa."));
+    return StatusCode(StatusCodes.Status405MethodNotAllowed, ApiResponseFactory.Failure("Không thể xóa mẫu email.", "templates_code_managed", "Mẫu email được dev lập trình sẵn bằng React Email."));
   }
 
   [HttpPatch("{id:guid}/restore")]
-  public async Task<IActionResult> Restore(Guid id, CancellationToken cancellationToken = default)
+  public IActionResult Restore(Guid id)
   {
-    return await service.RestoreAsync(id, cancellationToken)
-      ? Ok(ApiResponseFactory.Success<object?>(null, "Khôi phục mẫu email thành công."))
-      : NotFound(ApiResponseFactory.Failure("Không tìm thấy mẫu email.", "not_found", "Mẫu email không tồn tại hoặc chưa bị xóa."));
+    return StatusCode(StatusCodes.Status405MethodNotAllowed, ApiResponseFactory.Failure("Không thể khôi phục mẫu email.", "templates_code_managed", "Mẫu email được dev lập trình sẵn bằng React Email."));
   }
 }
 

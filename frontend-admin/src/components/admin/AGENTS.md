@@ -12,7 +12,6 @@ Domain-specific CRUD modals and forms for admin entities. Each modal handles cre
 | `ModalOverlay.tsx` | Shared backdrop/z-index wrapper used by all modals in this directory |
 | `CategoryFormModal.tsx` | Create/edit category modal |
 | `DeleteConfirmModal.tsx` | Generic delete confirmation dialog (title + message + confirm/cancel) |
-| `EmailTemplateFormModal.tsx` | Create/edit email template modal with subject, preheader, and HTML body fields |
 | `PromoFormModal.tsx` | Create/edit promo code modal |
 | `RoleFormModal.tsx` | Create/edit role modal |
 | `UserFormModal.tsx` | Create/edit admin user modal |

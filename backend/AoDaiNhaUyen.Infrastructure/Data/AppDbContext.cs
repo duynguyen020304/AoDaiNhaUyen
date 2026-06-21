@@ -905,6 +905,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.Preheader).HasMaxLength(255);
       builder.Property(x => x.HtmlBody).HasColumnType("text").IsRequired();
       builder.Property(x => x.TextBody).HasColumnType("text");
+      builder.Property(x => x.TemplateType).HasMaxLength(80).HasDefaultValue("legacy.html").IsRequired();
+      builder.Property(x => x.ConfigJson).HasColumnType("jsonb");
+      builder.Property(x => x.IsSystem).HasDefaultValue(false).IsRequired();
       builder.Property(x => x.Locale).HasMaxLength(20).HasDefaultValue("vi-VN").IsRequired();
       builder.Property(x => x.Version).HasDefaultValue(1).IsRequired();
       builder.HasIndex(x => new { x.Key, x.Locale, x.Version }).IsUnique();

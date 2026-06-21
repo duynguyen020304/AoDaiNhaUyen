@@ -22,7 +22,7 @@ Route-level admin screens. Each page is responsible for composing stores, query 
 | `BlogListPage.tsx` | Blog post list with status/filter |
 | `BlogFormPage.tsx` | Blog post editor using `BlockEditor`, with AI draft handoff via sessionStorage |
 | `MarketingDashboardPage.tsx` | Marketing metrics overview |
-| `EmailTemplatesPage.tsx` | Email template CRUD with `EmailTemplateFormModal` and live preview |
+| `EmailTemplatesPage.tsx` | Read-only dev-managed React Email template list and preview |
 | `EmailQueuePage.tsx` | View and manage queued email sends |
 | `SubscribersPage.tsx` | Email subscriber management |
 | `AiChatPage.tsx` | Full-page admin AI chat (generic + Hermes mode) |

@@ -304,10 +304,11 @@ export interface AdminOrderListItem {
 
 // ── Email Marketing ──
 
-export interface EmailTemplateListItem { id: string; key: string; name: string; subject: string; locale: string; version: number; isActive: boolean; isDeleted: boolean; createdAt: string; updatedAt: string }
-export interface EmailTemplateDetail extends EmailTemplateListItem { preheader: string | null; htmlBody: string; textBody: string | null }
-export interface CreateEmailTemplateRequest { key: string; name: string; subject: string; preheader?: string; htmlBody: string; textBody?: string; locale: string }
-export interface UpdateEmailTemplateRequest { name: string; subject: string; preheader?: string; htmlBody: string; textBody?: string; locale: string; isActive: boolean }
+export type EmailTemplateType = 'marketing.promo' | 'marketing.newsletter' | 'subscriber.welcome' | 'order.confirmation' | 'legacy.html'
+export interface EmailTemplateListItem { id: string; key: string; name: string; subject: string; templateType: EmailTemplateType | string; locale: string; version: number; isSystem: boolean; isActive: boolean; isDeleted: boolean; createdAt: string; updatedAt: string }
+export interface EmailTemplateDetail extends EmailTemplateListItem { preheader: string | null; configJson: string }
+export interface CreateEmailTemplateRequest { key: string; name: string; subject: string; preheader?: string; templateType: EmailTemplateType; configJson: string; locale: string; isSystem: boolean }
+export interface UpdateEmailTemplateRequest { name: string; subject: string; preheader?: string; templateType: EmailTemplateType; configJson: string; locale: string; isSystem: boolean; isActive: boolean }
 export interface SubscriberListItem { id: string; email: string; status: string; subscribedAt: string | null; unsubscribedAt: string | null; lastSentAt: string | null; userId: string | null; isDeleted: boolean }
 export interface ConsentRecord { channel: string; isOptIn: boolean; source: string; consentedAt: string | null; revokedAt: string | null }
 export interface SubscriberDetail extends SubscriberListItem { lastOpenAt: string | null; lastClickAt: string | null; consents: ConsentRecord[] }
