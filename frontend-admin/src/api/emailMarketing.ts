@@ -59,6 +59,8 @@ export const unsubscribeSubscriber = (id: string) =>
   request<void>(`/api/admin/subscribers/${id}/unsubscribe`, {
     method: "PATCH",
   });
+export const deleteSubscriber = (id: string) =>
+  request<void>(`/api/admin/subscribers/${id}`, { method: "DELETE" });
 export const importSubscribers = (data: ImportSubscribersRequest) =>
   request<ImportSubscribersResult>("/api/admin/subscribers/import", {
     method: "POST",
@@ -77,3 +79,5 @@ export const retryEmailJob = (id: string) =>
   request<void>(`/api/admin/email-jobs/${id}/retry`, { method: "PATCH" });
 export const cancelEmailJob = (id: string) =>
   request<void>(`/api/admin/email-jobs/${id}/cancel`, { method: "PATCH" });
+export const deleteEmailJob = (id: string) =>
+  request<void>(`/api/admin/email-jobs/${id}`, { method: "DELETE" });

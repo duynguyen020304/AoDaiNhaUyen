@@ -27,7 +27,7 @@ public sealed record QueueSingleEmailJobRequest(
   string IdempotencyKey);
 public sealed record QueueSingleEmailJobResponse(Guid JobId, string ToEmail, string TemplateKey, DateTime ScheduledAt, bool AlreadyQueued);
 
-public sealed record EmailJobListItem(Guid Id, string ToEmail, string TemplateKey, string Status, int RetryCount, DateTime ScheduledAt, DateTime? SentAt, string? ErrorMessage);
+public sealed record EmailJobListItem(Guid Id, string ToEmail, string TemplateKey, string Status, int RetryCount, DateTime ScheduledAt, DateTime? SentAt, string? ErrorMessage, bool IsDeleted = false);
 public sealed record EmailJobDetail(Guid Id, string ToEmail, string TemplateKey, string PayloadJson, string Status, int RetryCount, DateTime ScheduledAt, DateTime? SentAt, string? ErrorMessage, IReadOnlyList<SendLogRecord> Logs);
 public sealed record SendLogRecord(string Status, DateTime? SentAt, DateTime? FailedAt, string? ErrorMessage);
 

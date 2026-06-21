@@ -328,10 +328,32 @@ public sealed class AdminSubscriberService(
     await dbContext.SaveChangesAsync(cancellationToken);
 
     await hermesEvents.EnqueueAdminEmailEventAsync(
-      "email_template_updated",
+      "subscriber_unsubscribed",
       subscriber.Id,
       new { subscriberId = subscriber.Id, action = "unsubscribed", status = subscriber.Status },
       $"subscriber_unsubscribed:Email:{subscriber.Id:N}:{subscriber.UpdatedAt.Ticks}",
+      cancellationToken);
+
+    return true;
+  }
+
+  public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+  {
+    var subscriber = await dbContext.Subscribers.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    if (subscriber is null || subscriber.IsDeleted) return false;
+
+    var now = DateTime.UtcNow;
+    subscriber.IsDeleted = true;
+    subscriber.DeletedAt = now;
+    subscriber.UpdatedAt = now;
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+
+    await hermesEvents.EnqueueAdminEmailEventAsync(
+      "subscriber_deleted",
+      subscriber.Id,
+      new { subscriberId = subscriber.Id, action = "deleted", subscriber.Email, deletedAt = now },
+      $"subscriber_deleted:Email:{subscriber.Id:N}:{now.Ticks}",
       cancellationToken);
 
     return true;
@@ -366,7 +388,7 @@ public sealed class AdminSubscriberService(
     await dbContext.SaveChangesAsync(cancellationToken);
 
     await hermesEvents.EnqueueAdminEmailEventAsync(
-      "email_template_updated",
+      "subscribers_bulk_imported",
       Guid.NewGuid(),
       new { action = "bulk_imported", source = string.IsNullOrWhiteSpace(source) ? "admin_import" : source.Trim(), importedCount = imported, requestedCount = emails.Count },
       $"subscriber_bulk_imported:Email:{now.Ticks}:{imported}",
@@ -386,20 +408,21 @@ public sealed class AdminEmailJobService(
 {
   private readonly EmailSettings emailSettings = emailSettings.Value;
 
-  public async Task<(IReadOnlyList<EmailJobListItem> Items, int TotalItem)> GetListAsync(string? status, int page, int pageSize, CancellationToken cancellationToken = default)
+  public async Task<(IReadOnlyList<EmailJobListItem> Items, int TotalItem)> GetListAsync(string? status, bool includeDeleted, int page, int pageSize, CancellationToken cancellationToken = default)
   {
     var query = dbContext.EmailJobs.AsNoTracking().AsQueryable();
+    if (!includeDeleted) query = query.Where(x => !x.IsDeleted);
     if (!string.IsNullOrWhiteSpace(status)) query = query.Where(x => x.Status == status.Trim());
     var total = await query.CountAsync(cancellationToken);
     var items = await query.OrderByDescending(x => x.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize)
-      .Select(x => new EmailJobListItem(x.Id, x.ToEmail, x.TemplateKey, x.Status, x.RetryCount, x.ScheduledAt, x.SentAt, x.ErrorMessage))
+      .Select(x => new EmailJobListItem(x.Id, x.ToEmail, x.TemplateKey, x.Status, x.RetryCount, x.ScheduledAt, x.SentAt, x.ErrorMessage, x.IsDeleted))
       .ToListAsync(cancellationToken);
     return (items, total);
   }
 
   public async Task<EmailJobDetail?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
   {
-    return await dbContext.EmailJobs.AsNoTracking().Where(x => x.Id == id)
+    return await dbContext.EmailJobs.AsNoTracking().Where(x => x.Id == id && !x.IsDeleted)
       .Select(x => new EmailJobDetail(x.Id, x.ToEmail, x.TemplateKey, x.PayloadJson, x.Status, x.RetryCount, x.ScheduledAt, x.SentAt, x.ErrorMessage,
         x.SendLogs.OrderByDescending(l => l.CreatedAt).Select(l => new SendLogRecord(l.Status, l.SentAt, l.FailedAt, l.ErrorMessage)).ToList()))
       .FirstOrDefaultAsync(cancellationToken);
@@ -553,6 +576,20 @@ public sealed class AdminEmailJobService(
     if (job is null) return false;
     job.Status = "cancelled";
     job.UpdatedAt = DateTime.UtcNow;
+    await dbContext.SaveChangesAsync(cancellationToken);
+    return true;
+  }
+
+  public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+  {
+    var job = await dbContext.EmailJobs.IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+    if (job is null || job.IsDeleted) return false;
+    if (job.Status is "queued" or "sending") return false;
+
+    var now = DateTime.UtcNow;
+    job.IsDeleted = true;
+    job.DeletedAt = now;
+    job.UpdatedAt = now;
     await dbContext.SaveChangesAsync(cancellationToken);
     return true;
   }

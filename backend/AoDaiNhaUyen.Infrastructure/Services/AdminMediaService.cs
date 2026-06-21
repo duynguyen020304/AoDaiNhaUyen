@@ -1,5 +1,6 @@
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +9,7 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 public sealed class AdminMediaService(
   AppDbContext dbContext,
   IStorageService storageService,
+  IImageUploadValidator imageUploadValidator,
   IHermesEventOutboxPublisher hermesEvents) : IAdminMediaService
 {
   public async Task<UserImageListDto> GetAllAsync(
@@ -106,6 +108,60 @@ public sealed class AdminMediaService(
       row.FileSizeBytes,
       row.SourceType,
       row.CreatedAt);
+  }
+
+  public async Task<UserImageDto> UploadAsync(byte[] bytes, string fileName, string contentType, string sourceType = "admin", CancellationToken ct = default)
+  {
+    const long maxBytes = 10 * 1024 * 1024;
+    var validation = imageUploadValidator.Validate(contentType, bytes, bytes.LongLength, maxBytes);
+    if (!validation.IsValid || validation.NormalizedContentType is null)
+      throw new ArgumentException(validation.ErrorMessage ?? "Ảnh không hợp lệ.");
+
+    var safeFileName = string.IsNullOrWhiteSpace(fileName) ? $"{Guid.NewGuid():N}" : Path.GetFileName(fileName.Trim());
+    var ext = Path.GetExtension(safeFileName);
+    if (string.IsNullOrWhiteSpace(ext))
+    {
+      ext = validation.NormalizedContentType switch
+      {
+        "image/png" => ".png",
+        "image/jpeg" => ".jpg",
+        "image/webp" => ".webp",
+        _ => ".bin"
+      };
+      safeFileName += ext;
+    }
+
+    await using var stream = new MemoryStream(bytes);
+    var uploaded = await storageService.UploadAsync(stream, safeFileName, validation.NormalizedContentType, "private/admin-media", ct);
+    var now = DateTime.UtcNow;
+    var entity = new UserGeneratedImage
+    {
+      Id = Guid.NewGuid(),
+      ObjectKey = uploaded.ObjectKey,
+      Url = uploaded.Url,
+      Kind = "admin_upload",
+      MimeType = uploaded.MimeType,
+      OriginalFileName = uploaded.OriginalFileName,
+      FileSizeBytes = uploaded.FileSize,
+      SourceType = string.IsNullOrWhiteSpace(sourceType) ? "admin" : sourceType.Trim(),
+      CreatedAt = now,
+      UpdatedAt = now
+    };
+
+    dbContext.UserGeneratedImages.Add(entity);
+    await dbContext.SaveChangesAsync(ct);
+
+    await hermesEvents.EnqueueAdminEventAsync(
+      "media_uploaded",
+      "Media",
+      entity.Id.ToString("N"),
+      new { mediaId = entity.Id, entity.Kind, entity.SourceType, fileName = entity.OriginalFileName, entity.ObjectKey, entity.FileSizeBytes },
+      $"media_uploaded:Media:{entity.Id:N}:{now.Ticks}",
+      null,
+      ct);
+
+    var presignedUrl = await storageService.GeneratePresignedGetUrlAsync(entity.ObjectKey, 3600, ct);
+    return new UserImageDto(entity.Id, entity.ObjectKey, presignedUrl, entity.Kind, entity.MimeType, entity.OriginalFileName, entity.FileSizeBytes, entity.SourceType, new DateTimeOffset(entity.CreatedAt, TimeSpan.Zero));
   }
 
   public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)

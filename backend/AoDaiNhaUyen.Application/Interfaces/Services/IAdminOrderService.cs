@@ -24,6 +24,11 @@ public interface IAdminOrderService
 
   /// <summary>Cancel order and restore stock.</summary>
   Task<OrderUpdateResult> CancelOrderAsync(Guid orderId, CancellationToken ct = default);
+
+  Task<OrderUpdateResult> UpdateOrderAddressAsync(Guid orderId, AdminOrderAddressUpdate request, CancellationToken ct = default);
+  Task<OrderUpdateResult> UpdateOrderItemsAsync(Guid orderId, IReadOnlyList<AdminOrderItemUpdate> items, CancellationToken ct = default);
+  Task<OrderUpdateResult> DeleteOrderAsync(Guid orderId, CancellationToken ct = default);
+  Task<OrderUpdateResult> RestoreOrderAsync(Guid orderId, CancellationToken ct = default);
 }
 
 public sealed record AdminOrderListItem(
@@ -54,6 +59,9 @@ public sealed record AdminOrderDetail(
   IReadOnlyList<AdminOrderItemDetail> Items);
 
 public sealed record AdminOrderItemDetail(
+  Guid Id,
+  Guid? ProductId,
+  Guid? VariantId,
   string ProductName,
   string? Sku,
   string? Size,
@@ -61,3 +69,17 @@ public sealed record AdminOrderItemDetail(
   decimal UnitPrice,
   int Quantity,
   decimal LineTotal);
+
+public sealed record AdminOrderAddressUpdate(
+  string RecipientName,
+  string RecipientPhone,
+  string Province,
+  string District,
+  string? Ward,
+  string AddressLine,
+  string? Note);
+
+public sealed record AdminOrderItemUpdate(
+  Guid ItemId,
+  int Quantity,
+  decimal? UnitPrice = null);

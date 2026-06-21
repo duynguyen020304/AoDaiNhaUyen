@@ -62,7 +62,13 @@ public sealed class AdminToolRiskService(
     }
   }
 
-  private static List<ToolRiskConfig> GetDefaultToolConfigs()
+  /// <summary>
+  /// Single source of truth for default tool risk configurations.
+  /// Consumed by <see cref="SeedDefaultsAsync"/> and by <c>SeedDataService</c>
+  /// (via the shared <c>ToolRiskConfigDefaults</c> static below) to avoid the
+  /// previous drift between three divergent copies. New tools MUST be added here.
+  /// </summary>
+  public static List<ToolRiskConfig> GetDefaultToolConfigs()
   {
     return
     [
@@ -80,6 +86,11 @@ public sealed class AdminToolRiskService(
       new() { ToolName = "update_product", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Cập nhật sản phẩm", Category = "Products" },
       new() { ToolName = "delete_product", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm sản phẩm", Category = "Products" },
       new() { ToolName = "toggle_product_status", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Bật/tắt trạng thái sản phẩm", Category = "Products" },
+      new() { ToolName = "list_variants", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê biến thể sản phẩm", Category = "Products" },
+      new() { ToolName = "create_variant", RiskLevel = "Low", RequiresConfirmation = false, Description = "Tạo biến thể sản phẩm", Category = "Products" },
+      new() { ToolName = "update_variant", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Cập nhật biến thể sản phẩm", Category = "Products" },
+      new() { ToolName = "update_variant_stock", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Cập nhật tồn kho biến thể", Category = "Products" },
+      new() { ToolName = "delete_variant", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm biến thể sản phẩm", Category = "Products" },
 
       // Categories
       new() { ToolName = "list_categories", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê danh mục", Category = "Categories" },
@@ -87,11 +98,26 @@ public sealed class AdminToolRiskService(
       new() { ToolName = "update_category", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Cập nhật danh mục", Category = "Categories" },
       new() { ToolName = "delete_category", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm danh mục", Category = "Categories" },
 
+      // Collections
+      new() { ToolName = "list_collections", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê collections/lookbook", Category = "Collections" },
+      new() { ToolName = "get_collection", RiskLevel = "Read", RequiresConfirmation = false, Description = "Chi tiết collection", Category = "Collections" },
+      new() { ToolName = "create_collection", RiskLevel = "Low", RequiresConfirmation = false, Description = "Tạo collection", Category = "Collections" },
+      new() { ToolName = "update_collection", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Cập nhật collection", Category = "Collections" },
+      new() { ToolName = "delete_collection", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm collection", Category = "Collections" },
+      new() { ToolName = "restore_collection", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Khôi phục collection", Category = "Collections" },
+      new() { ToolName = "add_product_to_collection", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Thêm sản phẩm vào collection", Category = "Collections" },
+      new() { ToolName = "remove_product_from_collection", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Xóa sản phẩm khỏi collection", Category = "Collections" },
+
       // Users
       new() { ToolName = "list_users", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê người dùng", Category = "Users" },
       new() { ToolName = "get_user", RiskLevel = "Read", RequiresConfirmation = false, Description = "Chi tiết người dùng", Category = "Users" },
       new() { ToolName = "update_user_status", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Bật/tắt trạng thái người dùng", Category = "Users" },
       new() { ToolName = "update_user_role", RiskLevel = "High", RequiresConfirmation = true, Description = "Thay đổi vai trò người dùng", Category = "Users" },
+      new() { ToolName = "update_user_profile", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Cập nhật hồ sơ người dùng", Category = "Users" },
+      new() { ToolName = "create_role", RiskLevel = "High", RequiresConfirmation = true, Description = "Tạo vai trò mới", Category = "Users" },
+      new() { ToolName = "create_user", RiskLevel = "Low", RequiresConfirmation = false, Description = "Tạo người dùng mới", Category = "Users" },
+      new() { ToolName = "delete_user", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm người dùng", Category = "Users" },
+      new() { ToolName = "restore_user", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Khôi phục người dùng đã xóa", Category = "Users" },
 
       // Orders
       new() { ToolName = "list_orders", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê đơn hàng", Category = "Orders" },
@@ -99,17 +125,30 @@ public sealed class AdminToolRiskService(
       new() { ToolName = "confirm_order", RiskLevel = "High", RequiresConfirmation = true, Description = "Xác nhận đơn hàng", Category = "Orders" },
       new() { ToolName = "start_processing_order", RiskLevel = "High", RequiresConfirmation = true, Description = "Bắt đầu xử lý đơn", Category = "Orders" },
       new() { ToolName = "ship_order", RiskLevel = "High", RequiresConfirmation = true, Description = "Tạo shipment", Category = "Orders" },
+      new() { ToolName = "complete_order", RiskLevel = "High", RequiresConfirmation = true, Description = "Hoàn tất đơn hàng", Category = "Orders" },
       new() { ToolName = "cancel_order", RiskLevel = "High", RequiresConfirmation = true, Description = "Hủy đơn hàng", Category = "Orders" },
+      new() { ToolName = "update_order_address", RiskLevel = "High", RequiresConfirmation = true, Description = "Cập nhật địa chỉ nhận hàng", Category = "Orders" },
+      new() { ToolName = "update_order_items", RiskLevel = "High", RequiresConfirmation = true, Description = "Cập nhật dòng hàng đơn", Category = "Orders" },
+      new() { ToolName = "delete_order", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm đơn hàng", Category = "Orders" },
+      new() { ToolName = "restore_order", RiskLevel = "High", RequiresConfirmation = true, Description = "Khôi phục đơn hàng", Category = "Orders" },
 
-      // Inventory & Store Health
+      // Inventory, Media & Store Health
       new() { ToolName = "get_inventory_summary", RiskLevel = "Read", RequiresConfirmation = false, Description = "Tồn kho tổng quan", Category = "Inventory" },
       new() { ToolName = "get_store_health_score", RiskLevel = "Read", RequiresConfirmation = false, Description = "Điểm sức khỏe cửa hàng", Category = "Inventory" },
+      new() { ToolName = "list_media", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê media", Category = "Media" },
+      new() { ToolName = "get_media", RiskLevel = "Read", RequiresConfirmation = false, Description = "Chi tiết media", Category = "Media" },
+      new() { ToolName = "upload_media", RiskLevel = "Low", RequiresConfirmation = false, Description = "Upload media từ base64", Category = "Media" },
+      new() { ToolName = "delete_media", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm media", Category = "Media" },
 
       // Reviews & Comments
       new() { ToolName = "list_recent_reviews", RiskLevel = "Read", RequiresConfirmation = false, Description = "Đánh giá gần đây", Category = "Reviews" },
       new() { ToolName = "list_recent_comments", RiskLevel = "Read", RequiresConfirmation = false, Description = "Bình luận gần đây", Category = "Reviews" },
       new() { ToolName = "reply_to_review", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Phản hồi đánh giá khách hàng", Category = "Reviews" },
       new() { ToolName = "reply_to_comment", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Phản hồi bình luận khách hàng", Category = "Reviews" },
+      new() { ToolName = "list_reviews", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê đánh giá sản phẩm", Category = "Reviews" },
+      new() { ToolName = "hide_review", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Ẩn đánh giá", Category = "Reviews" },
+      new() { ToolName = "show_review", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Hiện lại đánh giá", Category = "Reviews" },
+      new() { ToolName = "delete_review", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa vĩnh viễn đánh giá", Category = "Reviews" },
 
       // Promotions
       new() { ToolName = "list_promo_codes", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê mã khuyến mãi", Category = "Promotions" },
@@ -119,8 +158,27 @@ public sealed class AdminToolRiskService(
       new() { ToolName = "toggle_promo_code", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Bật/tắt mã khuyến mãi", Category = "Promotions" },
       new() { ToolName = "delete_promo_code", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm mã khuyến mãi", Category = "Promotions" },
 
+      // Marketing & Subscribers
+      new() { ToolName = "list_marketing_options", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê nội dung marketing có thể gắn vào email", Category = "Marketing" },
+      new() { ToolName = "send_marketing_campaign", RiskLevel = "High", RequiresConfirmation = true, Description = "Gửi chiến dịch email marketing", Category = "Marketing" },
+      new() { ToolName = "list_subscribers", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê người đăng ký email", Category = "Marketing" },
+      new() { ToolName = "get_subscriber", RiskLevel = "Read", RequiresConfirmation = false, Description = "Chi tiết người đăng ký email", Category = "Marketing" },
+      new() { ToolName = "unsubscribe_subscriber", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Hủy đăng ký email", Category = "Marketing" },
+      new() { ToolName = "delete_subscriber", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm người đăng ký email", Category = "Marketing" },
+      new() { ToolName = "list_email_jobs", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê email jobs", Category = "Marketing" },
+      new() { ToolName = "get_email_job", RiskLevel = "Read", RequiresConfirmation = false, Description = "Chi tiết email job", Category = "Marketing" },
+      new() { ToolName = "retry_email_job", RiskLevel = "Low", RequiresConfirmation = false, Description = "Retry email job", Category = "Marketing" },
+      new() { ToolName = "cancel_email_job", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Hủy email job", Category = "Marketing" },
+      new() { ToolName = "delete_email_job", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm email job", Category = "Marketing" },
+
       // Blog content
       new() { ToolName = "generate_blog_draft", RiskLevel = "Read", RequiresConfirmation = false, Description = "Tạo bản nháp blog AI", Category = "Content" },
+      new() { ToolName = "save_blog_draft", RiskLevel = "Low", RequiresConfirmation = false, Description = "Lưu bài viết nháp", Category = "Content" },
+      new() { ToolName = "publish_blog_post", RiskLevel = "High", RequiresConfirmation = true, Description = "Xuất bản bài viết", Category = "Content" },
+      new() { ToolName = "list_blog_posts", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê bài viết blog", Category = "Content" },
+      new() { ToolName = "get_blog_post", RiskLevel = "Read", RequiresConfirmation = false, Description = "Chi tiết bài viết blog", Category = "Content" },
+      new() { ToolName = "update_blog_post", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Cập nhật bài viết blog", Category = "Content" },
+      new() { ToolName = "delete_blog_post", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa bài viết blog", Category = "Content" },
 
       // Purchase Note + Daily Report
       new() { ToolName = "create_purchase_note", RiskLevel = "Low", RequiresConfirmation = false, Description = "Tạo ghi chú nhập hàng", Category = "Inventory" },

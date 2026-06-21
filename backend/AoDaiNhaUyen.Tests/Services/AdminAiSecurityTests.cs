@@ -4,6 +4,7 @@ using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.DTOs.BlogPost;
+using AoDaiNhaUyen.Application.DTOs.Collections;
 
 using AoDaiNhaUyen.Application.DTOs.Dashboard;
 using AoDaiNhaUyen.Application.DTOs.Order;
@@ -427,6 +428,7 @@ public sealed class AdminAiSecurityTests
       new StaticSafetyGate(),
       products ?? new FakeProductService(),
       new FakeCategoryService(),
+      new FakeCollectionService(),
       new FakeUserService(),
       new FakeRoleService(),
       dashboard ?? new FakeDashboardService(),
@@ -434,9 +436,12 @@ public sealed class AdminAiSecurityTests
       new FakeInventoryService(),
       new FakeReviewService(),
       promos ?? new FakePromoService(),
+      new FakeMediaService(),
       new FakeBlogAiDraftService(),
       new FakeBlogPostService(),
       marketing ?? new FakeMarketingCampaignService(),
+      new FakeSubscriberService(),
+      new FakeEmailJobService(),
       autoMode ?? new AutoModeStore(),
       NullLogger<AdminAgentService>.Instance,
       new PendingActionStore(),
@@ -582,6 +587,7 @@ public sealed class AdminAiSecurityTests
     public Task<AdminProductDetailResponse> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Product(ProductId));
     public Task<AdminProductDetailResponse?> UpdateAsync(Guid id, UpdateProductRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(id));
     public Task<AdminProductDetailResponse?> UpdateVariantStockAsync(Guid productId, Guid variantId, int stockQty, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
+    public Task<AdminProductDetailResponse?> DeleteVariantAsync(Guid productId, Guid variantId, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
     public Task<AdminProductDetailResponse?> CreateVariantAsync(Guid productId, CreateVariantRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
     public Task<AdminProductDetailResponse?> UpdateVariantAsync(Guid productId, Guid variantId, UpdateVariantRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
     public Task<bool> ToggleStatusAsync(Guid id, string newStatus, CancellationToken cancellationToken = default) => Task.FromResult(true);
@@ -637,6 +643,34 @@ public sealed class AdminAiSecurityTests
     public Task<MarketingCampaignSendResult> QueueCampaignAsync(SendMarketingCampaignRequest request, CancellationToken cancellationToken = default) => Task.FromResult(new MarketingCampaignSendResult(0, 0, []));
   }
 
+  private sealed class FakeMediaService : IAdminMediaService
+  {
+    public Task<UserImageListDto> GetAllAsync(int page, int pageSize, string? sourceType, string? search, CancellationToken ct = default) => Task.FromResult(new UserImageListDto([], page, pageSize, 0, 0));
+    public Task<UserImageDto?> GetByIdAsync(Guid id, CancellationToken ct = default) => Task.FromResult<UserImageDto?>(null);
+    public Task<UserImageDto> UploadAsync(byte[] bytes, string fileName, string contentType, string sourceType = "admin", CancellationToken ct = default) => Task.FromResult(new UserImageDto(Guid.NewGuid(), "key", "url", "admin_upload", contentType, fileName, bytes.Length, sourceType, DateTimeOffset.UtcNow));
+    public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default) => Task.FromResult(true);
+    public Task<MediaStatsDto> GetStatsAsync(CancellationToken ct = default) => Task.FromResult(new MediaStatsDto(0, 0, 0, 0));
+  }
+
+  private sealed class FakeSubscriberService : IAdminSubscriberService
+  {
+    public Task<(IReadOnlyList<SubscriberListItem> Items, int TotalItem)> GetListAsync(string? search, string? status, bool includeDeleted, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(((IReadOnlyList<SubscriberListItem>)[], 0));
+    public Task<SubscriberDetail?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<SubscriberDetail?>(null);
+    public Task<bool> UnsubscribeAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
+    public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
+    public Task<ImportSubscribersResult> BulkImportAsync(IReadOnlyList<string> emails, string source, CancellationToken cancellationToken = default) => Task.FromResult(new ImportSubscribersResult(0, 0));
+  }
+
+  private sealed class FakeEmailJobService : IAdminEmailJobService
+  {
+    public Task<(IReadOnlyList<EmailJobListItem> Items, int TotalItem)> GetListAsync(string? status, bool includeDeleted, int page, int pageSize, CancellationToken cancellationToken = default) => Task.FromResult(((IReadOnlyList<EmailJobListItem>)[], 0));
+    public Task<EmailJobDetail?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<EmailJobDetail?>(null);
+    public Task<QueueSingleEmailJobResponse> QueueSingleAsync(QueueSingleEmailJobRequest request, CancellationToken cancellationToken = default) => Task.FromResult(new QueueSingleEmailJobResponse(Guid.NewGuid(), request.ToEmail ?? "a@example.com", request.TemplateKey, DateTime.UtcNow, false));
+    public Task<bool> RetryAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
+    public Task<bool> CancelAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
+    public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
+  }
+
   private sealed class FakeCategoryService : IAdminCategoryService
   {
     public Task<IReadOnlyList<AdminCategoryListItemResponse>> GetAllAsync(bool includeDeleted = false, CancellationToken cancellationToken = default) => Task.FromResult((IReadOnlyList<AdminCategoryListItemResponse>)[]);
@@ -645,6 +679,19 @@ public sealed class AdminAiSecurityTests
     public Task<AdminCategoryDetailResponse?> UpdateAsync(Guid id, UpdateCategoryRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminCategoryDetailResponse?>(new(id, null, request.Name, request.Slug, request.Description, null, 0, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
     public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
     public Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
+  }
+
+  private sealed class FakeCollectionService : IAdminCollectionService
+  {
+    public Task<PagedResult<CollectionListItemDto>> GetListAsync(string? search, bool includeDeleted, int page, int pageSize, CancellationToken ct = default) => Task.FromResult(new PagedResult<CollectionListItemDto>([], 0, page, pageSize));
+    public Task<CollectionDetailDto?> GetByIdAsync(Guid id, bool includeDeleted = false, CancellationToken ct = default) => Task.FromResult<CollectionDetailDto?>(null);
+    public Task<CollectionDetailDto> CreateAsync(CreateCollectionRequest request, CancellationToken ct = default) => Task.FromResult(Collection(Guid.NewGuid(), request.Name));
+    public Task<CollectionDetailDto?> UpdateAsync(Guid id, UpdateCollectionRequest request, CancellationToken ct = default) => Task.FromResult<CollectionDetailDto?>(Collection(id, request.Name));
+    public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default) => Task.FromResult(true);
+    public Task<bool> RestoreAsync(Guid id, CancellationToken ct = default) => Task.FromResult(true);
+    public Task<CollectionDetailDto?> AddProductAsync(Guid id, AddProductToCollectionRequest request, CancellationToken ct = default) => Task.FromResult<CollectionDetailDto?>(Collection(id, "Collection"));
+    public Task<CollectionDetailDto?> RemoveProductAsync(Guid id, Guid productId, CancellationToken ct = default) => Task.FromResult<CollectionDetailDto?>(Collection(id, "Collection"));
+    private static CollectionDetailDto Collection(Guid id, string name) => new(id, name, "collection", null, null, false, false, 0, null, DateTime.UtcNow, DateTime.UtcNow, false, []);
   }
 
   private sealed class FakeUserService : IAdminUserService
@@ -685,6 +732,10 @@ public sealed class AdminAiSecurityTests
     public Task<OrderUpdateResult> UpdateStatusAsync(Guid orderId, string newStatus, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, newStatus));
     public Task<OrderUpdateResult> CreateShipmentAsync(Guid orderId, string? carrier, string? trackingNumber, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "shipping"));
     public Task<OrderUpdateResult> CancelOrderAsync(Guid orderId, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "cancelled"));
+    public Task<OrderUpdateResult> UpdateOrderAddressAsync(Guid orderId, AdminOrderAddressUpdate request, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "pending"));
+    public Task<OrderUpdateResult> UpdateOrderItemsAsync(Guid orderId, IReadOnlyList<AdminOrderItemUpdate> items, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "pending"));
+    public Task<OrderUpdateResult> DeleteOrderAsync(Guid orderId, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "pending"));
+    public Task<OrderUpdateResult> RestoreOrderAsync(Guid orderId, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "pending"));
   }
 
   private sealed class FakeInventoryService : IAdminInventoryService

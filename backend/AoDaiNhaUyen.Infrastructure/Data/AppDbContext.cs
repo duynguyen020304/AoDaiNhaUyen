@@ -19,6 +19,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<MeasurementProfile> MeasurementProfiles => Set<MeasurementProfile>();
   public DbSet<Category> Categories => Set<Category>();
   public DbSet<Product> Products => Set<Product>();
+  public DbSet<Collection> Collections => Set<Collection>();
+  public DbSet<CollectionProduct> CollectionProducts => Set<CollectionProduct>();
   public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
   public DbSet<ProductImage> ProductImages => Set<ProductImage>();
   public DbSet<StyleScenario> StyleScenarios => Set<StyleScenario>();
@@ -240,6 +242,32 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasOne(x => x.Category).WithMany(x => x.Products).HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.Restrict);
       builder.ToTable(t => t.HasCheckConstraint("ck_products_type", "product_type IN ('ao_dai', 'phu_kien')"));
       builder.ToTable(t => t.HasCheckConstraint("ck_products_status", "status IN ('draft', 'active', 'inactive', 'out_of_stock')"));
+    });
+
+    modelBuilder.Entity<Collection>(builder =>
+    {
+      builder.ToTable("collections");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.Slug).HasMaxLength(220).IsRequired();
+      builder.Property(x => x.Description).HasMaxLength(2000);
+      builder.Property(x => x.CoverImageUrl).HasMaxLength(1000);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.Slug).IsUnique();
+      builder.HasIndex(x => x.IsPublished).HasDatabaseName("idx_collections_is_published");
+      builder.HasIndex(x => x.SortOrder).HasDatabaseName("idx_collections_sort_order");
+    });
+
+    modelBuilder.Entity<CollectionProduct>(builder =>
+    {
+      builder.ToTable("collection_products");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.CollectionId, x.ProductId }).IsUnique();
+      builder.HasOne(x => x.Collection).WithMany(x => x.Products).HasForeignKey(x => x.CollectionId).OnDelete(DeleteBehavior.Cascade);
+      builder.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
     });
 
     modelBuilder.Entity<ProductVariant>(builder =>

@@ -32,6 +32,9 @@ public interface IAdminProductService
     /// <summary>Update stock quantity for one product variant.</summary>
     Task<AdminProductDetailResponse?> UpdateVariantStockAsync(Guid productId, Guid variantId, int stockQty, CancellationToken cancellationToken = default);
 
+    /// <summary>Soft-delete a product variant. If the deleted variant was default, promotes another active variant.</summary>
+    Task<AdminProductDetailResponse?> DeleteVariantAsync(Guid productId, Guid variantId, CancellationToken cancellationToken = default);
+
     /// <summary>Toggle product status (active/draft/inactive).</summary>
     Task<bool> ToggleStatusAsync(Guid id, string newStatus, CancellationToken cancellationToken = default);
 

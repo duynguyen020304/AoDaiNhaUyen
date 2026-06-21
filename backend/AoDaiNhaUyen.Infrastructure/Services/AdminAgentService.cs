@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.DTOs.BlogPost;
+using AoDaiNhaUyen.Application.DTOs.Collections;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Common;
 using AoDaiNhaUyen.Domain.Entities;
@@ -17,6 +18,7 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly ISafetyGate _safety;
   private readonly IAdminProductService _products;
   private readonly IAdminCategoryService _categories;
+  private readonly IAdminCollectionService _collections;
   private readonly IAdminUserService _users;
   private readonly IAdminRoleService _roles;
   private readonly IAdminDashboardService _dashboard;
@@ -24,9 +26,12 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IAdminInventoryService _inventory;
   private readonly IAdminReviewService _reviews;
   private readonly IAdminPromoService _promos;
+  private readonly IAdminMediaService _media;
   private readonly IBlogAiDraftService _blogAiDrafts;
   private readonly IBlogPostService _blogPosts;
   private readonly IAdminMarketingCampaignService _marketingCampaigns;
+  private readonly IAdminSubscriberService _subscribers;
+  private readonly IAdminEmailJobService _emailJobs;
   private readonly IAutoModeStore _autoMode;
   private readonly ILogger<AdminAgentService> _logger;
 
@@ -53,6 +58,7 @@ public sealed class AdminAgentService : IAdminAgentService
     ISafetyGate safety,
     IAdminProductService products,
     IAdminCategoryService categories,
+    IAdminCollectionService collections,
     IAdminUserService users,
     IAdminRoleService roles,
     IAdminDashboardService dashboard,
@@ -60,9 +66,12 @@ public sealed class AdminAgentService : IAdminAgentService
     IAdminInventoryService inventory,
     IAdminReviewService reviews,
     IAdminPromoService promos,
+    IAdminMediaService media,
     IBlogAiDraftService blogAiDrafts,
     IBlogPostService blogPosts,
     IAdminMarketingCampaignService marketingCampaigns,
+    IAdminSubscriberService subscribers,
+    IAdminEmailJobService emailJobs,
     IAutoModeStore autoMode,
     ILogger<AdminAgentService> logger,
     IPendingActionStore pendingStore,
@@ -74,6 +83,7 @@ public sealed class AdminAgentService : IAdminAgentService
     _safety = safety;
     _products = products;
     _categories = categories;
+    _collections = collections;
     _users = users;
     _roles = roles;
     _dashboard = dashboard;
@@ -81,9 +91,12 @@ public sealed class AdminAgentService : IAdminAgentService
     _inventory = inventory;
     _reviews = reviews;
     _promos = promos;
+    _media = media;
     _blogAiDrafts = blogAiDrafts;
     _blogPosts = blogPosts;
     _marketingCampaigns = marketingCampaigns;
+    _subscribers = subscribers;
+    _emailJobs = emailJobs;
     _autoMode = autoMode;
     _logger = logger;
     _pendingStore = pendingStore;
@@ -151,6 +164,47 @@ public sealed class AdminAgentService : IAdminAgentService
         ("id", O("string", "ID sản phẩm (GUID)")),
         ("status", O("string", "Trạng thái mới: draft, active, inactive hoặc out_of_stock")))),
 
+    T("list_variants", "Liệt kê biến thể (size/color/SKU/stock) của một sản phẩm. Dùng để xem tồn kho theo phiên bản hoặc lấy variantId trước khi update/delete.",
+      P(("productId", O("string", "ID sản phẩm (GUID) — bắt buộc")))),
+
+    T("create_variant", "Tạo biến thể mới cho sản phẩm (SKU/size/color/price/stock).",
+      P(
+        ("productId", O("string", "ID sản phẩm (GUID) — bắt buộc")),
+        ("sku", O("string", "Mã SKU duy nhất — bắt buộc")),
+        ("size", O("string", "Kích cỡ (tùy chọn)")),
+        ("color", O("string", "Màu (tùy chọn)")),
+        ("variantName", O("string", "Tên biến thể (tùy chọn)")),
+        ("price", O("number", "Giá (VND) — bắt buộc")),
+        ("salePrice", O("number", "Giá khuyến mãi (VND, tùy chọn)")),
+        ("stockQty", O("integer", "Số lượng tồn kho — bắt buộc")),
+        ("isDefault", O("boolean", "Đặt làm biến thể mặc định (tùy chọn)")),
+        ("status", O("string", "Trạng thái: active, inactive, out_of_stock. Mặc định: active")))),
+
+    T("update_variant", "Cập nhật biến thể. Đổi các trường được cung cấp, giữ nguyên trường còn lại. Cần productId + variantId.",
+      P(
+        ("productId", O("string", "ID sản phẩm (GUID) — bắt buộc")),
+        ("variantId", O("string", "ID biến thể (GUID) — bắt buộc")),
+        ("sku", O("string", "SKU mới (tùy chọn)")),
+        ("size", O("string", "Kích cỡ mới (tùy chọn)")),
+        ("color", O("string", "Màu mới (tùy chọn)")),
+        ("variantName", O("string", "Tên biến thể mới (tùy chọn)")),
+        ("price", O("number", "Giá mới (tùy chọn)")),
+        ("salePrice", O("number", "Giá khuyến mãi mới (tùy chọn)")),
+        ("stockQty", O("integer", "Tồn kho mới (tùy chọn)")),
+        ("isDefault", O("boolean", "Đặt làm mặc định (tùy chọn)")),
+        ("status", O("string", "Trạng thái mới: active, inactive, out_of_stock (tùy chọn)")))),
+
+    T("update_variant_stock", "Cập nhật nhanh tồn kho của một biến thể (không đổi trường khác).",
+      P(
+        ("productId", O("string", "ID sản phẩm (GUID) — bắt buộc")),
+        ("variantId", O("string", "ID biến thể (GUID) — bắt buộc")),
+        ("stockQty", O("integer", "Số lượng tồn kho mới — bắt buộc")))),
+
+    T("delete_variant", "Xóa mềm một biến thể. Nếu là biến thể mặc định, hệ thống tự đề xuất biến thể khác.",
+      P(
+        ("productId", O("string", "ID sản phẩm (GUID) — bắt buộc")),
+        ("variantId", O("string", "ID biến thể (GUID) — bắt buộc")))),
+
     // Categories
     T("list_categories", "Liệt kê tất cả danh mục. Dùng trước khi tạo danh mục hoặc tạo sản phẩm cần categoryId.", P()),
 
@@ -167,6 +221,48 @@ public sealed class AdminAgentService : IAdminAgentService
 
     T("delete_category", "Xóa mềm một danh mục.",
       P(("id", O("string", "ID danh mục (GUID)")))),
+
+    // Collections / Lookbook
+    T("list_collections", "Liệt kê collections/lookbook có phân trang. Dùng để tìm collectionId trước khi sửa/xóa/thêm sản phẩm.",
+      P(
+        ("page", O("integer", "Trang hiện tại, 1-based, mặc định 1")),
+        ("pageSize", O("integer", "Số collection mỗi trang, mặc định 20")),
+        ("search", O("string", "Từ khóa tìm theo tên/slug (tùy chọn)")),
+        ("includeDeleted", O("boolean", "Bao gồm collection đã xóa mềm")))),
+    T("get_collection", "Xem chi tiết một collection/lookbook theo ID.",
+      P(("id", O("string", "ID collection (GUID) — bắt buộc")))),
+    T("create_collection", "Tạo collection/lookbook mới.",
+      P(
+        ("name", O("string", "Tên collection — bắt buộc")),
+        ("slug", O("string", "Slug (tùy chọn, tự tạo nếu trống)")),
+        ("description", O("string", "Mô tả (tùy chọn)")),
+        ("coverImageUrl", O("string", "Ảnh bìa (tùy chọn)")),
+        ("isPublished", O("boolean", "Xuất bản ngay hay không")),
+        ("isFeatured", O("boolean", "Đánh dấu nổi bật")),
+        ("sortOrder", O("integer", "Thứ tự sắp xếp")))),
+    T("update_collection", "Cập nhật collection/lookbook. Giữ nguyên trường không gửi.",
+      P(
+        ("id", O("string", "ID collection (GUID) — bắt buộc")),
+        ("name", O("string", "Tên mới (tùy chọn)")),
+        ("slug", O("string", "Slug mới (tùy chọn)")),
+        ("description", O("string", "Mô tả mới (tùy chọn)")),
+        ("coverImageUrl", O("string", "Ảnh bìa mới (tùy chọn)")),
+        ("isPublished", O("boolean", "Xuất bản/ẩn (tùy chọn)")),
+        ("isFeatured", O("boolean", "Nổi bật (tùy chọn)")),
+        ("sortOrder", O("integer", "Thứ tự mới (tùy chọn)")))),
+    T("delete_collection", "Xóa mềm collection/lookbook.",
+      P(("id", O("string", "ID collection (GUID) — bắt buộc")))),
+    T("restore_collection", "Khôi phục collection/lookbook đã xóa mềm.",
+      P(("id", O("string", "ID collection (GUID) — bắt buộc")))),
+    T("add_product_to_collection", "Thêm sản phẩm vào collection/lookbook.",
+      P(
+        ("id", O("string", "ID collection (GUID) — bắt buộc")),
+        ("productId", O("string", "ID sản phẩm (GUID) — bắt buộc")),
+        ("sortOrder", O("integer", "Thứ tự sản phẩm trong collection")))),
+    T("remove_product_from_collection", "Xóa sản phẩm khỏi collection/lookbook.",
+      P(
+        ("id", O("string", "ID collection (GUID) — bắt buộc")),
+        ("productId", O("string", "ID sản phẩm (GUID) — bắt buộc")))),
 
     // Users
     T("list_users", "Liệt kê người dùng có phân trang. Dùng search theo tên/email/sđt khi admin hỏi người dùng cụ thể; page 1 không đại diện toàn bộ dữ liệu.",
@@ -200,6 +296,20 @@ public sealed class AdminAgentService : IAdminAgentService
         ("name", O("string", "Tên vai trò mới")),
         ("description", O("string", "Mô tả vai trò (tùy chọn)")))),
 
+    T("create_user", "Tạo người dùng mới (khách hàng hoặc admin). Yêu cầu họ tên + email + mật khẩu. Role mặc định: customer.",
+      P(
+        ("fullName", O("string", "Họ tên đầy đủ — bắt buộc")),
+        ("email", O("string", "Email (tùy chọn nhưng nên có)")),
+        ("phone", O("string", "SĐT (tùy chọn)")),
+        ("password", O("string", "Mật khẩu (8-128 ký tự)")),
+        ("role", O("string", "Vai trò: admin hoặc customer. Mặc định: customer")))),
+
+    T("delete_user", "Xóa mềm người dùng. Có thể khôi phục sau.",
+      P(("id", O("string", "ID người dùng (GUID) — bắt buộc")))),
+
+    T("restore_user", "Khôi phục người dùng đã bị xóa mềm.",
+      P(("id", O("string", "ID người dùng (GUID) — bắt buộc")))),
+
     // Orders
     T("list_orders", "Liệt kê đơn hàng theo trạng thái/giới hạn. Nếu admin hỏi một đơn cụ thể, tìm ID rồi dùng get_order để xem chi tiết.",
       P(
@@ -229,12 +339,54 @@ public sealed class AdminAgentService : IAdminAgentService
     T("cancel_order", "Hủy đơn hàng và hoàn stock.",
       P(("orderId", O("string", "ID đơn hàng (GUID)")))),
 
+    T("update_order_address", "Cập nhật thông tin nhận hàng của đơn ở trạng thái pending/confirmed/processing.",
+      P(
+        ("orderId", O("string", "ID đơn hàng (GUID) — bắt buộc")),
+        ("recipientName", O("string", "Tên người nhận — bắt buộc")),
+        ("recipientPhone", O("string", "SĐT người nhận — bắt buộc")),
+        ("province", O("string", "Tỉnh/thành — bắt buộc")),
+        ("district", O("string", "Quận/huyện — bắt buộc")),
+        ("ward", O("string", "Phường/xã (tùy chọn)")),
+        ("addressLine", O("string", "Địa chỉ chi tiết — bắt buộc")),
+        ("note", O("string", "Ghi chú đơn hàng (tùy chọn)")))),
+
+    T("update_order_items", "Cập nhật số lượng/đơn giá dòng hàng của đơn. Trước đó phải dùng get_order để lấy itemId.",
+      P(
+        ("orderId", O("string", "ID đơn hàng (GUID) — bắt buộc")),
+        ("itemsJson", O("string", "JSON array: [{\"itemId\":\"GUID\",\"quantity\":2,\"unitPrice\":1500000}]")))),
+
+    T("delete_order", "Xóa mềm một đơn hàng. Không xóa đơn đã giao thành công.",
+      P(("orderId", O("string", "ID đơn hàng (GUID) — bắt buộc")))),
+
+    T("restore_order", "Khôi phục đơn hàng đã xóa mềm.",
+      P(("orderId", O("string", "ID đơn hàng (GUID) — bắt buộc")))),
+
     // Inventory & Store Health
     T("get_inventory_summary", "Kiểm tra tồn kho tổng quan và cảnh báo sản phẩm sắp hết.",
       P(("threshold", O("integer", "Ngưỡng tồn kho thấp. Mặc định: 10")))),
 
     T("get_store_health_score", "Điểm sức khỏe cửa hàng (0-100) dựa trên nhiều chỉ số.",
       P()),
+
+    T("list_media", "Liệt kê thư viện media/user-generated images có phân trang, lọc sourceType và tìm theo file/object key.",
+      P(
+        ("page", O("integer", "Trang hiện tại, 1-based, mặc định 1")),
+        ("pageSize", O("integer", "Số media mỗi trang, mặc định 20")),
+        ("sourceType", O("string", "chat, ai_tryon, admin... (tùy chọn)")),
+        ("search", O("string", "Từ khóa theo tên file/object key (tùy chọn)")))),
+
+    T("get_media", "Xem chi tiết một media item theo ID.",
+      P(("id", O("string", "ID media (GUID) — bắt buộc")))),
+
+    T("upload_media", "Upload ảnh vào media library từ chuỗi base64. Dùng cho file nhỏ; không dùng cho video.",
+      P(
+        ("fileName", O("string", "Tên file gốc, ví dụ image.png")),
+        ("contentType", O("string", "image/png, image/jpeg hoặc image/webp")),
+        ("base64", O("string", "Nội dung ảnh dạng base64, có thể kèm data URL prefix")),
+        ("sourceType", O("string", "Nguồn: admin, chat, ai_tryon... Mặc định: admin")))),
+
+    T("delete_media", "Xóa mềm media và cố gắng xóa object trong storage.",
+      P(("id", O("string", "ID media (GUID) — bắt buộc")))),
 
     // Reviews & Comments
     T("list_recent_reviews", "Xem đánh giá gần đây từ khách hàng.",
@@ -254,6 +406,23 @@ public sealed class AdminAgentService : IAdminAgentService
         ("commentId", O("string", "ID bình luận gốc (GUID)")),
         ("productId", O("string", "ID sản phẩm (GUID)")),
         ("content", O("string", "Nội dung phản hồi")))),
+
+    T("list_reviews", "Liệt kê/tìm đánh giá sản phẩm có phân trang, lọc theo rating và trạng thái hiển thị. Dùng trước khi hide/show/delete để lấy ID đánh giá.",
+      P(
+        ("page", O("integer", "Trang hiện tại, 1-based, mặc định 1")),
+        ("pageSize", O("integer", "Số đánh giá mỗi trang, mặc định 20")),
+        ("rating", O("integer", "Lọc theo số sao 1-5 (tùy chọn)")),
+        ("isVisible", O("boolean", "Lọc theo hiển thị: true=đang hiện, false=đã ẩn (tùy chọn)")),
+        ("search", O("string", "Từ khóa tìm nội dung/tên (tùy chọn)")))),
+
+    T("hide_review", "Ẩn một đánh giá khỏi storefront (vẫn giữ trong DB).",
+      P(("id", O("string", "ID đánh giá (GUID) — bắt buộc")))),
+
+    T("show_review", "Hiện lại đánh giá đã ẩn.",
+      P(("id", O("string", "ID đánh giá (GUID) — bắt buộc")))),
+
+    T("delete_review", "Xóa vĩnh viễn một đánh giá/bình luận.",
+      P(("id", O("string", "ID đánh giá (GUID) — bắt buộc")))),
 
     // Promotions
     T("create_purchase_note", "Tạo ghi chú nhập hàng (draft) cho sản phẩm.",
@@ -295,6 +464,29 @@ public sealed class AdminAgentService : IAdminAgentService
         ("featuredImage", O("string", "Ảnh nổi bật (tùy chọn)")),
         ("tags", O("string", "Tags phân tách bằng dấu phẩy (tùy chọn)")))),
 
+    T("list_blog_posts", "Liệt kê/tìm bài viết blog có phân trang và lọc trạng thái. DÙNG KHI admin hỏi bài viết, duyệt nội dung, hoặc tìm ID trước khi sửa/xóa. KẾT QUẢ có total,page,pageSize,totalPages,hasMore. KHÔNG kết luận không có bài viết trừ khi total == 0.",
+      P(
+        ("page", O("integer", "Trang hiện tại, 1-based, mặc định 1")),
+        ("pageSize", O("integer", "Số bài mỗi trang, mặc định 20; dùng 50 cho yêu cầu liệt kê rộng")),
+        ("status", O("string", "Lọc trạng thái: Draft, Published, Archived (tùy chọn)")),
+        ("search", O("string", "Từ khóa tìm theo tiêu đề (tùy chọn)")))),
+
+    T("get_blog_post", "Xem chi tiết một bài viết blog theo ID.",
+      P(("id", O("string", "ID bài viết (GUID) — bắt buộc")))),
+
+    T("update_blog_post", "Cập nhật bài viết blog. Chỉ đổi các trường được cung cấp; giữ nguyên trường còn lại.",
+      P(
+        ("id", O("string", "ID bài viết (GUID) — bắt buộc")),
+        ("title", O("string", "Tiêu đề mới (tùy chọn)")),
+        ("excerpt", O("string", "Tóm tắt mới (tùy chọn)")),
+        ("content", O("string", "JSON blocks hoặc nội dung text mới (tùy chọn)")),
+        ("featuredImage", O("string", "Ảnh nổi bật mới (tùy chọn)")),
+        ("tags", O("string", "Tags phân tách bằng dấu phẩy (tùy chọn)")),
+        ("status", O("string", "Trạng thái mới: Draft, Published, hoặc Archived (tùy chọn)")))),
+
+    T("delete_blog_post", "Xóa một bài viết blog.",
+      P(("id", O("string", "ID bài viết (GUID) — bắt buộc")))),
+
     T("list_marketing_options", "Liệt kê nội dung marketing có thể gắn vào email.", P()),
 
     T("send_marketing_campaign", "Tạo/gửi chiến dịch email marketing.",
@@ -307,6 +499,42 @@ public sealed class AdminAgentService : IAdminAgentService
         ("bodyHtml", O("string", "Nội dung HTML")),
         ("ctaLabel", O("string", "Nhãn CTA (tùy chọn)")),
         ("ctaUrl", O("string", "URL CTA (tùy chọn)")))),
+
+    T("list_subscribers", "Liệt kê người đăng ký email/newsletter có phân trang và lọc trạng thái. Dùng trước khi unsubscribe/delete để lấy ID.",
+      P(
+        ("page", O("integer", "Trang hiện tại, 1-based, mặc định 1")),
+        ("pageSize", O("integer", "Số người đăng ký mỗi trang, mặc định 20")),
+        ("status", O("string", "pending, active, unsubscribed (tùy chọn)")),
+        ("search", O("string", "Tìm theo email (tùy chọn)")),
+        ("includeDeleted", O("boolean", "Bao gồm bản ghi đã xóa mềm (tùy chọn)")))),
+
+    T("get_subscriber", "Xem chi tiết một người đăng ký email/newsletter theo ID.",
+      P(("id", O("string", "ID subscriber (GUID) — bắt buộc")))),
+
+    T("unsubscribe_subscriber", "Hủy đăng ký email cho một subscriber (không xóa bản ghi).",
+      P(("id", O("string", "ID subscriber (GUID) — bắt buộc")))),
+
+    T("delete_subscriber", "Xóa mềm một subscriber khỏi danh sách quản trị.",
+      P(("id", O("string", "ID subscriber (GUID) — bắt buộc")))),
+
+    T("list_email_jobs", "Liệt kê hàng đợi email jobs theo trạng thái có phân trang.",
+      P(
+        ("page", O("integer", "Trang hiện tại, 1-based, mặc định 1")),
+        ("pageSize", O("integer", "Số jobs mỗi trang, mặc định 20")),
+        ("status", O("string", "queued, sending, sent, failed, dead, cancelled (tùy chọn)")),
+        ("includeDeleted", O("boolean", "Bao gồm jobs đã xóa mềm (tùy chọn)")))),
+
+    T("get_email_job", "Xem chi tiết một email job theo ID.",
+      P(("id", O("string", "ID email job (GUID) — bắt buộc")))),
+
+    T("retry_email_job", "Đưa một email job failed/dead/cancelled về hàng đợi gửi lại.",
+      P(("id", O("string", "ID email job (GUID) — bắt buộc")))),
+
+    T("cancel_email_job", "Hủy một email job đang queued/failed/dead.",
+      P(("id", O("string", "ID email job (GUID) — bắt buộc")))),
+
+    T("delete_email_job", "Xóa mềm một email job đã kết thúc. Không xóa job đang queued/sending.",
+      P(("id", O("string", "ID email job (GUID) — bắt buộc")))),
 
     // Autonomy Mode
     T("toggle_autonomy", "Bật/tắt chế độ tự động cho AI. Khi bật, các hành động Medium risk được tự động thực hiện.",
@@ -873,11 +1101,28 @@ public sealed class AdminAgentService : IAdminAgentService
         "toggle_product_status" => await ToggleProductStatus(
           RequiredGuid(args, "id"), RequiredEnum(args, "status", "draft", "active", "inactive", "out_of_stock"), ct),
 
+        // Product Variants
+        "list_variants" => await ListVariants(RequiredGuid(args, "productId"), ct),
+        "create_variant" => await CreateVariant(args, ct),
+        "update_variant" => await UpdateVariant(args, ct),
+        "update_variant_stock" => await UpdateVariantStock(args, ct),
+        "delete_variant" => await DeleteVariant(RequiredGuid(args, "productId"), RequiredGuid(args, "variantId"), ct),
+
         // Categories
         "list_categories" => await ListCategories(ct),
         "create_category" => await CreateCategory(args, ct),
         "update_category" => await UpdateCategory(args, ct),
         "delete_category" => await DeleteCategory(RequiredGuid(args, "id"), ct),
+
+        // Collections
+        "list_collections" => await ListCollections(args, ct),
+        "get_collection" => await GetCollection(RequiredGuid(args, "id"), ct),
+        "create_collection" => await CreateCollection(args, ct),
+        "update_collection" => await UpdateCollection(args, ct),
+        "delete_collection" => await DeleteCollection(RequiredGuid(args, "id"), ct),
+        "restore_collection" => await RestoreCollection(RequiredGuid(args, "id"), ct),
+        "add_product_to_collection" => await AddProductToCollection(args, ct),
+        "remove_product_from_collection" => await RemoveProductFromCollection(args, ct),
 
         // Users
         "list_users" => await ListUsers(
@@ -890,6 +1135,9 @@ public sealed class AdminAgentService : IAdminAgentService
           RequiredGuid(args, "id"), RequiredString(args, "role", 80), adminUserId, ct),
         "update_user_profile" => await UpdateUserProfile(args, ct),
         "create_role" => await CreateRole(args, ct),
+        "create_user" => await CreateUser(args, ct),
+        "delete_user" => await DeleteUser(RequiredGuid(args, "id"), adminUserId, ct),
+        "restore_user" => await RestoreUser(RequiredGuid(args, "id"), adminUserId, ct),
 
         // Orders
         "list_orders" => await ListOrders(OptionalEnum(args, "status", "pending", "confirmed", "processing", "shipping", "completed", "cancelled"), ClampInt(GetIntArg(args, "limit", 10), 1, 50), ct),
@@ -899,16 +1147,28 @@ public sealed class AdminAgentService : IAdminAgentService
         "ship_order" => await ShipOrder(args, ct),
         "complete_order" => await UpdateOrderStatus(RequiredGuid(args, "orderId"), "completed", ct),
         "cancel_order" => await CancelOrder(RequiredGuid(args, "orderId"), ct),
+        "update_order_address" => await UpdateOrderAddress(args, ct),
+        "update_order_items" => await UpdateOrderItems(args, ct),
+        "delete_order" => await DeleteOrder(RequiredGuid(args, "orderId"), ct),
+        "restore_order" => await RestoreOrder(RequiredGuid(args, "orderId"), ct),
 
-        // Inventory & Store Health
+        // Inventory, Media & Store Health
         "get_inventory_summary" => await GetInventorySummary(ClampInt(GetIntArg(args, "threshold", 10), 0, 500), ct),
         "get_store_health_score" => await GetStoreHealthScore(ct),
+        "list_media" => await ListMedia(args, ct),
+        "get_media" => await GetMedia(RequiredGuid(args, "id"), ct),
+        "upload_media" => await UploadMedia(args, ct),
+        "delete_media" => await DeleteMedia(RequiredGuid(args, "id"), ct),
 
         // Reviews & Comments
         "list_recent_reviews" => await ListRecentReviews(ClampInt(GetIntArg(args, "limit", 10), 1, 20), ct),
         "list_recent_comments" => await ListRecentComments(ClampInt(GetIntArg(args, "limit", 10), 1, 20), ct),
         "reply_to_review" => await ReplyToComment(adminUserId, args, ct),
         "reply_to_comment" => await ReplyToComment(adminUserId, args, ct),
+        "list_reviews" => await ListReviews(args, ct),
+        "hide_review" => await SetReviewVisibility(RequiredGuid(args, "id"), false, ct),
+        "show_review" => await SetReviewVisibility(RequiredGuid(args, "id"), true, ct),
+        "delete_review" => await DeleteReview(RequiredGuid(args, "id"), ct),
 
         // Promotions
         "list_promo_codes" => await ListPromoCodes(ct),
@@ -926,8 +1186,23 @@ public sealed class AdminAgentService : IAdminAgentService
         "generate_blog_draft" => await GenerateBlogDraft(args, ct),
         "save_blog_draft" => await SaveBlogPost(args, BlogPostStatus.Draft, ct),
         "publish_blog_post" => await PublishBlogPost(args, ct),
+        "list_blog_posts" => await ListBlogPosts(
+          ClampInt(GetIntArg(args, "page", 1), 1, 10000), ClampInt(GetIntArg(args, "pageSize", 20), 1, 50),
+          OptionalEnum(args, "status", "Draft", "Published", "Archived"), GetStrArg(args, "search"), ct),
+        "get_blog_post" => await GetBlogPost(RequiredGuid(args, "id"), ct),
+        "update_blog_post" => await UpdateBlogPost(args, ct),
+        "delete_blog_post" => await DeleteBlogPost(RequiredGuid(args, "id"), ct),
         "list_marketing_options" => await ListMarketingOptions(ct),
         "send_marketing_campaign" => await SendMarketingCampaign(args, ct),
+        "list_subscribers" => await ListSubscribers(args, ct),
+        "get_subscriber" => await GetSubscriber(RequiredGuid(args, "id"), ct),
+        "unsubscribe_subscriber" => await UnsubscribeSubscriber(RequiredGuid(args, "id"), ct),
+        "delete_subscriber" => await DeleteSubscriber(RequiredGuid(args, "id"), ct),
+        "list_email_jobs" => await ListEmailJobs(args, ct),
+        "get_email_job" => await GetEmailJob(RequiredGuid(args, "id"), ct),
+        "retry_email_job" => await RetryEmailJob(RequiredGuid(args, "id"), ct),
+        "cancel_email_job" => await CancelEmailJob(RequiredGuid(args, "id"), ct),
+        "delete_email_job" => await DeleteEmailJob(RequiredGuid(args, "id"), ct),
 
         // Autonomy Mode
         "toggle_autonomy" => ToggleAutonomy(adminUserId, args),
@@ -1046,17 +1321,32 @@ public sealed class AdminAgentService : IAdminAgentService
       "update_product" or "delete_product" or "toggle_product_status" or
       "update_user_status" or "update_user_role" or
       "delete_category" or "update_category" or
-      "update_promo_code" or "toggle_promo_code" or "delete_promo_code" or "get_promo_code";
+      "update_promo_code" or "toggle_promo_code" or "delete_promo_code" or "get_promo_code" or
+      "update_blog_post" or "delete_blog_post" or "get_blog_post" or
+      "delete_user" or "restore_user" or
+      "hide_review" or "show_review" or "delete_review" or
+      "list_variants" or "create_variant" or "update_variant" or "update_variant_stock" or "delete_variant" or
+      "get_subscriber" or "unsubscribe_subscriber" or "delete_subscriber" or
+      "get_email_job" or "retry_email_job" or "cancel_email_job" or "delete_email_job" or
+      "get_media" or "delete_media" or
+      "update_order_address" or "update_order_items" or "delete_order" or "restore_order" or
+      "get_collection" or "update_collection" or "delete_collection" or "restore_collection" or "add_product_to_collection" or "remove_product_from_collection";
 
     if (!requiresExplicitId) return null;
 
-    var idName = toolName.Contains("promo", StringComparison.OrdinalIgnoreCase)
-      ? "promoId"
-      : "id";
-
-    var hasId = args.TryGetProperty(idName, out var idElement)
+    static bool HasGuid(JsonElement source, string name) =>
+      source.TryGetProperty(name, out var idElement)
       && idElement.ValueKind == JsonValueKind.String
       && Guid.TryParse(idElement.GetString(), out _);
+
+    var hasId = toolName switch
+    {
+      "update_variant" or "update_variant_stock" or "delete_variant" => HasGuid(args, "productId") && HasGuid(args, "variantId"),
+      "list_variants" or "create_variant" => HasGuid(args, "productId"),
+      "update_order_address" or "update_order_items" or "delete_order" or "restore_order" => HasGuid(args, "orderId"),
+      _ when toolName.Contains("promo", StringComparison.OrdinalIgnoreCase) => HasGuid(args, "promoId"),
+      _ => HasGuid(args, "id")
+    };
 
     return hasId
       ? null
@@ -1307,6 +1597,105 @@ public sealed class AdminAgentService : IAdminAgentService
     return ok ? $"✅ Đã chuyển trạng thái sản phẩm thành '{status}'." : "❌ Không tìm thấy sản phẩm.";
   }
 
+  // --- Product Variant tools ---
+
+  private async Task<string> ListVariants(Guid productId, CancellationToken ct)
+  {
+    var product = await _products.GetByIdAsync(productId, ct);
+    if (product is null) return "❌ Không tìm thấy sản phẩm.";
+
+    var variants = product.Variants;
+    if (variants.Count == 0) return $"📦 Sản phẩm '{product.Name}' chưa có biến thể nào.";
+
+    return SerializeToolResult(
+      new { productId, product.Name, totalVariants = variants.Count, variants },
+      message: $"Tìm thấy {variants.Count} biến thể của '{product.Name}'.");
+  }
+
+  private async Task<string> CreateVariant(JsonElement args, CancellationToken ct)
+  {
+    var productId = RequiredGuid(args, "productId");
+    var product = await _products.GetByIdAsync(productId, ct);
+    if (product is null) return "❌ Không tìm thấy sản phẩm.";
+
+    var sku = RequiredString(args, "sku", 120).Trim();
+    var price = ClampDecimal(GetDecimalArg(args, "price", 0m), 0m, 1_000_000_000m);
+    var stockQty = ClampInt(GetIntArg(args, "stockQty", 0), 0, 10_000_000);
+    var request = new CreateVariantRequest
+    {
+      Sku = sku,
+      VariantName = GetOptionalString(args, "variantName", 120),
+      Size = GetOptionalString(args, "size", 80),
+      Color = GetOptionalString(args, "color", 80),
+      Price = price,
+      SalePrice = args.TryGetProperty("salePrice", out _) ? GetDecimalArg(args, "salePrice", 0m) : null,
+      StockQty = stockQty,
+      IsDefault = GetBoolArg(args, "isDefault", false),
+      Status = OptionalEnum(args, "status", "active", "inactive", "out_of_stock") ?? "active"
+    };
+
+    var updated = await _products.CreateVariantAsync(productId, request, ct);
+    if (updated is null) return "❌ Không tìm thấy sản phẩm.";
+
+    var created = updated.Variants.FirstOrDefault(v => v.Sku.Equals(sku, StringComparison.OrdinalIgnoreCase));
+    return created is null
+      ? $"✅ Đã tạo biến thể SKU '{sku}' cho sản phẩm '{updated.Name}'."
+      : $"✅ Đã tạo biến thể SKU '{created.Sku}' (ID: {created.Id}, size: {created.Size ?? "—"}, color: {created.Color ?? "—"}, giá: {created.Price:N0}đ, tồn: {created.StockQty}).";
+  }
+
+  private async Task<string> UpdateVariant(JsonElement args, CancellationToken ct)
+  {
+    var productId = RequiredGuid(args, "productId");
+    var variantId = RequiredGuid(args, "variantId");
+
+    var product = await _products.GetByIdAsync(productId, ct);
+    if (product is null) return "❌ Không tìm thấy sản phẩm.";
+
+    var existing = product.Variants.FirstOrDefault(v => v.Id == variantId);
+    if (existing is null) return "❌ Không tìm thấy biến thể.";
+
+    // UpdateVariantRequest is full-patch; fall back to existing values for missing args.
+    var request = new UpdateVariantRequest
+    {
+      Sku = GetOptionalString(args, "sku", 120)?.Trim() ?? existing.Sku,
+      VariantName = args.TryGetProperty("variantName", out _) ? GetOptionalString(args, "variantName", 120) : existing.VariantName,
+      Size = args.TryGetProperty("size", out _) ? GetOptionalString(args, "size", 80) : existing.Size,
+      Color = args.TryGetProperty("color", out _) ? GetOptionalString(args, "color", 80) : existing.Color,
+      Price = args.TryGetProperty("price", out _) ? ClampDecimal(GetDecimalArg(args, "price", 0m), 0m, 1_000_000_000m) : existing.Price,
+      SalePrice = args.TryGetProperty("salePrice", out _) ? GetDecimalArg(args, "salePrice", 0m) : existing.SalePrice,
+      StockQty = args.TryGetProperty("stockQty", out _) ? ClampInt(GetIntArg(args, "stockQty", 0), 0, 10_000_000) : existing.StockQty,
+      IsDefault = args.TryGetProperty("isDefault", out _) ? GetBoolArg(args, "isDefault", existing.IsDefault) : existing.IsDefault,
+      Status = OptionalEnum(args, "status", "active", "inactive", "out_of_stock") ?? existing.Status
+    };
+
+    var updated = await _products.UpdateVariantAsync(productId, variantId, request, ct);
+    return updated is null
+      ? "❌ Không tìm thấy biến thể."
+      : $"✅ Đã cập nhật biến thể SKU '{request.Sku}' (giá: {request.Price:N0}đ, tồn: {request.StockQty}).";
+  }
+
+  private async Task<string> UpdateVariantStock(JsonElement args, CancellationToken ct)
+  {
+    var productId = RequiredGuid(args, "productId");
+    var variantId = RequiredGuid(args, "variantId");
+    if (!args.TryGetProperty("stockQty", out var stockEl) || stockEl.ValueKind != JsonValueKind.Number)
+      throw new ToolValidationException("Thiếu tham số stockQty dạng số nguyên.");
+    var stockQty = ClampInt(stockEl.GetInt32(), 0, 10_000_000);
+
+    var updated = await _products.UpdateVariantStockAsync(productId, variantId, stockQty, ct);
+    return updated is null
+      ? "❌ Không tìm thấy biến thể."
+      : $"✅ Đã cập nhật tồn kho biến thể thành {stockQty}.";
+  }
+
+  private async Task<string> DeleteVariant(Guid productId, Guid variantId, CancellationToken ct)
+  {
+    var updated = await _products.DeleteVariantAsync(productId, variantId, ct);
+    return updated is null
+      ? "❌ Không tìm thấy sản phẩm hoặc biến thể."
+      : $"✅ Đã xóa mềm biến thể. Sản phẩm hiện còn {updated.Variants.Count} biến thể.";
+  }
+
   private async Task<string> ListCategories(CancellationToken ct)
   {
     var cats = await _categories.GetAllAsync(false, ct);
@@ -1357,6 +1746,85 @@ public sealed class AdminAgentService : IAdminAgentService
   {
     var ok = await _categories.DeleteAsync(id, ct);
     return ok ? "✅ Đã xóa danh mục." : "❌ Không tìm thấy danh mục.";
+  }
+
+  // --- Collection tools ---
+
+  private async Task<string> ListCollections(JsonElement args, CancellationToken ct)
+  {
+    var page = ClampInt(GetIntArg(args, "page", 1), 1, 10000);
+    var pageSize = ClampInt(GetIntArg(args, "pageSize", 20), 1, 50);
+    var search = GetStrArg(args, "search");
+    var includeDeleted = GetBoolArg(args, "includeDeleted", false);
+    var result = await _collections.GetListAsync(search, includeDeleted, page, pageSize, ct);
+    return SerializePaginatedToolResult(result.Items, result.TotalCount, result.Page, result.PageSize, new { search, includeDeleted }, successMessage: $"Tìm thấy {result.TotalCount} collections.");
+  }
+
+  private async Task<string> GetCollection(Guid id, CancellationToken ct)
+  {
+    var collection = await _collections.GetByIdAsync(id, true, ct);
+    return collection is null
+      ? "❌ Không tìm thấy collection."
+      : SerializeToolResult(collection, message: $"Collection '{collection.Name}' có {collection.Products.Count} sản phẩm.");
+  }
+
+  private async Task<string> CreateCollection(JsonElement args, CancellationToken ct)
+  {
+    var request = new CreateCollectionRequest(
+      RequiredString(args, "name", 200),
+      GetOptionalString(args, "slug", 220),
+      GetOptionalString(args, "description", 2000),
+      GetOptionalString(args, "coverImageUrl", 1000),
+      GetBoolArg(args, "isPublished", false),
+      GetBoolArg(args, "isFeatured", false),
+      ClampInt(GetIntArg(args, "sortOrder", 0), -100000, 100000));
+    var collection = await _collections.CreateAsync(request, ct);
+    return $"✅ Đã tạo collection '{collection.Name}' (ID: {collection.Id}, slug: {collection.Slug}).";
+  }
+
+  private async Task<string> UpdateCollection(JsonElement args, CancellationToken ct)
+  {
+    var id = RequiredGuid(args, "id");
+    var existing = await _collections.GetByIdAsync(id, true, ct);
+    if (existing is null || existing.IsDeleted) return "❌ Không tìm thấy collection.";
+    var request = new UpdateCollectionRequest(
+      GetOptionalString(args, "name", 200) ?? existing.Name,
+      GetOptionalString(args, "slug", 220) ?? existing.Slug,
+      args.TryGetProperty("description", out _) ? GetOptionalString(args, "description", 2000) : existing.Description,
+      args.TryGetProperty("coverImageUrl", out _) ? GetOptionalString(args, "coverImageUrl", 1000) : existing.CoverImageUrl,
+      args.TryGetProperty("isPublished", out _) ? GetBoolArg(args, "isPublished", existing.IsPublished) : existing.IsPublished,
+      args.TryGetProperty("isFeatured", out _) ? GetBoolArg(args, "isFeatured", existing.IsFeatured) : existing.IsFeatured,
+      args.TryGetProperty("sortOrder", out _) ? ClampInt(GetIntArg(args, "sortOrder", existing.SortOrder), -100000, 100000) : existing.SortOrder);
+    var updated = await _collections.UpdateAsync(id, request, ct);
+    return updated is null ? "❌ Không tìm thấy collection." : $"✅ Đã cập nhật collection '{updated.Name}'.";
+  }
+
+  private async Task<string> DeleteCollection(Guid id, CancellationToken ct)
+  {
+    var ok = await _collections.DeleteAsync(id, ct);
+    return ok ? "✅ Đã xóa mềm collection." : "❌ Không tìm thấy collection hoặc đã bị xóa.";
+  }
+
+  private async Task<string> RestoreCollection(Guid id, CancellationToken ct)
+  {
+    var ok = await _collections.RestoreAsync(id, ct);
+    return ok ? "✅ Đã khôi phục collection." : "❌ Không tìm thấy collection đã xóa.";
+  }
+
+  private async Task<string> AddProductToCollection(JsonElement args, CancellationToken ct)
+  {
+    var id = RequiredGuid(args, "id");
+    var productId = RequiredGuid(args, "productId");
+    var result = await _collections.AddProductAsync(id, new AddProductToCollectionRequest(productId, GetIntArg(args, "sortOrder", 0)), ct);
+    return result is null ? "❌ Không tìm thấy collection." : $"✅ Đã thêm sản phẩm vào collection '{result.Name}'.";
+  }
+
+  private async Task<string> RemoveProductFromCollection(JsonElement args, CancellationToken ct)
+  {
+    var id = RequiredGuid(args, "id");
+    var productId = RequiredGuid(args, "productId");
+    var result = await _collections.RemoveProductAsync(id, productId, ct);
+    return result is null ? "❌ Không tìm thấy liên kết sản phẩm trong collection." : $"✅ Đã xóa sản phẩm khỏi collection '{result.Name}'.";
   }
 
   private async Task<string> ListUsers(int page, int pageSize, string? search, CancellationToken ct)
@@ -1416,6 +1884,55 @@ public sealed class AdminAgentService : IAdminAgentService
 
     var role = await _roles.CreateRoleAsync(new CreateRoleRequest { Name = name, Description = description }, ct);
     return $"✅ Đã tạo vai trò '{role.Name}' (ID: {role.Id}).";
+  }
+
+  private async Task<string> CreateUser(JsonElement args, CancellationToken ct)
+  {
+    var fullName = RequiredString(args, "fullName", 100).Trim();
+    var email = GetOptionalString(args, "email", 255)?.Trim();
+    var phone = GetOptionalString(args, "phone", 30)?.Trim();
+    var password = GetOptionalString(args, "password", 128);
+
+    // Resolve roleId from role name (default customer).
+    var roleStr = GetOptionalString(args, "role", 80)?.Trim();
+    Guid? roleId = null;
+    if (!string.IsNullOrWhiteSpace(roleStr))
+    {
+      var roles = await _roles.GetRolesAsync(ct);
+      var target = roles.FirstOrDefault(r => r.Name.Equals(roleStr, StringComparison.OrdinalIgnoreCase));
+      if (target is null)
+        return $"❌ Không tìm thấy vai trò '{roleStr}'. Các vai trò hiện có: {string.Join(", ", roles.Select(r => r.Name))}";
+      roleId = target.Id;
+    }
+
+    var request = new CreateUserRequest
+    {
+      FullName = fullName,
+      Email = email,
+      Phone = phone,
+      Password = password,
+      RoleId = roleId
+    };
+
+    var user = await _users.CreateUserAsync(request, ct);
+    return $"✅ Đã tạo người dùng '{user.FullName}' (ID: {user.Id}" +
+           (user.Email is not null ? $", email: {user.Email}" : "") + ").";
+  }
+
+  private async Task<string> DeleteUser(Guid id, Guid adminUserId, CancellationToken ct)
+  {
+    var result = await _users.DeleteUserAsync(adminUserId, id, ct);
+    return result.Succeeded
+      ? "✅ Đã xóa mềm người dùng. Có thể khôi phục."
+      : $"❌ {result.ErrorMessage ?? "Không tìm thấy người dùng hoặc không có quyền."}";
+  }
+
+  private async Task<string> RestoreUser(Guid id, Guid adminUserId, CancellationToken ct)
+  {
+    var result = await _users.RestoreUserAsync(adminUserId, id, ct);
+    return result.Succeeded
+      ? "✅ Đã khôi phục người dùng."
+      : $"❌ {result.ErrorMessage ?? "Không tìm thấy người dùng."}";
   }
 
   // --- Order tools ---
@@ -1502,6 +2019,51 @@ public sealed class AdminAgentService : IAdminAgentService
       : $"❌ {result.ErrorMessage}";
   }
 
+  private async Task<string> UpdateOrderAddress(JsonElement args, CancellationToken ct)
+  {
+    var orderId = RequiredGuid(args, "orderId");
+    var request = new AdminOrderAddressUpdate(
+      RequiredString(args, "recipientName", 120),
+      RequiredString(args, "recipientPhone", 30),
+      RequiredString(args, "province", 120),
+      RequiredString(args, "district", 120),
+      GetOptionalString(args, "ward", 120),
+      RequiredString(args, "addressLine", 300),
+      GetOptionalString(args, "note", 1000));
+    var result = await _orders.UpdateOrderAddressAsync(orderId, request, ct);
+    return result.Success ? "✅ Đã cập nhật địa chỉ nhận hàng." : $"❌ {result.ErrorMessage}";
+  }
+
+  private async Task<string> UpdateOrderItems(JsonElement args, CancellationToken ct)
+  {
+    var orderId = RequiredGuid(args, "orderId");
+    var itemsJson = RequiredString(args, "itemsJson", 5000);
+    IReadOnlyList<AdminOrderItemUpdate> updates;
+    try
+    {
+      updates = JsonSerializer.Deserialize<List<AdminOrderItemUpdate>>(itemsJson, ToolResultJsonOptions) ?? [];
+    }
+    catch (JsonException)
+    {
+      throw new ToolValidationException("itemsJson không phải JSON array hợp lệ.");
+    }
+
+    var result = await _orders.UpdateOrderItemsAsync(orderId, updates, ct);
+    return result.Success ? "✅ Đã cập nhật dòng hàng và tính lại tổng tiền đơn." : $"❌ {result.ErrorMessage}";
+  }
+
+  private async Task<string> DeleteOrder(Guid orderId, CancellationToken ct)
+  {
+    var result = await _orders.DeleteOrderAsync(orderId, ct);
+    return result.Success ? "✅ Đã xóa mềm đơn hàng." : $"❌ {result.ErrorMessage}";
+  }
+
+  private async Task<string> RestoreOrder(Guid orderId, CancellationToken ct)
+  {
+    var result = await _orders.RestoreOrderAsync(orderId, ct);
+    return result.Success ? "✅ Đã khôi phục đơn hàng." : $"❌ {result.ErrorMessage}";
+  }
+
   // --- Inventory & Store Health tools ---
 
   private async Task<string> GetInventorySummary(int threshold, CancellationToken ct)
@@ -1545,6 +2107,58 @@ Chi tiết:
 - Hài lòng khách hàng: {h.CustomerSatisfaction}%";
   }
 
+  // --- Media tools ---
+
+  private async Task<string> ListMedia(JsonElement args, CancellationToken ct)
+  {
+    var page = ClampInt(GetIntArg(args, "page", 1), 1, 10000);
+    var pageSize = ClampInt(GetIntArg(args, "pageSize", 20), 1, 50);
+    var sourceType = GetStrArg(args, "sourceType");
+    var search = GetStrArg(args, "search");
+    var result = await _media.GetAllAsync(page, pageSize, sourceType, search, ct);
+    var message = $"Tìm thấy {result.TotalItems} media items (trang {result.Page}/{result.TotalPages}).";
+    return SerializePaginatedToolResult(result.Items, result.TotalItems, result.Page, result.PageSize, new { sourceType, search }, successMessage: message);
+  }
+
+  private async Task<string> GetMedia(Guid id, CancellationToken ct)
+  {
+    var media = await _media.GetByIdAsync(id, ct);
+    return media is null
+      ? "❌ Không tìm thấy media."
+      : SerializeToolResult(media, message: $"Media {media.Id}: {media.OriginalFileName ?? media.ObjectKey} ({media.SourceType}).");
+  }
+
+  private async Task<string> UploadMedia(JsonElement args, CancellationToken ct)
+  {
+    var fileName = RequiredString(args, "fileName", 255);
+    var contentType = RequiredString(args, "contentType", 80);
+    var base64 = RequiredString(args, "base64", 12_000_000);
+    var sourceType = GetOptionalString(args, "sourceType", 80) ?? "admin";
+
+    var commaIndex = base64.IndexOf(',');
+    if (base64.StartsWith("data:", StringComparison.OrdinalIgnoreCase) && commaIndex >= 0)
+      base64 = base64[(commaIndex + 1)..];
+
+    byte[] bytes;
+    try
+    {
+      bytes = Convert.FromBase64String(base64);
+    }
+    catch (FormatException)
+    {
+      throw new ToolValidationException("base64 không hợp lệ.");
+    }
+
+    var uploaded = await _media.UploadAsync(bytes, fileName, contentType, sourceType, ct);
+    return SerializeToolResult(uploaded, "low", false, message: $"Đã upload media '{uploaded.OriginalFileName ?? fileName}' (ID: {uploaded.Id}).");
+  }
+
+  private async Task<string> DeleteMedia(Guid id, CancellationToken ct)
+  {
+    var ok = await _media.DeleteAsync(id, ct);
+    return ok ? "✅ Đã xóa mềm media." : "❌ Không tìm thấy media hoặc đã bị xóa.";
+  }
+
   // --- Review & Comment tools ---
 
   private async Task<string> ListRecentReviews(int limit, CancellationToken ct)
@@ -1584,6 +2198,40 @@ Chi tiết:
     var result = await _reviews.ReplyToCommentAsync(adminUserId, commentId, productId, content, ct);
     return result.Success
       ? $"✅ {result.Message}"
+      : $"❌ {result.Message}";
+  }
+
+  private async Task<string> ListReviews(JsonElement args, CancellationToken ct)
+  {
+    var page = ClampInt(GetIntArg(args, "page", 1), 1, 10000);
+    var pageSize = ClampInt(GetIntArg(args, "pageSize", 20), 1, 50);
+    var rating = args.TryGetProperty("rating", out _) ? ClampInt(GetIntArg(args, "rating", 0), 1, 5) : (int?)null;
+    var isVisible = args.TryGetProperty("isVisible", out var visEl) && visEl.ValueKind == JsonValueKind.False
+      ? false
+      : args.TryGetProperty("isVisible", out visEl) && visEl.ValueKind == JsonValueKind.True ? true : (bool?)null;
+    var search = GetStrArg(args, "search");
+
+    var query = new AdminReviewListQuery(search, rating, isVisible, page, pageSize);
+    var result = await _reviews.GetReviewsAsync(query, ct);
+    var shown = Math.Min(result.Items.Count, 10);
+    var hasMore = page * pageSize < result.TotalCount || result.Items.Count > shown;
+    var message = $"Tìm thấy {result.TotalCount} đánh giá (hiển thị {shown}/{result.Items.Count}, còn tiếp: {(hasMore ? "có" : "không")}).";
+    return SerializePaginatedToolResult(result.Items, result.TotalCount, page, pageSize, new { rating, isVisible, search }, successMessage: message);
+  }
+
+  private async Task<string> SetReviewVisibility(Guid id, bool isVisible, CancellationToken ct)
+  {
+    var result = await _reviews.SetReviewVisibilityAsync(id, isVisible, ct);
+    return result.Success
+      ? $"✅ {(isVisible ? "Đã hiện lại đánh giá." : "Đã ẩn đánh giá.")}"
+      : $"❌ {result.Message}";
+  }
+
+  private async Task<string> DeleteReview(Guid id, CancellationToken ct)
+  {
+    var result = await _reviews.DeleteReviewAsync(id, ct);
+    return result.Success
+      ? "✅ Đã xóa vĩnh viễn đánh giá."
       : $"❌ {result.Message}";
   }
 
@@ -1909,6 +2557,100 @@ TỔNG QUAN:
     }, ToolResultJsonOptions);
   }
 
+  // --- Blog CRUD tools ---
+
+  private static BlogPostStatus? ParseBlogStatus(string? status)
+  {
+    if (string.IsNullOrWhiteSpace(status)) return null;
+    return Enum.TryParse<BlogPostStatus>(status, true, out var parsed) ? parsed : null;
+  }
+
+  private async Task<string> ListBlogPosts(int page, int pageSize, string? status, string? search, CancellationToken ct)
+  {
+    var cleanSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
+    var statusFilter = ParseBlogStatus(status);
+
+    var result = await _blogPosts.GetPostsAsync(statusFilter, null, null, cleanSearch, page, pageSize, false, ct);
+    var shown = Math.Min(result.Items.Count, 10);
+    var hasMore = page * pageSize < result.TotalCount || result.Items.Count > shown;
+    var message = $"Tìm thấy {result.TotalCount} bài viết (hiển thị {shown}/{result.Items.Count}, còn tiếp: {(hasMore ? "có" : "không")})." +
+                  (hasMore ? " Gợi ý: dùng search cụ thể hoặc page tiếp theo trước khi kết luận thiếu dữ liệu." : string.Empty);
+    return SerializePaginatedToolResult(result.Items, result.TotalCount, page, pageSize, new { status = statusFilter?.ToString(), search = cleanSearch }, successMessage: message);
+  }
+
+  private async Task<string> GetBlogPost(Guid id, CancellationToken ct)
+  {
+    var post = await _blogPosts.GetByIdAsync(id, true, ct);
+    if (post is null) return "❌ Không tìm thấy bài viết.";
+    return SerializeToolResult(post, message: $"Bài viết '{post.Title}' (trạng thái: {post.Status}).");
+  }
+
+  private async Task<string> UpdateBlogPost(JsonElement args, CancellationToken ct)
+  {
+    var id = RequiredGuid(args, "id");
+    var existing = await _blogPosts.GetByIdAsync(id, true, ct);
+    if (existing is null) return "❌ Không tìm thấy bài viết.";
+
+    var title = GetOptionalString(args, "title", 500) ?? existing.Title;
+    var excerpt = GetOptionalString(args, "excerpt", 800) ?? existing.Excerpt;
+    var featuredImage = GetOptionalString(args, "featuredImage", 1000) ?? existing.FeaturedImage;
+    var tags = args.TryGetProperty("tags", out _) ? ParseCsv(GetOptionalString(args, "tags", 1000)) : existing.Tags;
+
+    // Content: keep existing unless a new value is provided.
+    JsonElement contentElement;
+    if (args.TryGetProperty("content", out var contentArg) && contentArg.ValueKind == JsonValueKind.String)
+    {
+      using var contentDoc = JsonDocument.Parse(NormalizeBlogContent(GetOptionalString(args, "content", 12000) ?? title));
+      contentElement = contentDoc.RootElement.Clone();
+    }
+    else
+    {
+      var existingJson = JsonSerializer.Serialize(existing.Content, ToolResultJsonOptions);
+      using var existingDoc = JsonDocument.Parse(existingJson);
+      contentElement = existingDoc.RootElement.Clone();
+    }
+
+    var status = args.TryGetProperty("status", out _)
+      ? (ParseBlogStatus(GetStrArg(args, "status")) ?? existing.Status)
+      : existing.Status;
+
+    var request = new UpdateBlogPostRequest
+    {
+      Title = title,
+      Slug = existing.Slug,
+      Excerpt = excerpt,
+      FeaturedImage = featuredImage,
+      FeaturedImageWidth = existing.FeaturedImageWidth,
+      FeaturedImageHeight = existing.FeaturedImageHeight,
+      Template = existing.Template,
+      Content = contentElement,
+      Tags = tags,
+      BlogCategoryId = existing.BlogCategoryId,
+      AuthorId = existing.AuthorId,
+      AuthorNameOverride = existing.AuthorName,
+      AuthorBio = existing.AuthorBio,
+      ReviewedBy = existing.ReviewedBy,
+      InformationGain = existing.InformationGain,
+      Status = status,
+      PublishedAt = existing.PublishedAt,
+      MetaTitle = existing.MetaTitle,
+      MetaDescription = existing.MetaDescription,
+      CanonicalUrl = existing.CanonicalUrl
+    };
+
+    var updated = await _blogPosts.UpdateAsync(id, request, ct);
+    return $"✅ Đã cập nhật bài viết '{updated.Title}' (trạng thái: {updated.Status}).";
+  }
+
+  private async Task<string> DeleteBlogPost(Guid id, CancellationToken ct)
+  {
+    var existing = await _blogPosts.GetByIdAsync(id, true, ct);
+    if (existing is null) return "❌ Không tìm thấy bài viết.";
+
+    await _blogPosts.DeleteAsync(id, ct);
+    return $"✅ Đã xóa bài viết '{existing.Title}'.";
+  }
+
   private async Task<string> ListMarketingOptions(CancellationToken ct)
   {
     var options = await _marketingCampaigns.GetContentOptionsAsync(ct);
@@ -1934,6 +2676,80 @@ TỔNG QUAN:
       null);
     var result = await _marketingCampaigns.QueueCampaignAsync(request, ct);
     return $"✅ Đã xếp hàng chiến dịch marketing: {result.Queued} email, bỏ qua {result.Skipped}.";
+  }
+
+  private async Task<string> ListSubscribers(JsonElement args, CancellationToken ct)
+  {
+    var page = ClampInt(GetIntArg(args, "page", 1), 1, 10000);
+    var pageSize = ClampInt(GetIntArg(args, "pageSize", 20), 1, 50);
+    var search = GetStrArg(args, "search");
+    var status = OptionalEnum(args, "status", "pending", "active", "unsubscribed");
+    var includeDeleted = GetBoolArg(args, "includeDeleted", false);
+
+    var (items, total) = await _subscribers.GetListAsync(search, status, includeDeleted, page, pageSize, ct);
+    var shown = Math.Min(items.Count, 10);
+    var hasMore = page * pageSize < total || items.Count > shown;
+    var message = $"Tìm thấy {total} người đăng ký (hiển thị {shown}/{items.Count}, còn tiếp: {(hasMore ? "có" : "không")}).";
+    return SerializePaginatedToolResult(items, total, page, pageSize, new { search, status, includeDeleted }, successMessage: message);
+  }
+
+  private async Task<string> GetSubscriber(Guid id, CancellationToken ct)
+  {
+    var subscriber = await _subscribers.GetByIdAsync(id, ct);
+    return subscriber is null
+      ? "❌ Không tìm thấy người đăng ký."
+      : SerializeToolResult(subscriber, message: $"Subscriber {subscriber.Email} ({subscriber.Status}).");
+  }
+
+  private async Task<string> UnsubscribeSubscriber(Guid id, CancellationToken ct)
+  {
+    var ok = await _subscribers.UnsubscribeAsync(id, ct);
+    return ok ? "✅ Đã hủy đăng ký email cho subscriber." : "❌ Không tìm thấy người đăng ký.";
+  }
+
+  private async Task<string> DeleteSubscriber(Guid id, CancellationToken ct)
+  {
+    var ok = await _subscribers.DeleteAsync(id, ct);
+    return ok ? "✅ Đã xóa mềm subscriber." : "❌ Không tìm thấy subscriber hoặc đã bị xóa.";
+  }
+
+  private async Task<string> ListEmailJobs(JsonElement args, CancellationToken ct)
+  {
+    var page = ClampInt(GetIntArg(args, "page", 1), 1, 10000);
+    var pageSize = ClampInt(GetIntArg(args, "pageSize", 20), 1, 50);
+    var status = OptionalEnum(args, "status", "queued", "sending", "sent", "failed", "dead", "cancelled");
+    var includeDeleted = GetBoolArg(args, "includeDeleted", false);
+    var (items, total) = await _emailJobs.GetListAsync(status, includeDeleted, page, pageSize, ct);
+    var shown = Math.Min(items.Count, 10);
+    var hasMore = page * pageSize < total || items.Count > shown;
+    var message = $"Tìm thấy {total} email jobs (hiển thị {shown}/{items.Count}, còn tiếp: {(hasMore ? "có" : "không")}).";
+    return SerializePaginatedToolResult(items, total, page, pageSize, new { status, includeDeleted }, successMessage: message);
+  }
+
+  private async Task<string> GetEmailJob(Guid id, CancellationToken ct)
+  {
+    var job = await _emailJobs.GetByIdAsync(id, ct);
+    return job is null
+      ? "❌ Không tìm thấy email job."
+      : SerializeToolResult(job, message: $"Email job {job.Id} gửi tới {job.ToEmail} ({job.Status}).");
+  }
+
+  private async Task<string> RetryEmailJob(Guid id, CancellationToken ct)
+  {
+    var ok = await _emailJobs.RetryAsync(id, ct);
+    return ok ? "✅ Đã đưa email job về hàng đợi gửi lại." : "❌ Không tìm thấy email job hoặc không thể retry.";
+  }
+
+  private async Task<string> CancelEmailJob(Guid id, CancellationToken ct)
+  {
+    var ok = await _emailJobs.CancelAsync(id, ct);
+    return ok ? "✅ Đã hủy email job." : "❌ Không tìm thấy email job hoặc không thể hủy.";
+  }
+
+  private async Task<string> DeleteEmailJob(Guid id, CancellationToken ct)
+  {
+    var ok = await _emailJobs.DeleteAsync(id, ct);
+    return ok ? "✅ Đã xóa mềm email job." : "❌ Không tìm thấy email job, đã bị xóa hoặc đang được gửi.";
   }
 
 

@@ -282,6 +282,51 @@ public sealed class AdminProductService(
         return await GetByIdAsync(productId, cancellationToken);
     }
 
+    public async Task<AdminProductDetailResponse?> DeleteVariantAsync(Guid productId, Guid variantId, CancellationToken cancellationToken = default)
+    {
+        // Ignore soft-delete filter so admins can act on already-archived variants too.
+        var variant = await dbContext.ProductVariants
+            .IgnoreQueryFilters()
+            .Include(v => v.Product)
+            .FirstOrDefaultAsync(v => v.Id == variantId && v.ProductId == productId, cancellationToken);
+
+        if (variant is null) return null;
+        if (variant.IsDeleted) return await GetByIdAsync(productId, cancellationToken);
+
+        var wasDefault = variant.IsDefault;
+        var now = DateTime.UtcNow;
+
+        variant.IsDeleted = true;
+        variant.DeletedAt = now;
+        variant.UpdatedAt = now;
+        variant.Product.UpdatedAt = now;
+
+        // If the removed variant was the default, promote another active variant on the product.
+        // Don't filter on IsDefault == false: under data drift there may be multiple defaults,
+        // and excluding them could leave the product with zero defaults. We just need any
+        // surviving active variant (the just-deleted one is excluded by Id + soft-delete filter).
+        if (wasDefault)
+        {
+            var replacement = await dbContext.ProductVariants
+                .Where(v => v.ProductId == productId && v.Id != variantId && !v.IsDeleted)
+                .OrderBy(v => v.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (replacement is not null) replacement.IsDefault = true;
+        }
+
+        await hermesEvents.EnqueueAdminInventoryEventAsync(
+            "product_variant_deleted",
+            variant.Id,
+            new { productId, variantId, variant.Sku, variant.Size, variant.Color, deletedAt = now },
+            $"product_variant_deleted:Inventory:{variant.Id:N}:{now.Ticks}",
+            cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Admin soft-deleted variant {VariantId} for product {ProductId}", variantId, productId);
+        return await GetByIdAsync(productId, cancellationToken);
+    }
+
     public async Task<bool> ToggleStatusAsync(Guid id, string newStatus, CancellationToken cancellationToken = default)
     {
         var product = await dbContext.Products

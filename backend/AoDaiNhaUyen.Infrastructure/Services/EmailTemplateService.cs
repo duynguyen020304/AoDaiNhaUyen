@@ -170,7 +170,20 @@ public sealed partial class EmailTemplateService(AppDbContext dbContext) : IEmai
 
   private static bool AllowsTrustedHtmlBody(string templateKey)
   {
-    return false; // All templates now use database-driven rendering
+    // Trusted HTML body is allowed only for built-in transactional templates whose
+    // content is admin/system-controlled (invoices, confirmations, auth flows).
+    // Marketing/newsletter keys that render from stored/edited bodies must not
+    // accept caller-supplied trustedHtmlBody, since those go through customer-facing
+    // templates and could be abused to inject HTML. Returns false for any unknown key,
+    // so custom DB-driven templates stay safe.
+    return SafeEmailTemplateRenderer.ResolveType(templateKey) is not null
+      && templateKey is
+        "order.invoice" or
+        "order.confirmation" or
+        "auth.verify_email" or
+        "auth.reset_password" or
+        "subscriber.welcome" or
+        "marketing.confirm_subscription";
   }
 
   private static string ReplaceTokens(string template, IReadOnlyDictionary<string, string> values)

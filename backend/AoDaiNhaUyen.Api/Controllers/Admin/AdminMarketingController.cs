@@ -85,6 +85,14 @@ public sealed class AdminSubscribersController(IAdminSubscriberService service) 
       : NotFound(ApiResponseFactory.Failure("Không tìm thấy người đăng ký.", "not_found", "Người đăng ký không tồn tại."));
   }
 
+  [HttpDelete("{id:guid}")]
+  public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken = default)
+  {
+    return await service.DeleteAsync(id, cancellationToken)
+      ? Ok(ApiResponseFactory.Success<object?>(null, "Xóa người đăng ký thành công."))
+      : NotFound(ApiResponseFactory.Failure("Không tìm thấy người đăng ký.", "not_found", "Người đăng ký không tồn tại hoặc đã bị xóa."));
+  }
+
   [HttpPost("import")]
   public async Task<IActionResult> Import(ImportSubscribersRequest request, CancellationToken cancellationToken = default)
   {
@@ -106,11 +114,11 @@ public sealed class AdminSubscribersController(IAdminSubscriberService service) 
 public sealed class AdminEmailJobsController(IAdminEmailJobService service) : ControllerBase
 {
   [HttpGet]
-  public async Task<IActionResult> GetAll([FromQuery] string? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
+  public async Task<IActionResult> GetAll([FromQuery] string? status = null, [FromQuery] bool includeDeleted = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
   {
     page = Math.Max(1, page);
     pageSize = Math.Clamp(pageSize, 1, 100);
-    var (items, totalItem) = await service.GetListAsync(status, page, pageSize, cancellationToken);
+    var (items, totalItem) = await service.GetListAsync(status, includeDeleted, page, pageSize, cancellationToken);
     return Ok(ApiResponseFactory.PaginatedSuccess(items, page, pageSize, totalItem));
   }
 
@@ -155,6 +163,14 @@ public sealed class AdminEmailJobsController(IAdminEmailJobService service) : Co
     return await service.CancelAsync(id, cancellationToken)
       ? Ok(ApiResponseFactory.Success<object?>(null, "Hủy email job thành công."))
       : NotFound(ApiResponseFactory.Failure("Không thể hủy email job.", "not_found", "Email job không tồn tại hoặc không thể hủy."));
+  }
+
+  [HttpDelete("{id:guid}")]
+  public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken = default)
+  {
+    return await service.DeleteAsync(id, cancellationToken)
+      ? Ok(ApiResponseFactory.Success<object?>(null, "Xóa email job thành công."))
+      : NotFound(ApiResponseFactory.Failure("Không thể xóa email job.", "not_found", "Email job không tồn tại, đã bị xóa hoặc đang được gửi."));
   }
 }
 

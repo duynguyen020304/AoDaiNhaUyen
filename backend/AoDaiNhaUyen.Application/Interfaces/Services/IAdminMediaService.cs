@@ -13,6 +13,8 @@ public interface IAdminMediaService
 
   Task<UserImageDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
 
+  Task<UserImageDto> UploadAsync(byte[] bytes, string fileName, string contentType, string sourceType = "admin", CancellationToken ct = default);
+
   Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
 
   Task<MediaStatsDto> GetStatsAsync(CancellationToken ct = default);
