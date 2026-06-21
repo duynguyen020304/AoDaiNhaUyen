@@ -14,14 +14,14 @@ export default function BlogPage() {
   const page = Number(sp.get('page') ?? '1');
   const posts = useBlogList({ tag, category, page, pageSize: 9 });
 
-  const title = 'Bài Viết Áo Dài, Cưới, Văn Hóa | Áo Dài Nhà Uyên';
-  const description = 'Khám phá bí quyết chọn áo dài cưới, bảo quản áo dài và cảm hứng thời trang Việt từ Áo Dài Nhà Uyên.';
+  const title = 'Bài Viết Áo Dài, Cưới, Văn Hóa | Áo Dài Nhã Uyên';
+  const description = 'Khám phá bí quyết chọn áo dài cưới, bảo quản áo dài và cảm hứng thời trang Việt từ Áo Dài Nhã Uyên.';
   const items = posts.data?.data ?? [];
 
   return (
     <main className={styles.page}>
       <BlogSeo title={title} description={description} canonical={`${SITE}/blog/`} image={`${SITE}/assets/footer-logo.png`} />
-      <JsonLd data={{ '@context': 'https://schema.org', '@type': 'Organization', name: 'Áo Dài Nhà Uyên', url: SITE, logo: `${SITE}/logo.png` }} />
+      <JsonLd data={{ '@context': 'https://schema.org', '@type': 'Organization', name: 'Áo Dài Nhã Uyên', url: SITE, logo: `${SITE}/logo.png` }} />
       <JsonLd data={{ '@context': 'https://schema.org', '@type': 'ItemList', itemListElement: items.slice(0, 10).map((post, index) => ({ '@type': 'ListItem', position: index + 1, url: `${SITE}/blog/${post.slug}/`, name: post.title, image: post.featuredImage ?? undefined })) }} />
       
       {/* Decorative background grid and gradient */}

@@ -12,7 +12,7 @@ export function BlogSeo({ title, description, canonical, image, type = 'website'
       <meta property="og:description" content={description} />
       <meta property="og:type" content={type} />
       <meta property="og:url" content={canonical} />
-      <meta property="og:site_name" content="Áo Dài Nhà Uyên" />
+      <meta property="og:site_name" content="Áo Dài Nhã Uyên" />
       {image ? <meta property="og:image" content={image} /> : null}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />

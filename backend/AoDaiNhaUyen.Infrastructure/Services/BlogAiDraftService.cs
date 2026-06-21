@@ -81,7 +81,7 @@ public sealed class BlogAiDraftService(
   }
 
   private static string BuildSystemPrompt() => """
-Bạn là biên tập viên SEO/E-E-A-T cho website áo dài cao cấp Áo Dài Nhà Uyên.
+Bạn là biên tập viên SEO/E-E-A-T cho website áo dài cao cấp Áo Dài Nhã Uyên.
 Chỉ trả về JSON hợp lệ, không markdown, không lời dẫn.
 Không bịa số liệu, chứng nhận, địa chỉ, giá, bác sĩ/chuyên gia, hoặc nguồn ngoài nếu không được cung cấp.
 Không tạo HTML/script. Mọi nội dung phải là text thuần.
@@ -98,7 +98,7 @@ Schema JSON bắt buộc:
   "metaDescription": "string <= 500",
   "canonicalUrl": null,
   "informationGain": "string",
-  "authorNameOverride": "Ban biên tập Áo Dài Nhà Uyên",
+  "authorNameOverride": "Ban biên tập Áo Dài Nhã Uyên",
   "authorBio": "string",
   "reviewedBy": "string|null",
   "blogCategoryId": null,
@@ -147,7 +147,7 @@ Yêu cầu chất lượng:
       SafeNullableText(draft.MetaDescription, 500),
       SafeUrlOrNull(draft.CanonicalUrl),
       SafeNullableText(draft.InformationGain, 1000),
-      SafeNullableText(draft.AuthorNameOverride, 200) ?? "Ban biên tập Áo Dài Nhà Uyên",
+      SafeNullableText(draft.AuthorNameOverride, 200) ?? "Ban biên tập Áo Dài Nhã Uyên",
       SafeNullableText(draft.AuthorBio, 1000) ?? "Nội dung được biên tập cho khách hàng quan tâm áo dài, phong cách mặc và bảo quản trang phục truyền thống Việt Nam.",
       SafeNullableText(draft.ReviewedBy, 200),
       draft.BlogCategoryId ?? request.CategoryId,
@@ -205,10 +205,10 @@ Yêu cầu chất lượng:
       JsonSerializer.SerializeToElement(blocks, JsonOptions),
       ["áo dài", request.TargetKeyword ?? request.Topic],
       request.Topic,
-      $"Tìm hiểu {request.Topic} cùng Áo Dài Nhà Uyên: gợi ý chọn, mặc và bảo quản áo dài phù hợp.",
+      $"Tìm hiểu {request.Topic} cùng Áo Dài Nhã Uyên: gợi ý chọn, mặc và bảo quản áo dài phù hợp.",
       null,
       "Bản nháp cần bổ sung ví dụ thực tế, hình ảnh sản phẩm và kiểm duyệt thủ công trước khi xuất bản.",
-      "Ban biên tập Áo Dài Nhà Uyên",
+      "Ban biên tập Áo Dài Nhã Uyên",
       "Nội dung được biên tập cho khách hàng quan tâm áo dài, phong cách mặc và bảo quản trang phục truyền thống Việt Nam.",
       null,
       request.CategoryId,

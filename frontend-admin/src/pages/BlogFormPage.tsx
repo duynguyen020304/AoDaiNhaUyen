@@ -172,7 +172,7 @@ export function BlogFormPage() {
     })
   }, [isEdit, selectedPost])
 
-  const seoTitle = useMemo(() => form.metaTitle?.trim() || `${form.title} | Áo Dài Nhà Uyên`, [form.metaTitle, form.title])
+  const seoTitle = useMemo(() => form.metaTitle?.trim() || `${form.title} | Áo Dài Nhã Uyên`, [form.metaTitle, form.title])
   const seoDescription = useMemo(() => form.metaDescription?.trim() || form.excerpt, [form.metaDescription, form.excerpt])
 
   function patch(patch: Partial<BlogPostPayload>) {

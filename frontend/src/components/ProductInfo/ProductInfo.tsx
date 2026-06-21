@@ -1,9 +1,13 @@
 import { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import StarRating from '../StarRating/StarRating';
 import { fadeUp, staggerContainer, cardReveal } from '../../utils/motion';
 import type { ProductDetail, ProductVariant } from '../../types/catalog';
+import { useAddCartItemMutation } from '../../hooks/cart/useCartMutations';
+import { useToast } from '../Toast/useToast';
+import { useAuthModal } from '../../auth/AuthModalContext';
+import { useAuth } from '../../auth/useAuth';
 import styles from './ProductInfo.module.css';
 
 interface ProductInfoProps {
@@ -29,6 +33,11 @@ function formatPrice(amount: number): string {
 
 
 export default function ProductInfo({ product }: ProductInfoProps) {
+  const location = useLocation();
+  const { status } = useAuth();
+  const { openAuthModal } = useAuthModal();
+  const { showToast } = useToast();
+  const addCartItemMutation = useAddCartItemMutation();
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(() =>
     getDefaultVariant(product.variants),
   );
@@ -98,6 +107,25 @@ export default function ProductInfo({ product }: ProductInfoProps) {
   }, []);
 
   const inStock = maxQty > 0;
+
+  const handleAddToCart = useCallback(async () => {
+    if (status !== 'authenticated') {
+      openAuthModal({ from: location.pathname + location.search });
+      return;
+    }
+
+    if (!selectedVariant.id) {
+      showToast('Sản phẩm này hiện chưa sẵn sàng để thêm vào giỏ.', 'error');
+      return;
+    }
+
+    try {
+      await addCartItemMutation.mutateAsync({ variantId: selectedVariant.id, quantity });
+      showToast('Đã thêm sản phẩm vào giỏ hàng.');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Không thể thêm vào giỏ hàng.', 'error');
+    }
+  }, [addCartItemMutation, location.pathname, location.search, openAuthModal, quantity, selectedVariant.id, showToast, status]);
 
   return (
     <motion.div
@@ -230,10 +258,11 @@ export default function ProductInfo({ product }: ProductInfoProps) {
         type="button"
         className={styles.addToCartBtn}
         variants={cardReveal}
-        disabled={!inStock}
-        whileTap={inStock ? { scale: 0.97 } : undefined}
+        disabled={!inStock || addCartItemMutation.isPending}
+        onClick={handleAddToCart}
+        whileTap={inStock && !addCartItemMutation.isPending ? { scale: 0.97 } : undefined}
       >
-        Thêm vào giỏ hàng
+        {addCartItemMutation.isPending ? 'Đang thêm...' : 'Thêm vào giỏ hàng'}
       </motion.button>
 
       {/* Product details accordion */}

@@ -321,7 +321,7 @@ public sealed class BlogPostService(
     var (items, _) = await blogPostRepository.GetAllAsync(BlogPostStatus.Published, null, null, null, 1, 20, false, cancellationToken);
     var baseUrl = siteBaseUrl.TrimEnd('/');
     var sb = new StringBuilder();
-    sb.AppendLine("# Áo Dài Nhà Uyên");
+    sb.AppendLine("# Áo Dài Nhã Uyên");
     sb.AppendLine("> Premium áo dài Việt Nam — blog về thời trang, văn hóa, đám cưới");
     sb.AppendLine();
     sb.AppendLine("## Bài Viết Mới Nhất");

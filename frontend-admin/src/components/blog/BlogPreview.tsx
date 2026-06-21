@@ -8,7 +8,7 @@ interface BlogPreviewProps {
 }
 
 export function BlogPreview({ post }: BlogPreviewProps) {
-  const author = post.authorNameOverride || 'Áo Dài Nhà Uyên'
+  const author = post.authorNameOverride || 'Áo Dài Nhã Uyên'
   const dateStr = post.publishedAt
     ? new Date(post.publishedAt).toLocaleDateString('vi-VN')
     : new Date().toLocaleDateString('vi-VN')

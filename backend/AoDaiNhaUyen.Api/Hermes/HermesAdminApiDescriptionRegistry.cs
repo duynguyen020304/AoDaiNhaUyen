@@ -98,7 +98,7 @@ public sealed class HermesAdminApiDescriptionRegistry
     // Reviews
     Get("/api/admin/reviews", "List đánh giá để Hermes kiểm tra nội dung, rating, productId và reviewId trước khi phản hồi.", "Paginated AdminReviewModerationItem[]", query: [Param("search", "string", false, "Từ khóa nội dung/khách/sản phẩm/email"), Param("rating", "int", false, "Số sao 1-5"), Param("isVisible", "bool", false, "Trạng thái hiển thị"), Param("page", "int", false, "Trang"), Param("pageSize", "int", false, "Kích thước trang, tối đa 100")]),
     Get("/api/admin/reviews/recovery-stats", "Thống kê chăm sóc đánh giá xấu: tỷ lệ đã phản hồi, thời gian phản hồi đầu tiên, số quá SLA. Đây là recovery action/response coverage, không phải true resolution.", "BadReviewRecoveryStats", query: [Param("days", "int", false, "Khoảng ngày, mặc định 30"), Param("slaHours", "double", false, "SLA phản hồi tính theo giờ, mặc định 4")]),
-    Post("/api/admin/reviews/{id}/reply", "Trả lời một đánh giá/bình luận bằng tài khoản Hermes admin; tạo child comment công khai.", "AdminReplyResult", ReviewReplyBody(), path: [Id("id", "ID review/comment gốc")], notes: ["Risk: low/medium brand impact. Chỉ phản hồi khi có reviewId/commentId và productId thật.", "Nội dung phản hồi phải lịch sự, đúng giọng Áo Dài Nhà Uyên, không hứa hoàn tiền/khuyến mãi nếu chưa có policy rõ.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
+    Post("/api/admin/reviews/{id}/reply", "Trả lời một đánh giá/bình luận bằng tài khoản Hermes admin; tạo child comment công khai.", "AdminReplyResult", ReviewReplyBody(), path: [Id("id", "ID review/comment gốc")], notes: ["Risk: low/medium brand impact. Chỉ phản hồi khi có reviewId/commentId và productId thật.", "Nội dung phản hồi phải lịch sự, đúng giọng Áo Dài Nhã Uyên, không hứa hoàn tiền/khuyến mãi nếu chưa có policy rõ.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
     Patch("/api/admin/reviews/{id}/visibility", "Ẩn/hiển thị đánh giá cho moderation.", "AdminReviewActionResult", Body([Field("isVisible", "bool", true, "true để hiển thị, false để ẩn")], new { isVisible = true }), path: [Id("id", "ID review")]),
     Delete("/api/admin/reviews/{id}", "Xóa đánh giá/bình luận khỏi hệ thống.", "AdminReviewActionResult", path: [Id("id", "ID review")]),
 
@@ -235,13 +235,13 @@ public sealed class HermesAdminApiDescriptionRegistry
       Field("purpose", "string", true, "transactional/survey/thank_you"),
       Field("scheduledAt", "datetime", false, "UTC ISO time; bỏ trống để gửi ngay, +14 ngày cho survey"),
       Field("idempotencyKey", "string", true, "Khóa ổn định, ví dụ hermes:thank-you:{orderId}")
-    ], new { toEmail = "khach@example.com", customerId = "00000000-0000-0000-0000-000000000000", orderId = (string?)null, templateKey = "hermes.single_email", subject = "Cảm ơn chị đã tin yêu Áo Dài Nhã Uyên", preheader = "Nhà Uyên rất trân trọng trải nghiệm của chị", intro = "Chào chị,", body = "Cảm ơn chị đã lựa chọn Áo Dài Nhã Uyên. Nhà Uyên hy vọng sản phẩm mang lại trải nghiệm thật đẹp và thoải mái cho chị.", ctaLabel = "Chia sẻ cảm nhận", ctaUrl = "https://aodainhauyen.io.vn", purpose = "thank_you", scheduledAt = (string?)null, idempotencyKey = "hermes:thank-you:00000000000000000000000000000000" });
+    ], new { toEmail = "khach@example.com", customerId = "00000000-0000-0000-0000-000000000000", orderId = (string?)null, templateKey = "hermes.single_email", subject = "Cảm ơn chị đã tin yêu Áo Dài Nhã Uyên", preheader = "Nhã Uyên rất trân trọng trải nghiệm của chị", intro = "Chào chị,", body = "Cảm ơn chị đã lựa chọn Áo Dài Nhã Uyên. Nhã Uyên hy vọng sản phẩm mang lại trải nghiệm thật đẹp và thoải mái cho chị.", ctaLabel = "Chia sẻ cảm nhận", ctaUrl = "https://aodainhauyen.io.vn", purpose = "thank_you", scheduledAt = (string?)null, idempotencyKey = "hermes:thank-you:00000000000000000000000000000000" });
 
   private static HermesBodyDescription ReviewReplyBody() =>
     Body([
       Field("productId", "guid", true, "ID sản phẩm chứa review/comment gốc"),
       Field("content", "string", true, "Nội dung phản hồi công khai, tiếng Việt, lịch sự/ấm/chuyên nghiệp")
-    ], new { productId = "00000000-0000-0000-0000-000000000000", content = "Cảm ơn chị đã chia sẻ trải nghiệm với Áo Dài Nhà Uyên. Nhà Uyên rất vui khi sản phẩm hợp ý chị ạ!" });
+    ], new { productId = "00000000-0000-0000-0000-000000000000", content = "Cảm ơn chị đã chia sẻ trải nghiệm với Áo Dài Nhã Uyên. Nhã Uyên rất vui khi sản phẩm hợp ý chị ạ!" });
 
   private static HermesBodyDescription HermesReportBody() =>
     Body([
