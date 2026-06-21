@@ -1,7 +1,6 @@
 import { request, requestPaginated } from "./client";
 import type { PaginatedApiEnvelope } from "@/types/api";
 import type {
-  CreateEmailTemplateRequest,
   EmailJobDetail,
   EmailJobListItem,
   EmailTemplateDetail,
@@ -14,7 +13,6 @@ import type {
   SendMarketingCampaignRequest,
   SubscriberDetail,
   SubscriberListItem,
-  UpdateEmailTemplateRequest,
 } from "@/types/admin";
 
 function qs(params: Record<string, string | number | boolean | undefined>) {
@@ -45,26 +43,6 @@ export const getEmailTemplates = (
   );
 export const getEmailTemplate = (id: string) =>
   request<EmailTemplateDetail>(`/api/admin/email-templates/${id}`);
-export const createEmailTemplate = (data: CreateEmailTemplateRequest) =>
-  request<EmailTemplateDetail>("/api/admin/email-templates", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-export const updateEmailTemplate = (
-  id: string,
-  data: UpdateEmailTemplateRequest,
-) =>
-  request<EmailTemplateDetail>(`/api/admin/email-templates/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
-export const deleteEmailTemplate = (id: string) =>
-  request<void>(`/api/admin/email-templates/${id}`, { method: "DELETE" });
-export const restoreEmailTemplate = (id: string) =>
-  request<void>(`/api/admin/email-templates/${id}/restore`, {
-    method: "PATCH",
-  });
-
 export const getSubscribers = (
   search = "",
   status = "",
