@@ -165,6 +165,9 @@ public sealed class HermesEventProcessor(
     if (eventType.Contains("blog", StringComparison.Ordinal) || eventType.Contains("content", StringComparison.Ordinal))
       return new ReportProfile("seo", "info", "Cơ hội SEO", "cơ hội SEO", "Tăng organic traffic và internal link");
 
+    if (eventType.Contains("social", StringComparison.Ordinal) || eventType.Contains("facebook", StringComparison.Ordinal) || eventType.Contains("zernio", StringComparison.Ordinal))
+      return new ReportProfile("growth", eventType.Contains("anomaly", StringComparison.Ordinal) ? "warning" : "info", "Tín hiệu social", "tín hiệu social", "Tăng chuyển đổi từ tương tác mạng xã hội");
+
     if (eventType.Contains("email", StringComparison.Ordinal) || eventType.Contains("campaign", StringComparison.Ordinal))
       return new ReportProfile("crm", "info", "Cơ hội CRM", "cơ hội CRM", "Tăng repeat purchase và phân khúc khách");
 

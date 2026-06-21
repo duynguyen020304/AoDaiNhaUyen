@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Loader2, Globe, FileX, Upload, Trash2, Star, EyeOff, PackageCheck } from 'lucide-react'
 import { useProductStore } from '@/stores/productStore'
-import type { AdminImageResponse, AdminVariantResponse } from '@/types/admin'
+import type { AdminImageResponse, AdminVariantResponse, CreateVariantRequest } from '@/types/admin'
 import { useCategoryStore } from '@/stores/categoryStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -126,8 +126,7 @@ export function ProductFormPage() {
     setError(null)
     try {
       const product = await useProductStore.getState().updateVariantStock(id, variant.id, nextStock)
-      setVariants(product.variants)
-      setStockInputs(Object.fromEntries(product.variants.map((item) => [item.id, String(item.stockQty)])))
+      syncVariants(product.variants)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không thể cập nhật tồn kho.')
     } finally {
@@ -148,48 +147,74 @@ export function ProductFormPage() {
     setEditIsDefault(variant.isDefault)
   }
 
-  const handleSaveVariant = async (variantId: string) => {
-    if (!id) return
+  const buildVariantPayload = (): CreateVariantRequest | null => {
     if (!editSku.trim()) {
       setError('SKU không được để trống.')
-      return
+      return null
     }
     const priceVal = Number(editPrice)
     if (isNaN(priceVal) || priceVal < 0) {
       setError('Giá tiền không hợp lệ.')
-      return
+      return null
     }
     const salePriceVal = editSalePrice.trim() ? Number(editSalePrice) : null
     if (salePriceVal !== null && (isNaN(salePriceVal) || salePriceVal < 0)) {
       setError('Giá khuyến mãi không hợp lệ.')
-      return
+      return null
     }
     const stockQtyVal = Number(editStockQty)
     if (isNaN(stockQtyVal) || !Number.isInteger(stockQtyVal) || stockQtyVal < 0) {
       setError('Số lượng tồn kho không hợp lệ.')
-      return
+      return null
     }
 
+    return {
+      sku: editSku.trim(),
+      variantName: editVariantName.trim() || null,
+      size: editSize.trim() || null,
+      color: editColor.trim() || null,
+      price: priceVal,
+      salePrice: salePriceVal,
+      stockQty: stockQtyVal,
+      isDefault: editIsDefault,
+      status: editStatus
+    }
+  }
+
+  const syncVariants = (nextVariants: AdminVariantResponse[]) => {
+    setVariants(nextVariants)
+    setStockInputs(Object.fromEntries(nextVariants.map((item) => [item.id, String(item.stockQty)])))
+  }
+
+  const handleCreateVariantClick = () => {
+    setEditingVariantId('new')
+    setEditSku('')
+    setEditVariantName('')
+    setEditSize('')
+    setEditColor('')
+    setEditPrice('')
+    setEditSalePrice('')
+    setEditStockQty('0')
+    setEditStatus('active')
+    setEditIsDefault(variants.length === 0)
+  }
+
+  const handleSaveVariant = async (variantId: string) => {
+    if (!id) return
+    const payload = buildVariantPayload()
+    if (!payload) return
+
+    const isNew = variantId === 'new'
     setSavingVariantId(variantId)
     setError(null)
     try {
-      const payload = {
-        sku: editSku.trim(),
-        variantName: editVariantName.trim() || null,
-        size: editSize.trim() || null,
-        color: editColor.trim() || null,
-        price: priceVal,
-        salePrice: salePriceVal,
-        stockQty: stockQtyVal,
-        isDefault: editIsDefault,
-        status: editStatus
-      }
-      const product = await useProductStore.getState().updateVariant(id, variantId, payload)
-      setVariants(product.variants)
-      setStockInputs(Object.fromEntries(product.variants.map((item) => [item.id, String(item.stockQty)])))
+      const product = isNew
+        ? await useProductStore.getState().createVariant(id, payload)
+        : await useProductStore.getState().updateVariant(id, variantId, payload)
+      syncVariants(product.variants)
       setEditingVariantId(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Không thể cập nhật biến thể.')
+      setError(err instanceof Error ? err.message : isNew ? 'Không thể tạo biến thể.' : 'Không thể cập nhật biến thể.')
     } finally {
       setSavingVariantId(null)
     }
@@ -303,6 +328,20 @@ export function ProductFormPage() {
         )),
       ]
     })
+
+  const draftVariant: AdminVariantResponse = {
+    id: 'new',
+    sku: '',
+    variantName: null,
+    size: null,
+    color: null,
+    price: 0,
+    salePrice: null,
+    stockQty: 0,
+    isDefault: variants.length === 0,
+    status: 'active'
+  }
+  const visibleVariants = editingVariantId === 'new' ? [draftVariant, ...variants] : variants
 
   return (
     <div>
@@ -428,25 +467,40 @@ export function ProductFormPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <PackageCheck className="size-5 text-burgundy" />
-                Biến thể và tồn kho
-              </CardTitle>
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <PackageCheck className="size-5 text-burgundy" />
+                  Biến thể và tồn kho
+                </CardTitle>
+                {id && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCreateVariantClick}
+                    disabled={editingVariantId !== null}
+                  >
+                    Thêm biến thể
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {!id ? (
                 <p className="text-sm text-muted-foreground">Lưu sản phẩm trước rồi quay lại để cập nhật tồn kho.</p>
-              ) : variants.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sản phẩm chưa có biến thể.</p>
+              ) : variants.length === 0 && editingVariantId !== 'new' ? (
+                <div className="rounded-lg border border-dashed border-border p-4 space-y-3">
+                  <p className="text-sm text-muted-foreground">Sản phẩm chưa có biến thể. Bấm “Thêm biến thể” để tạo biến thể đầu tiên.</p>
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {variants.map((variant) => {
+                  {visibleVariants.map((variant) => {
                     const isEditing = editingVariantId === variant.id
                     if (isEditing) {
                       return (
                         <div key={variant.id} className="space-y-3 border-b border-border/70 pb-4 last:border-b-0 last:pb-0">
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-name-${variant.id}`}>Tên biến thể</Label>
+                            <Label htmlFor={`edit-name-${variant.id}`}>{variant.id === 'new' ? 'Tên biến thể mới' : 'Tên biến thể'}</Label>
                             <Input
                               id={`edit-name-${variant.id}`}
                               value={editVariantName}
@@ -542,7 +596,7 @@ export function ProductFormPage() {
                               onClick={() => handleSaveVariant(variant.id)}
                               disabled={savingVariantId === variant.id}
                             >
-                              {savingVariantId === variant.id ? <Loader2 className="size-4 animate-spin" /> : 'Lưu'}
+                              {savingVariantId === variant.id ? <Loader2 className="size-4 animate-spin" /> : variant.id === 'new' ? 'Tạo biến thể' : 'Lưu'}
                             </Button>
                           </div>
                         </div>

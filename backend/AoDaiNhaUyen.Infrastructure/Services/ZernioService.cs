@@ -19,7 +19,8 @@ public sealed class ZernioService(
   IHttpClientFactory httpClientFactory,
   IOptions<ZernioSettings> zernioOptions,
   AppDbContext dbContext,
-  ILogger<ZernioService> logger) : ISocialService
+  ILogger<ZernioService> logger,
+  IHermesEventOutboxPublisher? hermesEventOutboxPublisher = null) : ISocialService
 {
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
   private readonly ZernioSettings settings = zernioOptions.Value;
@@ -354,13 +355,17 @@ public sealed class ZernioService(
       ?? data
       ?? response;
 
-    return new SocialAnalyticsDto(
+    var metrics = postsValue.HasValue && postsValue.Value.ValueKind == JsonValueKind.Array
+      ? SumPostAnalytics(postsValue.Value)
+      : ReadAnalyticsMetrics(metricsSource);
+    var result = new SocialAnalyticsDto(
       normalizedPlatform,
       fromDate,
       toDate,
-      postsValue.HasValue && postsValue.Value.ValueKind == JsonValueKind.Array
-        ? SumPostAnalytics(postsValue.Value)
-        : ReadAnalyticsMetrics(metricsSource));
+      metrics);
+
+    await PublishSocialAnalyticsSnapshotAsync(result, cancellationToken);
+    return result;
   }
 
   public async Task<SocialCommentedPostListDto> GetCommentedPostsAsync(
@@ -677,6 +682,7 @@ public sealed class ZernioService(
       {
         var dto = MapWebhookMessage(message.Value, account, conversation);
         await UpsertMessagesAsync(dto.ConversationId, dto.AccountId, [dto], cancellationToken);
+        await PublishSocialWebhookEventAsync(eventName, dto.Platform ?? "facebook", dto.Id, cancellationToken);
       }
     }
     else if (eventName.StartsWith("comment.", StringComparison.OrdinalIgnoreCase))
@@ -687,9 +693,70 @@ public sealed class ZernioService(
       {
         var postId = GetString(comment.Value, "postId", "platformPostId") ?? string.Empty;
         var accountId = GetString(account ?? default, "id", "accountId") ?? GetString(comment.Value, "accountId") ?? string.Empty;
-        await UpsertCommentsAsync(postId, accountId, [MapComment(comment.Value)], cancellationToken);
+        var dto = MapComment(comment.Value);
+        await UpsertCommentsAsync(postId, accountId, [dto], cancellationToken);
+        await PublishSocialWebhookEventAsync(eventName, dto.Platform ?? GetString(account ?? default, "platform") ?? "facebook", dto.Id, cancellationToken);
       }
     }
+  }
+
+  private async Task PublishSocialAnalyticsSnapshotAsync(SocialAnalyticsDto analytics, CancellationToken cancellationToken)
+  {
+    if (hermesEventOutboxPublisher is null)
+    {
+      return;
+    }
+
+    var metrics = analytics.Posts;
+    var idempotencyKey = $"social_metrics_snapshot:{analytics.Platform}:{analytics.FromDate:yyyyMMdd}:{analytics.ToDate:yyyyMMdd}:{metrics.Impressions}:{metrics.Likes}:{metrics.Comments}:{metrics.Shares}:{metrics.Clicks}:{metrics.Views}";
+    await hermesEventOutboxPublisher.EnqueueAdminEventAsync(
+      "social_metrics_snapshot_created",
+      "SocialAnalytics",
+      $"{analytics.Platform}:{analytics.FromDate:yyyyMMdd}:{analytics.ToDate:yyyyMMdd}",
+      new
+      {
+        analytics.Platform,
+        analytics.FromDate,
+        analytics.ToDate,
+        metrics.Impressions,
+        metrics.Likes,
+        metrics.Comments,
+        metrics.Shares,
+        metrics.Clicks,
+        metrics.Views
+      },
+      idempotencyKey,
+      $"social:{analytics.Platform}",
+      cancellationToken);
+  }
+
+  private async Task PublishSocialWebhookEventAsync(string eventName, string platform, string aggregateId, CancellationToken cancellationToken)
+  {
+    if (hermesEventOutboxPublisher is null || string.IsNullOrWhiteSpace(eventName) || string.IsNullOrWhiteSpace(aggregateId))
+    {
+      return;
+    }
+
+    var eventType = eventName.StartsWith("comment.", StringComparison.OrdinalIgnoreCase)
+      ? "social_comment_received"
+      : "social_message_received";
+    var safePlatform = string.IsNullOrWhiteSpace(platform) ? "facebook" : platform.Trim().ToLowerInvariant();
+
+    await hermesEventOutboxPublisher.EnqueueAdminEventAsync(
+      eventType,
+      "SocialInbox",
+      aggregateId,
+      new
+      {
+        EventName = eventName,
+        Platform = safePlatform,
+        AggregateId = aggregateId,
+        ContainsUserGeneratedText = true,
+        Privacy = "message/comment body and author PII omitted"
+      },
+      $"{eventType}:{safePlatform}:{eventName.Trim().ToLowerInvariant()}:{aggregateId}",
+      $"social:{safePlatform}:{aggregateId}",
+      cancellationToken);
   }
 
   private async Task UpsertConversationsAsync(IEnumerable<SocialConversationDto> conversations, string? profileId, CancellationToken cancellationToken)

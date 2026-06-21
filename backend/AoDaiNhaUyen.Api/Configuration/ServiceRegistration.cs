@@ -168,6 +168,7 @@ public static class ServiceRegistration
     services.AddScoped<IHermesEventProcessor, HermesEventProcessor>();
     services.AddScoped<IHermesFeedService, HermesFeedService>();
     services.AddScoped<IHermesMonitorLinkService, HermesMonitorLinkService>();
+    services.AddScoped<IAdminShopEventContextService, AdminShopEventContextService>();
     services.AddHostedService<BackgroundHermesOutboxWorker>();
     services.AddScoped<IAdminProductService, AdminProductService>();
     services.AddScoped<IAdminUserService, AdminUserService>();
