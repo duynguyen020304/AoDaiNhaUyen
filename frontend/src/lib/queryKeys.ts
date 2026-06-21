@@ -17,7 +17,6 @@ export const queryKeys = {
     list: (params: unknown = {}) => ['blog', 'list', params] as const,
     detail: (slug: string) => ['blog', 'detail', slug] as const,
     related: (slug: string) => ['blog', 'related', slug] as const,
-    tags: ['blog', 'tags'] as const,
     categories: ['blog', 'categories'] as const,
   },
   cart: {

@@ -712,7 +712,7 @@ public sealed class AdminAgentService : IAdminAgentService
         .Where(m => !string.Equals(m.Role, "system", StringComparison.OrdinalIgnoreCase))
         .Select(MapToLlmMessage));
     }
-    _conversationStore.TrimHistory(conversationId, 50);
+    _conversationStore.TrimHistory(conversationId, 250);
 
     // Tell frontend the conversation ID so it can continue after confirmations
     yield return new LlmChunk("conversation", conversationId);

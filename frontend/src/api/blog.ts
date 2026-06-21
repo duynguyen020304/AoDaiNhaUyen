@@ -56,5 +56,4 @@ export async function getBlogPost(slug: string) {
   return post;
 }
 export async function getRelatedPosts(slug: string, count = 3) { return request<BlogPostListItem[]>(`/api/v1/blog/${slug}/related?count=${count}`); }
-export async function getBlogTags() { return request<string[]>('/api/v1/blog/tags'); }
 export async function getBlogCategories() { return request<BlogCategory[]>('/api/v1/blog/categories'); }

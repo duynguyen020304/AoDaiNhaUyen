@@ -10,9 +10,9 @@ public sealed class AdminShopEventContextService(
   AppDbContext dbContext,
   ILogger<AdminShopEventContextService> logger) : IAdminShopEventContextService
 {
-  private const int MaxEvents = 12;
-  private const int MaxReports = 6;
-  private const int MaxChars = 2600;
+  private const int MaxEvents = 60;
+  private const int MaxReports = 30;
+  private const int MaxChars = 25000;
 
   public async Task<string?> GetRecentContextAsync(CancellationToken cancellationToken = default)
   {
