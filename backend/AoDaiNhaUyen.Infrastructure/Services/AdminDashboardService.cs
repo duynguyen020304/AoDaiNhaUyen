@@ -304,4 +304,105 @@ public sealed class AdminDashboardService(
 
     return new UserGrowthDataDto(points);
   }
+
+  // --- Explicit date-range queries (no cache — these are arbitrary ranges) ---
+
+  public async Task<RevenueDataDto> GetRevenueByRangeAsync(DateTime startDateUtc, DateTime endDateUtc, CancellationToken ct = default)
+  {
+    var (start, end) = NormalizeRange(startDateUtc, endDateUtc);
+    var endExclusive = end.AddDays(1);
+
+    var raw = await dbContext.Orders
+      .AsNoTracking()
+      .Where(o => o.Payment != null && !o.IsDeleted && o.CreatedAt >= start && o.CreatedAt < endExclusive)
+      .GroupBy(o => o.CreatedAt.Date)
+      .Select(g => new { Date = g.Key, Revenue = g.Sum(o => o.TotalAmount), Orders = g.Count() })
+      .OrderBy(x => x.Date)
+      .ToListAsync(ct);
+
+    var points = new List<RevenuePointDto>();
+    for (var d = start; d <= end; d = d.AddDays(1))
+    {
+      var match = raw.FirstOrDefault(x => x.Date == d);
+      points.Add(new RevenuePointDto(d, match?.Revenue ?? 0, match?.Orders ?? 0));
+    }
+    return new RevenueDataDto("daily", points);
+  }
+
+  public async Task<OrderStatusDistributionDto> GetOrdersByStatusByRangeAsync(DateTime startDateUtc, DateTime endDateUtc, CancellationToken ct = default)
+  {
+    var (start, end) = NormalizeRange(startDateUtc, endDateUtc);
+    var endExclusive = end.AddDays(1);
+
+    var groups = await dbContext.Orders
+      .AsNoTracking()
+      .Where(o => !o.IsDeleted && o.CreatedAt >= start && o.CreatedAt < endExclusive)
+      .GroupBy(o => o.OrderStatus)
+      .Select(g => new { Status = g.Key, Count = g.Count() })
+      .ToListAsync(ct);
+
+    int Get(string status) => groups.FirstOrDefault(g => g.Status == status)?.Count ?? 0;
+    return new OrderStatusDistributionDto(
+      Pending: Get("pending"),
+      Confirmed: Get("confirmed"),
+      Processing: Get("processing"),
+      Shipping: Get("shipping"),
+      Completed: Get("completed"),
+      Cancelled: Get("cancelled"),
+      Returned: Get("returned"));
+  }
+
+  public async Task<IReadOnlyList<TopProductDto>> GetTopProductsByRangeAsync(DateTime startDateUtc, DateTime endDateUtc, int limit, CancellationToken ct = default)
+  {
+    var (start, end) = NormalizeRange(startDateUtc, endDateUtc);
+    var endExclusive = end.AddDays(1);
+    var cappedLimit = Math.Clamp(limit, 1, 50);
+
+    var top = await dbContext.OrderItems
+      .AsNoTracking()
+      .Where(oi => !oi.Order.IsDeleted && oi.Order.CreatedAt >= start && oi.Order.CreatedAt < endExclusive)
+      .GroupBy(oi => new { oi.ProductId, oi.ProductName })
+      .Select(g => new
+      {
+        g.Key.ProductId,
+        g.Key.ProductName,
+        SoldCount = g.Sum(oi => oi.Quantity),
+        Revenue = g.Sum(oi => oi.LineTotal)
+      })
+      .OrderByDescending(x => x.Revenue)
+      .Take(cappedLimit)
+      .ToListAsync(ct);
+
+    return top.Select(x => new TopProductDto(x.ProductId, x.ProductName, null, x.SoldCount, x.Revenue)).ToList();
+  }
+
+  public async Task<DashboardRangeMetricsDto> GetRangeMetricsAsync(DateTime startDateUtc, DateTime endDateUtc, CancellationToken ct = default)
+  {
+    var (start, end) = NormalizeRange(startDateUtc, endDateUtc);
+    var endExclusive = end.AddDays(1);
+
+    var allOrders = await dbContext.Orders
+      .AsNoTracking()
+      .Where(o => !o.IsDeleted && o.CreatedAt >= start && o.CreatedAt < endExclusive)
+      .Select(o => new { o.OrderStatus, o.TotalAmount, HasPayment = o.Payment != null })
+      .ToListAsync(ct);
+
+    var totalOrders = allOrders.Count;
+    var paidOrders = allOrders.Count(o => o.HasPayment);
+    var cancelledOrders = allOrders.Count(o => o.OrderStatus == "cancelled");
+    var totalRevenue = allOrders.Sum(o => o.TotalAmount);
+    var paidRevenue = allOrders.Where(o => o.HasPayment).Sum(o => o.TotalAmount);
+    var aov = paidOrders > 0 ? paidRevenue / paidOrders : 0m;
+
+    return new DashboardRangeMetricsDto(start, end, totalOrders, paidOrders, cancelledOrders, totalRevenue, paidRevenue, aov);
+  }
+
+  private static (DateTime Start, DateTime End) NormalizeRange(DateTime startDateUtc, DateTime endDateUtc)
+  {
+    // Treat inputs as UTC dates. Clamp to [start-of-day, end-of-day], swap if reversed.
+    var s = DateTime.SpecifyKind(startDateUtc.Date, DateTimeKind.Utc);
+    var e = DateTime.SpecifyKind(endDateUtc.Date, DateTimeKind.Utc);
+    if (e < s) (s, e) = (e, s);
+    return (s, e);
+  }
 }

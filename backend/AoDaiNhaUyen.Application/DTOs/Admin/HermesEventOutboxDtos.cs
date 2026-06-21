@@ -19,7 +19,9 @@ public sealed record HermesEventOutboxSearchRequest(
   string? Status = null,
   string? EventType = null,
   string? AggregateType = null,
-  string? Q = null);
+  string? Q = null,
+  DateTimeOffset? StartDate = null,
+  DateTimeOffset? EndDate = null);
 
 public sealed record HermesEventOutboxListItemResponse(
   Guid Id,

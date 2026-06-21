@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm'
 import type { AiMessage, AiToolCall } from '@/types/ai'
 import { AI_BLOG_DRAFT_STORAGE_KEY } from '@/types/blog'
 import { ConfirmCard } from './ConfirmCard'
+import { ChartBlock, ChartError, ChartSpecSchema } from './ChartBlock'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 
 function toolLabel(name: string): string {
@@ -193,6 +194,33 @@ const markdownComponents = {
   ),
   code: ({ children, className }: { children?: React.ReactNode; className?: string }) => {
     const match = /language-(\w+)/.exec(className || '')
+    const language = match ? match[1] : ''
+    const codeContent = String(children ?? '').replace(/\n$/, '').trim()
+
+    // Declarative chart block: AI emits ```recharts { ... } ```. Validate with
+    // Zod before rendering — unknown keys are stripped, never forwarded.
+    if (language === 'recharts' || language === 'chart') {
+      try {
+        const parsed = JSON.parse(codeContent)
+        const result = ChartSpecSchema.safeParse(parsed)
+        if (result.success) {
+          return (
+            <div className="my-3">
+              <ChartBlock spec={result.data} />
+            </div>
+          )
+        }
+        return (
+          <ChartError
+            reason={`Cấu trúc JSON không hợp lệ: ${result.error.issues.map((i) => i.path.join('.') || i.message).join('; ')}`}
+            raw={codeContent}
+          />
+        )
+      } catch (err) {
+        return <ChartError reason={`JSON không hợp lệ: ${String(err)}`} raw={codeContent} />
+      }
+    }
+
     if (match) {
       return (
         <pre className="bg-gray-950 text-gray-100 p-4 rounded-xl my-3 text-xs overflow-x-auto font-mono shadow-inner border border-gray-850">

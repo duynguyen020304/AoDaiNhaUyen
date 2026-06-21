@@ -79,6 +79,20 @@ public sealed class AdminToolRiskService(
       new() { ToolName = "get_recent_orders", RiskLevel = "Read", RequiresConfirmation = false, Description = "Đơn hàng gần đây", Category = "Dashboard" },
       new() { ToolName = "get_top_products", RiskLevel = "Read", RequiresConfirmation = false, Description = "Sản phẩm bán chạy", Category = "Dashboard" },
 
+      // Date-range / specific-day queries (all read-only aggregations)
+      new() { ToolName = "get_revenue_by_range", RiskLevel = "Read", RequiresConfirmation = false, Description = "Doanh thu theo ngày/khoảng ngày", Category = "Reports" },
+      new() { ToolName = "get_orders_by_status_by_range", RiskLevel = "Read", RequiresConfirmation = false, Description = "Phân phối đơn theo khoảng ngày", Category = "Reports" },
+      new() { ToolName = "get_top_products_by_range", RiskLevel = "Read", RequiresConfirmation = false, Description = "Top sản phẩm theo khoảng ngày", Category = "Reports" },
+      new() { ToolName = "get_range_metrics", RiskLevel = "Read", RequiresConfirmation = false, Description = "Tổng hợp số liệu theo khoảng ngày", Category = "Reports" },
+      new() { ToolName = "list_orders_by_range", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê đơn theo khoảng ngày", Category = "Reports" },
+      new() { ToolName = "count_by_created_range", RiskLevel = "Read", RequiresConfirmation = false, Description = "Đếm mọi loại entity theo khoảng ngày (timeline universal)", Category = "Reports" },
+
+      // Live shop activity & Hermes reports
+      new() { ToolName = "list_recent_activity", RiskLevel = "Read", RequiresConfirmation = false, Description = "Dòng hoạt động gần đây từ Hermes", Category = "Activity" },
+      new() { ToolName = "list_hermes_reports", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê báo cáo Hermes", Category = "Activity" },
+      new() { ToolName = "get_hermes_report", RiskLevel = "Read", RequiresConfirmation = false, Description = "Chi tiết báo cáo Hermes", Category = "Activity" },
+      new() { ToolName = "list_hermes_events", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê sự kiện Hermes outbox", Category = "Activity" },
+
       // Products
       new() { ToolName = "list_products", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê sản phẩm", Category = "Products" },
       new() { ToolName = "get_product", RiskLevel = "Read", RequiresConfirmation = false, Description = "Chi tiết sản phẩm", Category = "Products" },
@@ -115,6 +129,9 @@ public sealed class AdminToolRiskService(
       new() { ToolName = "update_user_role", RiskLevel = "High", RequiresConfirmation = true, Description = "Thay đổi vai trò người dùng", Category = "Users" },
       new() { ToolName = "update_user_profile", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Cập nhật hồ sơ người dùng", Category = "Users" },
       new() { ToolName = "create_role", RiskLevel = "High", RequiresConfirmation = true, Description = "Tạo vai trò mới", Category = "Users" },
+      new() { ToolName = "list_roles", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê vai trò", Category = "Users" },
+      new() { ToolName = "update_role", RiskLevel = "High", RequiresConfirmation = true, Description = "Cập nhật vai trò", Category = "Users" },
+      new() { ToolName = "delete_role", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa vai trò", Category = "Users" },
       new() { ToolName = "create_user", RiskLevel = "Low", RequiresConfirmation = false, Description = "Tạo người dùng mới", Category = "Users" },
       new() { ToolName = "delete_user", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm người dùng", Category = "Users" },
       new() { ToolName = "restore_user", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Khôi phục người dùng đã xóa", Category = "Users" },

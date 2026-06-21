@@ -35,6 +35,44 @@ public sealed class AdminOrderService(
     return orders;
   }
 
+  public async Task<IReadOnlyList<AdminOrderListItem>> GetOrdersByRangeAsync(
+    string? status, DateTime? startDateUtc, DateTime? endDateUtc, int limit, CancellationToken ct = default)
+  {
+    var query = dbContext.Orders
+      .AsNoTracking()
+      .Where(o => !o.IsDeleted);
+
+    if (!string.IsNullOrWhiteSpace(status))
+      query = query.Where(o => o.OrderStatus == status);
+
+    // Normalize: start = start-of-day UTC, endExclusive = day after end UTC.
+    if (startDateUtc.HasValue)
+    {
+      var s = DateTime.SpecifyKind(startDateUtc.Value.Date, DateTimeKind.Utc);
+      query = query.Where(o => o.CreatedAt >= s);
+    }
+    if (endDateUtc.HasValue)
+    {
+      var endExclusive = DateTime.SpecifyKind(endDateUtc.Value.Date, DateTimeKind.Utc).AddDays(1);
+      query = query.Where(o => o.CreatedAt < endExclusive);
+    }
+
+    var orders = await query
+      .OrderByDescending(o => o.CreatedAt)
+      .Take(Math.Clamp(limit, 1, 100))
+      .Select(o => new AdminOrderListItem(
+        o.Id,
+        o.OrderCode,
+        o.User.FullName,
+        o.TotalAmount,
+        o.OrderStatus,
+        o.Items.Count,
+        o.CreatedAt))
+      .ToListAsync(ct);
+
+    return orders;
+  }
+
   public Task<AdminOrderDetail?> GetOrderByIdAsync(Guid orderId, CancellationToken ct = default) =>
     ProjectOrderDetails(dbContext.Orders
       .AsNoTracking()

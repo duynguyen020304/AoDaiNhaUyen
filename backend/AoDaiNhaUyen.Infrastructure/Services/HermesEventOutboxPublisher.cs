@@ -123,6 +123,15 @@ public sealed class HermesEventOutboxPublisher(
       query = query.Where(x => x.AggregateId.Contains(q) || (x.CorrelationId != null && x.CorrelationId.Contains(q)) || (x.IdempotencyKey != null && x.IdempotencyKey.Contains(q)));
     }
 
+    if (request.StartDate.HasValue)
+      query = query.Where(x => x.OccurredAt >= request.StartDate.Value);
+
+    if (request.EndDate.HasValue)
+    {
+      var endExclusive = request.EndDate.Value.UtcDateTime.Date.AddDays(1);
+      query = query.Where(x => x.OccurredAt < endExclusive);
+    }
+
     var total = await query.CountAsync(cancellationToken);
     var items = await query
       .OrderByDescending(x => x.CreatedAt)

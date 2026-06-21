@@ -12,9 +12,22 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 public sealed partial class HermesFeedService(AppDbContext dbContext) : IHermesFeedService
 {
   public async Task<HermesFeedSnapshotResponse> GetRecentFeedAsync(int maxItems, CancellationToken cancellationToken)
+    => await GetRecentFeedAsync(maxItems, null, null, cancellationToken);
+
+  public async Task<HermesFeedSnapshotResponse> GetRecentFeedAsync(int maxItems, DateTimeOffset? startDateUtc, DateTimeOffset? endDateUtc, CancellationToken cancellationToken)
   {
     var take = Math.Clamp(maxItems, 1, 100);
-    var events = await dbContext.HermesEventOutbox.AsNoTracking()
+    IQueryable<Domain.Entities.HermesEventOutbox> eventsQuery = dbContext.HermesEventOutbox.AsNoTracking();
+
+    if (startDateUtc.HasValue)
+      eventsQuery = eventsQuery.Where(x => x.OccurredAt >= startDateUtc.Value);
+    if (endDateUtc.HasValue)
+    {
+      var endExclusive = endDateUtc.Value.UtcDateTime.Date.AddDays(1);
+      eventsQuery = eventsQuery.Where(x => x.OccurredAt < endExclusive);
+    }
+
+    var events = await eventsQuery
       .OrderByDescending(x => x.OccurredAt)
       .ThenByDescending(x => x.CreatedAt)
       .Take(take)

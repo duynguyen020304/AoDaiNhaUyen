@@ -10,8 +10,10 @@ using AoDaiNhaUyen.Application.DTOs.Dashboard;
 using AoDaiNhaUyen.Application.DTOs.Order;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Common;
+using AoDaiNhaUyen.Infrastructure.Data;
 using AoDaiNhaUyen.Infrastructure.Services;
 using AoDaiNhaUyen.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -442,12 +444,26 @@ public sealed class AdminAiSecurityTests
       marketing ?? new FakeMarketingCampaignService(),
       new FakeSubscriberService(),
       new FakeEmailJobService(),
+      new FakeHermesFeedService(),
+      new FakeHermesAgentService(),
+      new FakeHermesEventOutboxService(),
       autoMode ?? new AutoModeStore(),
       NullLogger<AdminAgentService>.Instance,
       new PendingActionStore(),
       new ConversationStore(),
       new FakeAdminChatPersistence(),
-      eventContext ?? new FakeAdminShopEventContextService());
+      eventContext ?? new FakeAdminShopEventContextService(),
+      CreateInMemoryDbContext());
+  }
+
+  /// <summary>In-memory AppDbContext for the agent (count_by_created_range uses it).
+  /// These tests don't exercise that tool, so an empty DB is fine.</summary>
+  private static AppDbContext CreateInMemoryDbContext()
+  {
+    var options = new DbContextOptionsBuilder<AppDbContext>()
+      .UseInMemoryDatabase($"admin-agent-{Guid.NewGuid():N}")
+      .Options;
+    return new AppDbContext(options);
   }
 
   private sealed class FakeAdminShopEventContextService(string? context = null) : IAdminShopEventContextService
@@ -722,11 +738,16 @@ public sealed class AdminAiSecurityTests
     public Task<IReadOnlyList<RecentOrderDto>> GetRecentOrdersAsync(int limit, CancellationToken ct = default) => Task.FromResult((IReadOnlyList<RecentOrderDto>)[]);
     public Task<IReadOnlyList<TopProductDto>> GetTopProductsAsync(int limit, CancellationToken ct = default) => Task.FromResult((IReadOnlyList<TopProductDto>)[]);
     public Task<UserGrowthDataDto> GetUserGrowthAsync(int periodDays, CancellationToken ct = default) => Task.FromResult(new UserGrowthDataDto([]));
+    public Task<RevenueDataDto> GetRevenueByRangeAsync(DateTime startDateUtc, DateTime endDateUtc, CancellationToken ct = default) => Task.FromResult(new RevenueDataDto("daily", []));
+    public Task<OrderStatusDistributionDto> GetOrdersByStatusByRangeAsync(DateTime startDateUtc, DateTime endDateUtc, CancellationToken ct = default) => Task.FromResult(new OrderStatusDistributionDto(0, 0, 0, 0, 0, 0, 0));
+    public Task<IReadOnlyList<TopProductDto>> GetTopProductsByRangeAsync(DateTime startDateUtc, DateTime endDateUtc, int limit, CancellationToken ct = default) => Task.FromResult((IReadOnlyList<TopProductDto>)[]);
+    public Task<DashboardRangeMetricsDto> GetRangeMetricsAsync(DateTime startDateUtc, DateTime endDateUtc, CancellationToken ct = default) => Task.FromResult(new DashboardRangeMetricsDto(startDateUtc, endDateUtc, 0, 0, 0, 0, 0, 0));
   }
 
   private sealed class FakeOrderService : IAdminOrderService
   {
     public Task<IReadOnlyList<AdminOrderListItem>> GetOrdersAsync(string? status, int limit, CancellationToken ct = default) => Task.FromResult((IReadOnlyList<AdminOrderListItem>)[]);
+    public Task<IReadOnlyList<AdminOrderListItem>> GetOrdersByRangeAsync(string? status, DateTime? startDateUtc, DateTime? endDateUtc, int limit, CancellationToken ct = default) => Task.FromResult((IReadOnlyList<AdminOrderListItem>)[]);
     public Task<AdminOrderDetail?> GetOrderByIdAsync(Guid orderId, CancellationToken ct = default) => Task.FromResult<AdminOrderDetail?>(null);
     public Task<AdminOrderDetail?> GetOrderByCodeAsync(string orderCode, CancellationToken ct = default) => Task.FromResult<AdminOrderDetail?>(null);
     public Task<OrderUpdateResult> UpdateStatusAsync(Guid orderId, string newStatus, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, newStatus));
@@ -824,5 +845,48 @@ public sealed class AdminAiSecurityTests
     public Task<IReadOnlyList<RecentOrderDto>> GetRecentOrdersAsync(int limit, CancellationToken ct = default) => throw toThrow;
     public Task<IReadOnlyList<TopProductDto>> GetTopProductsAsync(int limit, CancellationToken ct = default) => throw toThrow;
     public Task<UserGrowthDataDto> GetUserGrowthAsync(int periodDays, CancellationToken ct = default) => throw toThrow;
+    public Task<RevenueDataDto> GetRevenueByRangeAsync(DateTime startDateUtc, DateTime endDateUtc, CancellationToken ct = default) => throw toThrow;
+    public Task<OrderStatusDistributionDto> GetOrdersByStatusByRangeAsync(DateTime startDateUtc, DateTime endDateUtc, CancellationToken ct = default) => throw toThrow;
+    public Task<IReadOnlyList<TopProductDto>> GetTopProductsByRangeAsync(DateTime startDateUtc, DateTime endDateUtc, int limit, CancellationToken ct = default) => throw toThrow;
+    public Task<DashboardRangeMetricsDto> GetRangeMetricsAsync(DateTime startDateUtc, DateTime endDateUtc, CancellationToken ct = default) => throw toThrow;
+  }
+
+  // --- Hermes fakes (empty by default; tests that need them can specialize) ---
+
+  private sealed class FakeHermesFeedService : IHermesFeedService
+  {
+    public Task<HermesFeedSnapshotResponse> GetRecentFeedAsync(int maxItems, CancellationToken cancellationToken)
+      => GetRecentFeedAsync(maxItems, null, null, cancellationToken);
+    public Task<HermesFeedSnapshotResponse> GetRecentFeedAsync(int maxItems, DateTimeOffset? startDateUtc, DateTimeOffset? endDateUtc, CancellationToken cancellationToken)
+      => Task.FromResult(new HermesFeedSnapshotResponse(Array.Empty<HermesFeedItemResponse>(), null, DateTimeOffset.UtcNow));
+    public Task<HermesFeedHeartbeatResponse?> GetLatestHeartbeatAsync(CancellationToken cancellationToken)
+      => Task.FromResult<HermesFeedHeartbeatResponse?>(null);
+  }
+
+  private sealed class FakeHermesAgentService : IHermesAgentService
+  {
+    public Task<HermesStatusResponse> GetStatusAsync(CancellationToken cancellationToken)
+      => Task.FromResult(new HermesStatusResponse("idle", "fake", DateTimeOffset.UtcNow, null, null, 0, null, false));
+    public Task RecordHeartbeatAsync(HermesHeartbeatRequest request, CancellationToken cancellationToken) => Task.CompletedTask;
+    public IAsyncEnumerable<HermesStreamChunk> StreamChatAsync(HermesChatRequest request, Guid adminUserId, CancellationToken cancellationToken)
+      => AsyncEnumerable.Empty<HermesStreamChunk>();
+    public Task<IReadOnlyList<HermesRunSummaryResponse>> ListRunsAsync(CancellationToken cancellationToken)
+      => Task.FromResult<IReadOnlyList<HermesRunSummaryResponse>>([]);
+    public Task<HermesReportResponse> RecordReportAsync(HermesReportRequest request, CancellationToken cancellationToken)
+      => throw new NotImplementedException();
+    public Task<PagedResult<HermesReportListItemResponse>> ListReportsAsync(HermesReportSearchRequest request, CancellationToken cancellationToken)
+      => Task.FromResult(new PagedResult<HermesReportListItemResponse>([], 0, request.Page, request.PageSize));
+    public Task<HermesReportResponse?> GetReportAsync(Guid id, CancellationToken cancellationToken)
+      => Task.FromResult<HermesReportResponse?>(null);
+  }
+
+  private sealed class FakeHermesEventOutboxService : IHermesEventOutboxService
+  {
+    public Task<PagedResult<HermesEventOutboxListItemResponse>> ListEventsAsync(HermesEventOutboxSearchRequest request, CancellationToken cancellationToken)
+      => Task.FromResult(new PagedResult<HermesEventOutboxListItemResponse>([], 0, request.Page, request.PageSize));
+    public Task<HermesEventOutboxResponse?> GetEventAsync(Guid id, CancellationToken cancellationToken)
+      => Task.FromResult<HermesEventOutboxResponse?>(null);
+    public Task<bool> RetryEventAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult(false);
+    public Task<bool> CancelEventAsync(Guid id, CancellationToken cancellationToken) => Task.FromResult(false);
   }
 }

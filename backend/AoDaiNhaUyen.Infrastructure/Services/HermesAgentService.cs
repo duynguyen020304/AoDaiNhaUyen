@@ -254,6 +254,16 @@ public sealed class HermesAgentService(
       query = query.Where(x => x.Title.Contains(q) || x.Summary.Contains(q) || (x.CorrelationId != null && x.CorrelationId.Contains(q)));
     }
 
+    if (request.StartDate.HasValue)
+      query = query.Where(x => x.CreatedAt >= request.StartDate.Value.UtcDateTime);
+
+    if (request.EndDate.HasValue)
+    {
+      // End date inclusive: filter to end-of-day UTC.
+      var endExclusive = request.EndDate.Value.UtcDateTime.Date.AddDays(1);
+      query = query.Where(x => x.CreatedAt < endExclusive);
+    }
+
     var total = await query.CountAsync(cancellationToken);
     var rows = await query
       .OrderByDescending(x => x.CreatedAt)

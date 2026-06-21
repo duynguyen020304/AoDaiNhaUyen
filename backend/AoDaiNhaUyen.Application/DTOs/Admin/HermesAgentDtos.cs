@@ -55,7 +55,9 @@ public sealed record HermesReportSearchRequest(
   string? Type = null,
   string? Status = null,
   string? Source = null,
-  string? Q = null);
+  string? Q = null,
+  DateTimeOffset? StartDate = null,
+  DateTimeOffset? EndDate = null);
 
 public sealed record HermesReportListItemResponse(
   Guid Id,

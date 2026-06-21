@@ -10,6 +10,10 @@ public interface IAdminOrderService
   Task<IReadOnlyList<AdminOrderListItem>> GetOrdersAsync(
     string? status, int limit, CancellationToken ct = default);
 
+  /// <summary>List orders filtered by status + optional UTC date range (inclusive both ends, by CreatedAt).</summary>
+  Task<IReadOnlyList<AdminOrderListItem>> GetOrdersByRangeAsync(
+    string? status, DateTime? startDateUtc, DateTime? endDateUtc, int limit, CancellationToken ct = default);
+
   /// <summary>Get order detail by ID.</summary>
   Task<AdminOrderDetail?> GetOrderByIdAsync(Guid orderId, CancellationToken ct = default);
 

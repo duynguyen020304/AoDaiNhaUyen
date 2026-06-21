@@ -74,3 +74,17 @@ public sealed record UserGrowthPointDto(
 /// </summary>
 public sealed record UserGrowthDataDto(
   IReadOnlyList<UserGrowthPointDto> Points);
+
+/// <summary>
+/// Số liệu tổng hợp trong một khoảng ngày cụ thể (dùng cho truy vấn theo ngày/khoảng ngày).
+/// </summary>
+public sealed record DashboardRangeMetricsDto(
+  DateTime StartDateUtc,
+  DateTime EndDateUtc,
+  int TotalOrders,
+  int PaidOrders,
+  int CancelledOrders,
+  decimal TotalRevenue,
+  decimal PaidRevenue,
+  decimal AverageOrderValue);
+
