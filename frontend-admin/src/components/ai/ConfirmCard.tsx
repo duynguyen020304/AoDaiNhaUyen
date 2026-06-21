@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AlertTriangle, Check } from 'lucide-react'
 import { useAdminAiStore } from '@/stores/adminAiStore'
+import { useFeedback } from '@/components/ui/feedbackContext'
 import type { AiPendingAction } from '@/types/ai'
 
 export function ConfirmCard({
@@ -13,6 +14,7 @@ export function ConfirmCard({
   const confirmAction = useAdminAiStore((s) => s.confirmAction)
   const continueAfterConfirm = useAdminAiStore((s) => s.continueAfterConfirm)
   const conversationId = useAdminAiStore((s) => s.conversationId)
+  const { toast } = useFeedback()
   const [status, setStatus] = useState<'pending' | 'confirmed' | 'rejected'>('pending')
 
   async function handleApprove() {
@@ -21,6 +23,8 @@ export function ConfirmCard({
       setStatus('confirmed')
       onStatusChange?.('confirmed')
       if (conversationId) void continueAfterConfirm(conversationId)
+    } else {
+      toast('Không thể xác nhận hành động. Vui lòng thử lại.', 'error')
     }
   }
 
@@ -30,6 +34,8 @@ export function ConfirmCard({
       setStatus('rejected')
       onStatusChange?.('rejected')
       if (conversationId) void continueAfterConfirm(conversationId)
+    } else {
+      toast('Không thể từ chối hành động. Vui lòng thử lại.', 'error')
     }
   }
 

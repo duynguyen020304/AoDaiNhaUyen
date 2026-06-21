@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronUp, Bot, User, Terminal, Check, X, AlertTriangle, FileText } from 'lucide-react'
+import { ChevronDown, ChevronUp, Bot, User, Terminal, Check, X, AlertTriangle, AlertCircle, FileText, RotateCw } from 'lucide-react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { AiMessage, AiToolCall } from '@/types/ai'
 import { AI_BLOG_DRAFT_STORAGE_KEY } from '@/types/blog'
 import { ConfirmCard } from './ConfirmCard'
+import { useAdminAiStore } from '@/stores/adminAiStore'
 
 function toolLabel(name: string): string {
   const labels: Record<string, string> = {
@@ -34,7 +35,7 @@ function toolLabel(name: string): string {
 
 interface ToolCallCardProps {
   toolCall: AiToolCall
-  status: 'pending' | 'confirmed' | 'rejected' | 'completed'
+  status: 'pending' | 'confirmed' | 'rejected' | 'completed' | 'error'
 }
 
 function parseToolMeta(toolCall: AiToolCall) {
@@ -83,6 +84,7 @@ function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
           {status === 'confirmed' && <Check className="size-4 text-green-600 shrink-0" />}
           {status === 'rejected' && <X className="size-4 text-red-500 shrink-0" />}
           {status === 'pending' && <AlertTriangle className="size-4 text-amber-500 shrink-0 animate-pulse" />}
+          {status === 'error' && <AlertCircle className="size-4 text-red-500 shrink-0" />}
           
           <Terminal className="size-3.5 text-gray-500" />
           {label}
@@ -124,6 +126,11 @@ function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
       {hasMore && (
         <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-800">
           Còn trang khác → dữ liệu hiện tại chưa đầy đủ
+        </div>
+      )}
+      {status === 'error' && toolCall.error && (
+        <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-[11px] leading-relaxed text-red-800 break-words">
+          {toolCall.error}
         </div>
       )}
       {expanded && (
@@ -213,14 +220,25 @@ const markdownComponents = {
 
 export function MessageBubble({ message }: { message: AiMessage }) {
   const isUser = message.role === 'user'
-  
+  const retryLast = useAdminAiStore((s) => s.retryLast)
+  const isLoading = useAdminAiStore((s) => s.isLoading)
+
   // Derive status from the pendingAction inside the message (persisted in store)
   const actionStatus = message.pendingAction
     ? (message.pendingAction.status || 'pending')
     : 'completed'
 
-  // Only show the main text bubble if there's user text, bot text, or a pending confirmation box
-  const showTextBubble = isUser || message.content.trim() !== '' || actionStatus === 'pending'
+  // A tool call with an error renders with the error status instead of the message-level one.
+  const toolStatusFor = (tc: AiToolCall): 'pending' | 'confirmed' | 'rejected' | 'completed' | 'error' =>
+    tc.error ? 'error' : actionStatus
+
+  // Show the text bubble only when there's user text, bot text, or a pending confirmation.
+  // An errored assistant turn renders its own separate error banner below (not a text bubble),
+  // so we don't render an empty white bubble here.
+  const showTextBubble = isUser
+    || message.content.trim() !== ''
+    || actionStatus === 'pending'
+    || message.status === 'error'
 
   return (
     <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -236,8 +254,27 @@ export function MessageBubble({ message }: { message: AiMessage }) {
         {message.toolCalls && message.toolCalls.length > 0 && (
           <div className="w-full space-y-1.5 mt-1 max-w-md">
             {message.toolCalls.map((tc, i) => (
-              <ToolCallCard key={i} toolCall={tc} status={actionStatus} />
+              <ToolCallCard key={i} toolCall={tc} status={toolStatusFor(tc)} />
             ))}
+          </div>
+        )}
+
+        {/* Inline error banner with retry when the assistant turn failed terminally. */}
+        {!isUser && message.status === 'error' && (
+          <div className="flex flex-col gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm rounded-tl-none max-w-md">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-500" />
+              <span className="leading-relaxed">{message.error || 'Lượt xử lý AI thất bại.'}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => { void retryLast() }}
+              disabled={isLoading}
+              className="inline-flex items-center justify-center gap-1.5 self-start rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RotateCw className={`size-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              Thử lại
+            </button>
           </div>
         )}
 

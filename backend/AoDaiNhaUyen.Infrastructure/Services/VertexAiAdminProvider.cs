@@ -139,6 +139,16 @@ CONFIRMATION:
 - Medium risk cần xác nhận trừ khi auto-mode backend cho phép.
 - Không tự ý delete, role change, refund/cancel order khi chưa có xác nhận backend.
 
+XỬ LÝ LỖI CÔNG CỤ & THỬ LẠI:
+- Nếu công cụ trả về lỗi (❌ với code validation_error / business_error / db_error / lookup_required):
+  đọc kỹ thông báo lỗi, sửa tham số hoặc hành động bị sai, rồi gọi lại công cụ đó (tối đa 2 lần).
+- Không lặp lại cùng tham số đã gây lỗi. Sau 2 lần vẫn lỗi: báo admin nguyên nhân cụ thể
+  (trích thông báo lỗi cuối) và đề xuất thao tác thay thế; không bịa kết quả, không xin lỗi chung chung.
+- Lỗi lookup_required: cần gọi tool list/search/get để lấy GUID hợp lệ trước khi thực hiện hành động ghi.
+- Lỗi validation_error: thiếu/sai tham số — bổ sung hoặc sửa định dạng theo thông báo lỗi.
+- Lỗi business_error: vi phạm quy tắc nghiệp vụ (trùng mã, trạng thái không hợp lệ, không thể tự sửa mình...) —
+  đọc kỹ nguyên nhân và đề xuất hướng giải quyết cho admin.
+
 LỊCH SỬ & TỰ KIỂM TRA:
 - Lịch sử chat có thể chứa kết luận sai trước đó. Dữ liệu mới từ tool thắng lịch sử.
 - Không lặp lại kết luận cũ nếu chưa xác minh bằng tool khi câu hỏi phụ thuộc dữ liệu hiện tại.
@@ -195,27 +205,68 @@ BẢO MẬT / RIÊNG TƯ:
     GeminiStreamRequest payload,
     [EnumeratorCancellation] CancellationToken ct)
   {
-    using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
-    {
-      Content = JsonContent.Create(payload)
-    };
-    request.Headers.Add("x-goog-api-key", _config.ApiKey);
-
+    // Bounded retry for transient upstream failures (network errors, 429, 5xx). Client
+    // errors (4xx other than 429) and in-stream error objects are NOT retried — they
+    // represent content-level or permanent request problems. Final failure degrades to
+    // the same error chunk the caller already expected.
+    const int maxAttempts = 3;
     HttpResponseMessage? response = null;
-    Exception? sendException = null;
-    try
+    Exception? lastSendException = null;
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++)
     {
-      response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
-    }
-    catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
-    {
-      sendException = ex;
+      ct.ThrowIfCancellationRequested();
+
+      using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+      {
+        Content = JsonContent.Create(payload)
+      };
+      request.Headers.Add("x-goog-api-key", _config.ApiKey);
+
+      response?.Dispose();
+      response = null;
+      lastSendException = null;
+
+      try
+      {
+        response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+      }
+      catch (OperationCanceledException) when (ct.IsCancellationRequested)
+      {
+        throw; // Real client cancellation — propagate, don't retry.
+      }
+      catch (Exception ex)
+      {
+        lastSendException = ex;
+        response = null;
+        if (attempt < maxAttempts)
+        {
+          await DelayBeforeRetryAsync(null, attempt, ct);
+          continue;
+        }
+        break;
+      }
+
+      // Retry on 429 and 5xx; everything else (success, 4xx) is terminal for this loop.
+      if (response is not null && IsTransientStatus(response.StatusCode) && attempt < maxAttempts)
+      {
+        var retryAfter = ReadRetryAfter(response);
+        logger.LogWarning("[VertexAI] Transient status {StatusCode} on attempt {Attempt}/{Max}; retrying.",
+          (int)response.StatusCode, attempt, maxAttempts);
+        response.Dispose();
+        response = null;
+        await DelayBeforeRetryAsync(retryAfter, attempt, ct);
+        continue;
+      }
+
+      break; // Success or non-retryable status — exit loop.
     }
 
-    if (sendException is not null)
+    if (lastSendException is not null)
     {
       var errorId = Guid.NewGuid().ToString("N");
-      logger.LogError(sendException, "[VertexAI] Stream request failed. ErrorId={ErrorId}", errorId);
+      logger.LogError(lastSendException, "[VertexAI] Stream request failed after {Attempts} attempts. ErrorId={ErrorId}",
+        maxAttempts, errorId);
       yield return new LlmChunk("error", $"Không thể kết nối Google AI. Mã tra cứu: {errorId}");
       yield break;
     }
@@ -240,6 +291,37 @@ BẢO MẬT / RIÊNG TƯ:
       await foreach (var chunk in ReadStreamChunksAsync(reader, ct))
         yield return chunk;
     }
+  }
+
+  private static bool IsTransientStatus(System.Net.HttpStatusCode statusCode)
+  {
+    var code = (int)statusCode;
+    return code == 429 || (code >= 500 && code < 600);
+  }
+
+  private static TimeSpan? ReadRetryAfter(HttpResponseMessage response)
+  {
+    if (response.Headers.TryGetValues("Retry-After", out var values))
+    {
+      var raw = values.FirstOrDefault();
+      if (raw is not null && int.TryParse(raw, out var seconds) && seconds > 0)
+        return TimeSpan.FromSeconds(Math.Min(seconds, 30));
+    }
+    return null;
+  }
+
+  /// <summary>
+  /// Exponential backoff with jitter: 200ms * 2^(attempt-1), capped near 2s.
+  /// Respects the server's Retry-After when provided. Honors cancellation while waiting.
+  /// </summary>
+  private static async Task DelayBeforeRetryAsync(TimeSpan? retryAfter, int attempt, CancellationToken ct)
+  {
+    var baseDelay = retryAfter ?? TimeSpan.FromMilliseconds(200 * Math.Pow(2, attempt - 1));
+    if (baseDelay > TimeSpan.FromSeconds(2)) baseDelay = TimeSpan.FromSeconds(2);
+    var jitter = TimeSpan.FromMilliseconds(Random.Shared.Next(0, 120));
+    var delay = baseDelay + jitter;
+    try { await Task.Delay(delay, ct); }
+    catch (OperationCanceledException) { throw; }
   }
 
   private static string GetSystemPrompt(IReadOnlyList<ToolDefinition> tools) =>

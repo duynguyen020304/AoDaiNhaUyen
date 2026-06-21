@@ -13,7 +13,7 @@ export interface HermesStatus {
 }
 
 export interface AiLlmChunk {
-  type: 'text' | 'tool_call' | 'tool_result' | 'confirmation' | 'conversation' | 'error' | 'done'
+  type: 'text' | 'tool_call' | 'tool_result' | 'confirmation' | 'conversation' | 'error' | 'tool_error' | 'done'
   content: string
   toolName?: string
   toolCallId?: string
@@ -27,6 +27,10 @@ export interface AiMessage {
   toolCalls?: AiToolCall[]
   /** Pending confirmation action */
   pendingAction?: AiPendingAction
+  /** Error message when the assistant turn failed (stream/provider/terminal tool error) */
+  error?: string
+  /** Lifecycle status of this message bubble */
+  status?: 'ok' | 'error'
   createdAt: string
 }
 
@@ -48,6 +52,8 @@ export interface AiToolCall {
   riskLevel?: string
   meta?: AiToolResultMeta
   blogDraft?: AiBlogDraft
+  /** Error message when this specific tool call failed terminally */
+  error?: string
 }
 
 export interface AiPendingAction {

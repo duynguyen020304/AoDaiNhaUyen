@@ -116,10 +116,118 @@ public sealed class AdminAiSecurityTests
     await service.StreamChatAsync(new AdminAiChatRequest("Xem sản phẩm", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
 
     Assert.Equal(0, products.GetByIdCalls);
+    // The new structured-error path surfaces the validator's precise Vietnamese message
+    // (not the old generic "Tham số công cụ không hợp lệ") so the LLM can self-correct.
     Assert.Contains(llm.HistorySnapshots.SelectMany(h => h), m =>
       m.Role == AdminLlmRole.ToolResponse &&
       m.ToolName == "get_product" &&
-      m.Content.Contains("Tham số công cụ không hợp lệ", StringComparison.Ordinal));
+      m.Content.Contains("sai định dạng GUID: id", StringComparison.OrdinalIgnoreCase));
+  }
+
+  [Fact]
+  public async Task ToolValidation_PreservesPreciseMessage_ForMissingRequiredArg()
+  {
+    // get_product with an empty args object — id is missing entirely.
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", "{}", "get_product", "call-1"),
+      new LlmChunk("text", "done"));
+    var products = new FakeProductService();
+    var service = CreateService(llm, products: products);
+
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Xem sản phẩm", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    Assert.Equal(0, products.GetByIdCalls);
+    var toolResultChunk = Assert.Single(chunks, c => c.Type == "tool_result" && c.ToolName == "get_product");
+    Assert.Contains("Thiếu hoặc sai định dạng GUID: id", toolResultChunk.Content, StringComparison.Ordinal);
+    // The validator message must reach the LLM verbatim (with the ❌ prefix) in history
+    // so it has actionable feedback to retry with a corrected argument.
+    var replayHistory = Assert.Single(llm.HistorySnapshots, h => h.Any(m => m.Role == AdminLlmRole.ToolResponse && m.ToolName == "get_product"));
+    var response = Assert.Single(replayHistory, m => m.Role == AdminLlmRole.ToolResponse && m.ToolName == "get_product");
+    Assert.Contains("Thiếu hoặc sai định dạng GUID: id", response.Content, StringComparison.Ordinal);
+    Assert.DoesNotContain("Tham số công cụ không hợp lệ", response.Content, StringComparison.Ordinal);
+  }
+
+  [Fact]
+  public async Task BusinessRuleError_PreservesServiceMessage()
+  {
+    // A service-level business throw (duplicate promo code) must surface verbatim,
+    // not be flattened to the generic message. Use create_promo_code which is
+    // Read-classified in StaticSafetyGate (no confirmation), so it executes inline.
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", "{\"code\":\"DUP\",\"discountType\":\"percentage\",\"discountValue\":10}", "create_promo_code", "call-1"),
+      new LlmChunk("text", "done"));
+    var promos = new ThrowingPromoService(new InvalidOperationException("Mã 'DUP' đã tồn tại."));
+    var service = CreateService(llm, promos: promos);
+
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Tạo mã", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    var toolResultChunk = Assert.Single(chunks, c => c.Type == "tool_result" && c.ToolName == "create_promo_code");
+    Assert.Contains("Mã 'DUP' đã tồn tại", toolResultChunk.Content, StringComparison.Ordinal);
+    Assert.DoesNotContain("Tham số công cụ không hợp lệ", toolResultChunk.Content, StringComparison.Ordinal);
+  }
+
+  [Fact]
+  public async Task FailedTool_RetriesWithinBudget_ThenSucceeds()
+  {
+    // First call: bad id (validation error). Second call: good id (success). The agent
+    // should let the LLM retry within the budget and NOT emit a terminal tool_error.
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", "{\"id\":\"not-a-guid\"}", "get_product", "call-bad"),
+      new LlmChunk("tool_call", $"{{\"id\":\"{ProductId}\"}}", "get_product", "call-good"),
+      new LlmChunk("text", "Xong"));
+    var products = new FakeProductService();
+    var service = CreateService(llm, products: products);
+
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Xem sản phẩm", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    // Two tool_call chunks (the retry), no terminal tool_error.
+    Assert.Equal(2, chunks.Count(c => c.Type == "tool_call" && c.ToolName == "get_product"));
+    Assert.DoesNotContain(chunks, c => c.Type == "tool_error");
+    // The good id reached the service exactly once.
+    Assert.Equal(1, products.GetByIdCalls);
+  }
+
+  [Fact]
+  public async Task FailedTool_EmitsTerminalError_AfterBudgetExhausted()
+  {
+    // The LLM keeps calling get_product with a bad id. After MaxToolRetries+1 attempts,
+    // the agent emits a terminal tool_error chunk and ends the turn.
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", "{\"id\":\"bad\"}", "get_product", "c1"),
+      new LlmChunk("tool_call", "{\"id\":\"bad\"}", "get_product", "c2"),
+      new LlmChunk("tool_call", "{\"id\":\"bad\"}", "get_product", "c3"),
+      new LlmChunk("tool_call", "{\"id\":\"bad\"}", "get_product", "c4"));
+    var products = new FakeProductService();
+    var service = CreateService(llm, products: products);
+
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Xem sản phẩm", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    var terminalError = Assert.Single(chunks, c => c.Type == "tool_error");
+    Assert.Equal("get_product", terminalError.ToolName);
+    Assert.Contains("thất bại sau", terminalError.Content, StringComparison.Ordinal);
+    Assert.Contains("sai định dạng GUID: id", terminalError.Content, StringComparison.OrdinalIgnoreCase);
+    // The stream ends with done after the terminal error.
+    Assert.Equal("done", chunks[^1].Type);
+    // The service was never reached (all attempts failed validation before the call).
+    Assert.Equal(0, products.GetByIdCalls);
+  }
+
+  [Fact]
+  public async Task OperationCanceled_SurfacesAsTimeout_NotGenericParamError()
+  {
+    // A non-cancellation OCE from a downstream service must surface as a timeout error,
+    // not be masked as "Tham số công cụ không hợp lệ".
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", "{}", "get_dashboard_summary", "call-1"),
+      new LlmChunk("text", "done"));
+    var dashboard = new ThrowingDashboardService(new OperationCanceledException("simulated timeout"));
+    var service = CreateService(llm, dashboard: dashboard);
+
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Tổng quan", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    var toolResultChunk = Assert.Single(chunks, c => c.Type == "tool_result" && c.ToolName == "get_dashboard_summary");
+    Assert.Contains("timeout", toolResultChunk.Content, StringComparison.OrdinalIgnoreCase);
+    Assert.DoesNotContain("Tham số công cụ không hợp lệ", toolResultChunk.Content, StringComparison.Ordinal);
   }
 
   [Fact]
@@ -310,7 +418,9 @@ public sealed class AdminAiSecurityTests
     FakeProductService? products = null,
     IAutoModeStore? autoMode = null,
     FakeMarketingCampaignService? marketing = null,
-    IAdminShopEventContextService? eventContext = null)
+    IAdminShopEventContextService? eventContext = null,
+    IAdminPromoService? promos = null,
+    IAdminDashboardService? dashboard = null)
   {
     return new AdminAgentService(
       llm,
@@ -319,11 +429,11 @@ public sealed class AdminAiSecurityTests
       new FakeCategoryService(),
       new FakeUserService(),
       new FakeRoleService(),
-      new FakeDashboardService(),
+      dashboard ?? new FakeDashboardService(),
       new FakeOrderService(),
       new FakeInventoryService(),
       new FakeReviewService(),
-      new FakePromoService(),
+      promos ?? new FakePromoService(),
       new FakeBlogAiDraftService(),
       new FakeBlogPostService(),
       marketing ?? new FakeMarketingCampaignService(),
@@ -446,6 +556,7 @@ public sealed class AdminAiSecurityTests
       "list_products" => RiskLevel.Read,
       "get_dashboard_summary" => RiskLevel.Read,
       "list_marketing_options" => RiskLevel.Read,
+      "create_promo_code" => RiskLevel.Read,
       _ => RiskLevel.Medium
     };
 
@@ -471,6 +582,7 @@ public sealed class AdminAiSecurityTests
     public Task<AdminProductDetailResponse> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Product(ProductId));
     public Task<AdminProductDetailResponse?> UpdateAsync(Guid id, UpdateProductRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(id));
     public Task<AdminProductDetailResponse?> UpdateVariantStockAsync(Guid productId, Guid variantId, int stockQty, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
+    public Task<AdminProductDetailResponse?> CreateVariantAsync(Guid productId, CreateVariantRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
     public Task<AdminProductDetailResponse?> UpdateVariantAsync(Guid productId, Guid variantId, UpdateVariantRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
     public Task<bool> ToggleStatusAsync(Guid id, string newStatus, CancellationToken cancellationToken = default) => Task.FromResult(true);
     public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default) { DeleteCalls++; return Task.FromResult(true); }
@@ -635,5 +747,31 @@ public sealed class AdminAiSecurityTests
         request.CategoryId,
         ["Fake draft for testing"]));
     }
+  }
+
+  /// <summary>A promo service that throws on CreatePromoAsync to simulate a business-rule failure (duplicate code).</summary>
+  private sealed class ThrowingPromoService(Exception toThrow) : IAdminPromoService
+  {
+    public Task<IReadOnlyList<AdminPromoItem>> GetAllAsync(CancellationToken ct = default) => Task.FromResult((IReadOnlyList<AdminPromoItem>)[]);
+    public Task<AdminPromoResult> CreateAsync(CreateAdminPromoRequest request, CancellationToken ct = default) => throw toThrow;
+    public Task<(IReadOnlyList<AdminPromoListItemResponse> Items, int TotalItem)> GetAllAdminAsync(bool includeDeleted = false, string? search = null, bool? isActive = null, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default) =>
+      Task.FromResult(((IReadOnlyList<AdminPromoListItemResponse>)[], 0));
+    public Task<AdminPromoDetailResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult<AdminPromoDetailResponse?>(null);
+    public Task<AdminPromoDetailResponse> CreatePromoAsync(CreatePromoRequest request, CancellationToken cancellationToken = default) => throw toThrow;
+    public Task<AdminPromoDetailResponse?> UpdateAsync(Guid id, UpdatePromoRequest request, CancellationToken cancellationToken = default) => throw toThrow;
+    public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
+    public Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
+    public Task<bool> ToggleActiveAsync(Guid id, bool isActive, CancellationToken cancellationToken = default) => Task.FromResult(true);
+  }
+
+  /// <summary>A dashboard service whose GetSummaryAsync throws to simulate a downstream timeout.</summary>
+  private sealed class ThrowingDashboardService(Exception toThrow) : IAdminDashboardService
+  {
+    public Task<DashboardSummaryDto> GetSummaryAsync(CancellationToken ct = default) => throw toThrow;
+    public Task<RevenueDataDto> GetRevenueAsync(int periodDays, CancellationToken ct = default) => throw toThrow;
+    public Task<OrderStatusDistributionDto> GetOrdersByStatusAsync(CancellationToken ct = default) => throw toThrow;
+    public Task<IReadOnlyList<RecentOrderDto>> GetRecentOrdersAsync(int limit, CancellationToken ct = default) => throw toThrow;
+    public Task<IReadOnlyList<TopProductDto>> GetTopProductsAsync(int limit, CancellationToken ct = default) => throw toThrow;
+    public Task<UserGrowthDataDto> GetUserGrowthAsync(int periodDays, CancellationToken ct = default) => throw toThrow;
   }
 }

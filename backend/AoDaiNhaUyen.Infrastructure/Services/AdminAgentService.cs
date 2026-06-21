@@ -6,6 +6,7 @@ using AoDaiNhaUyen.Application.DTOs.BlogPost;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Common;
 using AoDaiNhaUyen.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
@@ -33,6 +34,14 @@ public sealed class AdminAgentService : IAdminAgentService
   {
     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
   };
+
+  /// <summary>
+  /// Max automatic retries a single tool gets per turn before the agent emits a terminal
+  /// tool_error chunk. Total attempts = MaxToolRetries + 1. Retries share the orchestration
+  /// loop's iteration budget (see StreamChatAsync), so the terminal chunk guarantees the
+  /// loop ends cleanly even if a tool keeps failing.
+  /// </summary>
+  private const int MaxToolRetries = 2;
 
   private readonly IPendingActionStore _pendingStore;
   private readonly IConversationStore _conversationStore;
@@ -387,7 +396,13 @@ public sealed class AdminAgentService : IAdminAgentService
     }
 
     var liveEventContext = await _eventContext.GetRecentContextAsync(ct);
+    // NOTE: maxIterations is shared between genuine multi-tool turns and per-tool retries.
+    // Each failed-tool retry consumes one iteration. The terminal tool_error chunk below
+    // guarantees the loop ends cleanly if a tool exhausts its budget.
     var maxIterations = 5;
+    // Per-tool retry budget for this turn. Keyed by tool name so concurrent retries of
+    // different tools don't starve each other.
+    var retryAttempts = new Dictionary<string, int>(StringComparer.Ordinal);
     for (var iteration = 0; iteration < maxIterations; iteration++)
     {
       var hadToolCall = false;
@@ -448,6 +463,30 @@ public sealed class AdminAgentService : IAdminAgentService
           await PersistLlmMessageAsync(thread.Id, adminUserId, toolCall, ct);
           await PersistLlmMessageAsync(thread.Id, adminUserId, toolResponse, ct);
           assistantText = ""; // reset for next iteration
+
+          // Retry-with-feedback: if the tool failed, give the LLM another turn to correct
+          // its arguments. The structured error message is already in history (above), so
+          // the next loop iteration lets the model self-correct. If the budget is exhausted,
+          // emit a terminal tool_error chunk and end the turn cleanly instead of looping
+          // into a dead-end apology.
+          if (toolResult.IsError)
+          {
+            retryAttempts[chunk.ToolName] = retryAttempts.TryGetValue(chunk.ToolName, out var attempts) ? attempts + 1 : 1;
+            if (retryAttempts[chunk.ToolName] > MaxToolRetries)
+            {
+              _logger.LogWarning("[AdminAgent] Tool {ToolName} exhausted retry budget ({Attempts} attempts) for admin {AdminId}",
+                chunk.ToolName, retryAttempts[chunk.ToolName], adminUserId);
+              yield return new LlmChunk(
+                "tool_error",
+                $"❌ Công cụ '{chunk.ToolName}' thất bại sau {MaxToolRetries + 1} lần thử. Lỗi cuối: {toolResult.Description}",
+                chunk.ToolName,
+                chunk.ToolCallId);
+              yield return new LlmChunk("done", "", null, null);
+              yield break;
+            }
+            _logger.LogInformation("[AdminAgent] Tool {ToolName} failed (attempt {Attempt}/{Max}); letting LLM retry with feedback",
+              chunk.ToolName, retryAttempts[chunk.ToolName], MaxToolRetries);
+          }
         }
       }
 
@@ -905,10 +944,58 @@ public sealed class AdminAgentService : IAdminAgentService
       var wrappedResult = MaybeWrapToolResult(result, riskLevel.ToString(), requiresConfirmation);
       return new ToolResult(wrappedResult, false, wrappedResult, riskLevel.ToString());
     }
+    catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+    {
+      // Non-cancellation OCE (e.g. downstream timeout). Don't mask real client cancellation.
+      return new ToolResult(
+        "❌ Thao tác bị hủy do timeout. Vui lòng thử lại.",
+        false, "Tool timed out", riskLevel.ToString(),
+        IsError: true, ErrorCode: "timeout");
+    }
+    catch (ToolValidationException ex)
+    {
+      // Validators already produce good Vietnamese: "Thiếu hoặc sai định dạng GUID: categoryId."
+      return new ToolResult(
+        $"❌ {ex.Message}",
+        false, ex.Message, riskLevel.ToString(),
+        IsError: true, ErrorCode: "validation_error");
+    }
+    catch (ArgumentException ex)
+    {
+      // Service business rules: "Mã 'XYZ' đã tồn tại.", "Ngày kết thúc phải sau ngày bắt đầu.", etc.
+      return new ToolResult(
+        $"❌ {ex.Message}",
+        false, ex.Message, riskLevel.ToString(),
+        IsError: true, ErrorCode: "business_error");
+    }
+    catch (InvalidOperationException ex)
+    {
+      // Service business rules: "Mẫu email chưa hoạt động...", "Không thể tải điểm sức khỏe..."
+      return new ToolResult(
+        $"❌ {ex.Message}",
+        false, ex.Message, riskLevel.ToString(),
+        IsError: true, ErrorCode: "business_error");
+    }
+    catch (DbUpdateException ex)
+    {
+      _logger.LogError(ex, "[AdminAgent] Tool {ToolName} DB update failed", toolName);
+      var inner = ex.InnerException?.Message;
+      var hint = !string.IsNullOrWhiteSpace(inner)
+        && inner.Contains("foreign key", StringComparison.OrdinalIgnoreCase)
+          ? " (có thể ID tham chiếu không tồn tại — hãy dùng list/get để xác minh ID trước)."
+          : "";
+      return new ToolResult(
+        $"❌ Lỗi cơ sở dữ liệu khi thực hiện thao tác{hint}. Vui lòng thử lại.",
+        false, "DB error", riskLevel.ToString(),
+        IsError: true, ErrorCode: "db_error");
+    }
     catch (Exception ex)
     {
       _logger.LogError(ex, "[AdminAgent] Tool {ToolName} failed", toolName);
-      return new ToolResult("❌ Tham số công cụ không hợp lệ hoặc thao tác thất bại. Vui lòng kiểm tra lại dữ liệu đầu vào.", false, "Tool validation or execution failed", riskLevel.ToString());
+      return new ToolResult(
+        $"❌ Lỗi không xác định khi chạy công cụ: {ex.Message}",
+        false, "Execution failed", riskLevel.ToString(),
+        IsError: true, ErrorCode: "execution_error");
     }
   }
 
@@ -2068,5 +2155,11 @@ TOP 5 SẢN PHẨM:";
     return $"{slug}-{Random.Shared.Next(1000, 9999)}";
   }
 
-  private sealed record ToolResult(string Content, bool NeedsConfirmation, string Description, string RiskLevel);
+  private sealed record ToolResult(
+    string Content,
+    bool NeedsConfirmation,
+    string Description,
+    string RiskLevel,
+    bool IsError = false,
+    string? ErrorCode = null);
 }

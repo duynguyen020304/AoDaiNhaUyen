@@ -62,6 +62,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<HermesEventOutbox> HermesEventOutbox => Set<HermesEventOutbox>();
   public DbSet<HermesMonitorLink> HermesMonitorLinks => Set<HermesMonitorLink>();
   public DbSet<HermesAgentTraceStep> HermesAgentTraceSteps => Set<HermesAgentTraceStep>();
+  public DbSet<HermesActionAudit> HermesActionAudits => Set<HermesActionAudit>();
   public DbSet<SocialAccountConnection> SocialAccountConnections => Set<SocialAccountConnection>();
   public DbSet<SocialInboxConversation> SocialInboxConversations => Set<SocialInboxConversation>();
   public DbSet<SocialInboxMessage> SocialInboxMessages => Set<SocialInboxMessage>();
@@ -845,6 +846,27 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasOne(x => x.Run).WithMany().HasForeignKey(x => x.RunId).OnDelete(DeleteBehavior.SetNull);
       builder.HasOne(x => x.EventOutbox).WithMany().HasForeignKey(x => x.EventOutboxId).OnDelete(DeleteBehavior.SetNull);
       builder.ToTable(t => t.HasCheckConstraint("ck_hermes_agent_trace_steps_status", "status IN ('success','failed','running','skipped')"));
+    });
+
+    modelBuilder.Entity<HermesActionAudit>(builder =>
+    {
+      builder.ToTable("hermes_action_audit");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Method).HasMaxLength(10).IsRequired();
+      builder.Property(x => x.Path).HasMaxLength(400).IsRequired();
+      builder.Property(x => x.BodyHash).HasMaxLength(128).IsRequired();
+      builder.Property(x => x.BodyPreview).HasColumnType("text");
+      builder.Property(x => x.RiskLevel).HasMaxLength(20);
+      builder.Property(x => x.ResponseStatus).IsRequired();
+      builder.Property(x => x.ResponsePreview).HasColumnType("text");
+      builder.Property(x => x.Error).HasColumnType("text");
+      builder.Property(x => x.ExecutedAt).IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.RunId, x.ExecutedAt }).HasDatabaseName("idx_hermes_action_audit_run_executed_at");
+      builder.HasIndex(x => new { x.Method, x.Path, x.ExecutedAt }).HasDatabaseName("idx_hermes_action_audit_method_path_executed_at");
+      builder.HasIndex(x => x.EventOutboxId).HasDatabaseName("idx_hermes_action_audit_event_outbox_id");
+      builder.HasIndex(x => new { x.ResponseStatus, x.ExecutedAt }).HasDatabaseName("idx_hermes_action_audit_status_executed_at");
     });
 
     modelBuilder.Entity<OrderAttribution>(builder =>

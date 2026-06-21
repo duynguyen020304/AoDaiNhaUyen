@@ -167,6 +167,8 @@ interface AdminAiState {
   messages: AiMessage[]
   isLoading: boolean
   lastError: string | null
+  /** Last user message text, stashed so retryLast() can re-send it. */
+  lastUserMessage: string | null
   conversationId: string | null
   pendingActions: AiPendingAction[]
   suggestions: AiSuggestion[]
@@ -183,6 +185,8 @@ interface AdminAiState {
   sendMessage: (req: AiChatRequest) => Promise<void>
   confirmAction: (actionId: string, approved: boolean) => Promise<boolean>
   continueAfterConfirm: (conversationId: string) => Promise<void>
+  /** Re-send the last user message after a failed turn. */
+  retryLast: () => Promise<void>
   fetchSuggestions: () => Promise<void>
   fetchHermesStatus: () => Promise<void>
   setChatMode: (mode: AdminChatMode) => void
@@ -201,6 +205,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
   messages: [],
   isLoading: false,
   lastError: null,
+  lastUserMessage: null,
   conversationId: null,
   pendingActions: [],
   suggestions: [],
@@ -236,9 +241,11 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
     set((s) => ({
       isLoading: true,
       lastError: null,
+      lastUserMessage: req.message,
       messages: [...s.messages, userMsg, assistantMsg],
     }))
 
+    let sawError = false
     try {
       const endpoint = state.chatMode === 'hermes' ? '/api/admin/hermes/chat' : '/api/admin/ai/chat'
       const response = await fetch(`${API}${endpoint}`, {
@@ -310,6 +317,22 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                   m.id === assistantMsg.id ? { ...m, toolCalls: [...toolCalls] } : m,
                 ),
               }))
+            } else if (chunk.type === 'tool_error') {
+              // Terminal tool failure after retry budget exhausted. Mark the matching
+              // tool call and the assistant turn as errored so the UI can offer retry.
+              sawError = true
+              const toolName = chunk.toolName || chunk.toolCallId || 'unknown'
+              const errMsg = chunk.content || 'Công cụ thất bại.'
+              const idx = toolCalls.findLastIndex((tc) => tc.toolName === toolName && !tc.error)
+              if (idx >= 0) toolCalls[idx] = { ...toolCalls[idx], error: errMsg }
+              set((s) => ({
+                lastError: errMsg,
+                messages: s.messages.map((m) =>
+                  m.id === assistantMsg.id
+                    ? { ...m, status: 'error' as const, error: errMsg, toolCalls: [...toolCalls] }
+                    : m,
+                ),
+              }))
             } else if (chunk.type === 'confirmation') {
               const pending: AiPendingAction = {
                 actionId: chunk.toolCallId || genId(),
@@ -330,7 +353,16 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
             } else if (chunk.type === 'conversation') {
               set({ conversationId: chunk.content, activeConversationId: chunk.content })
             } else if (chunk.type === 'error') {
-              set({ lastError: chunk.content || 'AI stream lỗi.' })
+              sawError = true
+              const errMsg = chunk.content || 'AI stream lỗi.'
+              set((s) => ({
+                lastError: errMsg,
+                messages: s.messages.map((m) =>
+                  m.id === assistantMsg.id
+                    ? { ...m, status: 'error' as const, error: errMsg }
+                    : m,
+                ),
+              }))
             }
           } catch (err) {
             logAiWarn('Bỏ qua SSE chunk lỗi', { length: data.length, err })
@@ -338,10 +370,10 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
         }
       }
 
-      // Mark final
+      // Mark final. Only clear lastError if the turn actually succeeded.
       set((s) => ({
         isLoading: false,
-        lastError: null,
+        lastError: sawError ? s.lastError : null,
         messages: s.messages.map((m) =>
           m.id === assistantMsg.id
             ? { ...m, content: fullText || m.content, toolCalls: toolCalls }
@@ -351,9 +383,44 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       get().saveCurrentConversation()
       await get().fetchConversations()
     } catch (err) {
+      sawError = true
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
-      set({ isLoading: false, lastError: errorMsg })
+      set((s) => ({
+        isLoading: false,
+        lastError: errorMsg,
+        messages: s.messages.map((m) =>
+          m.id === assistantMsg.id
+            ? { ...m, status: 'error' as const, error: errorMsg }
+            : m,
+        ),
+      }))
     }
+  },
+
+  retryLast: async () => {
+    const state = get()
+    if (state.isLoading) return
+    if (!state.lastUserMessage) return
+
+    // Drop the trailing failed assistant bubble AND the user message that triggered it,
+    // so sendMessage() re-adding a fresh pair doesn't leave a duplicate user bubble.
+    set((s) => {
+      const last = s.messages[s.messages.length - 1]
+      const dropFailed = last && last.role === 'assistant' && last.status === 'error'
+      if (!dropFailed) return { lastError: null }
+      const beforeAssistant = s.messages.slice(0, -1)
+      const prev = beforeAssistant[beforeAssistant.length - 1]
+      const dropUserToo = prev && prev.role === 'user' && prev.content === state.lastUserMessage
+      return {
+        messages: dropUserToo ? beforeAssistant.slice(0, -1) : beforeAssistant,
+        lastError: null,
+      }
+    })
+
+    await get().sendMessage({
+      message: state.lastUserMessage,
+      conversationId: state.conversationId ?? undefined,
+    })
   },
 
   confirmAction: async (actionId: string, approved: boolean) => {
@@ -397,8 +464,12 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
 
     set({ messages: [...state.messages, assistantMsg] })
 
+    let sawError = false
     try {
-      const response = await fetch(`${API}/api/admin/ai/chat`, {
+      // Respect the current chat mode (was previously hardcoded to the generic endpoint,
+      // which broke continuation after confirming a tool in Hermes mode).
+      const endpoint = state.chatMode === 'hermes' ? '/api/admin/hermes/chat' : '/api/admin/ai/chat'
+      const response = await fetch(`${API}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -459,6 +530,20 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                   m.id === assistantMsg.id ? { ...m, toolCalls: [...toolCalls] } : m,
                 ),
               }))
+            } else if (chunk.type === 'tool_error') {
+              sawError = true
+              const toolName = chunk.toolName || chunk.toolCallId || 'unknown'
+              const errMsg = chunk.content || 'Công cụ thất bại.'
+              const idx = toolCalls.findLastIndex((tc) => tc.toolName === toolName && !tc.error)
+              if (idx >= 0) toolCalls[idx] = { ...toolCalls[idx], error: errMsg }
+              set((s) => ({
+                lastError: errMsg,
+                messages: s.messages.map((m) =>
+                  m.id === assistantMsg.id
+                    ? { ...m, status: 'error' as const, error: errMsg, toolCalls: [...toolCalls] }
+                    : m,
+                ),
+              }))
             } else if (chunk.type === 'confirmation') {
               const pending: AiPendingAction = {
                 actionId: chunk.toolCallId || genId(),
@@ -479,7 +564,16 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
             } else if (chunk.type === 'conversation') {
               set({ conversationId: chunk.content, activeConversationId: chunk.content })
             } else if (chunk.type === 'error') {
-              set({ lastError: chunk.content || 'AI stream lỗi.' })
+              sawError = true
+              const errMsg = chunk.content || 'AI stream lỗi.'
+              set((s) => ({
+                lastError: errMsg,
+                messages: s.messages.map((m) =>
+                  m.id === assistantMsg.id
+                    ? { ...m, status: 'error' as const, error: errMsg }
+                    : m,
+                ),
+              }))
             }
           } catch (err) {
             logAiWarn('Bỏ qua SSE chunk lỗi khi tiếp tục', { length: data.length, err })
@@ -489,6 +583,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
 
       set((s) => ({
         isLoading: false,
+        lastError: sawError ? s.lastError : null,
         messages: s.messages.map((m) =>
           m.id === assistantMsg.id
             ? { ...m, content: fullText || m.content, toolCalls }
@@ -498,9 +593,18 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       get().saveCurrentConversation()
       await get().fetchConversations()
     } catch (err) {
+      sawError = true
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
       logAiWarn('Tiếp tục AI sau xác nhận thất bại', err)
-      set({ isLoading: false, lastError: errorMsg })
+      set((s) => ({
+        isLoading: false,
+        lastError: errorMsg,
+        messages: s.messages.map((m) =>
+          m.id === assistantMsg.id
+            ? { ...m, status: 'error' as const, error: errorMsg }
+            : m,
+        ),
+      }))
     }
   },
 
