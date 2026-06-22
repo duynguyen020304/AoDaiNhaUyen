@@ -126,11 +126,11 @@ function HermesChatView({ sidebarOpen, onSidebarOpenChange }: { sidebarOpen: boo
 
       <div
         className={`${
-          sidebarOpen ? 'w-72' : 'w-0'
+          sidebarOpen ? 'w-[min(22rem,88vw)] lg:w-[22rem]' : 'w-0'
         } max-lg:top-0 max-lg:left-0 max-lg:z-20 max-lg:h-dvh transition-all duration-200 overflow-hidden shrink-0 max-lg:fixed lg:h-full`}
       >
         <ChatHistorySidebar
-          className="w-72"
+          className="w-[min(22rem,88vw)] lg:w-[22rem]"
           onSelect={() => {
             if (window.innerWidth <= 1024) {
               onSidebarOpenChange(false)

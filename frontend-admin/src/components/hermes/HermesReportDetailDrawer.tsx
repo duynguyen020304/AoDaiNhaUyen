@@ -1,7 +1,8 @@
-import { useEffect, useMemo } from 'react'
-import { Loader2, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Download, Loader2, X } from 'lucide-react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { downloadHermesReportPdf } from '@/api/hermes'
 import { Button } from '@/components/ui/button'
 import type { HermesRawAction, HermesReportDetail } from '@/types/hermes'
 
@@ -65,23 +66,6 @@ const markdownComponents = {
   ),
   a: ({ children }: { children?: React.ReactNode }) => <span className="text-zinc-700">{children}</span>,
   hr: () => <hr className="my-4 border-zinc-200" />,
-}
-
-function formatJson(value: unknown) {
-  if (value === null || value === undefined) return null
-  if (typeof value === 'string') {
-    try {
-      return JSON.stringify(JSON.parse(value), null, 2)
-    } catch {
-      return value
-    }
-  }
-
-  try {
-    return JSON.stringify(value, null, 2)
-  } catch {
-    return String(value)
-  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -174,8 +158,6 @@ function riskLabel(risk: string) {
 }
 
 function HermesActionCard({ action }: { action: HermesRawAction }) {
-  const bodyPreview = formatJson(action.body)
-
   return (
     <article className="space-y-2 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -185,22 +167,14 @@ function HermesActionCard({ action }: { action: HermesRawAction }) {
         </span>
       </div>
       {action.reason ? <p className="text-xs leading-relaxed text-zinc-600">{action.reason}</p> : null}
-      <p className="text-xs text-zinc-500">Hermes runner tự thực thi an toàn bằng khóa nội bộ.</p>
-
-      <details className="rounded-lg border border-zinc-200 bg-zinc-50 p-2.5">
-        <summary className="cursor-pointer text-xs font-medium text-zinc-500">Chi tiết kỹ thuật (audit)</summary>
-        <div className="mt-2 rounded-md border border-zinc-200 bg-zinc-950 p-2.5 font-mono text-xs text-zinc-100">
-          <span className="text-emerald-300">{action.method}</span> {action.path}
-        </div>
-        {bodyPreview ? (
-          <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap text-xs text-zinc-700">{bodyPreview}</pre>
-        ) : null}
-      </details>
+      <p className="text-xs text-zinc-500">Hermes runner tự xử lý theo quy tắc an toàn đã cấu hình.</p>
     </article>
   )
 }
 
 export function HermesReportDetailDrawer({ open, loading, report, onClose }: Props) {
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
   const cleanedSummary = useMemo(() => cleanSummary(report?.summary ?? null), [report?.summary])
   const parsedActions = useMemo(
     () => parseActions(report?.payloadJson ?? null, report?.summary ?? null),
@@ -216,23 +190,47 @@ export function HermesReportDetailDrawer({ open, loading, report, onClose }: Pro
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [open, onClose])
 
+  async function handleDownloadPdf() {
+    if (!report || downloadingPdf) return
+    setDownloadError(null)
+    setDownloadingPdf(true)
+    try {
+      await downloadHermesReportPdf(report.id)
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Không thể tải PDF báo cáo Hermes.')
+    } finally {
+      setDownloadingPdf(false)
+    }
+  }
+
   if (!open) return null
 
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Chi tiết báo cáo Hermes">
       <button className="absolute inset-0 bg-black/40" onClick={onClose} aria-label="Đóng chi tiết" />
       <aside className="absolute inset-y-0 right-0 flex w-full max-w-3xl flex-col bg-white shadow-xl">
-        <header className="flex items-center justify-between border-b border-zinc-200 p-4">
+        <header className="flex items-center justify-between gap-3 border-b border-zinc-200 p-4">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">Chi tiết báo cáo Hermes</h2>
-            <p className="text-xs text-zinc-500">Nội dung trình bày thân thiện, không hiển thị mã kỹ thuật.</p>
+            <p className="text-xs text-zinc-500">Nội dung trình bày thân thiện, không hiển thị dữ liệu kỹ thuật.</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Đóng">
-            <X className="size-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => void handleDownloadPdf()} disabled={!report || downloadingPdf}>
+              {downloadingPdf ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+              Tải PDF
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Đóng">
+              <X className="size-5" />
+            </Button>
+          </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-4">
+          {downloadError && (
+            <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+              {downloadError}
+            </div>
+          )}
           {loading ? (
             <div className="flex h-64 items-center justify-center">
               <Loader2 className="size-6 animate-spin text-primary" />
@@ -242,7 +240,7 @@ export function HermesReportDetailDrawer({ open, loading, report, onClose }: Pro
               <section className="space-y-1">
                 <h3 className="text-base font-semibold text-zinc-900">{report.title}</h3>
                 <p className="text-xs text-zinc-500">
-                  {report.reportType} · {report.severity} · {report.status} · {report.source} ·{' '}
+                  {report.reportType} · {report.severity} · {report.status} ·{' '}
                   {new Date(report.createdAt).toLocaleString('vi-VN')}
                 </p>
               </section>
@@ -273,24 +271,7 @@ export function HermesReportDetailDrawer({ open, loading, report, onClose }: Pro
                 </div>
               ) : null}
 
-              <details className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                <summary className="cursor-pointer text-xs font-medium text-zinc-500">
-                  Dữ liệu kỹ thuật (payload JSON)
-                </summary>
-                <dl className="mt-3 grid gap-2 md:grid-cols-2">
-                  <div className="rounded-lg bg-white p-2 text-xs">
-                    <dt className="text-zinc-500">Correlation ID</dt>
-                    <dd className="mt-0.5 break-all text-zinc-800">{report.correlationId || '—'}</dd>
-                  </div>
-                  <div className="rounded-lg bg-white p-2 text-xs">
-                    <dt className="text-zinc-500">Run ID</dt>
-                    <dd className="mt-0.5 break-all text-zinc-800">{report.runId || '—'}</dd>
-                  </div>
-                </dl>
-                <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap rounded-lg border border-zinc-200 bg-white p-3 text-xs text-zinc-600">
-                  {formatJson(report.payloadJson) || '—'}
-                </pre>
-              </details>
+
             </div>
           ) : (
             <p className="text-sm text-zinc-500">Không có dữ liệu chi tiết.</p>

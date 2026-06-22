@@ -20,6 +20,7 @@ using AoDaiNhaUyen.Api.Hermes;
 using AoDaiNhaUyen.Api.Responses;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
+using QuestPDF.Infrastructure;
 
 var envPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env");
 if (File.Exists(envPath))
@@ -28,6 +29,7 @@ if (File.Exists(envPath))
 }
 
 var builder = WebApplication.CreateBuilder(args);
+QuestPDF.Settings.License = LicenseType.Community;
 
 builder.Services.AddControllers();
 builder.Services.Configure<ApiBehaviorOptions>(options =>

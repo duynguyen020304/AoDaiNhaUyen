@@ -19,6 +19,7 @@ public sealed class AdminToolInstructionRegistry : IAdminToolInstructionRegistry
     "send_marketing_campaign", "unsubscribe_subscriber", "delete_subscriber",
     "retry_email_job", "cancel_email_job", "delete_email_job",
     "create_promo_code", "update_promo_code", "toggle_promo_code", "delete_promo_code",
+    "create_purchase_note",
     "toggle_autonomy", "upload_media", "delete_media", "reply_facebook_comment"
   ];
 

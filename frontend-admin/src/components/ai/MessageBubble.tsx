@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDown, ChevronUp, Bot, User, Terminal, Check, X, AlertTriangle, AlertCircle, FileText, RotateCw } from 'lucide-react'
 import Markdown from 'react-markdown'
@@ -153,6 +153,56 @@ function safeHref(href?: string) {
   }
 }
 
+
+const STREAM_INTERVAL_MS = 28
+const STREAM_MIN_CHARS = 32
+const STREAM_MAX_CHARS = 180
+
+function useTokenStream(target: string, enabled: boolean) {
+  const [displayText, setDisplayText] = useState(target)
+  const latestTargetRef = useRef(target)
+
+  useEffect(() => {
+    latestTargetRef.current = target
+
+    const timerId = window.setTimeout(() => {
+      if (!enabled) {
+        setDisplayText(target)
+        return
+      }
+
+      setDisplayText((current) => {
+        if (!target) return ''
+        if (target === current) return current
+        if (target.startsWith(current)) return current
+        return ''
+      })
+    }, 0)
+
+    return () => window.clearTimeout(timerId)
+  }, [enabled, target])
+
+  useEffect(() => {
+    if (!enabled || displayText === target) return
+
+    const timerId = window.setTimeout(() => {
+      setDisplayText((current) => {
+        const nextTarget = latestTargetRef.current
+        if (!nextTarget) return ''
+        if (!nextTarget.startsWith(current)) return nextTarget.slice(0, STREAM_MIN_CHARS)
+
+        const remaining = nextTarget.length - current.length
+        const chunkSize = Math.min(STREAM_MAX_CHARS, Math.max(STREAM_MIN_CHARS, Math.ceil(remaining / 10)))
+        return nextTarget.slice(0, current.length + chunkSize)
+      })
+    }, STREAM_INTERVAL_MS)
+
+    return () => window.clearTimeout(timerId)
+  }, [displayText, enabled, target])
+
+  return displayText
+}
+
 const markdownComponents = {
   h1: ({ children }: { children?: React.ReactNode }) => (
     <h1 className="text-lg font-bold text-gray-900 mt-4 mb-2 first:mt-0 tracking-tight">{children}</h1>
@@ -176,8 +226,8 @@ const markdownComponents = {
     <li className="my-0.5 leading-relaxed">{children}</li>
   ),
   table: ({ children }: { children?: React.ReactNode }) => (
-    <div className="overflow-x-auto my-3 border border-gray-200 rounded-xl shadow-sm bg-white">
-      <table className="text-xs w-full divide-y divide-gray-200">{children}</table>
+    <div className="my-3 max-w-full overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+      <table className="min-w-max w-full divide-y divide-gray-200 text-xs">{children}</table>
     </div>
   ),
   thead: ({ children }: { children?: React.ReactNode }) => (
@@ -187,10 +237,10 @@ const markdownComponents = {
     <tbody className="divide-y divide-gray-100">{children}</tbody>
   ),
   th: ({ children }: { children?: React.ReactNode }) => (
-    <th className="px-3 py-2 text-left font-semibold text-gray-500 uppercase tracking-wider">{children}</th>
+    <th className="whitespace-nowrap px-3 py-2 text-left font-semibold uppercase tracking-wider text-gray-500">{children}</th>
   ),
   td: ({ children }: { children?: React.ReactNode }) => (
-    <td className="px-3 py-2 text-gray-700">{children}</td>
+    <td className="whitespace-nowrap px-3 py-2 text-gray-700">{children}</td>
   ),
   code: ({ children, className }: { children?: React.ReactNode; className?: string }) => {
     const match = /language-(\w+)/.exec(className || '')
@@ -250,6 +300,8 @@ export function MessageBubble({ message }: { message: AiMessage }) {
   const isUser = message.role === 'user'
   const retryLast = useAdminAiStore((s) => s.retryLast)
   const isLoading = useAdminAiStore((s) => s.isLoading)
+  const streamedContent = useTokenStream(message.content, !isUser)
+  const isStreamingContent = !isUser && streamedContent !== message.content
 
   // Derive status from the pendingAction inside the message (persisted in store)
   const actionStatus = message.pendingAction
@@ -277,7 +329,7 @@ export function MessageBubble({ message }: { message: AiMessage }) {
         </div>
       )}
 
-      <div className={`flex flex-col gap-1.5 max-w-[95%] ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex min-w-0 flex-col gap-1.5 ${isUser ? 'max-w-[85%] items-end' : 'w-[calc(100%-3rem)] max-w-full items-start'}`}>
         {/* Tool calls rendered as clean badges on top of text response for flow sync */}
         {message.toolCalls && message.toolCalls.length > 0 && (
           <div className="w-full space-y-1.5 mt-1 max-w-md">
@@ -311,16 +363,17 @@ export function MessageBubble({ message }: { message: AiMessage }) {
             className={`rounded-2xl px-4 py-3 text-sm shadow-sm transition-all ${
               isUser
                 ? 'bg-wine text-white rounded-tr-none whitespace-pre-wrap'
-                : 'bg-white border border-gray-100 text-gray-800 rounded-tl-none shadow-sm'
+                : 'w-full min-w-0 overflow-hidden bg-white border border-gray-100 text-gray-800 rounded-tl-none shadow-sm'
             }`}
           >
             {isUser ? (
               message.content
             ) : (
-              <div className="prose prose-sm max-w-none">
+              <div className="prose prose-sm max-w-none overflow-hidden">
                 <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                  {message.content}
+                  {streamedContent}
                 </Markdown>
+                {isStreamingContent && <span className="ml-1 inline-block h-3 w-1 animate-pulse rounded-full bg-wine/50 align-middle" aria-hidden="true" />}
               </div>
             )}
 

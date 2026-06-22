@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { MessageBubble } from './MessageBubble'
@@ -10,20 +10,35 @@ export function FullChatArea() {
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
+  const shouldStickToBottomRef = useRef(true)
+
+  useLayoutEffect(() => {
+    const node = scrollRef.current
+    if (!node || !shouldStickToBottomRef.current) return
+
+    const frameId = window.requestAnimationFrame(() => {
+      node.scrollTop = node.scrollHeight
+    })
+
+    return () => window.cancelAnimationFrame(frameId)
   }, [messages, isLoading])
+
+  function handleScroll() {
+    const node = scrollRef.current
+    if (!node) return
+    shouldStickToBottomRef.current = node.scrollHeight - node.scrollTop - node.clientHeight < 120
+  }
 
   async function handleSend() {
     if (!input.trim() || isLoading) return
     const msg = input
+    shouldStickToBottomRef.current = true
     setInput('')
     await sendMessage({ message: msg })
   }
 
   async function handleSuggestionClick(message: string) {
+    shouldStickToBottomRef.current = true
     setInput('')
     await sendMessage({ message })
   }
@@ -43,7 +58,7 @@ export function FullChatArea() {
 
       {/* Messages or Empty State */}
       {hasMessages ? (
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-6 scroll-smooth">
+        <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-6 py-6 [overflow-anchor:none]">
           <div className="max-w-[95%] mx-auto space-y-6">
             {messages.map((msg) => (
               <MessageBubble key={msg.id} message={msg} />

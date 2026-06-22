@@ -1,5 +1,9 @@
 using System.IO;
 using System.Text.Json;
+using QuestPDF.Infrastructure;
+using QuestPDF.Helpers;
+using QuestPDF.Fluent;
+using System.Text.RegularExpressions;
 using AoDaiNhaUyen.Api.Responses;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.Interfaces.Services;
@@ -69,6 +73,24 @@ public sealed class AdminHermesController(
     return report is null
       ? NotFound(ApiResponseFactory.Failure("Không tìm thấy báo cáo Hermes.", "not_found", "Báo cáo không tồn tại."))
       : Ok(ApiResponseFactory.Success(report, "Lấy chi tiết báo cáo Hermes thành công."));
+  }
+
+
+
+  /// <summary>Download a human-readable Hermes report as PDF.</summary>
+  [Authorize(Policy = "RequireAdminRole")]
+  [HttpGet("reports/{id:guid}/pdf")]
+  public async Task<IActionResult> DownloadReportPdf(Guid id, CancellationToken cancellationToken)
+  {
+    var report = await hermesAgentService.GetReportAsync(id, cancellationToken);
+    if (report is null)
+    {
+      return NotFound(ApiResponseFactory.Failure("Không tìm thấy báo cáo Hermes.", "not_found", "Báo cáo không tồn tại."));
+    }
+
+    var pdf = CreateReportPdf(report).GeneratePdf();
+    var filename = $"bao-cao-hermes-{id:N}.pdf";
+    return File(pdf, "application/pdf", filename);
   }
 
   /// <summary>List Hermes outbox events.</summary>
@@ -335,6 +357,93 @@ public sealed class AdminHermesController(
     if (request.CorrelationId?.Length > 128) return "CorrelationId quá dài.";
     return null;
   }
+
+
+
+  private static IDocument CreateReportPdf(HermesReportResponse report)
+  {
+    var summary = CleanReportSummary(report.Summary);
+    var severity = ReportSeverityLabel(report.Severity);
+    var status = ReportStatusLabel(report.Status);
+
+    return Document.Create(container =>
+    {
+      container.Page(page =>
+      {
+        page.Size(PageSizes.A4);
+        page.Margin(1.6f, Unit.Centimetre);
+        page.PageColor(Colors.White);
+        page.DefaultTextStyle(text => text.FontSize(10.5f).FontColor(Colors.Grey.Darken3));
+
+        page.Header().Column(column =>
+        {
+          column.Spacing(6);
+          column.Item().Text("Áo Dài Nhà Uyên · Báo cáo Hermes")
+            .FontSize(11).SemiBold().FontColor(Colors.Grey.Darken1);
+          column.Item().Text(report.Title)
+            .FontSize(22).Bold().FontColor(Colors.Grey.Darken4);
+          column.Item().Row(row =>
+          {
+            row.RelativeItem().Text($"Ngày tạo: {report.CreatedAt:dd/MM/yyyy HH:mm}");
+            row.RelativeItem().AlignRight().Text($"Mức độ: {severity} · Trạng thái: {status}");
+          });
+          column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+        });
+
+        page.Content().PaddingVertical(18).Column(column =>
+        {
+          column.Spacing(12);
+          column.Item().Background(Colors.Grey.Lighten5).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(12).Column(box =>
+          {
+            box.Spacing(4);
+            box.Item().Text("Tóm tắt báo cáo").FontSize(13).Bold().FontColor(Colors.Grey.Darken4);
+            box.Item().Text(summary.Length > 0 ? summary : "Báo cáo chưa có nội dung tóm tắt.")
+              .LineHeight(1.35f);
+          });
+
+          column.Item().Text("Ghi chú").FontSize(13).Bold().FontColor(Colors.Grey.Darken4);
+          column.Item().Text("Bản PDF này chỉ chứa nội dung nghiệp vụ đã làm sạch. Payload JSON, mã gọi API, correlation ID và dữ liệu kỹ thuật nội bộ không được đưa vào báo cáo tải xuống.")
+            .FontColor(Colors.Grey.Darken1).Italic();
+        });
+
+        page.Footer().AlignCenter().Text(text =>
+        {
+          text.Span("Trang ");
+          text.CurrentPageNumber();
+          text.Span(" / ");
+          text.TotalPages();
+        });
+      });
+    });
+  }
+
+  private static string CleanReportSummary(string? summary)
+  {
+    if (string.IsNullOrWhiteSpace(summary)) return string.Empty;
+
+    var cleaned = Regex.Replace(summary, @"```[a-zA-Z0-9_-]*\s*[\s\S]*?```", string.Empty);
+    cleaned = Regex.Replace(cleaned, @"^#{1,4}\s*API\s*đề\s*xuất\s*:?\s*$", string.Empty, RegexOptions.IgnoreCase | RegexOptions.Multiline);
+    cleaned = Regex.Replace(cleaned, @"`([^`]+)`", "$1");
+    cleaned = Regex.Replace(cleaned, @"\[([^\]]+)\]\([^\)]+\)", "$1");
+    cleaned = Regex.Replace(cleaned, @"^#{1,6}\s*", string.Empty, RegexOptions.Multiline);
+    cleaned = Regex.Replace(cleaned, @"\n{3,}", "\n\n");
+    return cleaned.Trim();
+  }
+
+  private static string ReportSeverityLabel(string severity) => severity.ToLowerInvariant() switch
+  {
+    "critical" => "Khẩn cấp",
+    "high" => "Cao",
+    "warning" => "Cần chú ý",
+    _ => "Thông tin"
+  };
+
+  private static string ReportStatusLabel(string status) => status.ToLowerInvariant() switch
+  {
+    "closed" => "Đã xử lý",
+    "resolved" => "Đã giải quyết",
+    _ => "Đang mở"
+  };
 
   private string GetPublicBaseUrl()
   {
