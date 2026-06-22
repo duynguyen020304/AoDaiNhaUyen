@@ -52,6 +52,26 @@ public sealed partial class HermesFeedService(AppDbContext dbContext) : IHermesF
       .OrderBy(x => x.StartedAt)
       .ToListAsync(cancellationToken);
 
+    // Batch runs carry a batch-id ConversationId (not an event id), so the run query
+    // above can't find them. They're reachable only through the per-event batch_member
+    // trace steps — load them here and refresh runIds before the reports query so the
+    // single comprehensive batch report attaches to every covered event below.
+    var traceRunIds = traces
+      .Where(x => x.RunId.HasValue)
+      .Select(x => x.RunId!.Value)
+      .Except(runIds)
+      .Distinct()
+      .ToArray();
+    if (traceRunIds.Length > 0)
+    {
+      var batchRuns = await dbContext.HermesRuns.AsNoTracking()
+        .Where(x => traceRunIds.Contains(x.Id))
+        .OrderBy(x => x.StartedAt)
+        .ToListAsync(cancellationToken);
+      runs.AddRange(batchRuns);
+      runIds = runs.Select(x => x.Id).ToArray();
+    }
+
     var reports = await dbContext.HermesReports.AsNoTracking()
       .Where(x => (x.RunId != null && runIds.Contains(x.RunId.Value)) || (x.CorrelationId != null && (correlationIds.Contains(x.CorrelationId) || conversationIds.Contains(x.CorrelationId))))
       .OrderBy(x => x.CreatedAt)

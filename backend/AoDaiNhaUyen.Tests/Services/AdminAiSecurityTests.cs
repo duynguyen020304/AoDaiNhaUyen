@@ -4,6 +4,7 @@ using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.DTOs.BlogPost;
+using AoDaiNhaUyen.Application.DTOs.Facebook;
 
 using AoDaiNhaUyen.Application.DTOs.Dashboard;
 using AoDaiNhaUyen.Application.DTOs.Order;
@@ -40,6 +41,21 @@ public sealed class AdminAiSecurityTests
       message.Content.Contains("TRUSTED_APP_CONTEXT_BEGIN", StringComparison.Ordinal) &&
       message.Content.Contains("checkout_completed", StringComparison.Ordinal) &&
       message.Content.Contains("TRUSTED_APP_CONTEXT_END", StringComparison.Ordinal));
+  }
+
+  [Fact]
+  public async Task StreamChatAsync_DoesNotInjectShopEventContext_ForBareAcknowledgment()
+  {
+    var llm = new ScriptedLlmProvider(new LlmChunk("text", "done"));
+    var service = CreateService(
+      llm,
+      eventContext: new FakeAdminShopEventContextService("NGỮ CẢNH SỰ KIỆN LIVE CỬA HÀNG: checkout_completed Order/AD-TEST"));
+
+    await service.StreamChatAsync(new AdminAiChatRequest("ok", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    var firstHistory = Assert.Single(llm.HistorySnapshots);
+    Assert.DoesNotContain(firstHistory, message =>
+      message.Content.Contains("TRUSTED_APP_CONTEXT_BEGIN", StringComparison.Ordinal));
   }
 
   [Fact]
@@ -451,7 +467,8 @@ public sealed class AdminAiSecurityTests
       new ConversationStore(),
       new FakeAdminChatPersistence(),
       eventContext ?? new FakeAdminShopEventContextService(),
-      CreateInMemoryDbContext());
+      CreateInMemoryDbContext(),
+      new FakeFacebookService());
   }
 
   /// <summary>In-memory AppDbContext for the agent (count_by_created_range uses it).
@@ -641,6 +658,39 @@ public sealed class AdminAiSecurityTests
     public Task<string> BuildLlmsTextAsync(string siteBaseUrl, CancellationToken cancellationToken = default) => Task.FromResult(string.Empty);
 
     private static BlogPostDto BlogPost(Guid id, string title, string slug, BlogPostStatus status) => new(id, title, slug, string.Empty, null, null, null, BlogPostTemplate.StandardArticle, [], [], null, null, null, null, null, null, null, null, status, null, null, null, null, DateTime.UtcNow, DateTime.UtcNow);
+  }
+
+  private sealed class FakeFacebookService : IFacebookService
+  {
+    public Task<IReadOnlyList<FacebookConnectionDto>> GetConnectionsAsync(CancellationToken ct = default)
+      => Task.FromResult<IReadOnlyList<FacebookConnectionDto>>(new List<FacebookConnectionDto>());
+    public Task<FacebookPostListDto> GetPostsAsync(string pageId, string? cursor = null, int limit = 25, CancellationToken ct = default)
+      => Task.FromResult(new FacebookPostListDto(new List<FacebookPostDto>(), null, null, null));
+    public Task<FacebookPostCommentListDto> GetPostCommentsAsync(string pageId, string postId, string? after = null, int limit = 25, CancellationToken ct = default)
+      => Task.FromResult(new FacebookPostCommentListDto(new List<FacebookCommentDto>(), null, null, null));
+    public Task<FacebookCommentActionResultDto> ReplyToCommentAsync(string pageId, string commentId, ReplyFacebookCommentRequest request, CancellationToken ct = default)
+      => Task.FromResult(new FacebookCommentActionResultDto(true, "0", "OK"));
+
+    // Unused by the admin agent — not exercised in these tests.
+    public Task<FacebookConnectionDto> ConnectPageAsync(ConnectFacebookPageRequest request, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookOAuthUrlDto> GetOAuthUrlAsync(string redirectUri, string state, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<IReadOnlyList<FacebookOAuthPageDto>> GetOAuthPagesAsync(FacebookOAuthPagesRequest request, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookConnectionDto> ConnectOAuthPageAsync(ConnectFacebookOAuthPageRequest request, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task DisconnectPageAsync(string pageId, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookPageInfoDto> GetPageInfoAsync(string pageId, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookPublishResultDto> PublishPostAsync(string pageId, CreateFacebookPostRequest request, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookPublishResultDto> PublishPhotoAsync(string pageId, System.IO.Stream imageStream, string fileName, string contentType, string? caption, DateTimeOffset? scheduledPublishTime = null, bool published = true, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookPublishResultDto> PublishVideoAsync(string pageId, System.IO.Stream videoStream, string fileName, string contentType, string? description, DateTimeOffset? scheduledPublishTime = null, bool published = true, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookPostDto> GetPostAsync(string postId, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookPostDto> UpdatePostAsync(string postId, UpdateFacebookPostRequest request, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookDeleteResultDto> DeletePostAsync(string postId, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookCommentActionResultDto> CommentOnPostAsync(string pageId, string postId, CreateFacebookCommentRequest request, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookCommentActionResultDto> ToggleCommentHiddenAsync(string pageId, string commentId, ToggleFacebookCommentHiddenRequest request, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookDeleteResultDto> DeleteCommentAsync(string pageId, string commentId, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookConversationListDto> GetConversationsAsync(string pageId, string? after = null, int limit = 25, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookMessageListDto> GetConversationMessagesAsync(string pageId, string conversationId, string? before = null, int limit = 50, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookMessageSendResultDto> SendMessageAsync(string pageId, string conversationId, SendFacebookMessageRequest request, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<MarkConversationReadResultDto> MarkConversationReadAsync(string pageId, string conversationId, CancellationToken ct = default) => throw new NotImplementedException();
   }
 
   private sealed class FakeMarketingCampaignService : IAdminMarketingCampaignService

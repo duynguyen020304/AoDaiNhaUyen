@@ -12,6 +12,28 @@ public sealed class HermesOutboxOptions
   public int MaxAttempts { get; init; } = 5;
   public int LockTimeoutMinutes { get; init; } = 10;
   public int MaxPayloadBytes { get; init; } = 0;
+
+  /// <summary>
+  /// When true, events claimed in one poll are sent to Hermes in a single batch
+  /// HTTP call producing ONE comprehensive report covering all of them, instead
+  /// of one call + one report per event. On any batch failure the worker falls
+  /// back to per-event processing so retry/backoff/dead-letter guarantees stay
+  /// intact. Default <c>false</c> — enable after testing.
+  /// </summary>
+  public bool BatchProcessingEnabled { get; init; }
+
+  /// <summary>
+  /// Maximum number of events in a single batch HTTP call. The claimed set is
+  /// chunked if it exceeds this. Default 10.
+  /// </summary>
+  public int MaxBatchEvents { get; init; } = 10;
+
+  /// <summary>
+  /// Maximum total payload bytes (sum of every event's PayloadJson) for a single
+  /// batch. Prevents LLM-context blowup. <c>0</c> = no limit. Default 500000.
+  /// </summary>
+  public int MaxBatchPayloadBytes { get; init; } = 500_000;
+
   public decimal HighValueOrderThreshold { get; init; } = 5_000_000m;
   public int LowStockThreshold { get; init; } = 3;
   public string EventPath { get; init; } = "/v1/responses";
