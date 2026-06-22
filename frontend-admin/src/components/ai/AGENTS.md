@@ -13,7 +13,7 @@ Admin AI chat UI components. Together they form the floating sidebar chat panel 
 | `FullChatArea.tsx` | Full-page chat layout used by `AiChatPage` (as opposed to the sidebar overlay) |
 | `MessageBubble.tsx` | Renders a single `AiMessage`: user/assistant bubbles, tool call disclosure, pending action display |
 | `ChatInput.tsx` | Text input + send button; handles Enter-to-send |
-| `ChatModeSelector.tsx` | Toggle between `'generic'` and `'hermes'` chat modes; calls `adminAiStore.setChatMode()` |
+| `ChatModeSelector.tsx` | Read-only chat mode badge; no UI selector. Store still supports `'generic'` and `'hermes'`. |
 | `ChatHistorySidebar.tsx` | Conversation list panel; load, delete, new conversation actions |
 | `ConfirmCard.tsx` | Inline approve/reject card rendered inside a `MessageBubble` for pending AI tool actions |
 | `EmptyChat.tsx` | Placeholder shown when no messages exist |
@@ -24,7 +24,7 @@ Admin AI chat UI components. Together they form the floating sidebar chat panel 
 - SSE streaming state lives entirely in `adminAiStore.sendMessage()`; components only display derived state.
 - `MessageBubble` must handle all `AiMessage` shapes: plain text, tool calls (with/without results), and pending confirmation actions.
 - `ConfirmCard` calls `adminAiStore.confirmAction(actionId, approved)` then `continueAfterConfirm(conversationId)`.
-- Hermes mode adds a status indicator in the header; `setChatMode('hermes')` triggers `fetchHermesStatus()` automatically.
+- Generic chat is default. Do not reintroduce mode selection UI unless requested; Hermes logic remains in the store/routes.
 
 ### Common Patterns
 - Scroll to bottom on new messages: `useEffect` on `messages` with a `scrollRef.current.scrollTop = scrollRef.current.scrollHeight`.

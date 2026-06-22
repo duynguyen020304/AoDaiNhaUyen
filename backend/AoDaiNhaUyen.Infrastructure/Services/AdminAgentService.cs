@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.DTOs.BlogPost;
-using AoDaiNhaUyen.Application.DTOs.Collections;
 using AoDaiNhaUyen.Application.DTOs.Facebook;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Common;
@@ -20,7 +19,6 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly ISafetyGate _safety;
   private readonly IAdminProductService _products;
   private readonly IAdminCategoryService _categories;
-  private readonly IAdminCollectionService _collections;
   private readonly IAdminUserService _users;
   private readonly IAdminRoleService _roles;
   private readonly IAdminDashboardService _dashboard;
@@ -65,7 +63,6 @@ public sealed class AdminAgentService : IAdminAgentService
     ISafetyGate safety,
     IAdminProductService products,
     IAdminCategoryService categories,
-    IAdminCollectionService collections,
     IAdminUserService users,
     IAdminRoleService roles,
     IAdminDashboardService dashboard,
@@ -95,7 +92,6 @@ public sealed class AdminAgentService : IAdminAgentService
     _safety = safety;
     _products = products;
     _categories = categories;
-    _collections = collections;
     _users = users;
     _roles = roles;
     _dashboard = dashboard;
@@ -172,9 +168,9 @@ public sealed class AdminAgentService : IAdminAgentService
 
     // Generic time-range counter for ANY entity type. Mọi dữ liệu admin đều có CreatedAt
     // nên tool này đáp ứng "all data in any timeline". Trả số lượng + breakdown theo ngày.
-    T("count_by_created_range", "Đếm số bản ghi MỌI loại dữ liệu admin (products, users, reviews, promos, subscribers, email_jobs, media, blog_posts, collections, comments, orders) được TẠO trong khoảng ngày cụ thể. Dùng khi admin hỏi 'có bao nhiêu X được tạo trong khoảng/ngày Y' — ví dụ 'có bao nhiêu user mới tuần qua', 'tháng 6 có tạo bao nhiêu sản phẩm', 'đã có bao nhiêu đánh giá hôm qua'. Trả về total + breakdown theo ngày + sample (tên/mã hiển thị).",
+    T("count_by_created_range", "Đếm số bản ghi MỌI loại dữ liệu admin (products, users, reviews, promos, subscribers, email_jobs, media, blog_posts, comments, orders) được TẠO trong khoảng ngày cụ thể. Dùng khi admin hỏi 'có bao nhiêu X được tạo trong khoảng/ngày Y' — ví dụ 'có bao nhiêu user mới tuần qua', 'tháng 6 có tạo bao nhiêu sản phẩm', 'đã có bao nhiêu đánh giá hôm qua'. Trả về total + breakdown theo ngày + sample (tên/mã hiển thị).",
       P(
-        ("entity", O("string", "Loại dữ liệu: products, users, reviews, promos, subscribers, email_jobs, media, blog_posts, collections, comments, orders — bắt buộc")),
+        ("entity", O("string", "Loại dữ liệu: products, users, reviews, promos, subscribers, email_jobs, media, blog_posts, comments, orders — bắt buộc")),
         ("startDate", O("string", "Ngày bắt đầu ISO yyyy-MM-dd — bắt buộc")),
         ("endDate", O("string", "Ngày kết thúc ISO yyyy-MM-dd — bắt buộc")),
         ("includeDeleted", O("boolean", "Có bao gồm bản ghi đã xóa mềm. Mặc định: false")),
@@ -313,48 +309,6 @@ public sealed class AdminAgentService : IAdminAgentService
 
     T("delete_category", "Xóa mềm một danh mục.",
       P(("id", O("string", "ID danh mục (GUID)")))),
-
-    // Collections / Lookbook
-    T("list_collections", "Liệt kê collections/lookbook có phân trang. Dùng để tìm collectionId trước khi sửa/xóa/thêm sản phẩm.",
-      P(
-        ("page", O("integer", "Trang hiện tại, 1-based, mặc định 1")),
-        ("pageSize", O("integer", "Số collection mỗi trang, mặc định 20")),
-        ("search", O("string", "Từ khóa tìm theo tên/slug (tùy chọn)")),
-        ("includeDeleted", O("boolean", "Bao gồm collection đã xóa mềm")))),
-    T("get_collection", "Xem chi tiết một collection/lookbook theo ID.",
-      P(("id", O("string", "ID collection (GUID) — bắt buộc")))),
-    T("create_collection", "Tạo collection/lookbook mới.",
-      P(
-        ("name", O("string", "Tên collection — bắt buộc")),
-        ("slug", O("string", "Slug (tùy chọn, tự tạo nếu trống)")),
-        ("description", O("string", "Mô tả (tùy chọn)")),
-        ("coverImageUrl", O("string", "Ảnh bìa (tùy chọn)")),
-        ("isPublished", O("boolean", "Xuất bản ngay hay không")),
-        ("isFeatured", O("boolean", "Đánh dấu nổi bật")),
-        ("sortOrder", O("integer", "Thứ tự sắp xếp")))),
-    T("update_collection", "Cập nhật collection/lookbook. Giữ nguyên trường không gửi.",
-      P(
-        ("id", O("string", "ID collection (GUID) — bắt buộc")),
-        ("name", O("string", "Tên mới (tùy chọn)")),
-        ("slug", O("string", "Slug mới (tùy chọn)")),
-        ("description", O("string", "Mô tả mới (tùy chọn)")),
-        ("coverImageUrl", O("string", "Ảnh bìa mới (tùy chọn)")),
-        ("isPublished", O("boolean", "Xuất bản/ẩn (tùy chọn)")),
-        ("isFeatured", O("boolean", "Nổi bật (tùy chọn)")),
-        ("sortOrder", O("integer", "Thứ tự mới (tùy chọn)")))),
-    T("delete_collection", "Xóa mềm collection/lookbook.",
-      P(("id", O("string", "ID collection (GUID) — bắt buộc")))),
-    T("restore_collection", "Khôi phục collection/lookbook đã xóa mềm.",
-      P(("id", O("string", "ID collection (GUID) — bắt buộc")))),
-    T("add_product_to_collection", "Thêm sản phẩm vào collection/lookbook.",
-      P(
-        ("id", O("string", "ID collection (GUID) — bắt buộc")),
-        ("productId", O("string", "ID sản phẩm (GUID) — bắt buộc")),
-        ("sortOrder", O("integer", "Thứ tự sản phẩm trong collection")))),
-    T("remove_product_from_collection", "Xóa sản phẩm khỏi collection/lookbook.",
-      P(
-        ("id", O("string", "ID collection (GUID) — bắt buộc")),
-        ("productId", O("string", "ID sản phẩm (GUID) — bắt buộc")))),
 
     // Users
     T("list_users", "Liệt kê người dùng có phân trang. Dùng search theo tên/email/sđt khi admin hỏi người dùng cụ thể; page 1 không đại diện toàn bộ dữ liệu.",
@@ -1290,16 +1244,6 @@ public sealed class AdminAgentService : IAdminAgentService
         "update_category" => await UpdateCategory(args, ct),
         "delete_category" => await DeleteCategory(RequiredGuid(args, "id"), ct),
 
-        // Collections
-        "list_collections" => await ListCollections(args, ct),
-        "get_collection" => await GetCollection(RequiredGuid(args, "id"), ct),
-        "create_collection" => await CreateCollection(args, ct),
-        "update_collection" => await UpdateCollection(args, ct),
-        "delete_collection" => await DeleteCollection(RequiredGuid(args, "id"), ct),
-        "restore_collection" => await RestoreCollection(RequiredGuid(args, "id"), ct),
-        "add_product_to_collection" => await AddProductToCollection(args, ct),
-        "remove_product_from_collection" => await RemoveProductFromCollection(args, ct),
-
         // Users
         "list_users" => await ListUsers(
           ClampInt(GetIntArg(args, "page", 1), 1, 10000), ClampInt(GetIntArg(args, "pageSize", 20), 1, 50),
@@ -1517,8 +1461,7 @@ public sealed class AdminAgentService : IAdminAgentService
       "get_subscriber" or "unsubscribe_subscriber" or "delete_subscriber" or
       "get_email_job" or "retry_email_job" or "cancel_email_job" or "delete_email_job" or
       "get_media" or "delete_media" or
-      "update_order_address" or "update_order_items" or "delete_order" or "restore_order" or
-      "get_collection" or "update_collection" or "delete_collection" or "restore_collection" or "add_product_to_collection" or "remove_product_from_collection";
+      "update_order_address" or "update_order_items" or "delete_order" or "restore_order";
 
     if (!requiresExplicitId) return null;
 
@@ -1916,11 +1859,10 @@ public sealed class AdminAgentService : IAdminAgentService
       "email_jobs" => await CountAndSampleEmailJobs(start, endExclusive, includeDeleted, limit, ct),
       "media" => await CountAndSampleMedia(start, endExclusive, includeDeleted, limit, ct),
       "blog_posts" => await CountAndSampleBlogPosts(start, endExclusive, includeDeleted, limit, ct),
-      "collections" => await CountAndSampleCollections(start, endExclusive, includeDeleted, limit, ct),
       "comments" => await CountAndSampleComments(start, endExclusive, includeDeleted, limit, ct),
       "orders" => await CountAndSampleOrders(start, endExclusive, includeDeleted, limit, ct),
       _ => throw new ToolValidationException(
-        $"entity '{entityKey}' không hợp lệ. Cho phép: products, users, reviews, promos, subscribers, email_jobs, media, blog_posts, collections, comments, orders.")
+        $"entity '{entityKey}' không hợp lệ. Cho phép: products, users, reviews, promos, subscribers, email_jobs, media, blog_posts, comments, orders.")
     };
 
     var rangeLabel = start.Date == (endExclusive.Date.AddDays(-1))
@@ -2040,19 +1982,6 @@ public sealed class AdminAgentService : IAdminAgentService
     var samples = await q.Where(b => b.CreatedAt >= start && b.CreatedAt < endExclusive)
       .OrderByDescending(b => b.CreatedAt).Take(limit)
       .Select(b => new { title = b.Title, status = b.Status.ToString(), createdAt = b.CreatedAt })
-      .ToListAsync(ct);
-    return new CountResult(total, breakdown, samples);
-  }
-
-  private async Task<CountResult> CountAndSampleCollections(DateTime start, DateTime endExclusive, bool includeDeleted, int limit, CancellationToken ct)
-  {
-    var q = _db.Collections.AsNoTracking();
-    if (!includeDeleted) q = q.Where(c => !c.IsDeleted);
-    var total = await q.CountAsync(c => c.CreatedAt >= start && c.CreatedAt < endExclusive, ct);
-    var breakdown = await DailyBreakdown(q, start, endExclusive, ct);
-    var samples = await q.Where(c => c.CreatedAt >= start && c.CreatedAt < endExclusive)
-      .OrderByDescending(c => c.CreatedAt).Take(limit)
-      .Select(c => new { name = c.Name, isPublished = c.IsPublished, createdAt = c.CreatedAt })
       .ToListAsync(ct);
     return new CountResult(total, breakdown, samples);
   }
@@ -2391,85 +2320,6 @@ public sealed class AdminAgentService : IAdminAgentService
   {
     var ok = await _categories.DeleteAsync(id, ct);
     return ok ? "✅ Đã xóa danh mục." : "❌ Không tìm thấy danh mục.";
-  }
-
-  // --- Collection tools ---
-
-  private async Task<string> ListCollections(JsonElement args, CancellationToken ct)
-  {
-    var page = ClampInt(GetIntArg(args, "page", 1), 1, 10000);
-    var pageSize = ClampInt(GetIntArg(args, "pageSize", 20), 1, 50);
-    var search = GetStrArg(args, "search");
-    var includeDeleted = GetBoolArg(args, "includeDeleted", false);
-    var result = await _collections.GetListAsync(search, includeDeleted, page, pageSize, ct);
-    return SerializePaginatedToolResult(result.Items, result.TotalCount, result.Page, result.PageSize, new { search, includeDeleted }, successMessage: $"Tìm thấy {result.TotalCount} collections.");
-  }
-
-  private async Task<string> GetCollection(Guid id, CancellationToken ct)
-  {
-    var collection = await _collections.GetByIdAsync(id, true, ct);
-    return collection is null
-      ? "❌ Không tìm thấy collection."
-      : SerializeToolResult(collection, message: $"Collection '{collection.Name}' có {collection.Products.Count} sản phẩm.");
-  }
-
-  private async Task<string> CreateCollection(JsonElement args, CancellationToken ct)
-  {
-    var request = new CreateCollectionRequest(
-      RequiredString(args, "name", 200),
-      GetOptionalString(args, "slug", 220),
-      GetOptionalString(args, "description", 2000),
-      GetOptionalString(args, "coverImageUrl", 1000),
-      GetBoolArg(args, "isPublished", false),
-      GetBoolArg(args, "isFeatured", false),
-      ClampInt(GetIntArg(args, "sortOrder", 0), -100000, 100000));
-    var collection = await _collections.CreateAsync(request, ct);
-    return $"✅ Đã tạo collection '{collection.Name}' (ID: {collection.Id}, slug: {collection.Slug}).";
-  }
-
-  private async Task<string> UpdateCollection(JsonElement args, CancellationToken ct)
-  {
-    var id = RequiredGuid(args, "id");
-    var existing = await _collections.GetByIdAsync(id, true, ct);
-    if (existing is null || existing.IsDeleted) return "❌ Không tìm thấy collection.";
-    var request = new UpdateCollectionRequest(
-      GetOptionalString(args, "name", 200) ?? existing.Name,
-      GetOptionalString(args, "slug", 220) ?? existing.Slug,
-      args.TryGetProperty("description", out _) ? GetOptionalString(args, "description", 2000) : existing.Description,
-      args.TryGetProperty("coverImageUrl", out _) ? GetOptionalString(args, "coverImageUrl", 1000) : existing.CoverImageUrl,
-      args.TryGetProperty("isPublished", out _) ? GetBoolArg(args, "isPublished", existing.IsPublished) : existing.IsPublished,
-      args.TryGetProperty("isFeatured", out _) ? GetBoolArg(args, "isFeatured", existing.IsFeatured) : existing.IsFeatured,
-      args.TryGetProperty("sortOrder", out _) ? ClampInt(GetIntArg(args, "sortOrder", existing.SortOrder), -100000, 100000) : existing.SortOrder);
-    var updated = await _collections.UpdateAsync(id, request, ct);
-    return updated is null ? "❌ Không tìm thấy collection." : $"✅ Đã cập nhật collection '{updated.Name}'.";
-  }
-
-  private async Task<string> DeleteCollection(Guid id, CancellationToken ct)
-  {
-    var ok = await _collections.DeleteAsync(id, ct);
-    return ok ? "✅ Đã xóa mềm collection." : "❌ Không tìm thấy collection hoặc đã bị xóa.";
-  }
-
-  private async Task<string> RestoreCollection(Guid id, CancellationToken ct)
-  {
-    var ok = await _collections.RestoreAsync(id, ct);
-    return ok ? "✅ Đã khôi phục collection." : "❌ Không tìm thấy collection đã xóa.";
-  }
-
-  private async Task<string> AddProductToCollection(JsonElement args, CancellationToken ct)
-  {
-    var id = RequiredGuid(args, "id");
-    var productId = RequiredGuid(args, "productId");
-    var result = await _collections.AddProductAsync(id, new AddProductToCollectionRequest(productId, GetIntArg(args, "sortOrder", 0)), ct);
-    return result is null ? "❌ Không tìm thấy collection." : $"✅ Đã thêm sản phẩm vào collection '{result.Name}'.";
-  }
-
-  private async Task<string> RemoveProductFromCollection(JsonElement args, CancellationToken ct)
-  {
-    var id = RequiredGuid(args, "id");
-    var productId = RequiredGuid(args, "productId");
-    var result = await _collections.RemoveProductAsync(id, productId, ct);
-    return result is null ? "❌ Không tìm thấy liên kết sản phẩm trong collection." : $"✅ Đã xóa sản phẩm khỏi collection '{result.Name}'.";
   }
 
   private async Task<string> ListUsers(int page, int pageSize, string? search, CancellationToken ct)

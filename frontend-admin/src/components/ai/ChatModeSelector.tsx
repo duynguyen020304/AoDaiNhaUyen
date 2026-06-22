@@ -1,11 +1,5 @@
 import { Bot, RadioTower } from 'lucide-react'
 import { useAdminAiStore } from '@/stores/adminAiStore'
-import type { AdminChatMode } from '@/types/ai'
-
-const MODE_OPTIONS: Array<{ value: AdminChatMode; label: string }> = [
-  { value: 'generic', label: 'Generic Chat' },
-  { value: 'hermes', label: 'Hermes Agent' },
-]
 
 function statusLabel(status?: string) {
   if (status === 'running') return 'Running'
@@ -21,22 +15,15 @@ function statusClass(status?: string) {
 }
 
 export function ChatModeSelector() {
-  const { chatMode, setChatMode, hermesStatus } = useAdminAiStore()
+  const { chatMode, hermesStatus } = useAdminAiStore()
   const isHermes = chatMode === 'hermes'
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" aria-label="Chế độ chat AI">
       {isHermes ? <RadioTower className="size-4 text-wine" /> : <Bot className="size-4 text-wine" />}
-      <select
-        value={chatMode}
-        onChange={(event) => setChatMode(event.target.value as AdminChatMode)}
-        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm focus:border-wine focus:outline-none focus:ring-2 focus:ring-wine/20"
-        aria-label="Chọn chế độ chat AI"
-      >
-        {MODE_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>{option.label}</option>
-        ))}
-      </select>
+      <span className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm">
+        {isHermes ? 'Hermes Agent' : 'Generic Chat'}
+      </span>
       {isHermes && (
         <span className={`rounded-full border px-2 py-1 text-xs font-medium ${statusClass(hermesStatus?.status)}`}>
           {statusLabel(hermesStatus?.status)}

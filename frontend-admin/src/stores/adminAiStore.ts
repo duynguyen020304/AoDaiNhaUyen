@@ -178,6 +178,7 @@ interface AdminAiState {
   // Chat history
   conversations: SavedConversation[]
   activeConversationId: string | null
+  suppressNextLoadConversationId: string | null
 
   toggle: () => void
   open: () => void
@@ -213,6 +214,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
   hermesStatus: null,
   conversations: loadConversations(),
   activeConversationId: null,
+  suppressNextLoadConversationId: null,
 
   toggle: () => set((s) => ({ isOpen: !s.isOpen })),
   open: () => set({ isOpen: true }),
@@ -683,6 +685,12 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
   },
 
   loadConversation: async (id: string) => {
+    const suppressId = get().suppressNextLoadConversationId
+    if (suppressId === id) {
+      set({ suppressNextLoadConversationId: null })
+      return
+    }
+
     try {
       const detail = await request<AdminConversationDetail>(`/api/admin/ai/conversations/${id}`)
       const convo = mapConversationDetail(detail)
@@ -695,6 +703,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
         activeConversationId: convo.id,
         conversationId: convo.conversationId ?? convo.id,
         pendingActions: [],
+        suppressNextLoadConversationId: null,
         lastError: null,
       })
     } catch (err) {
@@ -709,6 +718,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
         activeConversationId: id,
         conversationId: convo.conversationId ?? id,
         pendingActions: [],
+        suppressNextLoadConversationId: null,
         lastError: 'Đang hiển thị bản cache cục bộ.',
       })
     }
@@ -734,11 +744,15 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
   },
 
   newConversation: () => {
+    const { activeConversationId, conversationId } = get()
     set({
       messages: [],
       conversationId: null,
       pendingActions: [],
       activeConversationId: null,
+      suppressNextLoadConversationId: activeConversationId ?? conversationId,
+      lastError: null,
+      lastUserMessage: null,
     })
   },
 }))

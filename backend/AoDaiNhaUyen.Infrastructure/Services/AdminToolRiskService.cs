@@ -112,16 +112,6 @@ public sealed class AdminToolRiskService(
       new() { ToolName = "update_category", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Cập nhật danh mục", Category = "Categories" },
       new() { ToolName = "delete_category", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm danh mục", Category = "Categories" },
 
-      // Collections
-      new() { ToolName = "list_collections", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê collections/lookbook", Category = "Collections" },
-      new() { ToolName = "get_collection", RiskLevel = "Read", RequiresConfirmation = false, Description = "Chi tiết collection", Category = "Collections" },
-      new() { ToolName = "create_collection", RiskLevel = "Low", RequiresConfirmation = false, Description = "Tạo collection", Category = "Collections" },
-      new() { ToolName = "update_collection", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Cập nhật collection", Category = "Collections" },
-      new() { ToolName = "delete_collection", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm collection", Category = "Collections" },
-      new() { ToolName = "restore_collection", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Khôi phục collection", Category = "Collections" },
-      new() { ToolName = "add_product_to_collection", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Thêm sản phẩm vào collection", Category = "Collections" },
-      new() { ToolName = "remove_product_from_collection", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Xóa sản phẩm khỏi collection", Category = "Collections" },
-
       // Users
       new() { ToolName = "list_users", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê người dùng", Category = "Users" },
       new() { ToolName = "get_user", RiskLevel = "Read", RequiresConfirmation = false, Description = "Chi tiết người dùng", Category = "Users" },
