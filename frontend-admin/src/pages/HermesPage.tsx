@@ -76,10 +76,10 @@ export function HermesPage() {
 
       <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-gray-200 bg-white px-4 py-2" role="tablist" aria-label="Khu vực Hermes">
         <HermesTabButton active={activeTab === 'chat'} onClick={() => switchTab('chat')} icon={<MessageSquare className="size-4" />}>
-          Chat Hermes
+          Chat
         </HermesTabButton>
         <HermesTabButton active={activeTab === 'reports'} onClick={() => switchTab('reports')} icon={<FileText className="size-4" />}>
-          Báo cáo Hermes
+          Báo cáo
         </HermesTabButton>
         <HermesTabButton active={activeTab === 'live'} onClick={() => switchTab('live')} icon={<Radio className="size-4" />}>
           Live Monitor
