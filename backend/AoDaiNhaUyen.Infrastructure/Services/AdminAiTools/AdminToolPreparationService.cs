@@ -14,15 +14,6 @@ public sealed class AdminToolPreparationService(
   ISafetyGate safety,
   IOptions<AdminToolGateOptions> options) : IAdminToolPreparationService
 {
-  private static readonly HashSet<string> DefaultLlmGateTools = new(StringComparer.Ordinal)
-  {
-    "confirm_order", "start_processing_order", "ship_order", "complete_order", "cancel_order", "delete_order", "restore_order", "update_order_address", "update_order_items",
-    "update_user_status", "update_user_role", "update_user_profile", "delete_user", "restore_user", "create_role", "update_role", "delete_role",
-    "delete_product", "toggle_product_status", "update_product", "delete_variant", "update_variant", "update_variant_stock",
-    "send_marketing_campaign", "retry_email_job", "cancel_email_job", "delete_email_job", "update_promo_code", "toggle_promo_code", "delete_promo_code",
-    "upload_media", "delete_media"
-  };
-
   public async Task<ToolPreparationResult> PrepareAsync(string toolName, string draftArgsJson, IReadOnlyList<ToolDefinition> tools, IReadOnlyList<AdminLlmMessage> history, Guid adminUserId, CancellationToken ct = default)
   {
     if (!options.Value.EnableDeterministicGate)
@@ -76,10 +67,9 @@ public sealed class AdminToolPreparationService(
   private async Task<bool> ShouldRunLlmGateAsync(string toolName, CancellationToken ct)
   {
     if (!options.Value.EnableLlmGate) return false;
-    var configured = options.Value.LlmGateToolNames is { Length: > 0 }
-      ? options.Value.LlmGateToolNames.ToHashSet(StringComparer.Ordinal)
-      : DefaultLlmGateTools;
-    if (!configured.Contains(toolName)) return false;
+    if (options.Value.LlmGateToolNames is { Length: > 0 }
+      && !options.Value.LlmGateToolNames.Contains(toolName, StringComparer.Ordinal))
+      return false;
     return await safety.ClassifyAsync(toolName, ct) != RiskLevel.Read;
   }
 

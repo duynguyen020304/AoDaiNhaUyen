@@ -1,4 +1,4 @@
-export type DashboardPeriod = 7 | 30 | 90
+export type DashboardPeriod = 1 | 7 | 30 | 90
 
 export const queryKeys = {
   auth: {

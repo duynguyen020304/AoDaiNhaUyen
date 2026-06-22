@@ -88,29 +88,29 @@ function renderYAxes({ yAxisDefs, defaultFormat, hasDualAxis }: AxisProps) {
   if (yAxisDefs.length === 0) {
     return (
       <YAxis
+        width={68}
         tickFormatter={makeFormatter(defaultFormat)}
-        tick={AXIS_TICK_STYLE}
+        tick={{ ...AXIS_TICK_STYLE, fontSize: 11 }}
         axisLine={false}
         tickLine={false}
       />
     )
   }
-  return yAxisDefs.map((def, i) => (
-    <YAxis
-      key={def.id}
-      yAxisId={hasDualAxis ? def.id : undefined}
-      orientation={def.orientation ?? (i === 1 ? 'right' : 'left')}
-      tickFormatter={makeFormatter(def.formatValueAs ?? defaultFormat)}
-      tick={AXIS_TICK_STYLE}
-      axisLine={false}
-      tickLine={false}
-      label={
-        def.label
-          ? { value: def.label, angle: i === 1 ? 90 : -90, position: 'insideLeft', style: { fill: '#6a7282', fontSize: 11 } }
-          : undefined
-      }
-    />
-  ))
+  return yAxisDefs.map((def, i) => {
+    const orientation = def.orientation ?? (i === 1 ? 'right' : 'left')
+    return (
+      <YAxis
+        key={def.id}
+        yAxisId={hasDualAxis ? def.id : undefined}
+        orientation={orientation}
+        width={orientation === 'right' ? 46 : 68}
+        tickFormatter={makeFormatter(def.formatValueAs ?? defaultFormat)}
+        tick={{ ...AXIS_TICK_STYLE, fontSize: 11 }}
+        axisLine={false}
+        tickLine={false}
+      />
+    )
+  })
 }
 
 function renderReferenceLines(lines: ChartReferenceLine[] | undefined, hasDualAxis: boolean) {
@@ -201,22 +201,29 @@ function renderAreaDefs(series: ChartSpec['series'], palette: string[]) {
   )
 }
 
+interface CartesianLayout {
+  margin: { top: number; right: number; left: number; bottom: number }
+  xAxisHeight: number
+  xAxisTick: typeof AXIS_TICK_STYLE & { angle?: number; textAnchor?: 'start' | 'middle' | 'end' }
+}
+
 interface CartesianProps {
   spec: ChartSpec
   palette: string[]
   hasDualAxis: boolean
+  layout: CartesianLayout
 }
 
-function CartesianChart({ spec, palette, hasDualAxis }: CartesianProps) {
+function CartesianChart({ spec, palette, hasDualAxis, layout }: CartesianProps) {
   const format = spec.formatValueAs
 
   // Composed chart: render each series by its own type.
   if (spec.kind === 'composed') {
     return (
-      <ComposedChart data={spec.data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+      <ComposedChart data={spec.data} margin={layout.margin}>
         {renderAreaDefs(spec.series, palette)}
         <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-        <XAxis dataKey={spec.xAxisKey} tick={AXIS_TICK_STYLE} axisLine={false} tickLine={false} />
+        <XAxis dataKey={spec.xAxisKey} tick={layout.xAxisTick} height={layout.xAxisHeight} interval="preserveStartEnd" axisLine={false} tickLine={false} />
         {renderYAxes({ yAxisDefs: spec.yAxis ?? [], defaultFormat: format, hasDualAxis })}
         <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [makeFormatter(format)(Number(v)), '']} />
         {spec.legend && <Legend wrapperStyle={{ fontSize: 11, marginTop: 8 }} />}
@@ -242,9 +249,9 @@ function CartesianChart({ spec, palette, hasDualAxis }: CartesianProps) {
 
   if (spec.kind === 'bar' || spec.kind === 'stacked') {
     return (
-      <BarChart data={spec.data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+      <BarChart data={spec.data} margin={layout.margin}>
         <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-        <XAxis dataKey={spec.xAxisKey} tick={AXIS_TICK_STYLE} axisLine={false} tickLine={false} />
+        <XAxis dataKey={spec.xAxisKey} tick={layout.xAxisTick} height={layout.xAxisHeight} interval="preserveStartEnd" axisLine={false} tickLine={false} />
         {renderYAxes({ yAxisDefs: spec.yAxis ?? [], defaultFormat: format, hasDualAxis })}
         <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [makeFormatter(format)(Number(v)), '']} />
         {spec.legend && <Legend wrapperStyle={{ fontSize: 11, marginTop: 8 }} />}
@@ -256,10 +263,10 @@ function CartesianChart({ spec, palette, hasDualAxis }: CartesianProps) {
 
   if (spec.kind === 'area') {
     return (
-      <AreaChart data={spec.data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+      <AreaChart data={spec.data} margin={layout.margin}>
         {renderAreaDefs(spec.series, palette)}
         <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-        <XAxis dataKey={spec.xAxisKey} tick={AXIS_TICK_STYLE} axisLine={false} tickLine={false} />
+        <XAxis dataKey={spec.xAxisKey} tick={layout.xAxisTick} height={layout.xAxisHeight} interval="preserveStartEnd" axisLine={false} tickLine={false} />
         {renderYAxes({ yAxisDefs: spec.yAxis ?? [], defaultFormat: format, hasDualAxis })}
         <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [makeFormatter(format)(Number(v)), '']} />
         {spec.legend && <Legend wrapperStyle={{ fontSize: 11, marginTop: 8 }} />}
@@ -271,9 +278,9 @@ function CartesianChart({ spec, palette, hasDualAxis }: CartesianProps) {
 
   // Default: line chart
   return (
-    <LineChart data={spec.data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+    <LineChart data={spec.data} margin={layout.margin}>
       <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
-      <XAxis dataKey={spec.xAxisKey} tick={AXIS_TICK_STYLE} axisLine={false} tickLine={false} />
+      <XAxis dataKey={spec.xAxisKey} tick={layout.xAxisTick} height={layout.xAxisHeight} interval="preserveStartEnd" axisLine={false} tickLine={false} />
       {renderYAxes({ yAxisDefs: spec.yAxis ?? [], defaultFormat: format, hasDualAxis })}
       <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [makeFormatter(format)(Number(v)), '']} />
       {spec.legend && <Legend wrapperStyle={{ fontSize: 11, marginTop: 8 }} />}
@@ -323,21 +330,22 @@ function PieLikeChart({ spec, palette }: { spec: ChartSpec; palette: string[] })
   )
 }
 
-function ScatterLikeChart({ spec, palette, hasDualAxis }: CartesianProps) {
+function ScatterLikeChart({ spec, palette, hasDualAxis, layout }: CartesianProps) {
   const format = spec.formatValueAs
   // X field: prefer xAxisKey (consistent with other cartesian kinds the AI
   // already knows), fall back to xKey for back-compat. Y comes from series[].
   const xField = spec.xAxisKey ?? spec.xKey ?? 'x'
   const ySeries = spec.series?.length ? spec.series : [{ key: spec.yKey ?? 'y' }]
   return (
-    <ScatterChart margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+    <ScatterChart margin={layout.margin}>
       <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} />
       <XAxis
         type="number"
         dataKey={xField}
         name={xField}
         tickFormatter={makeFormatter(format)}
-        tick={AXIS_TICK_STYLE}
+        tick={layout.xAxisTick}
+        height={layout.xAxisHeight}
         axisLine={false}
         tickLine={false}
       />
@@ -424,14 +432,54 @@ export function ChartError({ reason, raw }: { reason: string; raw: string }) {
   )
 }
 
+function getChartLayout(spec: ChartSpec): { height: number; minWidth: number; cartesian: CartesianLayout } {
+  const pointCount = spec.data.length
+  const seriesCount = spec.series?.length ?? 1
+  const isCartesian = ['line', 'area', 'bar', 'horizontalBar', 'stacked', 'composed', 'scatter'].includes(spec.kind)
+  const denseXAxis = isCartesian && pointCount > 8
+  const dualAxis = (spec.yAxis?.length ?? 0) >= 2
+
+  if (spec.kind === 'horizontalBar') {
+    const height = spec.height ?? Math.min(560, Math.max(260, pointCount * 34 + 120))
+    return {
+      height,
+      minWidth: 520,
+      cartesian: {
+        margin: { top: 12, right: 24, left: 10, bottom: 18 },
+        xAxisHeight: 32,
+        xAxisTick: AXIS_TICK_STYLE,
+      },
+    }
+  }
+
+  const height = spec.height ?? Math.min(560, Math.max(340, 290 + Math.max(0, seriesCount - 1) * 24 + Math.max(0, pointCount - 10) * 5))
+  const minWidth = isCartesian ? Math.max(680, pointCount * (denseXAxis ? 48 : 38), dualAxis ? 760 : 0) : 360
+
+  return {
+    height,
+    minWidth,
+    cartesian: {
+      margin: {
+        top: 18,
+        right: dualAxis ? 36 : 24,
+        left: 12,
+        bottom: denseXAxis ? 56 : 28,
+      },
+      xAxisHeight: denseXAxis ? 68 : 36,
+      xAxisTick: denseXAxis
+        ? { ...AXIS_TICK_STYLE, fontSize: 10, angle: -38, textAnchor: 'end' }
+        : AXIS_TICK_STYLE,
+    },
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Public component. Expects a Zod-parsed spec (caller validates).
 // ─────────────────────────────────────────────────────────────────────────────
 export function ChartBlock({ spec }: { spec: ChartSpec }) {
   const palette = spec.colors?.length ? spec.colors : CATEGORICAL_PALETTE
   const hasDualAxis = (spec.yAxis?.length ?? 0) >= 2
-  const heightClass = spec.height ? '' : 'h-64'
-  const heightStyle = spec.height ? { height: spec.height } : undefined
+  const layout = getChartLayout(spec)
 
   // Validate required fields per kind; render error card if missing.
   const validationError = useMemo(() => {
@@ -466,7 +514,7 @@ export function ChartBlock({ spec }: { spec: ChartSpec }) {
       chartEl = <PieLikeChart spec={spec} palette={palette} />
       break
     case 'scatter':
-      chartEl = <ScatterLikeChart spec={spec} palette={palette} hasDualAxis={hasDualAxis} />
+      chartEl = <ScatterLikeChart spec={spec} palette={palette} hasDualAxis={hasDualAxis} layout={layout.cartesian} />
       break
     case 'radar':
       chartEl = <RadarLikeChart spec={spec} palette={palette} />
@@ -475,7 +523,7 @@ export function ChartBlock({ spec }: { spec: ChartSpec }) {
       chartEl = <RadialGaugeChart spec={spec} palette={palette} />
       break
     default:
-      chartEl = <CartesianChart spec={spec} palette={palette} hasDualAxis={hasDualAxis} />
+      chartEl = <CartesianChart spec={spec} palette={palette} hasDualAxis={hasDualAxis} layout={layout.cartesian} />
   }
 
   return (
@@ -486,10 +534,12 @@ export function ChartBlock({ spec }: { spec: ChartSpec }) {
           {spec.subtitle && <p className="mt-0.5 text-xs text-muted-foreground">{spec.subtitle}</p>}
         </div>
       )}
-      <div className={heightClass} style={heightStyle}>
-        <ResponsiveContainer width="100%" height="100%" minWidth={100}>
-          {chartEl}
-        </ResponsiveContainer>
+      <div className="max-w-full overflow-x-auto overscroll-x-contain px-2 pb-5">
+        <div style={{ height: layout.height, minWidth: layout.minWidth }}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={layout.minWidth}>
+            {chartEl}
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   )

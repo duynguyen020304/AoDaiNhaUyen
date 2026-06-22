@@ -191,12 +191,18 @@ public sealed class AdminToolRiskService(
       new() { ToolName = "create_purchase_note", RiskLevel = "Low", RequiresConfirmation = false, Description = "Tạo ghi chú nhập hàng", Category = "Inventory" },
       new() { ToolName = "generate_daily_report", RiskLevel = "Read", RequiresConfirmation = false, Description = "Báo cáo doanh thu hôm nay", Category = "Intelligence" },
 
+      // Facebook Page (social)
+      new() { ToolName = "list_facebook_pages", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê trang Facebook đã kết nối", Category = "Social" },
+      new() { ToolName = "list_facebook_posts", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê bài đăng Facebook", Category = "Social" },
+      new() { ToolName = "list_facebook_post_comments", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê bình luận bài Facebook", Category = "Social" },
+      new() { ToolName = "reply_facebook_comment", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Trả lời bình luận Facebook bằng trang", Category = "Social" },
+
       // Autonomy Mode
       new() { ToolName = "toggle_autonomy", RiskLevel = "High", RequiresConfirmation = true, Description = "Bật/tắt chế độ tự động", Category = "System" },
       new() { ToolName = "get_autonomy_status", RiskLevel = "Read", RequiresConfirmation = false, Description = "Trạng thái chế độ tự động", Category = "System" },
 
       // Intelligence
-      new() { ToolName = "generate_product_description", RiskLevel = "Low", RequiresConfirmation = false, Description = "Tạo mô tả sản phẩm bằng AI", Category = "Intelligence" },
+      new() { ToolName = "generate_product_description", RiskLevel = "Read", RequiresConfirmation = false, Description = "Tạo mô tả sản phẩm bằng AI từ dữ liệu sản phẩm hiện có", Category = "Intelligence" },
       new() { ToolName = "generate_weekly_report", RiskLevel = "Read", RequiresConfirmation = false, Description = "Báo cáo tuần", Category = "Intelligence" },
       new() { ToolName = "check_inventory_alerts", RiskLevel = "Read", RequiresConfirmation = false, Description = "Cảnh báo tồn kho thấp", Category = "Intelligence" },
     ];

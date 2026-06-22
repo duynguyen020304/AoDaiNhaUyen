@@ -60,7 +60,6 @@ public sealed class SafetyGate : ISafetyGate
     ["update_variant"] = (RiskLevel.Medium, true),
     ["update_variant_stock"] = (RiskLevel.Medium, true),
     ["delete_variant"] = (RiskLevel.High, true),
-    ["upload_product_image"] = (RiskLevel.Low, false),
     ["list_categories"] = (RiskLevel.Read, false),
     ["get_category"] = (RiskLevel.Read, false),
     ["create_category"] = (RiskLevel.Low, false),
@@ -129,16 +128,16 @@ public sealed class SafetyGate : ISafetyGate
     ["delete_blog_post"] = (RiskLevel.High, true),
     ["create_purchase_note"] = (RiskLevel.Low, false),
     ["generate_daily_report"] = (RiskLevel.Read, false),
-    ["toggle_autonomy"] = (RiskLevel.High, true),
-    ["get_autonomy_status"] = (RiskLevel.Read, false),
-    ["generate_product_description"] = (RiskLevel.Read, false),
-    ["generate_weekly_report"] = (RiskLevel.Read, false),
-    ["check_inventory_alerts"] = (RiskLevel.Read, false),
     // Facebook Page (social)
     ["list_facebook_pages"] = (RiskLevel.Read, false),
     ["list_facebook_posts"] = (RiskLevel.Read, false),
     ["list_facebook_post_comments"] = (RiskLevel.Read, false),
     ["reply_facebook_comment"] = (RiskLevel.Medium, true),
+    ["toggle_autonomy"] = (RiskLevel.High, true),
+    ["get_autonomy_status"] = (RiskLevel.Read, false),
+    ["generate_product_description"] = (RiskLevel.Read, false),
+    ["generate_weekly_report"] = (RiskLevel.Read, false),
+    ["check_inventory_alerts"] = (RiskLevel.Read, false),
   };
 
   public SafetyGate(ILogger<SafetyGate> logger, AppDbContext? dbContext = null)

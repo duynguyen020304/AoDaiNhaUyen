@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { Bot, X, Send, Loader2 } from 'lucide-react'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { MessageBubble } from './MessageBubble'
@@ -16,18 +16,31 @@ export function AiChatSidebar() {
 
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
+  const shouldStickToBottomRef = useRef(true)
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
+  useLayoutEffect(() => {
+    const node = scrollRef.current
+    if (!node || !shouldStickToBottomRef.current) return
+
+    const frameId = window.requestAnimationFrame(() => {
+      node.scrollTop = node.scrollHeight
+    })
+
+    return () => window.cancelAnimationFrame(frameId)
   }, [messages, isLoading])
+
+  function handleScroll() {
+    const node = scrollRef.current
+    if (!node) return
+    shouldStickToBottomRef.current = node.scrollHeight - node.scrollTop - node.clientHeight < 120
+  }
 
   if (!isOpen) return null
 
   async function handleSend() {
     if (!input.trim() || isLoading) return
     const msg = input
+    shouldStickToBottomRef.current = true
     setInput('')
     await sendMessage({ message: msg })
   }
@@ -40,7 +53,7 @@ export function AiChatSidebar() {
   }
 
   return (
-    <aside className="fixed right-0 top-0 h-dvh w-96 bg-white border-l border-gray-200 flex flex-col z-50 shadow-xl">
+    <aside className="fixed right-0 top-0 h-dvh w-[min(820px,100vw)] bg-white border-l border-gray-200 flex flex-col z-50 shadow-xl">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-wine text-white">
         <div className="flex items-center gap-2">
@@ -60,7 +73,7 @@ export function AiChatSidebar() {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto overflow-x-hidden p-6 space-y-4 [overflow-anchor:none]">
         {messages.length === 0 && (
           <div className="text-center text-gray-400 mt-8">
             <Bot className="size-12 mx-auto mb-3 opacity-30" />

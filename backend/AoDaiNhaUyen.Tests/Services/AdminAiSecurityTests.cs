@@ -586,6 +586,39 @@ public sealed class AdminAiSecurityTests
     Assert.Contains(chunks, c => c.Type == "tool_result" && c.Content.Contains("Không kiểm tra được tool ghi"));
   }
 
+  [Fact]
+  public async Task LlmGateExecuteWithoutArguments_PreservesPreparedArgs()
+  {
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", $"{{\"id\":\"{ProductId}\"}}", "delete_product", "call-1"))
+    {
+      JsonDecision = new ToolGateDecision("execute", "delete_product", null, "OK")
+    };
+    var products = new FakeProductService();
+    var service = CreateService(llm, products: products, gateOptions: new AdminToolGateOptions { EnableLlmGate = true, LlmGateToolNames = ["delete_product"] });
+
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Xóa sản phẩm", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    Assert.Equal(1, llm.JsonCalls);
+    var toolCall = Assert.Single(chunks, c => c.Type == "tool_call" && c.ToolName == "delete_product");
+    Assert.Contains(ProductId.ToString(), toolCall.Content);
+    Assert.Contains(chunks, c => c.Type == "confirmation" && c.ToolName == "delete_product");
+    Assert.Equal(0, products.DeleteCalls);
+  }
+
+  [Fact]
+  public void EveryDefaultMutatingTool_HasInstruction()
+  {
+    var registry = new AdminToolInstructionRegistry();
+    var missing = AdminToolRiskService.GetDefaultToolConfigs()
+      .Where(config => !string.Equals(config.RiskLevel, nameof(RiskLevel.Read), StringComparison.OrdinalIgnoreCase))
+      .Select(config => config.ToolName)
+      .Where(toolName => !registry.TryGetInstruction(toolName, out _))
+      .ToList();
+
+    Assert.Empty(missing);
+  }
+
   private static AdminAgentService CreateService(
     IAdminLlmProvider llm,
     FakeProductService? products = null,

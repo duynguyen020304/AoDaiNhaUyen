@@ -13,7 +13,9 @@ public sealed class AdminToolArgumentValidator(
 {
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
   private static readonly HashSet<string> AllowedTools = AdminToolRiskService.GetDefaultToolConfigs()
-    .Select(c => c.ToolName).Append("reply_to_review").Append("restore_product")
+    .Select(c => c.ToolName)
+    .Append("reply_to_review") // Backward-compatible replay of old pending actions/history.
+    .Append("restore_product") // Kept for existing safety metadata; not currently exposed as a tool.
     .ToHashSet(StringComparer.Ordinal);
   private static readonly HashSet<string> BadFlags = new(StringComparer.OrdinalIgnoreCase)
     { "force", "hardDelete", "permanent", "permanentDelete", "cascade", "truncate", "drop", "purge", "deleteAll", "bypassConfirmation" };
@@ -26,7 +28,8 @@ public sealed class AdminToolArgumentValidator(
     ["get_media"] = ["id"], ["delete_media"] = ["id"], ["hide_review"] = ["id"], ["show_review"] = ["id"], ["delete_review"] = ["id"],
     ["get_promo_code"] = ["promoId"], ["update_promo_code"] = ["promoId"], ["toggle_promo_code"] = ["promoId"], ["delete_promo_code"] = ["promoId"],
     ["get_subscriber"] = ["id"], ["unsubscribe_subscriber"] = ["id"], ["delete_subscriber"] = ["id"], ["get_email_job"] = ["id"], ["retry_email_job"] = ["id"], ["cancel_email_job"] = ["id"], ["delete_email_job"] = ["id"],
-    ["get_blog_post"] = ["id"], ["update_blog_post"] = ["id"], ["delete_blog_post"] = ["id"], ["get_hermes_report"] = ["id"]
+    ["get_blog_post"] = ["id"], ["update_blog_post"] = ["id"], ["delete_blog_post"] = ["id"], ["get_hermes_report"] = ["id"],
+    ["generate_product_description"] = ["productId"]
   };
   private static readonly Dictionary<string, Dictionary<string, string[]>> Enums = new(StringComparer.Ordinal)
   {
@@ -35,7 +38,8 @@ public sealed class AdminToolArgumentValidator(
     ["update_user_status"] = new(StringComparer.Ordinal) { ["status"] = ["active", "inactive", "blocked"] },
     ["list_orders"] = new(StringComparer.Ordinal) { ["status"] = ["pending", "confirmed", "processing", "shipping", "completed", "cancelled"] },
     ["create_promo_code"] = new(StringComparer.Ordinal) { ["discountType"] = ["percentage", "fixed"] },
-    ["update_promo_code"] = new(StringComparer.Ordinal) { ["discountType"] = ["percentage", "fixed"] }
+    ["update_promo_code"] = new(StringComparer.Ordinal) { ["discountType"] = ["percentage", "fixed"] },
+    ["generate_product_description"] = new(StringComparer.Ordinal) { ["focus"] = ["all", "material", "style", "occasion", "seo"] }
   };
 
   public async Task<ToolPreparationResult> ValidateAsync(string toolName, string argsJson, IReadOnlyList<ToolDefinition> tools, bool requireGuidFields, CancellationToken ct)

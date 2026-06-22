@@ -14,7 +14,7 @@ public sealed class AdminToolPrerequisiteResolver(
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
   private static readonly HashSet<string> OrderTools = new(StringComparer.Ordinal) { "confirm_order", "start_processing_order", "ship_order", "complete_order", "cancel_order", "update_order_address", "update_order_items", "delete_order", "restore_order" };
   private static readonly HashSet<string> UserTools = new(StringComparer.Ordinal) { "update_user_status", "update_user_role", "update_user_profile", "delete_user", "restore_user" };
-  private static readonly HashSet<string> ProductTools = new(StringComparer.Ordinal) { "update_product", "delete_product", "restore_product", "toggle_product_status", "list_variants", "create_variant", "update_variant", "update_variant_stock", "delete_variant" };
+  private static readonly HashSet<string> ProductTools = new(StringComparer.Ordinal) { "update_product", "delete_product", "restore_product", "toggle_product_status", "list_variants", "create_variant", "update_variant", "update_variant_stock", "delete_variant", "generate_product_description" };
   private static readonly HashSet<string> RoleTools = new(StringComparer.Ordinal) { "update_role", "delete_role" };
   private static readonly HashSet<string> PromoTools = new(StringComparer.Ordinal) { "get_promo_code", "update_promo_code", "toggle_promo_code", "delete_promo_code" };
 
@@ -25,7 +25,7 @@ public sealed class AdminToolPrerequisiteResolver(
     if (UserTools.Contains(toolName) && !HasGuid(args, "id")) return await ResolveUserAsync(toolName, args, ct);
     if (ProductTools.Contains(toolName))
     {
-      var idField = toolName is "list_variants" or "create_variant" or "update_variant" or "update_variant_stock" or "delete_variant" ? "productId" : "id";
+      var idField = toolName is "list_variants" or "create_variant" or "update_variant" or "update_variant_stock" or "delete_variant" or "generate_product_description" ? "productId" : "id";
       if (!HasGuid(args, idField)) return await ResolveProductAsync(toolName, args, idField, ct);
       if (toolName is "update_variant" or "update_variant_stock" or "delete_variant" && !HasGuid(args, "variantId"))
         return await ResolveVariantAsync(toolName, args, ct);

@@ -32,7 +32,7 @@ public sealed class AdminToolInstructionGate(
     {
       var prompts = promptBuilder.Build(toolName, argsJson, instruction, history, options.Value.GateMaxContextChars);
       var decision = await llm.CompleteJsonAsync<ToolGateDecision>(prompts.SystemPrompt, prompts.UserPrompt, AdminToolGateJsonSchemas.GateDecision, ct);
-      return MapDecision(toolName, decision);
+      return MapDecision(toolName, argsJson, decision);
     }
     catch (Exception ex) when (ex is not OperationCanceledException)
     {
@@ -43,12 +43,12 @@ public sealed class AdminToolInstructionGate(
     }
   }
 
-  private static ToolPreparationResult MapDecision(string originalToolName, ToolGateDecision decision)
+  private static ToolPreparationResult MapDecision(string originalToolName, string originalArgsJson, ToolGateDecision decision)
   {
     var action = (decision.Action ?? string.Empty).Trim().ToLowerInvariant();
-    var argsJson = decision.Arguments.HasValue && decision.Arguments.Value.ValueKind == JsonValueKind.Object
-      ? decision.Arguments.Value.GetRawText()
-      : "{}";
+    var argsJson = HasNonEmptyArgumentObject(decision.Arguments)
+      ? decision.Arguments!.Value.GetRawText()
+      : originalArgsJson;
 
     return action switch
     {
@@ -59,4 +59,9 @@ public sealed class AdminToolInstructionGate(
       _ => new(ToolPreparationAction.Reject, originalToolName, null, "LLM gate trả action không hợp lệ.", null, true)
     };
   }
+
+  private static bool HasNonEmptyArgumentObject(JsonElement? arguments) =>
+    arguments.HasValue
+    && arguments.Value.ValueKind == JsonValueKind.Object
+    && arguments.Value.EnumerateObject().Any();
 }

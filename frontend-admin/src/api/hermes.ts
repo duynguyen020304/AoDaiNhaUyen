@@ -19,6 +19,26 @@ export async function getHermesReport(id: string): Promise<HermesReportDetail> {
   return request<HermesReportDetail>(`/api/admin/hermes/reports/${id}`)
 }
 
+export async function downloadHermesReportPdf(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/hermes/reports/${id}/pdf`, {
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    throw new Error('Không thể tải PDF báo cáo Hermes.')
+  }
+
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `bao-cao-hermes-${id}.pdf`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
 export async function getHermesEvents(filters: Partial<HermesEventFilters>): Promise<PaginatedApiEnvelope<HermesEventListItem[]>> {
   const query = cleanParams(filters)
   return requestPaginated<HermesEventListItem[]>(`/api/admin/hermes/events${query ? `?${query}` : ''}`)

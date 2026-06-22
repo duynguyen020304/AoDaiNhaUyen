@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -28,9 +29,26 @@ export function EmailQueuePage() {
   } = useEmailMarketingStore();
   const { confirm, toast } = useFeedback();
   const [status, setStatus] = useState("");
+
+  const refreshJobs = useCallback(async (page: number, showToast = false) => {
+    await fetchJobs(status, page);
+    if (showToast) toast("Đã làm mới hàng đợi email.", "success");
+  }, [fetchJobs, status, toast]);
+
   useEffect(() => {
-    fetchJobs(status).catch(() => {});
-  }, [fetchJobs, status]);
+    void refreshJobs(1).catch(() => {});
+  }, [refreshJobs]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      void refreshJobs(currentPage).catch(() => {});
+    }, 60_000);
+    return () => window.clearInterval(intervalId);
+  }, [currentPage, refreshJobs]);
+
+  function handleManualRefresh() {
+    void refreshJobs(currentPage, true).catch(() => {});
+  }
   async function handleRetry(job: EmailJobListItem) {
     if (job.status === "sent") {
       toast("Email đã gửi không thể gửi lại.", "error");
@@ -80,11 +98,17 @@ export function EmailQueuePage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink">Hàng đợi email</h1>
-        <p className="text-sm text-muted-foreground">
-          Theo dõi job gửi email và xử lý lỗi.
-        </p>
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-ink">Hàng đợi email</h1>
+          <p className="text-sm text-muted-foreground">
+            Theo dõi job gửi email và xử lý lỗi. Tự động làm mới mỗi 60 giây.
+          </p>
+        </div>
+        <Button variant="outline" onClick={handleManualRefresh} disabled={loading}>
+          <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
+          Làm mới
+        </Button>
       </div>
       {error && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
