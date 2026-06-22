@@ -37,4 +37,10 @@ public interface IAdminLlmProvider
     List<AdminLlmMessage> history,
     IReadOnlyList<ToolDefinition> tools,
     CancellationToken ct);
+
+  Task<T> CompleteJsonAsync<T>(
+    string systemPrompt,
+    string userPrompt,
+    object? responseSchema,
+    CancellationToken ct);
 }

@@ -10,6 +10,9 @@ using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.DataProtection;
+using AoDaiNhaUyen.Application.Options;
 
 namespace AoDaiNhaUyen.Infrastructure.Services;
 
@@ -57,6 +60,10 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IAdminChatPersistence _chatPersistence;
   private readonly AppDbContext _db;
   private readonly IFacebookService _facebook;
+  private readonly IAdminToolPreparationService _toolPreparation;
+  private readonly AdminToolGateOptions _toolGateOptions;
+  private readonly IDataProtector _pendingActionProtector;
+  private static readonly TimeSpan PendingActionTtl = TimeSpan.FromMinutes(15);
 
   public AdminAgentService(
     IAdminLlmProvider llm,
@@ -86,7 +93,10 @@ public sealed class AdminAgentService : IAdminAgentService
     IAdminChatPersistence chatPersistence,
     IAdminShopEventContextService eventContext,
     AppDbContext db,
-    IFacebookService facebook)
+    IFacebookService facebook,
+    IAdminToolPreparationService toolPreparation,
+    IOptions<AdminToolGateOptions> toolGateOptions,
+    IDataProtectionProvider dataProtectionProvider)
   {
     _llm = llm;
     _safety = safety;
@@ -116,6 +126,9 @@ public sealed class AdminAgentService : IAdminAgentService
     _chatPersistence = chatPersistence;
     _db = db;
     _facebook = facebook;
+    _toolPreparation = toolPreparation;
+    _toolGateOptions = toolGateOptions.Value;
+    _pendingActionProtector = dataProtectionProvider.CreateProtector("AoDaiNhaUyen.AdminAi.PendingAction.v1");
   }
 
   private static readonly IReadOnlyList<ToolDefinition> Tools =
@@ -721,14 +734,61 @@ public sealed class AdminAgentService : IAdminAgentService
       var injectedHistory = BuildInjectableHistory(history, liveEventContext);
       await foreach (var chunk in _llm.StreamChatAsync(injectedHistory, Tools, ct))
       {
-        if (chunk.Type == "text") assistantText += chunk.Content;
-        yield return chunk;
+        if (chunk.Type == "text")
+        {
+          assistantText += chunk.Content;
+          yield return chunk;
+        }
 
         if (chunk.Type == "tool_call" && chunk.ToolName is not null)
         {
           hadToolCall = true;
+          var prepared = await _toolPreparation.PrepareAsync(
+            chunk.ToolName, chunk.Content, Tools, history, adminUserId, ct);
+
+          if (prepared.Action != ToolPreparationAction.Execute)
+          {
+            var riskLevel = (await _safety.ClassifyAsync(chunk.ToolName, ct)).ToString();
+            var message = prepared.Message ?? "Tool call bị chặn bởi gate.";
+            var errorCode = prepared.Action == ToolPreparationAction.AskClarification ? "clarification_required" : "tool_gate_rejected";
+            if (prepared.Action == ToolPreparationAction.Reject && message.Contains("GUID", StringComparison.OrdinalIgnoreCase))
+              errorCode = "validation_error";
+            var errorContent = SerializeToolError(message, errorCode, riskLevel);
+            yield return new LlmChunk("tool_call", prepared.ArgumentsJson ?? chunk.Content, prepared.ToolName ?? chunk.ToolName, chunk.ToolCallId, chunk.ThoughtSignature);
+            yield return new LlmChunk("tool_result", errorContent, prepared.ToolName ?? chunk.ToolName, chunk.ToolCallId);
+
+            var rejectedToolCall = new AdminLlmMessage(AdminLlmRole.ToolCall, prepared.ArgumentsJson ?? chunk.Content, prepared.ToolName ?? chunk.ToolName, chunk.ToolCallId, ThoughtSignature: chunk.ThoughtSignature);
+            var rejectedToolResponse = new AdminLlmMessage(AdminLlmRole.ToolResponse, errorContent, prepared.ToolName ?? chunk.ToolName, chunk.ToolCallId, BuildToolResponseJson(errorContent));
+            history.Add(rejectedToolCall);
+            history.Add(rejectedToolResponse);
+            await PersistLlmMessageAsync(thread.Id, adminUserId, rejectedToolCall, ct);
+            await PersistLlmMessageAsync(thread.Id, adminUserId, rejectedToolResponse, ct);
+            assistantText = "";
+
+            if (errorCode is "validation_error" or "clarification_required")
+            {
+              retryAttempts[chunk.ToolName] = retryAttempts.TryGetValue(chunk.ToolName, out var attempts) ? attempts + 1 : 1;
+              if (retryAttempts[chunk.ToolName] > MaxToolRetries)
+              {
+                yield return new LlmChunk(
+                  "tool_error",
+                  $"❌ Công cụ '{chunk.ToolName}' thất bại sau {MaxToolRetries + 1} lần thử. Lỗi cuối: {message}",
+                  chunk.ToolName,
+                  chunk.ToolCallId);
+                yield return new LlmChunk("done", "", null, null);
+                yield break;
+              }
+            }
+
+            continue;
+          }
+
+          var preparedToolName = prepared.ToolName ?? chunk.ToolName;
+          var preparedArgsJson = prepared.ArgumentsJson ?? chunk.Content;
+          yield return new LlmChunk("tool_call", preparedArgsJson, preparedToolName, chunk.ToolCallId, chunk.ThoughtSignature);
+
           var toolResult = await ExecuteToolAsync(
-            chunk.ToolName, chunk.Content, adminUserId, ct, false);
+            preparedToolName, preparedArgsJson, adminUserId, ct, false);
 
           // If tool needs confirmation, hold it
           if (toolResult.NeedsConfirmation)
@@ -740,32 +800,34 @@ public sealed class AdminAgentService : IAdminAgentService
               await _chatPersistence.AddMessageAsync(thread.Id, adminUserId, "assistant", assistantText, null, null, ct);
             }
 
-            var actionId = Guid.NewGuid().ToString("N");
-            _pendingStore.Add(actionId, new AdminPendingAction(
-              actionId, chunk.ToolName,
+            var pendingDraft = new AdminPendingAction(
+              Guid.NewGuid().ToString("N"), preparedToolName,
               toolResult.Description,
               toolResult.RiskLevel.ToString(),
               DateTime.UtcNow,
               conversationId,
-              chunk.Content,
+              preparedArgsJson,
               assistantText,
               adminUserId,
-              chunk.ThoughtSignature));
+              chunk.ThoughtSignature);
+            var actionId = ProtectPendingAction(pendingDraft);
+            var pending = pendingDraft with { ActionId = actionId };
+            _pendingStore.Add(actionId, pending);
 
-            yield return new LlmChunk("confirmation", toolResult.Description, chunk.ToolName, actionId);
+            yield return new LlmChunk("confirmation", toolResult.Description, preparedToolName, actionId);
             yield return new LlmChunk("done", "", null, null);
             yield break; // Stop until user confirms
           }
 
-          yield return new LlmChunk("tool_result", toolResult.Content, chunk.ToolName, chunk.ToolCallId);
+          yield return new LlmChunk("tool_result", toolResult.Content, preparedToolName, chunk.ToolCallId);
 
           // Replay native Gemini tool call + function response in history.
-          var toolCall = new AdminLlmMessage(AdminLlmRole.ToolCall, chunk.Content, chunk.ToolName, chunk.ToolCallId, ThoughtSignature: chunk.ThoughtSignature);
+          var toolCall = new AdminLlmMessage(AdminLlmRole.ToolCall, preparedArgsJson, preparedToolName, chunk.ToolCallId, ThoughtSignature: chunk.ThoughtSignature);
           var toolResponseJson = BuildToolResponseJson(toolResult.Content);
           var toolResponse = new AdminLlmMessage(
             AdminLlmRole.ToolResponse,
             toolResult.Content,
-            chunk.ToolName,
+            preparedToolName,
             chunk.ToolCallId,
             toolResponseJson);
           history.Add(toolCall);
@@ -781,21 +843,21 @@ public sealed class AdminAgentService : IAdminAgentService
           // into a dead-end apology.
           if (toolResult.IsError)
           {
-            retryAttempts[chunk.ToolName] = retryAttempts.TryGetValue(chunk.ToolName, out var attempts) ? attempts + 1 : 1;
-            if (retryAttempts[chunk.ToolName] > MaxToolRetries)
+            retryAttempts[preparedToolName] = retryAttempts.TryGetValue(preparedToolName, out var attempts) ? attempts + 1 : 1;
+            if (retryAttempts[preparedToolName] > MaxToolRetries)
             {
               _logger.LogWarning("[AdminAgent] Tool {ToolName} exhausted retry budget ({Attempts} attempts) for admin {AdminId}",
-                chunk.ToolName, retryAttempts[chunk.ToolName], adminUserId);
+                preparedToolName, retryAttempts[preparedToolName], adminUserId);
               yield return new LlmChunk(
                 "tool_error",
-                $"❌ Công cụ '{chunk.ToolName}' thất bại sau {MaxToolRetries + 1} lần thử. Lỗi cuối: {toolResult.Description}",
-                chunk.ToolName,
+                $"❌ Công cụ '{preparedToolName}' thất bại sau {MaxToolRetries + 1} lần thử. Lỗi cuối: {toolResult.Description}",
+                preparedToolName,
                 chunk.ToolCallId);
               yield return new LlmChunk("done", "", null, null);
               yield break;
             }
             _logger.LogInformation("[AdminAgent] Tool {ToolName} failed (attempt {Attempt}/{Max}); letting LLM retry with feedback",
-              chunk.ToolName, retryAttempts[chunk.ToolName], MaxToolRetries);
+              preparedToolName, retryAttempts[preparedToolName], MaxToolRetries);
           }
         }
       }
@@ -961,6 +1023,22 @@ public sealed class AdminAgentService : IAdminAgentService
     await _chatPersistence.AddMessageAsync(threadId, adminUserId, role, message.Content, toolCallsJson, structuredPayloadJson, ct);
   }
 
+  private async Task TryPersistLlmMessageAsync(Guid threadId, Guid adminUserId, AdminLlmMessage message, CancellationToken ct)
+  {
+    try
+    {
+      await PersistLlmMessageAsync(threadId, adminUserId, message, ct);
+    }
+    catch (DbUpdateConcurrencyException ex)
+    {
+      _logger.LogWarning(ex, "[AdminAgent] Could not persist AI message because conversation changed. ThreadId={ThreadId}", threadId);
+    }
+    catch (DbUpdateException ex)
+    {
+      _logger.LogWarning(ex, "[AdminAgent] Could not persist AI message because conversation was unavailable. ThreadId={ThreadId}", threadId);
+    }
+  }
+
   private static AdminLlmMessage MapToLlmMessage(ChatMessage message)
   {
     return message.Role switch
@@ -1018,9 +1096,35 @@ public sealed class AdminAgentService : IAdminAgentService
     }
   }
 
+  private string ProtectPendingAction(AdminPendingAction pending)
+  {
+    var payload = JsonSerializer.Serialize(pending, ToolResultJsonOptions);
+    return _pendingActionProtector.Protect(payload);
+  }
+
+  private AdminPendingAction? TryUnprotectPendingAction(string actionId)
+  {
+    try
+    {
+      var payload = _pendingActionProtector.Unprotect(actionId);
+      var pending = JsonSerializer.Deserialize<AdminPendingAction>(payload, ToolResultJsonOptions);
+      if (pending is null) return null;
+      if (pending.RequestedAt < DateTime.UtcNow.Subtract(PendingActionTtl)) return null;
+      return pending with { ActionId = actionId };
+    }
+    catch (Exception ex) when (ex is not OperationCanceledException)
+    {
+      _logger.LogWarning(ex, "[AdminAgent] Could not decode pending action token.");
+      return null;
+    }
+  }
+
   public async Task<bool> ConfirmActionAsync(string actionId, bool approved, Guid adminUserId, CancellationToken ct)
   {
-    if (_pendingStore.Remove(actionId) is not { } pending)
+    var pending = _pendingStore.Remove(actionId);
+    var restoredFromToken = pending is null;
+    pending ??= TryUnprotectPendingAction(actionId);
+    if (pending is null)
     {
       _logger.LogWarning("[AdminAgent] Pending action {ActionId} not found", actionId);
       return false;
@@ -1030,50 +1134,64 @@ public sealed class AdminAgentService : IAdminAgentService
     {
       _logger.LogWarning("[AdminAgent] Admin {AdminId} attempted to confirm action {ActionId} owned by {OwnerId}",
         adminUserId, actionId, pending.AdminUserId);
+      if (!restoredFromToken) _pendingStore.Add(actionId, pending);
+      return false;
+    }
+
+    if (!_pendingStore.TryMarkConsumed(actionId))
+    {
+      _logger.LogWarning("[AdminAgent] Pending action {ActionId} was already consumed", actionId);
       return false;
     }
 
     _logger.LogInformation("[AdminAgent] Action {ActionId} {Result} by admin {AdminId}",
       actionId, approved ? "approved" : "rejected", adminUserId);
 
-    // Find the conversation and add the tool result
     if (pending.ConversationId is not null
-      && _conversationStore.TryGetValue(pending.ConversationId, out var conv))
+      && _conversationStore.TryGetValue(pending.ConversationId, out var existingConv)
+      && existingConv.AdminUserId != adminUserId)
     {
-      if (conv.AdminUserId != adminUserId)
-      {
-        _logger.LogWarning("[AdminAgent] Admin {AdminId} attempted to continue conversation {ConversationId} owned by {OwnerId}",
-          adminUserId, pending.ConversationId, conv.AdminUserId);
-        return false;
-      }
+      _logger.LogWarning("[AdminAgent] Admin {AdminId} attempted to continue conversation {ConversationId} owned by {OwnerId}",
+        adminUserId, pending.ConversationId, existingConv.AdminUserId);
+      return false;
+    }
 
-      if (approved)
+    if (approved)
+    {
+      // Execute prepared args even if in-memory conversation state was lost; DB/history replay is best-effort.
+      var toolResult = await ExecuteToolAsync(
+        pending.ToolName, pending.ToolArgsJson ?? "{}", adminUserId, ct, skipConfirmation: true);
+      var toolCall = new AdminLlmMessage(AdminLlmRole.ToolCall, pending.ToolArgsJson ?? "{}", pending.ToolName, pending.ActionId, ThoughtSignature: pending.ThoughtSignature);
+      var toolResponse = new AdminLlmMessage(
+        AdminLlmRole.ToolResponse,
+        toolResult.Content,
+        pending.ToolName,
+        pending.ActionId,
+        BuildToolResponseJson(toolResult.Content));
+
+      if (pending.ConversationId is not null
+        && _conversationStore.TryGetValue(pending.ConversationId, out var conv))
       {
-        // Execute the tool and add result to history
-        var toolResult = await ExecuteToolAsync(
-          pending.ToolName, pending.ToolArgsJson ?? "{}", adminUserId, ct, skipConfirmation: true);
-        var toolCall = new AdminLlmMessage(AdminLlmRole.ToolCall, pending.ToolArgsJson ?? "{}", pending.ToolName, pending.ActionId, ThoughtSignature: pending.ThoughtSignature);
-        var toolResponse = new AdminLlmMessage(
-          AdminLlmRole.ToolResponse,
-          toolResult.Content,
-          pending.ToolName,
-          pending.ActionId,
-          BuildToolResponseJson(toolResult.Content));
         conv.History.Add(toolCall);
         conv.History.Add(toolResponse);
-        if (Guid.TryParse(pending.ConversationId, out var threadId))
-        {
-          await PersistLlmMessageAsync(threadId, adminUserId, toolCall, ct);
-          await PersistLlmMessageAsync(threadId, adminUserId, toolResponse, ct);
-        }
       }
-      else
+
+      if (Guid.TryParse(pending.ConversationId, out var threadId))
       {
-        var rejection = $"[Người dùng đã từ chối thực hiện hành động '{pending.ToolName}']";
-        conv.History.Add(new AdminLlmMessage(AdminLlmRole.User, rejection));
-        if (Guid.TryParse(pending.ConversationId, out var threadId))
-          await _chatPersistence.AddMessageAsync(threadId, adminUserId, "user", rejection, null, null, ct);
+        await TryPersistLlmMessageAsync(threadId, adminUserId, toolCall, ct);
+        await TryPersistLlmMessageAsync(threadId, adminUserId, toolResponse, ct);
       }
+    }
+    else
+    {
+      var rejection = $"[Người dùng đã từ chối thực hiện hành động '{pending.ToolName}']";
+      if (pending.ConversationId is not null
+        && _conversationStore.TryGetValue(pending.ConversationId, out var conv))
+      {
+        conv.History.Add(new AdminLlmMessage(AdminLlmRole.User, rejection));
+      }
+      if (Guid.TryParse(pending.ConversationId, out var threadId))
+        await _chatPersistence.AddMessageAsync(threadId, adminUserId, "user", rejection, null, null, ct);
     }
 
     return true;
@@ -1182,13 +1300,16 @@ public sealed class AdminAgentService : IAdminAgentService
       using var doc = JsonDocument.Parse(argsJson);
       var args = doc.RootElement;
 
-      var lookupRequired = EnforceLookupBeforeWrite(toolName, args);
-      if (lookupRequired is not null)
-        return new ToolResult(
-          SerializeToolError(lookupRequired, "lookup_required", riskLevel.ToString()),
-          false,
-          lookupRequired,
-          riskLevel.ToString());
+      if (!_toolGateOptions.EnableDeterministicGate)
+      {
+        var lookupRequired = EnforceLookupBeforeWrite(toolName, args);
+        if (lookupRequired is not null)
+          return new ToolResult(
+            SerializeToolError(lookupRequired, "lookup_required", riskLevel.ToString()),
+            false,
+            lookupRequired,
+            riskLevel.ToString());
+      }
 
       var requiresConfirmation = await _safety.RequiresConfirmationAsync(toolName, ct);
       if (!skipConfirmation && requiresConfirmation && !_autoMode.IsAutoApproved(adminUserId, riskLevel.ToString()))

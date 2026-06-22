@@ -159,19 +159,24 @@ public sealed class AdminProductService(
 
     public async Task<AdminProductDetailResponse?> CreateVariantAsync(Guid productId, CreateVariantRequest request, CancellationToken cancellationToken = default)
     {
-        var product = await dbContext.Products
-            .Include(p => p.Variants)
-            .FirstOrDefaultAsync(p => p.Id == productId, cancellationToken);
+        // Do not keep Product tracked while creating variants. The AI admin flow may confirm
+        // minutes after lookup; updating a tracked Product row after it changed/deleted can
+        // raise DbUpdateConcurrencyException. Use no-tracking checks + set-based updates.
+        var productExists = await dbContext.Products
+            .AsNoTracking()
+            .AnyAsync(p => p.Id == productId, cancellationToken);
 
-        if (product is null) return null;
+        if (!productExists) return null;
 
         var now = DateTime.UtcNow;
-        var isDefault = request.IsDefault || product.Variants.Count == 0;
+        var hasVariants = await dbContext.ProductVariants
+            .AsNoTracking()
+            .AnyAsync(v => v.ProductId == productId && !v.IsDeleted, cancellationToken);
+        var isDefault = request.IsDefault || !hasVariants;
         var variant = new Domain.Entities.ProductVariant
         {
             Id = Guid.NewGuid(),
             ProductId = productId,
-            Product = product,
             Sku = request.Sku.Trim(),
             VariantName = string.IsNullOrWhiteSpace(request.VariantName) ? null : request.VariantName.Trim(),
             Size = string.IsNullOrWhiteSpace(request.Size) ? null : request.Size.Trim(),
@@ -192,8 +197,12 @@ public sealed class AdminProductService(
                 .ExecuteUpdateAsync(setters => setters.SetProperty(v => v.IsDefault, false), cancellationToken);
         }
 
-        product.Variants.Add(variant);
-        product.UpdatedAt = now;
+        var touchedProductRows = await dbContext.Products
+            .Where(p => p.Id == productId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.UpdatedAt, now), cancellationToken);
+        if (touchedProductRows == 0) return null;
+
+        dbContext.ProductVariants.Add(variant);
 
         await hermesEvents.EnqueueAdminInventoryEventAsync(
             "product_variant_created",
@@ -202,7 +211,21 @@ public sealed class AdminProductService(
             $"product_variant_created:Inventory:{variant.Id:N}:{variant.CreatedAt.Ticks}",
             cancellationToken);
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            logger.LogWarning(ex, "Create variant conflicted for product {ProductId}. Product/variant changed before save.", productId);
+            return null;
+        }
+        catch (DbUpdateException ex)
+        {
+            logger.LogWarning(ex, "Create variant failed for product {ProductId}. Product may have changed before save.", productId);
+            return null;
+        }
+
         logger.LogInformation("Admin created variant {VariantId} for product {ProductId}", variant.Id, productId);
         return await GetByIdAsync(productId, cancellationToken);
     }
