@@ -44,6 +44,21 @@ public sealed class AdminAiSecurityTests
   }
 
   [Fact]
+  public async Task StreamChatAsync_DoesNotInjectShopEventContext_ForBareAcknowledgment()
+  {
+    var llm = new ScriptedLlmProvider(new LlmChunk("text", "done"));
+    var service = CreateService(
+      llm,
+      eventContext: new FakeAdminShopEventContextService("NGỮ CẢNH SỰ KIỆN LIVE CỬA HÀNG: checkout_completed Order/AD-TEST"));
+
+    await service.StreamChatAsync(new AdminAiChatRequest("ok", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    var firstHistory = Assert.Single(llm.HistorySnapshots);
+    Assert.DoesNotContain(firstHistory, message =>
+      message.Content.Contains("TRUSTED_APP_CONTEXT_BEGIN", StringComparison.Ordinal));
+  }
+
+  [Fact]
   public async Task HighRiskTool_IsNotExecuted_BeforeConfirmation()
   {
     var llm = new ScriptedLlmProvider(
