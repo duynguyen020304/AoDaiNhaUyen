@@ -113,7 +113,7 @@ public sealed class AdminDashboardService(
 
   private async Task<RevenueDataDto> GetRevenueCoreAsync(int period, CancellationToken ct)
   {
-    var start = DateTime.UtcNow.Date.AddDays(-period);
+    var start = DateTime.UtcNow.Date.AddDays(-period + 1);
 
     var raw = await dbContext.Orders
       .AsNoTracking()
@@ -277,7 +277,7 @@ public sealed class AdminDashboardService(
 
   private async Task<UserGrowthDataDto> GetUserGrowthCoreAsync(int period, CancellationToken ct)
   {
-    var start = DateTime.UtcNow.Date.AddDays(-period);
+    var start = DateTime.UtcNow.Date.AddDays(-period + 1);
 
     var raw = await dbContext.Users
       .AsNoTracking()
