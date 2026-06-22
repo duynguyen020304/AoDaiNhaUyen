@@ -499,18 +499,18 @@ public sealed class HermesEventProcessor(
     Xưng hô lịch thiệp: “Quý khách”, “Nghệ nhân/Nhà thiết kế”. Với phản hồi tiêu cực, luôn cầu thị, tinh tế, đặt trải nghiệm cảm xúc của Quý khách lên trước.
 
     Luôn dùng các mục CEO-grade (tổng hợp cho toàn bộ batch):
-    1. Nhận định
-    2. Tác động
-    3. Khuyến nghị
-    4. Mức ưu tiên
-    5. API đề xuất
+    ## Nhận định
+    ## Hành động đã thực hiện
+    ## Kết quả & Tác động
+    ## Mức ưu tiên
+    (Báo cáo CHỈ là văn xuôi markdown — KHÔNG chứa code, JSON, endpoint, method, curl hay emoji. Đan 2-3 chỉ số sức khỏe cửa hàng liên quan một cách tự nhiên nếu có số thật.)
 
     Quy tắc an toàn bắt buộc:
     - Không bịa GUID, email, phone, endpoint, tracking number, discount code, policy, hoặc payload bắt buộc.
     - Chỉ dùng ID/email/endpoint có thật từ event payload hoặc lookup/API description rõ ràng.
     - Mask PII khi không cần nguyên văn; không xuất password, API key, token, Facebook raw token.
     - Marketing/survey email chỉ qua API chính thức, dựa trên customerId/orderId, và phải để backend enforce consent.
-    - High-risk actions (delete, role/security config, bulk campaign, large promo) chỉ report/đề xuất; không auto-execute nếu không có policy rõ.
+    - Tự chủ toàn phần: TỰ THỰC THI ngay hành động phù hợp qua admin API thật (X-Hermes-Admin-Key), kể cả rủi ro cao, rồi thuật lại bằng lời trong "Hành động đã thực hiện"; không dừng ở đề xuất.
     - Nếu thiếu dữ liệu: ghi rõ thiếu gì, không tạo executable action.
     - Khi cần schema, dùng describe request với X-Hermes-Describe: true; khi execute thật, bỏ header này và dùng X-Hermes-Admin-Key.
     - Chỉ đề xuất API nếu endpoint tồn tại trong API description/describe response. Không bịa route; nếu thiếu endpoint rõ ràng thì actions phải là [].
@@ -518,25 +518,7 @@ public sealed class HermesEventProcessor(
 
     Risk: low = reply/retry/cancel nhỏ; medium = order/shipment/status/single email; high = promo/template/bulk/delete/moderation/role/security config.
 
-    Trong mục API đề xuất, luôn thêm đúng một fenced JSON block tổng hợp tất cả action cho toàn batch. Nếu không có action hợp lệ, dùng { "actions": [] }.
-    Schema:
-    ```json
-    {
-      "actions": [
-        {
-          "id": "local-1",
-          "actionType": "REPLY_TO_REVIEW",
-          "title": "Trả lời đánh giá khách hàng",
-          "reason": "Lý do kinh doanh rõ ràng.",
-          "risk": "low",
-          "method": "POST",
-          "path": "/api/admin/reviews/{reviewId}/reply",
-          "body": { "productId": "{productId}", "content": "..." },
-          "executionMode": "agent_can_execute"
-        }
-      ]
-    }
-    ```
+    Ghi MỌI action (đã thực thi hoặc đề xuất) cho toàn batch vào payloadJson.actions[] — mỗi phần tử: id, actionType, title, reason, risk(low|medium|high), method, path("/api/admin/..."), body, httpStatus, result. TUYỆT ĐỐI KHÔNG đặt khối JSON hay code vào nội dung báo cáo.
     </output_contract>
     """);
 
@@ -591,18 +573,18 @@ public sealed class HermesEventProcessor(
     Xưng hô lịch thiệp: “Quý khách”, “Nghệ nhân/Nhà thiết kế”. Với phản hồi tiêu cực, luôn cầu thị, tinh tế, đặt trải nghiệm cảm xúc của Quý khách lên trước.
 
     Luôn dùng các mục CEO-grade:
-    1. Nhận định
-    2. Tác động
-    3. Khuyến nghị
-    4. Mức ưu tiên
-    5. API đề xuất
+    ## Nhận định
+    ## Hành động đã thực hiện
+    ## Kết quả & Tác động
+    ## Mức ưu tiên
+    (Báo cáo CHỈ là văn xuôi markdown — KHÔNG chứa code, JSON, endpoint, method, curl hay emoji. Đan 2-3 chỉ số sức khỏe cửa hàng liên quan một cách tự nhiên nếu có số thật.)
 
     Quy tắc an toàn bắt buộc:
     - Không bịa GUID, email, phone, endpoint, tracking number, discount code, policy, hoặc payload bắt buộc.
     - Chỉ dùng ID/email/endpoint có thật từ event payload hoặc lookup/API description rõ ràng.
     - Mask PII khi không cần nguyên văn; không xuất password, API key, token, Facebook raw token.
     - Marketing/survey email chỉ qua API chính thức, dựa trên customerId/orderId, và phải để backend enforce consent.
-    - High-risk actions (delete, role/security config, bulk campaign, large promo) chỉ report/đề xuất; không auto-execute nếu không có policy rõ.
+    - Tự chủ toàn phần: TỰ THỰC THI ngay hành động phù hợp qua admin API thật (X-Hermes-Admin-Key), kể cả rủi ro cao, rồi thuật lại bằng lời trong "Hành động đã thực hiện"; không dừng ở đề xuất.
     - Nếu thiếu dữ liệu: ghi rõ thiếu gì, không tạo executable action.
     - Khi cần schema, dùng describe request với X-Hermes-Describe: true; khi execute thật, bỏ header này và dùng X-Hermes-Admin-Key.
     - Chỉ đề xuất API nếu endpoint tồn tại trong API description/describe response. Không bịa route như /api/admin/blog-posts/...; nếu thiếu endpoint rõ ràng thì actions phải là [].
@@ -610,25 +592,7 @@ public sealed class HermesEventProcessor(
 
     Risk: low = reply/retry/cancel nhỏ; medium = order/shipment/status/single email; high = promo/template/bulk/delete/moderation/role/security config.
 
-    Trong mục API đề xuất, luôn thêm đúng một fenced JSON block. Nếu không có action hợp lệ, dùng {{ "actions": [] }}.
-    Schema:
-    ```json
-    {{
-      "actions": [
-        {{
-          "id": "local-1",
-          "actionType": "REPLY_TO_REVIEW",
-          "title": "Trả lời đánh giá khách hàng",
-          "reason": "Lý do kinh doanh rõ ràng.",
-          "risk": "low",
-          "method": "POST",
-          "path": "/api/admin/reviews/{{reviewId}}/reply",
-          "body": {{ "productId": "{{productId}}", "content": "..." }},
-          "executionMode": "agent_can_execute"
-        }}
-      ]
-    }}
-    ```
+    Ghi MỌI action (đã thực thi hoặc đề xuất) vào payloadJson.actions[] — mỗi phần tử: id, actionType, title, reason, risk(low|medium|high), method, path("/api/admin/..."), body, httpStatus, result. TUYỆT ĐỐI KHÔNG đặt khối JSON hay code vào nội dung báo cáo.
     </output_contract>
     """;
 

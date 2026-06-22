@@ -40,7 +40,20 @@ function cleanSummary(text: string): { displayText: string; rawDetail: string | 
   if (looksLikeJson) {
     return { displayText: 'Hermes đã ghi nhận kết quả phân tích. Mở chi tiết kỹ thuật nếu cần audit raw output.', rawDetail: trimmed }
   }
-  return { displayText: trimmed, rawDetail: null }
+
+  // Prose summary that still embeds fenced code blocks (esp. the legacy "## API đề xuất"
+  // ```json action block``` from the event prompt). Strip the noise from the visible
+  // prose and tuck any fenced blocks under "Chi tiết kỹ thuật".
+  const fences = trimmed.match(/```[\s\S]*?```/g)
+  const cleaned = trimmed
+    .replace(/```[a-z]*\s*[\s\S]*?```/gi, '')
+    .replace(/^#{1,4}\s*API\s*đề\s*xuất\s*:?\s*$/gimu, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+  if (fences && fences.length > 0) {
+    return { displayText: cleaned, rawDetail: fences.join('\n\n') }
+  }
+  return { displayText: cleaned, rawDetail: null }
 }
 
 function extractAssistantText(text: string): string | null {

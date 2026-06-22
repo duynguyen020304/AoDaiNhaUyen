@@ -94,7 +94,7 @@ function cleanSummary(summary: string | null): string {
   if (!summary) return ''
   return summary
     .replace(/```[a-z]*\s*[\s\S]*?```/gi, '')
-    .replace(/^#{1,4}\s*API đề xuất\s*$/gim, '')
+    .replace(/^#{1,4}\s*API\s*đề\s*xuất\s*:?\s*$/gimu, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
