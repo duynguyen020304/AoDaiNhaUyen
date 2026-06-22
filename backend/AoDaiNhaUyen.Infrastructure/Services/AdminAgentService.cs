@@ -4,6 +4,7 @@ using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.DTOs.BlogPost;
 using AoDaiNhaUyen.Application.DTOs.Collections;
+using AoDaiNhaUyen.Application.DTOs.Facebook;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Common;
 using AoDaiNhaUyen.Domain.Entities;
@@ -57,6 +58,7 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IAdminShopEventContextService _eventContext;
   private readonly IAdminChatPersistence _chatPersistence;
   private readonly AppDbContext _db;
+  private readonly IFacebookService _facebook;
 
   public AdminAgentService(
     IAdminLlmProvider llm,
@@ -86,7 +88,8 @@ public sealed class AdminAgentService : IAdminAgentService
     IConversationStore conversationStore,
     IAdminChatPersistence chatPersistence,
     IAdminShopEventContextService eventContext,
-    AppDbContext db)
+    AppDbContext db,
+    IFacebookService facebook)
   {
     _llm = llm;
     _safety = safety;
@@ -116,13 +119,14 @@ public sealed class AdminAgentService : IAdminAgentService
     _eventContext = eventContext;
     _chatPersistence = chatPersistence;
     _db = db;
+    _facebook = facebook;
   }
 
   private static readonly IReadOnlyList<ToolDefinition> Tools =
   [
     // Dashboard
-    T("get_dashboard_summary", "Lấy tổng quan dashboard (tổng doanh thu, đơn hàng, người dùng, sản phẩm).",
-      P(("period", O("string", "Khoảng thời gian: today, week, month. Mặc định: week")))),
+    T("get_dashboard_summary", "Lấy tổng quan dashboard (tổng doanh thu, đơn hàng, người dùng, sản phẩm) toàn thời gian.",
+      P()),
 
     T("get_revenue", "Lấy dữ liệu doanh thu theo khoảng thời gian.",
       P(("period", O("integer", "Số ngày: 7, 30, hoặc 90. Mặc định: 7")))),
@@ -225,7 +229,7 @@ public sealed class AdminAgentService : IAdminAgentService
       P(
         ("name", O("string", "Tên sản phẩm")),
         ("description", O("string", "Mô tả sản phẩm (tùy chọn)")),
-        ("categoryId", O("string", "ID danh mục (GUID) (tùy chọn)")),
+        ("categoryId", O("string", "ID danh mục (GUID) — bắt buộc. Gọi list_categories trước để lấy ID hợp lệ.")),
         ("productType", O("string", "Loại: ao_dai hoặc phu_kien. Mặc định: ao_dai")))),
 
     T("update_product", "Cập nhật sản phẩm hiện có bằng patch một phần, giữ nguyên trường không gửi.",
@@ -365,7 +369,7 @@ public sealed class AdminAgentService : IAdminAgentService
     T("update_user_status", "Bật/tắt trạng thái người dùng.",
       P(
         ("id", O("string", "ID người dùng (GUID)")),
-        ("status", O("string", "Trạng thái mới: active hoặc inactive")))),
+        ("status", O("string", "Trạng thái mới: active, inactive hoặc blocked")))),
 
     T("update_user_role", "Thay đổi vai trò người dùng (admin hoặc customer).",
       P(
@@ -401,7 +405,7 @@ public sealed class AdminAgentService : IAdminAgentService
         ("fullName", O("string", "Họ tên đầy đủ — bắt buộc")),
         ("email", O("string", "Email (tùy chọn nhưng nên có)")),
         ("phone", O("string", "SĐT (tùy chọn)")),
-        ("password", O("string", "Mật khẩu (8-128 ký tự)")),
+        ("password", O("string", "Mật khẩu (8-128 ký tự, tùy chọn — bỏ trống nếu chưa đặt mật khẩu)")),
         ("role", O("string", "Vai trò: admin hoặc customer. Mặc định: customer")))),
 
     T("delete_user", "Xóa mềm người dùng. Có thể khôi phục sau.",
@@ -495,17 +499,11 @@ public sealed class AdminAgentService : IAdminAgentService
     T("list_recent_comments", "Xem bình luận gần đây từ khách hàng.",
       P(("limit", O("integer", "Số lượng bình luận. Mặc định: 10")))),
 
-    T("reply_to_review", "Phản hồi đánh giá (review) của khách hàng. Dùng cho review có rating.",
+    T("reply_to_comment", "Phản hồi một bình luận hoặc đánh giá (review) của khách hàng. Dùng cho cả comment thường lẫn review có rating.",
       P(
-        ("commentId", O("string", "ID đánh giá gốc (GUID)")),
-        ("productId", O("string", "ID sản phẩm (GUID)")),
-        ("content", O("string", "Nội dung phản hồi")))),
-
-    T("reply_to_comment", "Phản hồi một bình luận/đánh giá của khách hàng.",
-      P(
-        ("commentId", O("string", "ID bình luận gốc (GUID)")),
-        ("productId", O("string", "ID sản phẩm (GUID)")),
-        ("content", O("string", "Nội dung phản hồi")))),
+        ("commentId", O("string", "ID bình luận/đánh giá gốc (GUID) — bắt buộc")),
+        ("productId", O("string", "ID sản phẩm (GUID) — bắt buộc")),
+        ("content", O("string", "Nội dung phản hồi — bắt buộc")))),
 
     T("list_reviews", "Liệt kê/tìm đánh giá sản phẩm có phân trang, lọc theo rating và trạng thái hiển thị. Dùng trước khi hide/show/delete để lấy ID đánh giá.",
       P(
@@ -593,7 +591,7 @@ public sealed class AdminAgentService : IAdminAgentService
       P(
         ("recipientMode", O("string", "all_active, selected, hoặc manual")),
         ("manualEmails", O("string", "Email thủ công phân tách dấu phẩy")),
-        ("templateKey", O("string", "Key mẫu email")),
+        ("templateKey", O("string", "Mẫu email (tùy chọn). Giá trị hợp lệ: marketing.newsletter (mặc định — bản tin/nội dung tự do, dùng intro+bodyHtml+CTA), marketing.promo (ưu đãi/khuyến mãi), marketing.welcome (chào mừng). Bỏ trống = marketing.newsletter.")),
         ("subject", O("string", "Tiêu đề email")),
         ("intro", O("string", "Đoạn mở đầu")),
         ("bodyHtml", O("string", "Nội dung HTML")),
@@ -635,6 +633,29 @@ public sealed class AdminAgentService : IAdminAgentService
 
     T("delete_email_job", "Xóa mềm một email job đã kết thúc. Không xóa job đang queued/sending.",
       P(("id", O("string", "ID email job (GUID) — bắt buộc")))),
+
+    // Facebook Page (social): đọc bài/bình luận và trả lời bình luận trên trang Facebook.
+    T("list_facebook_pages", "Liệt kê các trang Facebook đã kết nối (pageId + tên trang). Gọi trước khi thao tác Facebook để lấy pageId. Chỉ trả về pageId/tên, không bao giờ lộ access token.",
+      P()),
+
+    T("list_facebook_posts", "Liệt kê bài đăng trên một trang Facebook (mới nhất trước). Dùng để admin xem các bài đã đăng, hoặc lấy postId trước khi xem/ trả lời bình luận.",
+      P(
+        ("pageId", O("string", "Facebook Page ID — bắt buộc (lấy từ list_facebook_pages)")),
+        ("limit", O("integer", "Số bài tối đa. Mặc định: 15, tối đa 50")),
+        ("cursor", O("string", "Cursor trang kế tiếp để lấy thêm bài cũ hơn (tùy chọn)")))),
+
+    T("list_facebook_post_comments", "Liệt kê bình luận trên MỘT bài đăng Facebook (kèm tên người bình luận, nội dung, thời gian, đã ẩn chưa, có trả lời được không). Dùng để admin xem bình luận và lấy commentId trước khi trả lời.",
+      P(
+        ("pageId", O("string", "Facebook Page ID — bắt buộc")),
+        ("postId", O("string", "Facebook Post ID — bắt buộc (lấy từ list_facebook_posts)")),
+        ("limit", O("integer", "Số bình luận tối đa. Mặc định: 25, tối đa 50")),
+        ("after", O("string", "Cursor trang kế tiếp (tùy chọn)")))),
+
+    T("reply_facebook_comment", "Trả lời một bình luận trên bài đăng Facebook bằng tư cách trang. Reply ngắn, ấm, lịch sự, đúng giọng thương hiệu; cảm ơn khi tích cực, xin lỗi + hỗ trợ khi tiêu cực. KHÔNG tranh cãi với khách.",
+      P(
+        ("pageId", O("string", "Facebook Page ID — bắt buộc")),
+        ("commentId", O("string", "Facebook Comment ID cần trả lời — bắt buộc (lấy từ list_facebook_post_comments)")),
+        ("message", O("string", "Nội dung trả lời — bắt buộc")))),
 
     // Autonomy Mode
     T("toggle_autonomy", "Bật/tắt chế độ tự động cho AI. Khi bật, các hành động Medium risk được tự động thực hiện.",
@@ -678,7 +699,7 @@ public sealed class AdminAgentService : IAdminAgentService
     T("generate_product_description", "Tạo mô tả sản phẩm bằng AI (tiếng Việt). Dùng khi tạo hoặc cải thiện mô tả sản phẩm.",
       P(
         ("productId", O("string", "ID sản phẩm (GUID) — đọc dữ liệu hiện có để làm gốc")),
-        ("focus", O("string", "Trọng tâm: chất liệu, kiểu dáng, dịp mặc, hoặc all. Mặc định: all")))),
+        ("focus", O("string", "Trọng tâm: all (tất cả), material (chất liệu), style (kiểu dáng), occasion (dịp mặc), seo. Mặc định: all")))),
 
     T("generate_weekly_report", "Tạo báo cáo tuần tổng hợp theo periodDays từ dữ liệu dashboard. Dữ liệu chỉ đúng cho khoảng thời gian đã chọn; khi nhận định sau đó hãy trích cùng số liệu hoặc refresh bằng tool.",
       P(("periodDays", O("integer", "Số ngày phân tích. Mặc định: 7")))),
@@ -1321,6 +1342,8 @@ public sealed class AdminAgentService : IAdminAgentService
         // Reviews & Comments
         "list_recent_reviews" => await ListRecentReviews(ClampInt(GetIntArg(args, "limit", 10), 1, 20), ct),
         "list_recent_comments" => await ListRecentComments(ClampInt(GetIntArg(args, "limit", 10), 1, 20), ct),
+        // reply_to_review is no longer a declared tool (merged into reply_to_comment), but
+        // the case stays for backward-compat when replaying old histories / pending actions.
         "reply_to_review" => await ReplyToComment(adminUserId, args, ct),
         "reply_to_comment" => await ReplyToComment(adminUserId, args, ct),
         "list_reviews" => await ListReviews(args, ct),
@@ -1361,6 +1384,12 @@ public sealed class AdminAgentService : IAdminAgentService
         "retry_email_job" => await RetryEmailJob(RequiredGuid(args, "id"), ct),
         "cancel_email_job" => await CancelEmailJob(RequiredGuid(args, "id"), ct),
         "delete_email_job" => await DeleteEmailJob(RequiredGuid(args, "id"), ct),
+
+        // Facebook Page (social)
+        "list_facebook_pages" => await ListFacebookPages(ct),
+        "list_facebook_posts" => await ListFacebookPosts(args, ct),
+        "list_facebook_post_comments" => await ListFacebookPostComments(args, ct),
+        "reply_facebook_comment" => await ReplyFacebookComment(args, ct),
 
         // Autonomy Mode
         "toggle_autonomy" => ToggleAutonomy(adminUserId, args),
@@ -3314,11 +3343,16 @@ TỔNG QUAN:
   {
     var mode = OptionalEnum(args, "recipientMode", "all_active", "selected", "manual") ?? "manual";
     var manualEmails = ParseCsv(GetOptionalString(args, "manualEmails", 4000));
+    // templateKey is optional from the AI's side: it has no tool to enumerate DB template
+    // keys, so default to the always-available code-managed newsletter template, which
+    // renders intro/bodyHtml/CTA. Admin can still pass a specific configured key.
+    var templateKey = GetOptionalString(args, "templateKey", 120);
+    if (string.IsNullOrWhiteSpace(templateKey)) templateKey = "marketing.newsletter";
     var request = new SendMarketingCampaignRequest(
       mode,
       null,
       manualEmails,
-      RequiredString(args, "templateKey", 120),
+      templateKey,
       RequiredString(args, "subject", 200),
       GetOptionalString(args, "preheader", 200),
       GetOptionalString(args, "intro", 1000),
@@ -3403,6 +3437,76 @@ TỔNG QUAN:
   {
     var ok = await _emailJobs.DeleteAsync(id, ct);
     return ok ? "✅ Đã xóa mềm email job." : "❌ Không tìm thấy email job, đã bị xóa hoặc đang được gửi.";
+  }
+
+  // --- Facebook Page (social) ---
+
+  private async Task<string> ListFacebookPages(CancellationToken ct)
+  {
+    var pages = await _facebook.GetConnectionsAsync(ct);
+    // Only expose pageId + name; never the access token (DTO already strips it to TokenLast4).
+    var items = pages
+      .Where(p => p.IsActive)
+      .Select(p => new { p.PageId, name = p.PageName })
+      .ToList();
+    return SerializeToolResult(items, message: items.Count == 0
+      ? "Chưa có trang Facebook nào được kết nối."
+      : $"Tìm thấy {items.Count} trang Facebook đã kết nối.");
+  }
+
+  private async Task<string> ListFacebookPosts(JsonElement args, CancellationToken ct)
+  {
+    var pageId = RequiredString(args, "pageId", 64);
+    var limit = ClampInt(GetIntArg(args, "limit", 15), 1, 50);
+    var cursor = GetStrArg(args, "cursor");
+    var result = await _facebook.GetPostsAsync(pageId, cursor, limit, ct);
+    var items = result.Items.Select(p => new
+    {
+      p.Id,
+      message = p.Message,
+      createdTime = p.CreatedTime,
+      permalink = p.PermalinkUrl,
+      isPublished = p.IsPublished
+    }).ToList();
+    var hasMore = !string.IsNullOrEmpty(result.AfterCursor);
+    return SerializeToolResult(
+      new { items, afterCursor = result.AfterCursor, hasMore },
+      message: $"Tìm thấy {items.Count} bài đăng trên trang Facebook (còn tiếp: {(hasMore ? "có" : "không")}).");
+  }
+
+  private async Task<string> ListFacebookPostComments(JsonElement args, CancellationToken ct)
+  {
+    var pageId = RequiredString(args, "pageId", 64);
+    var postId = RequiredString(args, "postId", 128);
+    var limit = ClampInt(GetIntArg(args, "limit", 25), 1, 50);
+    var after = GetStrArg(args, "after");
+    var result = await _facebook.GetPostCommentsAsync(pageId, postId, after, limit, ct);
+    var items = result.Items.Select(c => new
+    {
+      c.Id,
+      author = c.Author?.Name,
+      message = c.Message,
+      createdTime = c.CreatedTime,
+      likeCount = c.LikeCount,
+      replyCount = c.CommentCount,
+      isHidden = c.IsHidden,
+      canReply = c.CanReply
+    }).ToList();
+    var hasMore = !string.IsNullOrEmpty(result.AfterCursor);
+    return SerializeToolResult(
+      new { items, afterCursor = result.AfterCursor, hasMore },
+      message: $"Tìm thấy {items.Count} bình luận trên bài đăng (còn tiếp: {(hasMore ? "có" : "không")}).");
+  }
+
+  private async Task<string> ReplyFacebookComment(JsonElement args, CancellationToken ct)
+  {
+    var pageId = RequiredString(args, "pageId", 64);
+    var commentId = RequiredString(args, "commentId", 128);
+    var message = RequiredString(args, "message", 2000);
+    var result = await _facebook.ReplyToCommentAsync(pageId, commentId, new ReplyFacebookCommentRequest(message), ct);
+    return result.Success
+      ? "✅ Đã trả lời bình luận Facebook."
+      : $"❌ Không thể trả lời bình luận: {result.Message}";
   }
 
 

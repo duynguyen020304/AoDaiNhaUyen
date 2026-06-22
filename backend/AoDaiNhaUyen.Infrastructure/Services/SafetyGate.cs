@@ -142,6 +142,11 @@ public sealed class SafetyGate : ISafetyGate
     ["generate_product_description"] = (RiskLevel.Read, false),
     ["generate_weekly_report"] = (RiskLevel.Read, false),
     ["check_inventory_alerts"] = (RiskLevel.Read, false),
+    // Facebook Page (social)
+    ["list_facebook_pages"] = (RiskLevel.Read, false),
+    ["list_facebook_posts"] = (RiskLevel.Read, false),
+    ["list_facebook_post_comments"] = (RiskLevel.Read, false),
+    ["reply_facebook_comment"] = (RiskLevel.Medium, true),
   };
 
   public SafetyGate(ILogger<SafetyGate> logger, AppDbContext? dbContext = null)
