@@ -509,6 +509,51 @@ KHÔNG HIỂN THỊ GUID/ID NỘI BỘ CHO ADMIN (MẶC ĐỊNH):
       yield return chunk;
   }
 
+  public async Task<T> CompleteJsonAsync<T>(
+    string systemPrompt,
+    string userPrompt,
+    object? responseSchema,
+    CancellationToken ct)
+  {
+    if (string.IsNullOrWhiteSpace(_config.ApiKey) || string.IsNullOrWhiteSpace(_config.StylistTextModel))
+      throw new InvalidOperationException("Google Cloud AI chưa được cấu hình.");
+
+    var payload = new GeminiJsonRequest(
+      new GeminiContent("system", [GeminiPart.FromText(systemPrompt)]),
+      [new GeminiContent("user", [GeminiPart.FromText(userPrompt)])],
+      new GeminiJsonGenerationConfig(0m, 0.9m, 32, 2048, "application/json", responseSchema),
+      [
+        new GeminiSafetySetting("HARM_CATEGORY_HARASSMENT", "BLOCK_MEDIUM_AND_ABOVE"),
+        new GeminiSafetySetting("HARM_CATEGORY_HATE_SPEECH", "BLOCK_MEDIUM_AND_ABOVE"),
+        new GeminiSafetySetting("HARM_CATEGORY_DANGEROUS_CONTENT", "BLOCK_MEDIUM_AND_ABOVE"),
+      ]);
+
+    using var request = new HttpRequestMessage(HttpMethod.Post, BuildGenerateEndpoint())
+    {
+      Content = JsonContent.Create(payload)
+    };
+    request.Headers.Add("x-goog-api-key", _config.ApiKey);
+
+    using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+    var body = await response.Content.ReadAsStringAsync(ct);
+    if (!response.IsSuccessStatusCode)
+      throw new InvalidOperationException($"Vertex JSON completion failed: {(int)response.StatusCode}: {Truncate(body, 1000)}");
+
+    using var doc = JsonDocument.Parse(body);
+    var text = doc.RootElement
+      .GetProperty("candidates")[0]
+      .GetProperty("content")
+      .GetProperty("parts")[0]
+      .GetProperty("text")
+      .GetString();
+
+    if (string.IsNullOrWhiteSpace(text))
+      throw new JsonException("Vertex JSON completion returned empty text.");
+
+    return JsonSerializer.Deserialize<T>(text, new JsonSerializerOptions(JsonSerializerDefaults.Web))
+      ?? throw new JsonException("Vertex JSON completion could not deserialize response.");
+  }
+
   private async IAsyncEnumerable<LlmChunk> SendAndReadAsync(
     HttpClient httpClient,
     string endpoint,
@@ -739,6 +784,19 @@ KHÔNG HIỂN THỊ GUID/ID NỘI BỘ CHO ADMIN (MẶC ĐỊNH):
     return $"https://aiplatform.googleapis.com/v1/publishers/google/models/{model}:streamGenerateContent?alt=sse";
   }
 
+  private string BuildGenerateEndpoint()
+  {
+    var model = Uri.EscapeDataString(_config.StylistTextModel);
+    if (!string.IsNullOrWhiteSpace(_config.ProjectId))
+    {
+      var projectId = Uri.EscapeDataString(_config.ProjectId);
+      var location = Uri.EscapeDataString(_config.Location);
+      return $"https://aiplatform.googleapis.com/v1/projects/{projectId}/locations/{location}/publishers/google/models/{model}:generateContent";
+    }
+
+    return $"https://aiplatform.googleapis.com/v1/publishers/google/models/{model}:generateContent";
+  }
+
   private async IAsyncEnumerable<LlmChunk> ReadStreamChunksAsync(
     StreamReader reader,
     [EnumeratorCancellation] CancellationToken ct)
@@ -880,6 +938,12 @@ internal sealed record GeminiStreamRequest(
   [property: JsonPropertyName("tools"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<GeminiTool>? Tools,
   [property: JsonPropertyName("safetySettings"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<GeminiSafetySetting>? SafetySettings);
 
+internal sealed record GeminiJsonRequest(
+  [property: JsonPropertyName("systemInstruction")] GeminiContent SystemInstruction,
+  [property: JsonPropertyName("contents")] IReadOnlyList<GeminiContent> Contents,
+  [property: JsonPropertyName("generationConfig")] GeminiJsonGenerationConfig GenerationConfig,
+  [property: JsonPropertyName("safetySettings"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<GeminiSafetySetting>? SafetySettings);
+
 internal sealed record GeminiContent(
   [property: JsonPropertyName("role")] string Role,
   [property: JsonPropertyName("parts")] IReadOnlyList<GeminiPart> Parts);
@@ -910,6 +974,14 @@ internal sealed record GeminiGenerationConfig(
   [property: JsonPropertyName("topP")] decimal TopP,
   [property: JsonPropertyName("topK")] int TopK,
   [property: JsonPropertyName("maxOutputTokens"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? MaxOutputTokens);
+
+internal sealed record GeminiJsonGenerationConfig(
+  [property: JsonPropertyName("temperature")] decimal Temperature,
+  [property: JsonPropertyName("topP")] decimal TopP,
+  [property: JsonPropertyName("topK")] int TopK,
+  [property: JsonPropertyName("maxOutputTokens"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? MaxOutputTokens,
+  [property: JsonPropertyName("responseMimeType")] string ResponseMimeType,
+  [property: JsonPropertyName("responseSchema"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] object? ResponseSchema);
 
 internal sealed record GeminiSafetySetting(
   [property: JsonPropertyName("category")] string Category,

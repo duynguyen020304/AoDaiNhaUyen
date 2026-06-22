@@ -41,8 +41,13 @@ public sealed class AdminChatPersistence(AppDbContext dbContext) : IAdminChatPer
   public async Task<ChatMessage?> AddMessageAsync(Guid threadId, Guid adminUserId, string role, string content,
     string? toolCallsJson, string? structuredPayloadJson, CancellationToken ct)
   {
-    var thread = await GetThreadAsync(threadId, adminUserId, ct);
-    if (thread is null) return null;
+    var threadExists = await dbContext.ChatThreads
+      .AsNoTracking()
+      .AnyAsync(t => t.Id == threadId
+        && t.UserId == adminUserId
+        && t.Source == ChatSources.AdminAi
+        && !t.IsDeleted, ct);
+    if (!threadExists) return null;
 
     var message = new ChatMessage
     {
@@ -54,9 +59,24 @@ public sealed class AdminChatPersistence(AppDbContext dbContext) : IAdminChatPer
     };
 
     dbContext.ChatMessages.Add(message);
-    thread.UpdatedAt = DateTime.UtcNow;
 
-    await dbContext.SaveChangesAsync(ct);
+    try
+    {
+      await dbContext.SaveChangesAsync(ct);
+    }
+    catch (DbUpdateException)
+    {
+      dbContext.Entry(message).State = EntityState.Detached;
+      return null;
+    }
+
+    await dbContext.ChatThreads
+      .Where(t => t.Id == threadId
+        && t.UserId == adminUserId
+        && t.Source == ChatSources.AdminAi
+        && !t.IsDeleted)
+      .ExecuteUpdateAsync(setters => setters.SetProperty(t => t.UpdatedAt, DateTime.UtcNow), ct);
+
     return message;
   }
 

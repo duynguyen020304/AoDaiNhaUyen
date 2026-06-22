@@ -174,7 +174,7 @@ builder.Services.AddRateLimiter(options =>
     GetClientPartitionKey(httpContext, includeGuestKey: true),
     _ => new FixedWindowRateLimiterOptions
     {
-      PermitLimit = 20,
+      PermitLimit = 20000,
       Window = TimeSpan.FromMinutes(10),
       QueueLimit = 0,
       AutoReplenishment = true

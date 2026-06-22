@@ -12,9 +12,13 @@ using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Common;
 using AoDaiNhaUyen.Infrastructure.Data;
 using AoDaiNhaUyen.Infrastructure.Services;
+using AoDaiNhaUyen.Infrastructure.Services.AdminAiTools;
+using AoDaiNhaUyen.Application.Options;
 using AoDaiNhaUyen.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.DataProtection;
 using Xunit;
 
 namespace AoDaiNhaUyen.Tests.Services;
@@ -431,6 +435,157 @@ public sealed class AdminAiSecurityTests
     Assert.Equal("secret", ownerRead[0].Content);
   }
 
+  [Fact]
+  public async Task CancelOrder_WithOrderCodeInOrderId_ResolvesToGuid_AndStoresPreparedArgs()
+  {
+    var orderId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", "{\"orderId\":\"AD-123\"}", "cancel_order", "call-1"));
+    var orders = new FakeOrderService { LookupOrder = OrderDetail(orderId, "AD-123") };
+    var service = CreateService(llm, orders: orders);
+
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Hủy đơn AD-123", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    Assert.Equal(1, orders.GetByCodeCalls);
+    Assert.Equal(0, orders.CancelCalls);
+    var toolCall = Assert.Single(chunks, c => c.Type == "tool_call" && c.ToolName == "cancel_order");
+    Assert.Contains(orderId.ToString(), toolCall.Content);
+    Assert.DoesNotContain("\"orderId\":\"AD-123\"", toolCall.Content);
+    var confirmation = Assert.Single(chunks, c => c.Type == "confirmation" && c.ToolName == "cancel_order");
+    var ok = await service.ConfirmActionAsync(confirmation.ToolCallId!, true, AdminA, CancellationToken.None);
+
+    Assert.True(ok);
+    Assert.Equal(1, orders.CancelCalls);
+    Assert.Equal(orderId, orders.LastCancelledOrderId);
+  }
+
+  [Fact]
+  public async Task UpdateVariantStock_WithSku_ResolvesVariantId_AndStoresPreparedArgs()
+  {
+    var productId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+    var variantId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", $"{{\"productId\":\"{productId}\",\"sku\":\"TRAM_CAI_TOC_XANH_BIEC_STD\",\"stockQty\":30}}", "update_variant_stock", "call-variant"));
+    var products = new FakeProductService { Detail = ProductWithVariant(productId, variantId, "TRAM_CAI_TOC_XANH_BIEC_STD") };
+    var service = CreateService(llm, products: products);
+
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Cập nhật SKU lên 30", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    var toolCall = Assert.Single(chunks, c => c.Type == "tool_call" && c.ToolName == "update_variant_stock");
+    Assert.Contains(variantId.ToString(), toolCall.Content);
+    Assert.Contains("TRAM_CAI_TOC_XANH_BIEC_STD", toolCall.Content);
+    Assert.Equal(0, products.UpdateVariantStockCalls);
+
+    var confirmation = Assert.Single(chunks, c => c.Type == "confirmation" && c.ToolName == "update_variant_stock");
+    var ok = await service.ConfirmActionAsync(confirmation.ToolCallId!, true, AdminA, CancellationToken.None);
+
+    Assert.True(ok);
+    Assert.Equal(1, products.UpdateVariantStockCalls);
+    Assert.Equal(productId, products.LastStockProductId);
+    Assert.Equal(variantId, products.LastStockVariantId);
+    Assert.Equal(30, products.LastStockQty);
+  }
+
+  [Fact]
+  public async Task CrossAdminConfirm_DoesNotConsumePendingAction()
+  {
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", $"{{\"id\":\"{ProductId}\"}}", "delete_product", "call-1"));
+    var products = new FakeProductService();
+    var service = CreateService(llm, products: products);
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Xóa sản phẩm", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+    var actionId = Assert.Single(chunks, c => c.Type == "confirmation").ToolCallId!;
+
+    var blocked = await service.ConfirmActionAsync(actionId, approved: true, AdminB, CancellationToken.None);
+    var ok = await service.ConfirmActionAsync(actionId, approved: true, AdminA, CancellationToken.None);
+
+    Assert.False(blocked);
+    Assert.True(ok);
+    Assert.Equal(1, products.DeleteCalls);
+  }
+
+  [Fact]
+  public async Task ConfirmAction_WithProtectedToken_ExecutesEvenWhenPendingStoreWasLost()
+  {
+    var productId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+    var variantId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+    var provider = new EphemeralDataProtectionProvider();
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", $"{{\"productId\":\"{productId}\",\"sku\":\"TRAM_CAI_TOC_XANH_BIEC_STD\",\"stockQty\":30}}", "update_variant_stock", "call-variant"));
+    var firstProducts = new FakeProductService { Detail = ProductWithVariant(productId, variantId, "TRAM_CAI_TOC_XANH_BIEC_STD") };
+    var firstService = CreateService(llm, products: firstProducts, dataProtectionProvider: provider);
+    var chunks = await firstService.StreamChatAsync(new AdminAiChatRequest("Cập nhật SKU lên 30", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+    var confirmation = Assert.Single(chunks, c => c.Type == "confirmation" && c.ToolName == "update_variant_stock");
+
+    var secondProducts = new FakeProductService { Detail = ProductWithVariant(productId, variantId, "TRAM_CAI_TOC_XANH_BIEC_STD") };
+    var secondService = CreateService(new ScriptedLlmProvider(), products: secondProducts, dataProtectionProvider: provider);
+
+    var ok = await secondService.ConfirmActionAsync(confirmation.ToolCallId!, true, AdminA, CancellationToken.None);
+
+    Assert.True(ok);
+    Assert.Equal(1, secondProducts.UpdateVariantStockCalls);
+    Assert.Equal(productId, secondProducts.LastStockProductId);
+    Assert.Equal(variantId, secondProducts.LastStockVariantId);
+    Assert.Equal(30, secondProducts.LastStockQty);
+  }
+
+  [Fact]
+  public async Task ProductUpdate_WithAmbiguousName_AsksClarification_NoExecution()
+  {
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", "{\"name\":\"Áo dài\",\"status\":\"active\"}", "update_product", "call-1"));
+    var products = new FakeProductService
+    {
+      Items = [ProductItem("Áo dài đỏ"), ProductItem("Áo dài xanh")],
+      TotalCount = 2
+    };
+    var service = CreateService(llm, products: products);
+
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Cập nhật áo dài", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    Assert.DoesNotContain(chunks, c => c.Type == "confirmation");
+    var result = Assert.Single(chunks, c => c.Type == "tool_result" && c.ToolName == "update_product");
+    Assert.Contains("nhiều sản phẩm", result.Content, StringComparison.OrdinalIgnoreCase);
+  }
+
+  [Fact]
+  public async Task LlmGateReject_BlocksMutatingExecution()
+  {
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", $"{{\"id\":\"{ProductId}\"}}", "delete_product", "call-1"))
+    {
+      JsonDecision = new ToolGateDecision("reject", "delete_product", null, "Gate từ chối")
+    };
+    var products = new FakeProductService();
+    var service = CreateService(llm, products: products, gateOptions: new AdminToolGateOptions { EnableLlmGate = true, LlmGateToolNames = ["delete_product"] });
+
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Xóa sản phẩm", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    Assert.Equal(1, llm.JsonCalls);
+    Assert.Equal(0, products.DeleteCalls);
+    Assert.DoesNotContain(chunks, c => c.Type == "confirmation");
+    Assert.Contains(chunks, c => c.Type == "tool_result" && c.Content.Contains("Gate từ chối"));
+  }
+
+  [Fact]
+  public async Task LlmGateMalformedJson_MutatingRejected()
+  {
+    var llm = new ScriptedLlmProvider(
+      new LlmChunk("tool_call", $"{{\"id\":\"{ProductId}\"}}", "delete_product", "call-1"))
+    {
+      JsonException = new JsonException("bad json")
+    };
+    var products = new FakeProductService();
+    var service = CreateService(llm, products: products, gateOptions: new AdminToolGateOptions { EnableLlmGate = true, LlmGateToolNames = ["delete_product"] });
+
+    var chunks = await service.StreamChatAsync(new AdminAiChatRequest("Xóa sản phẩm", null), AdminA, CancellationToken.None).ToListAsync(CancellationToken.None);
+
+    Assert.Equal(1, llm.JsonCalls);
+    Assert.Equal(0, products.DeleteCalls);
+    Assert.DoesNotContain(chunks, c => c.Type == "confirmation");
+    Assert.Contains(chunks, c => c.Type == "tool_result" && c.Content.Contains("Không kiểm tra được tool ghi"));
+  }
+
   private static AdminAgentService CreateService(
     IAdminLlmProvider llm,
     FakeProductService? products = null,
@@ -438,20 +593,40 @@ public sealed class AdminAiSecurityTests
     FakeMarketingCampaignService? marketing = null,
     IAdminShopEventContextService? eventContext = null,
     IAdminPromoService? promos = null,
-    IAdminDashboardService? dashboard = null)
+    IAdminDashboardService? dashboard = null,
+    FakeOrderService? orders = null,
+    IAdminUserService? users = null,
+    IAdminRoleService? roles = null,
+    IAdminToolInstructionRegistry? instructionRegistry = null,
+    AdminToolGateOptions? gateOptions = null,
+    IDataProtectionProvider? dataProtectionProvider = null)
   {
+    var safety = new StaticSafetyGate();
+    var productSvc = products ?? new FakeProductService();
+    var userSvc = users ?? new FakeUserService();
+    var roleSvc = roles ?? new FakeRoleService();
+    var orderSvc = orders ?? new FakeOrderService();
+    var promoSvc = promos ?? new FakePromoService();
+    var options = Options.Create(gateOptions ?? new AdminToolGateOptions { EnableLlmGate = false });
+    var registry = instructionRegistry ?? new AdminToolInstructionRegistry();
+    var validator = new AdminToolArgumentValidator(registry, safety, NullLogger<AdminToolArgumentValidator>.Instance);
+    var resolver = new AdminToolPrerequisiteResolver(orderSvc, productSvc, userSvc, roleSvc, promoSvc);
+    var promptBuilder = new AdminToolInstructionPromptBuilder();
+    var llmGate = new AdminToolInstructionGate(llm, registry, safety, promptBuilder, options, NullLogger<AdminToolInstructionGate>.Instance);
+    var preparation = new AdminToolPreparationService(validator, resolver, llmGate, safety, options);
+
     return new AdminAgentService(
       llm,
-      new StaticSafetyGate(),
-      products ?? new FakeProductService(),
+      safety,
+      productSvc,
       new FakeCategoryService(),
-      new FakeUserService(),
-      new FakeRoleService(),
+      userSvc,
+      roleSvc,
       dashboard ?? new FakeDashboardService(),
-      new FakeOrderService(),
+      orderSvc,
       new FakeInventoryService(),
       new FakeReviewService(),
-      promos ?? new FakePromoService(),
+      promoSvc,
       new FakeMediaService(),
       new FakeBlogAiDraftService(),
       new FakeBlogPostService(),
@@ -468,7 +643,10 @@ public sealed class AdminAiSecurityTests
       new FakeAdminChatPersistence(),
       eventContext ?? new FakeAdminShopEventContextService(),
       CreateInMemoryDbContext(),
-      new FakeFacebookService());
+      new FakeFacebookService(),
+      preparation,
+      options,
+      dataProtectionProvider ?? new EphemeralDataProtectionProvider());
   }
 
   /// <summary>In-memory AppDbContext for the agent (count_by_created_range uses it).
@@ -557,11 +735,32 @@ public sealed class AdminAiSecurityTests
     }
   }
 
+  private static AdminOrderDetail OrderDetail(Guid id, string code) => new(
+    id,
+    code,
+    "Khách Test",
+    "khach@example.com",
+    "TP.HCM",
+    "Quận 1",
+    null,
+    "1 Test",
+    100_000m,
+    0m,
+    20_000m,
+    120_000m,
+    "pending",
+    null,
+    DateTimeOffset.UtcNow,
+    []);
+
   private sealed class ScriptedLlmProvider(params LlmChunk[] chunks) : IAdminLlmProvider
   {
     private int _calls;
     public List<List<AdminLlmMessage>> HistorySnapshots { get; } = [];
     public List<IReadOnlyList<ToolDefinition>> ToolSnapshots { get; } = [];
+    public int JsonCalls { get; private set; }
+    public ToolGateDecision? JsonDecision { get; init; }
+    public Exception? JsonException { get; init; }
 
     public async IAsyncEnumerable<LlmChunk> StreamChatAsync(
       List<AdminLlmMessage> history,
@@ -580,6 +779,14 @@ public sealed class AdminAiSecurityTests
       }
       await Task.CompletedTask;
     }
+
+    public Task<T> CompleteJsonAsync<T>(string systemPrompt, string userPrompt, object? responseSchema, CancellationToken ct)
+    {
+      JsonCalls++;
+      if (JsonException is not null) throw JsonException;
+      object result = JsonDecision ?? new ToolGateDecision("execute", null, JsonDocument.Parse("{}").RootElement.Clone(), null);
+      return Task.FromResult((T)result);
+    }
   }
 
   private sealed class StaticSafetyGate : ISafetyGate
@@ -587,6 +794,8 @@ public sealed class AdminAiSecurityTests
     public RiskLevel Classify(string toolName) => toolName switch
     {
       "delete_product" => RiskLevel.High,
+      "cancel_order" => RiskLevel.High,
+      "update_product" => RiskLevel.Medium,
       "toggle_autonomy" => RiskLevel.High,
       "get_product" => RiskLevel.Read,
       "list_products" => RiskLevel.Read,
@@ -608,16 +817,28 @@ public sealed class AdminAiSecurityTests
   {
     public int DeleteCalls { get; private set; }
     public int GetByIdCalls { get; private set; }
+    public int UpdateVariantStockCalls { get; private set; }
+    public Guid? LastStockProductId { get; private set; }
+    public Guid? LastStockVariantId { get; private set; }
+    public int? LastStockQty { get; private set; }
     public int? LastPageSize { get; private set; }
     public IReadOnlyList<AdminProductListItemResponse> Items { get; init; } = [];
     public int TotalCount { get; init; }
+    public AdminProductDetailResponse? Detail { get; init; }
 
     public Task<(IReadOnlyList<AdminProductListItemResponse> Items, int TotalCount)> GetPagedAsync(string? search, string? status, int page, int pageSize, bool includeDeleted = false, CancellationToken cancellationToken = default)
     { LastPageSize = pageSize; return Task.FromResult((Items, TotalCount)); }
-    public Task<AdminProductDetailResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) { GetByIdCalls++; return Task.FromResult<AdminProductDetailResponse?>(Product(id)); }
+    public Task<AdminProductDetailResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) { GetByIdCalls++; return Task.FromResult<AdminProductDetailResponse?>(Detail?.Id == id ? Detail : Product(id)); }
     public Task<AdminProductDetailResponse> CreateAsync(CreateProductRequest request, CancellationToken cancellationToken = default) => Task.FromResult(Product(ProductId));
     public Task<AdminProductDetailResponse?> UpdateAsync(Guid id, UpdateProductRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(id));
-    public Task<AdminProductDetailResponse?> UpdateVariantStockAsync(Guid productId, Guid variantId, int stockQty, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
+    public Task<AdminProductDetailResponse?> UpdateVariantStockAsync(Guid productId, Guid variantId, int stockQty, CancellationToken cancellationToken = default)
+    {
+      UpdateVariantStockCalls++;
+      LastStockProductId = productId;
+      LastStockVariantId = variantId;
+      LastStockQty = stockQty;
+      return Task.FromResult<AdminProductDetailResponse?>(Detail?.Id == productId ? Detail : Product(productId));
+    }
     public Task<AdminProductDetailResponse?> DeleteVariantAsync(Guid productId, Guid variantId, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
     public Task<AdminProductDetailResponse?> CreateVariantAsync(Guid productId, CreateVariantRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
     public Task<AdminProductDetailResponse?> UpdateVariantAsync(Guid productId, Guid variantId, UpdateVariantRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminProductDetailResponse?>(Product(productId));
@@ -629,6 +850,26 @@ public sealed class AdminAiSecurityTests
     public Task<bool> SetPrimaryImageAsync(Guid productId, Guid imageId, CancellationToken cancellationToken = default) => Task.FromResult(true);
     private static AdminProductDetailResponse Product(Guid id) => new(id, "Áo dài", "ao-dai", "ao_dai", Guid.NewGuid(), "Danh mục", null, null, null, null, null, null, "active", false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, [], []);
   }
+
+  private static AdminProductDetailResponse ProductWithVariant(Guid productId, Guid variantId, string sku) => new(
+    productId,
+    "Trâm cài tóc xanh biếc",
+    "tram-cai-toc-xanh-biec",
+    "phu_kien",
+    Guid.NewGuid(),
+    "Phụ kiện",
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    "active",
+    false,
+    DateTimeOffset.UtcNow,
+    DateTimeOffset.UtcNow,
+    [new AdminVariantResponse(variantId, sku, "Tiêu chuẩn", null, "Xanh biếc", 100_000m, null, 5, true, "active")],
+    []);
 
   private static AdminProductListItemResponse ProductItem(string name) => new(
     Guid.NewGuid(),
@@ -781,13 +1022,17 @@ public sealed class AdminAiSecurityTests
 
   private sealed class FakeOrderService : IAdminOrderService
   {
+    public AdminOrderDetail? LookupOrder { get; init; }
+    public int GetByCodeCalls { get; private set; }
+    public int CancelCalls { get; private set; }
+    public Guid? LastCancelledOrderId { get; private set; }
     public Task<IReadOnlyList<AdminOrderListItem>> GetOrdersAsync(string? status, int limit, CancellationToken ct = default) => Task.FromResult((IReadOnlyList<AdminOrderListItem>)[]);
     public Task<IReadOnlyList<AdminOrderListItem>> GetOrdersByRangeAsync(string? status, DateTime? startDateUtc, DateTime? endDateUtc, int limit, CancellationToken ct = default) => Task.FromResult((IReadOnlyList<AdminOrderListItem>)[]);
-    public Task<AdminOrderDetail?> GetOrderByIdAsync(Guid orderId, CancellationToken ct = default) => Task.FromResult<AdminOrderDetail?>(null);
-    public Task<AdminOrderDetail?> GetOrderByCodeAsync(string orderCode, CancellationToken ct = default) => Task.FromResult<AdminOrderDetail?>(null);
+    public Task<AdminOrderDetail?> GetOrderByIdAsync(Guid orderId, CancellationToken ct = default) => Task.FromResult<AdminOrderDetail?>(LookupOrder?.Id == orderId ? LookupOrder : null);
+    public Task<AdminOrderDetail?> GetOrderByCodeAsync(string orderCode, CancellationToken ct = default) { GetByCodeCalls++; return Task.FromResult<AdminOrderDetail?>(LookupOrder?.OrderCode == orderCode ? LookupOrder : null); }
     public Task<OrderUpdateResult> UpdateStatusAsync(Guid orderId, string newStatus, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, newStatus));
     public Task<OrderUpdateResult> CreateShipmentAsync(Guid orderId, string? carrier, string? trackingNumber, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "shipping"));
-    public Task<OrderUpdateResult> CancelOrderAsync(Guid orderId, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "cancelled"));
+    public Task<OrderUpdateResult> CancelOrderAsync(Guid orderId, CancellationToken ct = default) { CancelCalls++; LastCancelledOrderId = orderId; return Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "cancelled")); }
     public Task<OrderUpdateResult> UpdateOrderAddressAsync(Guid orderId, AdminOrderAddressUpdate request, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "pending"));
     public Task<OrderUpdateResult> UpdateOrderItemsAsync(Guid orderId, IReadOnlyList<AdminOrderItemUpdate> items, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "pending"));
     public Task<OrderUpdateResult> DeleteOrderAsync(Guid orderId, CancellationToken ct = default) => Task.FromResult(new OrderUpdateResult(true, null, null, orderId, "pending"));

@@ -9,4 +9,5 @@ public interface IPendingActionStore
 {
   void Add(string actionId, AdminPendingAction pending);
   AdminPendingAction? Remove(string actionId);
+  bool TryMarkConsumed(string actionId);
 }

@@ -13,6 +13,7 @@ using AoDaiNhaUyen.Infrastructure.Configuration;
 using AoDaiNhaUyen.Infrastructure.Data;
 using AoDaiNhaUyen.Infrastructure.Repositories;
 using AoDaiNhaUyen.Infrastructure.Services;
+using AoDaiNhaUyen.Infrastructure.Services.AdminAiTools;
 using AoDaiNhaUyen.Api.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -89,6 +90,7 @@ public static class ServiceRegistration
         "FacebookApi:GraphApiVersion must be like v25.0 or 25.0.")
       .ValidateOnStart();
     services.Configure<HermesAgentOptions>(configuration.GetSection(HermesAgentOptions.SectionName));
+    services.Configure<AdminToolGateOptions>(configuration.GetSection(AdminToolGateOptions.SectionName));
     services.Configure<HermesAdminAuthOptions>(configuration.GetSection(HermesAdminAuthOptions.SectionName));
     services.Configure<HermesOutboxOptions>(configuration.GetSection(HermesOutboxOptions.SectionName));
     services.Configure<AdminSeedOptions>(configuration.GetSection(AdminSeedOptions.SectionName));
@@ -247,6 +249,12 @@ public static class ServiceRegistration
     services.AddSingleton<IPendingActionStore, PendingActionStore>();
     services.AddSingleton<IConversationStore, ConversationStore>();
     services.AddScoped<IBlogAiDraftService, BlogAiDraftService>();
+    services.AddSingleton<IAdminToolInstructionRegistry, AdminToolInstructionRegistry>();
+    services.AddSingleton<AdminToolInstructionPromptBuilder>();
+    services.AddScoped<AdminToolArgumentValidator>();
+    services.AddScoped<AdminToolPrerequisiteResolver>();
+    services.AddScoped<AdminToolInstructionGate>();
+    services.AddScoped<IAdminToolPreparationService, AdminToolPreparationService>();
     services.AddScoped<IAdminAgentService, AdminAgentService>();
     services.AddHttpClient<IAdminLlmProvider, VertexAiAdminProvider>(httpClient =>
     {
