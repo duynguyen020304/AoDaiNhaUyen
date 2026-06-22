@@ -4,7 +4,6 @@ using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.DTOs.BlogPost;
-using AoDaiNhaUyen.Application.DTOs.Collections;
 
 using AoDaiNhaUyen.Application.DTOs.Dashboard;
 using AoDaiNhaUyen.Application.DTOs.Order;
@@ -430,7 +429,6 @@ public sealed class AdminAiSecurityTests
       new StaticSafetyGate(),
       products ?? new FakeProductService(),
       new FakeCategoryService(),
-      new FakeCollectionService(),
       new FakeUserService(),
       new FakeRoleService(),
       dashboard ?? new FakeDashboardService(),
@@ -695,19 +693,6 @@ public sealed class AdminAiSecurityTests
     public Task<AdminCategoryDetailResponse?> UpdateAsync(Guid id, UpdateCategoryRequest request, CancellationToken cancellationToken = default) => Task.FromResult<AdminCategoryDetailResponse?>(new(id, null, request.Name, request.Slug, request.Description, null, 0, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
     public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
     public Task<bool> RestoreAsync(Guid id, CancellationToken cancellationToken = default) => Task.FromResult(true);
-  }
-
-  private sealed class FakeCollectionService : IAdminCollectionService
-  {
-    public Task<PagedResult<CollectionListItemDto>> GetListAsync(string? search, bool includeDeleted, int page, int pageSize, CancellationToken ct = default) => Task.FromResult(new PagedResult<CollectionListItemDto>([], 0, page, pageSize));
-    public Task<CollectionDetailDto?> GetByIdAsync(Guid id, bool includeDeleted = false, CancellationToken ct = default) => Task.FromResult<CollectionDetailDto?>(null);
-    public Task<CollectionDetailDto> CreateAsync(CreateCollectionRequest request, CancellationToken ct = default) => Task.FromResult(Collection(Guid.NewGuid(), request.Name));
-    public Task<CollectionDetailDto?> UpdateAsync(Guid id, UpdateCollectionRequest request, CancellationToken ct = default) => Task.FromResult<CollectionDetailDto?>(Collection(id, request.Name));
-    public Task<bool> DeleteAsync(Guid id, CancellationToken ct = default) => Task.FromResult(true);
-    public Task<bool> RestoreAsync(Guid id, CancellationToken ct = default) => Task.FromResult(true);
-    public Task<CollectionDetailDto?> AddProductAsync(Guid id, AddProductToCollectionRequest request, CancellationToken ct = default) => Task.FromResult<CollectionDetailDto?>(Collection(id, "Collection"));
-    public Task<CollectionDetailDto?> RemoveProductAsync(Guid id, Guid productId, CancellationToken ct = default) => Task.FromResult<CollectionDetailDto?>(Collection(id, "Collection"));
-    private static CollectionDetailDto Collection(Guid id, string name) => new(id, name, "collection", null, null, false, false, 0, null, DateTime.UtcNow, DateTime.UtcNow, false, []);
   }
 
   private sealed class FakeUserService : IAdminUserService

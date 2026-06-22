@@ -10,7 +10,6 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { ProductListPage } from '@/pages/ProductListPage'
 import { ProductFormPage } from '@/pages/ProductFormPage'
 import { CategoriesPage } from '@/pages/CategoriesPage'
-import { CollectionsPage } from '@/pages/CollectionsPage'
 import { UsersPage } from '@/pages/UsersPage'
 import { RolesPage } from '@/pages/RolesPage'
 import { MediaPage } from '@/pages/MediaPage'
@@ -68,7 +67,6 @@ export function App() {
             <Route path="products/:id" element={<ProductFormPage />} />
             <Route path="products/:id/edit" element={<ProductFormPage />} />
             <Route path="categories" element={<CategoriesPage />} />
-            <Route path="collections" element={<CollectionsPage />} />
             <Route path="promos" element={<PromosPage />} />
             <Route path="blog" element={<BlogListPage />} />
             <Route path="blog/new" element={<BlogFormPage />} />

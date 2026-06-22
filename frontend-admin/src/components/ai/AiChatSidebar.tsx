@@ -3,7 +3,6 @@ import { Bot, X, Send, Loader2 } from 'lucide-react'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { MessageBubble } from './MessageBubble'
 import { Button } from '@/components/ui/button'
-import { ChatModeSelector } from './ChatModeSelector'
 
 export function AiChatSidebar() {
   const {
@@ -58,10 +57,6 @@ export function AiChatSidebar() {
         >
           <X className="size-5" />
         </button>
-      </div>
-
-      <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
-        <ChatModeSelector />
       </div>
 
       {/* Messages */}

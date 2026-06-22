@@ -4,7 +4,6 @@ import { useAdminAiStore } from '@/stores/adminAiStore'
 import { MessageBubble } from './MessageBubble'
 import { ChatInput } from './ChatInput'
 import { EmptyChat } from './EmptyChat'
-import { ChatModeSelector } from './ChatModeSelector'
 
 export function FullChatArea() {
   const { messages, isLoading, sendMessage, chatMode } = useAdminAiStore()
@@ -40,7 +39,6 @@ export function FullChatArea() {
             {chatMode === 'hermes' ? 'Hermes Agent tự động quản trị, có heartbeat.' : 'Chat AI admin mặc định.'}
           </p>
         </div>
-        <ChatModeSelector />
       </div>
 
       {/* Messages or Empty State */}

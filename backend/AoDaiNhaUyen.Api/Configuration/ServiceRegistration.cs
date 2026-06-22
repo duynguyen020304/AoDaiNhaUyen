@@ -174,7 +174,6 @@ public static class ServiceRegistration
     services.AddScoped<IAdminUserService, AdminUserService>();
     services.AddScoped<IAdminRoleService, AdminRoleService>();
     services.AddScoped<IAdminCategoryService, AdminCategoryService>();
-    services.AddScoped<IAdminCollectionService, AdminCollectionService>();
     services.AddScoped<ICartService, CartService>();
     services.AddScoped<ICheckoutService, CheckoutService>();
     services.AddScoped<IPromoService, PromoService>();
