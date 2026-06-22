@@ -1,5 +1,6 @@
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
+using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -91,11 +92,85 @@ public sealed class BackgroundHermesOutboxWorker(
       await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    foreach (var id in claimedIds)
+    if (_options.BatchProcessingEnabled && claimedIds.Count > 1)
     {
-      var item = await dbContext.HermesEventOutbox.FirstAsync(x => x.Id == id, cancellationToken);
-      await ProcessItemAsync(dbContext, processor, item, cancellationToken);
+      await ProcessClaimedAsBatchesAsync(dbContext, processor, claimedIds, cancellationToken);
     }
+    else
+    {
+      foreach (var id in claimedIds)
+      {
+        var item = await dbContext.HermesEventOutbox.FirstAsync(x => x.Id == id, cancellationToken);
+        await ProcessItemAsync(dbContext, processor, item, cancellationToken);
+      }
+    }
+  }
+
+  private async Task ProcessClaimedAsBatchesAsync(
+    AppDbContext dbContext,
+    IHermesEventProcessor processor,
+    IReadOnlyList<Guid> claimedIds,
+    CancellationToken cancellationToken)
+  {
+    // Preserve claim order (scheduled_at, occurred_at) so batches group naturally.
+    var items = await dbContext.HermesEventOutbox
+      .Where(x => claimedIds.Contains(x.Id))
+      .ToListAsync(cancellationToken);
+    var ordered = claimedIds
+      .Select(id => items.First(x => x.Id == id))
+      .ToList();
+
+    foreach (var chunk in ChunkItems(ordered))
+    {
+      IReadOnlyList<Guid> processedIds;
+      try
+      {
+        processedIds = await processor.ProcessBatchAsync(chunk, cancellationToken);
+      }
+      catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+      {
+        throw;
+      }
+      catch (Exception ex)
+      {
+        logger.LogWarning(ex, "Hermes batch ({Count} events) lỗi, fallback xử lý từng event.", chunk.Count);
+        processedIds = Array.Empty<Guid>();
+      }
+
+      var processed = processedIds.ToHashSet();
+
+      // The processor already committed status='completed' for events it returned
+      // (inside its own transaction). Every other event in the chunk made no durable
+      // change — retry it per-event so its own retry/backoff/dead-letter applies.
+      foreach (var item in chunk.Where(x => !processed.Contains(x.Id)))
+      {
+        await ProcessItemAsync(dbContext, processor, item, cancellationToken);
+      }
+    }
+  }
+
+  private List<List<HermesEventOutbox>> ChunkItems(IReadOnlyList<HermesEventOutbox> items)
+  {
+    var maxEvents = Math.Clamp(_options.MaxBatchEvents, 1, 100);
+    var maxBytes = _options.MaxBatchPayloadBytes;
+    var chunks = new List<List<HermesEventOutbox>>();
+    var current = new List<HermesEventOutbox>();
+    var currentBytes = 0;
+
+    foreach (var item in items)
+    {
+      var itemBytes = System.Text.Encoding.UTF8.GetByteCount(item.PayloadJson);
+      if (current.Count > 0 && (current.Count >= maxEvents || (maxBytes > 0 && currentBytes + itemBytes > maxBytes)))
+      {
+        chunks.Add(current);
+        current = new List<HermesEventOutbox>();
+        currentBytes = 0;
+      }
+      current.Add(item);
+      currentBytes += itemBytes;
+    }
+    if (current.Count > 0) chunks.Add(current);
+    return chunks;
   }
 
   private async Task RequeueStaleProcessingAsync(AppDbContext dbContext, CancellationToken cancellationToken)
