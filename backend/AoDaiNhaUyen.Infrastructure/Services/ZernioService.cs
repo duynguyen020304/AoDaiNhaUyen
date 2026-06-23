@@ -686,7 +686,7 @@ public sealed class ZernioService(
       {
         var dto = MapWebhookMessage(message.Value, account, conversation);
         await UpsertMessagesAsync(dto.ConversationId, dto.AccountId, [dto], cancellationToken);
-        await PublishSocialWebhookEventAsync(eventName, dto.Platform ?? "facebook", dto.Id, cancellationToken);
+        await PublishSocialWebhookEventAsync(eventName, dto.Platform ?? "facebook", dto.Id, dto.AccountId, dto.ConversationId, cancellationToken);
       }
     }
     else if (eventName.StartsWith("comment.", StringComparison.OrdinalIgnoreCase))
@@ -699,7 +699,7 @@ public sealed class ZernioService(
         var accountId = GetString(account ?? default, "id", "accountId") ?? GetString(comment.Value, "accountId") ?? string.Empty;
         var dto = MapComment(comment.Value);
         await UpsertCommentsAsync(postId, accountId, [dto], cancellationToken);
-        await PublishSocialWebhookEventAsync(eventName, dto.Platform ?? GetString(account ?? default, "platform") ?? "facebook", dto.Id, cancellationToken);
+        await PublishSocialWebhookEventAsync(eventName, dto.Platform ?? GetString(account ?? default, "platform") ?? "facebook", dto.Id, accountId, postId, cancellationToken);
       }
     }
   }
@@ -734,17 +734,18 @@ public sealed class ZernioService(
       cancellationToken);
   }
 
-  private async Task PublishSocialWebhookEventAsync(string eventName, string platform, string aggregateId, CancellationToken cancellationToken)
+  private async Task PublishSocialWebhookEventAsync(string eventName, string platform, string aggregateId, string? pageId, string? threadId, CancellationToken cancellationToken)
   {
     if (hermesEventOutboxPublisher is null || string.IsNullOrWhiteSpace(eventName) || string.IsNullOrWhiteSpace(aggregateId))
     {
       return;
     }
 
-    var eventType = eventName.StartsWith("comment.", StringComparison.OrdinalIgnoreCase)
-      ? "social_comment_received"
-      : "social_message_received";
+    var isComment = eventName.StartsWith("comment.", StringComparison.OrdinalIgnoreCase);
+    var eventType = isComment ? "social_comment_received" : "social_message_received";
     var safePlatform = string.IsNullOrWhiteSpace(platform) ? "facebook" : platform.Trim().ToLowerInvariant();
+    var safePageId = string.IsNullOrWhiteSpace(pageId) ? null : pageId.Trim();
+    var safeThreadId = string.IsNullOrWhiteSpace(threadId) ? null : threadId.Trim();
 
     await hermesEventOutboxPublisher.EnqueueAdminEventAsync(
       eventType,
@@ -755,8 +756,16 @@ public sealed class ZernioService(
         EventName = eventName,
         Platform = safePlatform,
         AggregateId = aggregateId,
+        // Locator IDs (NOT PII): let the Hermes runner fetch the actual comment/message
+        // body via the authorized admin API and reply contextually. Body + author PII stay
+        // out of the untrusted event payload by design.
+        PageId = safePageId,
+        // postId for comments, conversationId for messages
+        ThreadId = safeThreadId,
+        CommentId = isComment ? aggregateId : null,
+        ConversationId = isComment ? null : safeThreadId,
         ContainsUserGeneratedText = true,
-        Privacy = "message/comment body and author PII omitted"
+        Privacy = "message/comment body and author PII omitted; fetch body via admin API to reply"
       },
       $"{eventType}:{safePlatform}:{eventName.Trim().ToLowerInvariant()}:{aggregateId}",
       $"social:{safePlatform}:{aggregateId}",
