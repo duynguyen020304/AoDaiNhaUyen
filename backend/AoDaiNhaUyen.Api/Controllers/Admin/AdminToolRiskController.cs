@@ -16,6 +16,7 @@ public sealed class AdminToolRiskController(IAdminToolRiskService service) : Con
   public async Task<ActionResult<ApiResponse<IReadOnlyList<ToolRiskConfigDto>>>> GetAll(
     CancellationToken cancellationToken)
   {
+    await service.SeedDefaultsAsync(cancellationToken);
     var configs = await service.GetAllAsync(cancellationToken);
     return Ok(ApiResponseFactory.Success(configs, "Lấy cấu hình rủi ro thành công."));
   }
