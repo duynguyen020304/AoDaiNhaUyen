@@ -17,6 +17,7 @@ export interface AiLlmChunk {
   content: string
   toolName?: string
   toolCallId?: string
+  riskLevel?: string
 }
 
 export interface AiMessage {

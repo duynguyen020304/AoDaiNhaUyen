@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { UserFormModal } from '@/components/admin/UserFormModal'
 import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal'
+import { PageSizeSelect } from '@/components/admin/PageSizeSelect'
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
@@ -18,8 +19,8 @@ function formatDate(iso: string | null): string {
 
 export function UsersPage() {
   const {
-    users, totalPages, totalItems, currentPage, search, includeDeleted, loading, error,
-    fetchUsers, fetchRoles, deleteUser, restoreUser, updateUserStatus, setSearch, setIncludeDeleted, clearError,
+    users, totalPages, totalItems, currentPage, pageSize, search, includeDeleted, loading, error,
+    fetchUsers, fetchRoles, deleteUser, restoreUser, updateUserStatus, setSearch, setIncludeDeleted, setPageSize, clearError,
   } = useUserStore()
 
   const [searchInput, setSearchInput] = useState(search)
@@ -51,6 +52,11 @@ export function UsersPage() {
 
   function handlePageChange(page: number) {
     fetchUsers(undefined, page)
+  }
+
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize)
+    queueMicrotask(() => fetchUsers(undefined, 1))
   }
 
   function handleStatusChange(userId: string, newStatus: string) {
@@ -201,9 +207,12 @@ export function UsersPage() {
       </Card>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground mt-4">
-          <span>Tổng: {totalItems} người dùng</span>
+      {totalItems > 0 && (
+        <div className="flex flex-col gap-3 text-sm text-muted-foreground mt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span>Tổng: {totalItems} người dùng</span>
+            <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} disabled={loading} />
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"

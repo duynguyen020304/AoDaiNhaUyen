@@ -259,7 +259,16 @@ public sealed class SafetyGate : ISafetyGate
       foreach (var config in dbConfigs)
       {
         if (Enum.TryParse<RiskLevel>(config.RiskLevel, true, out var level))
+        {
           newCache[config.ToolName] = (level, config.RequiresConfirmation);
+        }
+        else
+        {
+          _logger.LogWarning(
+            "[SafetyGate] Invalid risk level '{RiskLevel}' for tool {ToolName}; skipping DB config and falling back to defaults",
+            config.RiskLevel,
+            config.ToolName);
+        }
       }
 
       lock (_lock)

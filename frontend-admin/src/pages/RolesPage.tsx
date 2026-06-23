@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Loader2, Shield } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2, Shield, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRoleStore } from '@/stores/roleStore'
 import type { RoleDto } from '@/types/admin'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { RoleFormModal } from '@/components/admin/RoleFormModal'
 import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal'
+import { PageSizeSelect } from '@/components/admin/PageSizeSelect'
 
 const PROTECTED_ROLES = new Set(['admin', 'customer'])
 
@@ -14,6 +16,9 @@ export function RolesPage() {
   const { roles, loading, error, fetchRoles, deleteRole, clearError } = useRoleStore()
 
   const [formOpen, setFormOpen] = useState(false)
+  const [searchInput, setSearchInput] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
   const [editRole, setEditRole] = useState<RoleDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<RoleDto | null>(null)
 
@@ -36,6 +41,28 @@ export function RolesPage() {
     await deleteRole(deleteTarget.id)
   }
 
+  function handleSearch(value: string) {
+    setSearchInput(value)
+    setPage(1)
+  }
+
+  const filtered = searchInput
+    ? roles.filter((role) =>
+        role.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+        (role.description ?? '').toLowerCase().includes(searchInput.toLowerCase())
+      )
+    : roles
+  const totalPage = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage = Math.min(page, totalPage)
+  const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
+  const startItem = filtered.length === 0 ? 0 : (safePage - 1) * pageSize + 1
+  const endItem = Math.min(safePage * pageSize, filtered.length)
+
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize)
+    setPage(1)
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between gap-4 mb-6">
@@ -52,6 +79,18 @@ export function RolesPage() {
           <button onClick={clearError} className="underline shrink-0">Đóng</button>
         </div>
       )}
+
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="pl-9 w-60"
+            placeholder="Tìm theo tên hoặc mô tả..."
+            value={searchInput}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+        </div>
+      </div>
 
       <Card className="overflow-hidden">
         <Table>
@@ -70,7 +109,7 @@ export function RolesPage() {
                   Đang tải...
                 </TableCell>
               </TableRow>
-            ) : roles.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={3} className="text-center py-12 text-muted-foreground">
                   <Shield className="size-8 mx-auto mb-2 opacity-40" />
@@ -78,7 +117,7 @@ export function RolesPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              roles.map((r) => (
+              paginated.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-medium">
                     {r.name}
@@ -105,6 +144,37 @@ export function RolesPage() {
           </TableBody>
         </Table>
       </Card>
+
+
+      <div className="mt-4 flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <span>
+          Hiển thị {startItem}-{endItem} / {filtered.length} vai trò
+        </span>
+        <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} disabled={loading} />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading || safePage <= 1}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+          >
+            <ChevronLeft className="size-4" />
+            Trước
+          </Button>
+          <span className="min-w-24 text-center text-ink">
+            Trang {safePage} / {totalPage}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading || safePage >= totalPage}
+            onClick={() => setPage((value) => Math.min(totalPage, value + 1))}
+          >
+            Sau
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      </div>
 
       {/* Modals */}
       <RoleFormModal

@@ -2,6 +2,7 @@ import { request, requestPaginated } from './client'
 import type { PaginatedApiEnvelope } from '@/types/api'
 import type {
   AdminUserListItem,
+  AdminOrderListItem,
   AdminProductListItem,
   AdminProductDetail,
   AdminImageResponse,
@@ -350,6 +351,30 @@ export async function updateAiTryOnFeedbackStatus(id: string, data: UpdateAiTryO
 }
 
 // ── Orders ──
+
+export async function getAdminOrders(params?: {
+  status?: string
+  search?: string
+  fromDate?: string
+  toDate?: string
+  minTotal?: number
+  maxTotal?: number
+  sort?: string
+  page?: number
+  pageSize?: number
+}): Promise<PaginatedApiEnvelope<AdminOrderListItem[]>> {
+  const qs = new URLSearchParams()
+  if (params?.status && params.status !== 'all') qs.set('status', params.status)
+  if (params?.search) qs.set('search', params.search)
+  if (params?.fromDate) qs.set('fromDate', params.fromDate)
+  if (params?.toDate) qs.set('toDate', params.toDate)
+  if (params?.minTotal !== undefined) qs.set('minTotal', String(params.minTotal))
+  if (params?.maxTotal !== undefined) qs.set('maxTotal', String(params.maxTotal))
+  if (params?.sort) qs.set('sort', params.sort)
+  qs.set('page', String(params?.page ?? 1))
+  qs.set('pageSize', String(params?.pageSize ?? 20))
+  return requestPaginated<AdminOrderListItem[]>(`/api/admin/orders?${qs}`)
+}
 
 export async function updateOrderStatus(orderId: string, status: string): Promise<void> {
   await request<void>(`/api/admin/orders/${orderId}/status`, {

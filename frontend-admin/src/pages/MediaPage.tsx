@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import { PageSizeSelect } from '@/components/admin/PageSizeSelect'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('vi-VN')
@@ -23,7 +24,7 @@ export function MediaPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
   const [page, setPage] = useState(1)
-  const [pageSize] = useState(20)
+  const [pageSize, setPageSize] = useState(20)
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
@@ -71,6 +72,12 @@ export function MediaPage() {
   function handleFilterChange(value: string) {
     setLoading(true)
     setSourceFilter(value)
+    setPage(1)
+  }
+
+  function handlePageSizeChange(nextPageSize: number) {
+    setLoading(true)
+    setPageSize(nextPageSize)
     setPage(1)
   }
 
@@ -236,11 +243,12 @@ export function MediaPage() {
       </Card>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalItems > 0 && (
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">
-            Trang {page} / {totalPages}
-          </span>
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <span>Trang {page} / {totalPages}</span>
+            <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} disabled={loading} />
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Plus, Pencil, Trash2, RotateCcw, Loader2, FolderTree, Eye, EyeOff } from 'lucide-react'
+import { Search, Plus, Pencil, Trash2, RotateCcw, Loader2, FolderTree, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCategoryStore } from '@/stores/categoryStore'
 import type { CategoryListItem } from '@/types/admin'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { CategoryFormModal } from '@/components/admin/CategoryFormModal'
 import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal'
+import { PageSizeSelect } from '@/components/admin/PageSizeSelect'
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
@@ -22,6 +23,8 @@ export function CategoriesPage() {
   } = useCategoryStore()
 
   const [searchInput, setSearchInput] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
   const [formOpen, setFormOpen] = useState(false)
   const [editCategory, setEditCategory] = useState<CategoryListItem | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<CategoryListItem | null>(null)
@@ -34,11 +37,13 @@ export function CategoriesPage() {
   function handleToggleDeleted() {
     const next = !includeDeleted
     setIncludeDeleted(next)
+    setPage(1)
     fetchCategories()
   }
 
   function handleSearchInput(value: string) {
     setSearchInput(value)
+    setPage(1)
   }
 
   function openCreate() {
@@ -75,6 +80,16 @@ export function CategoriesPage() {
         c.slug.toLowerCase().includes(searchInput.toLowerCase())
       )
     : categories
+  const totalPage = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage = Math.min(page, totalPage)
+  const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
+  const startItem = filtered.length === 0 ? 0 : (safePage - 1) * pageSize + 1
+  const endItem = Math.min(safePage * pageSize, filtered.length)
+
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize)
+    setPage(1)
+  }
 
   return (
     <div>
@@ -145,7 +160,7 @@ export function CategoriesPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((cat) => (
+              paginated.map((cat) => (
                   <TableRow key={cat.id} className={cat.isDeleted ? 'opacity-60 bg-muted/30' : ''}>
                     <TableCell className="font-medium">
                       {cat.name}
@@ -180,6 +195,37 @@ export function CategoriesPage() {
           </TableBody>
         </Table>
       </Card>
+
+
+      <div className="mt-4 flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <span>
+          Hiển thị {startItem}-{endItem} / {filtered.length} danh mục
+        </span>
+        <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} disabled={loading} />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading || safePage <= 1}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+          >
+            <ChevronLeft className="size-4" />
+            Trước
+          </Button>
+          <span className="min-w-24 text-center text-ink">
+            Trang {safePage} / {totalPage}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading || safePage >= totalPage}
+            onClick={() => setPage((value) => Math.min(totalPage, value + 1))}
+          >
+            Sau
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      </div>
 
       {/* Modals */}
       <CategoryFormModal

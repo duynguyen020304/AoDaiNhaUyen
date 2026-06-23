@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Loader2, Settings2, Bot, AlertTriangle, CheckCircle2, Activity } from 'lucide-react'
+import { Loader2, Settings2, Bot, AlertTriangle, CheckCircle2, Activity, Search } from 'lucide-react'
 import { request } from '@/api/client'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 interface ToolRiskConfig {
   id: string
@@ -27,7 +28,9 @@ export function ToolRiskPage() {
   const [configs, setConfigs] = useState<ToolRiskConfig[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
+  const [savingAutoMode, setSavingAutoMode] = useState(false)
   const [autoMode, setAutoMode] = useState(false)
+  const [search, setSearch] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const loadConfigs = useCallback(async () => {
@@ -62,15 +65,19 @@ export function ToolRiskPage() {
   }, [loadAutoMode, loadConfigs])
 
   async function toggleAutoMode() {
+    const nextAutoMode = !autoMode
     setError(null)
+    setSavingAutoMode(true)
     try {
       await request('/api/admin/ai/auto-mode/toggle', {
         method: 'POST',
-        body: JSON.stringify({ enabled: !autoMode }),
+        body: JSON.stringify({ enabled: nextAutoMode }),
       })
-      setAutoMode(!autoMode)
+      setAutoMode(nextAutoMode)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không thể cập nhật chế độ tự động.')
+    } finally {
+      setSavingAutoMode(false)
     }
   }
 
@@ -96,8 +103,18 @@ export function ToolRiskPage() {
     }
   }
 
+  const normalizedSearch = search.trim().toLowerCase()
+  const filteredConfigs = normalizedSearch
+    ? configs.filter((config) =>
+        config.toolName.toLowerCase().includes(normalizedSearch) ||
+        (config.description ?? '').toLowerCase().includes(normalizedSearch) ||
+        (config.category ?? '').toLowerCase().includes(normalizedSearch) ||
+        config.riskLevel.toLowerCase().includes(normalizedSearch)
+      )
+    : configs
+
   // Group by category
-  const grouped = configs.reduce<Record<string, ToolRiskConfig[]>>((acc, c) => {
+  const grouped = filteredConfigs.reduce<Record<string, ToolRiskConfig[]>>((acc, c) => {
     const cat = c.category || 'Other'
     if (!acc[cat]) acc[cat] = []
     acc[cat].push(c)
@@ -106,7 +123,7 @@ export function ToolRiskPage() {
 
   const stats = {
     total: configs.length,
-    autoApproved: configs.filter(c => c.riskLevel === 'Read' || c.riskLevel === 'Low').length,
+    autoApproved: configs.filter(c => !c.requiresConfirmation).length,
     needsConfirmation: configs.filter(c => c.requiresConfirmation).length,
   }
 
@@ -123,6 +140,16 @@ export function ToolRiskPage() {
           </p>
         </div>
 
+        <div className="relative max-w-xl">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Tìm tool, mô tả, nhóm hoặc mức rủi ro..."
+          />
+        </div>
+
         {error && (
           <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
             {error}
@@ -132,6 +159,10 @@ export function ToolRiskPage() {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="size-6 animate-spin text-primary" />
+          </div>
+        ) : filteredConfigs.length === 0 ? (
+          <div className="rounded-xl border bg-white py-12 text-center text-sm text-muted-foreground">
+            Không tìm thấy công cụ phù hợp.
           </div>
         ) : (
           Object.entries(grouped).map(([category, tools]) => (
@@ -175,14 +206,15 @@ export function ToolRiskPage() {
                       </TableCell>
                       <TableCell className="text-center">
                         <button
-                          onClick={() => updateConfig(tool, tool.riskLevel, !tool.requiresConfirmation)}
+                          onClick={() => updateConfig(tool, tool.riskLevel, tool.requiresConfirmation ? false : true)}
                           disabled={saving === tool.id}
+                          title={tool.requiresConfirmation ? 'Đang yêu cầu xác nhận' : 'Đang tự động thực hiện'}
                           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 ${
-                            tool.requiresConfirmation ? 'bg-primary' : 'bg-muted'
+                            !tool.requiresConfirmation ? 'bg-primary' : 'bg-muted'
                           }`}
                         >
                           <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
-                            tool.requiresConfirmation ? 'translate-x-4' : 'translate-x-0.5'
+                            !tool.requiresConfirmation ? 'translate-x-4' : 'translate-x-0.5'
                           }`} />
                         </button>
                       </TableCell>
@@ -228,17 +260,23 @@ export function ToolRiskPage() {
             <h3 className="text-sm font-medium text-ink">Chế độ tự động</h3>
           </div>
           <p className="text-xs text-muted-foreground">
-            Khi bật, các hành động Medium risk sẽ được tự động thực hiện mà không cần xác nhận.
+            Hoạt động theo từng admin trong phiên backend hiện tại. Khi bật, Read/Low/Medium có thể tự chạy; High/Critical vẫn cần xác nhận.
           </p>
           <Button
             onClick={toggleAutoMode}
-            className={`w-full active:scale-[0.98] transition-transform ${
+            disabled={savingAutoMode}
+            className={`w-full active:scale-[0.98] transition-transform disabled:opacity-60 ${
               autoMode
                 ? 'bg-[#721311] hover:bg-[#870e0b] text-white'
                 : 'bg-muted hover:bg-muted/70 text-ink'
             }`}
           >
-            {autoMode ? (
+            {savingAutoMode ? (
+              <>
+                <Loader2 className="size-4 mr-2 animate-spin" />
+                Đang cập nhật...
+              </>
+            ) : autoMode ? (
               <>
                 <CheckCircle2 className="size-4 mr-2" />
                 Đang bật — Tắt đi

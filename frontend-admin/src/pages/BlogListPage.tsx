@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FileText, Loader2, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, Loader2, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useBlogStore } from '@/stores/blogStore'
 import type { BlogPostListItem, BlogStatus } from '@/types/blog'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DeleteConfirmModal } from '@/components/admin/DeleteConfirmModal'
+import { PageSizeSelect } from '@/components/admin/PageSizeSelect'
 
 function formatDate(value: string | null) {
   return value ? new Date(value).toLocaleDateString('vi-VN') : '—'
@@ -20,10 +21,40 @@ function statusLabel(status: BlogStatus) {
 }
 
 export function BlogListPage() {
-  const { posts, loading, error, search, status, fetchPosts, setSearch, setStatus, deletePost, clearError } = useBlogStore()
+  const {
+    posts,
+    loading,
+    error,
+    search,
+    status,
+    page,
+    pageSize,
+    totalItem,
+    fetchPosts,
+    setSearch,
+    setStatus,
+    setPage,
+    setPageSize,
+    deletePost,
+    clearError,
+  } = useBlogStore()
   const [deleteTarget, setDeleteTarget] = useState<BlogPostListItem | null>(null)
 
   useEffect(() => { fetchPosts() }, [fetchPosts])
+
+  const totalPage = Math.max(1, Math.ceil(totalItem / pageSize))
+  const startItem = totalItem === 0 ? 0 : (page - 1) * pageSize + 1
+  const endItem = Math.min(page * pageSize, totalItem)
+
+  async function changePage(nextPage: number) {
+    setPage(nextPage)
+    queueMicrotask(fetchPosts)
+  }
+
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize)
+    queueMicrotask(fetchPosts)
+  }
 
   async function confirmDelete() {
     if (!deleteTarget) return
@@ -89,6 +120,38 @@ export function BlogListPage() {
           </TableBody>
         </Table>
       </Card>
+
+      <div className="mt-4 flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <span>
+            Hiển thị {startItem}-{endItem} / {totalItem} bài đăng
+          </span>
+          <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} disabled={loading} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading || page <= 1}
+            onClick={() => changePage(Math.max(1, page - 1))}
+          >
+            <ChevronLeft className="size-4" />
+            Trước
+          </Button>
+          <span className="min-w-24 text-center text-ink">
+            Trang {page} / {totalPage}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading || page >= totalPage}
+            onClick={() => changePage(Math.min(totalPage, page + 1))}
+          >
+            Sau
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      </div>
 
       <DeleteConfirmModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={confirmDelete} title="Xóa bài đăng" message={`Bạn có chắc muốn xóa "${deleteTarget?.title}"?`} />
     </div>

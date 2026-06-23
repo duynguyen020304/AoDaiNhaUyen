@@ -1,9 +1,26 @@
+using AoDaiNhaUyen.Application.DTOs;
+using AoDaiNhaUyen.Application.DTOs.Dashboard;
 using AoDaiNhaUyen.Application.DTOs.Order;
 
 namespace AoDaiNhaUyen.Application.Interfaces.Services;
 
 public interface IOrderService
 {
+  /// <summary>
+  /// Lấy danh sách đơn hàng cho admin với phân trang và lọc trạng thái.
+  /// </summary>
+  Task<PagedResult<RecentOrderDto>> GetAdminOrdersAsync(
+    string? status,
+    string? search,
+    DateTime? fromDate,
+    DateTime? toDate,
+    decimal? minTotal,
+    decimal? maxTotal,
+    string? sort,
+    int page,
+    int pageSize,
+    CancellationToken cancellationToken = default);
+
   /// <summary>
   /// Cập nhật trạng thái đơn hàng (với state machine validation).
   /// </summary>

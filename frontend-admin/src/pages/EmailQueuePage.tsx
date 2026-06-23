@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { useEmailMarketingStore } from "@/stores/emailMarketingStore";
 import { useFeedback } from "@/components/ui/feedbackContext";
+import { PageSizeSelect } from "@/components/admin/PageSizeSelect";
 import type { EmailJobListItem } from "@/types/admin";
 
 export function EmailQueuePage() {
@@ -22,8 +23,11 @@ export function EmailQueuePage() {
     loading,
     error,
     totalPages,
+    totalItems,
     currentPage,
+    pageSize,
     fetchJobs,
+    setPageSize,
     retryJob,
     cancelJob,
   } = useEmailMarketingStore();
@@ -45,6 +49,11 @@ export function EmailQueuePage() {
     }, 60_000);
     return () => window.clearInterval(intervalId);
   }, [currentPage, refreshJobs]);
+
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize);
+    queueMicrotask(() => fetchJobs(status, 1).catch(() => {}));
+  }
 
   function handleManualRefresh() {
     void refreshJobs(currentPage, true).catch(() => {});
@@ -202,7 +211,12 @@ export function EmailQueuePage() {
           </TableBody>
         </Table>
       </Card>
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span>Tổng: {totalItems} job</span>
+          <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} disabled={loading} />
+        </div>
+        <div className="flex justify-end gap-2">
         <Button
           variant="outline"
           disabled={currentPage <= 1}
@@ -220,6 +234,7 @@ export function EmailQueuePage() {
         >
           Sau
         </Button>
+        </div>
       </div>
     </div>
   );

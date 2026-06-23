@@ -19,7 +19,8 @@ public sealed record LlmChunk(
   [property: JsonPropertyName("content")] string Content,
   [property: JsonPropertyName("toolName")] string? ToolName = null,
   [property: JsonPropertyName("toolCallId")] string? ToolCallId = null,
-  [property: JsonPropertyName("thoughtSignature")] string? ThoughtSignature = null);
+  [property: JsonPropertyName("thoughtSignature")] string? ThoughtSignature = null,
+  [property: JsonPropertyName("riskLevel")] string? RiskLevel = null);
 
 public sealed record ToolDefinition(
   string Name,

@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useEmailMarketingStore } from "@/stores/emailMarketingStore";
 import { useFeedback } from "@/components/ui/feedbackContext";
+import { PageSizeSelect } from "@/components/admin/PageSizeSelect";
 
 export function SubscribersPage() {
   const {
@@ -21,8 +22,11 @@ export function SubscribersPage() {
     loading,
     error,
     totalPages,
+    totalItems,
     currentPage,
+    pageSize,
     fetchSubscribers,
+    setPageSize,
     unsubscribe,
     importSubscribers,
   } = useEmailMarketingStore();
@@ -33,6 +37,11 @@ export function SubscribersPage() {
   useEffect(() => {
     fetchSubscribers(search, status).catch(() => {});
   }, [fetchSubscribers, search, status]);
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize);
+    queueMicrotask(() => fetchSubscribers(search, status, 1).catch(() => {}));
+  }
+
   async function handleImport() {
     const rawList = emails
       .split(/[\n,;]+/)
@@ -172,7 +181,12 @@ export function SubscribersPage() {
           </TableBody>
         </Table>
       </Card>
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span>Tổng: {totalItems} người đăng ký</span>
+          <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} disabled={loading} />
+        </div>
+        <div className="flex justify-end gap-2">
         <Button
           variant="outline"
           disabled={currentPage <= 1}
@@ -190,6 +204,7 @@ export function SubscribersPage() {
         >
           Sau
         </Button>
+        </div>
       </div>
     </div>
   );

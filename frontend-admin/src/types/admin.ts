@@ -38,6 +38,15 @@ export interface UpdateUserStatusRequest {
   status: string
 }
 
+export interface AdminOrderListItem {
+  id: string
+  orderCode: string
+  customerName: string
+  totalAmount: number
+  status: string
+  createdAt: string
+  completedAt: string | null
+}
 
 // ── Products ──
 

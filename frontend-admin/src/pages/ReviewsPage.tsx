@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Eye, EyeOff, Loader2, MessageSquareReply, RefreshCw, Search, Star, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { getReviews, setReviewVisibility, deleteReview, replyToReview } from '@/api/admin'
 import type { AdminReviewItem } from '@/types/admin'
-
-const PAGE_SIZE = 12
+import { PageSizeSelect } from '@/components/admin/PageSizeSelect'
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('vi-VN', {
@@ -32,6 +31,7 @@ export function ReviewsPage() {
   const [reviews, setReviews] = useState<AdminReviewItem[]>([])
   const [totalItems, setTotalItems] = useState(0)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(12)
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [rating, setRating] = useState<'all' | number>('all')
@@ -43,7 +43,7 @@ export function ReviewsPage() {
   const [replyText, setReplyText] = useState('')
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
 
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
   const visibleCount = useMemo(() => reviews.filter((item) => item.isVisible).length, [reviews])
   const hiddenCount = reviews.length - visibleCount
   const avgRating = useMemo(() => {
@@ -51,7 +51,7 @@ export function ReviewsPage() {
     return reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length
   }, [reviews])
 
-  async function fetchReviews(nextPage = page) {
+  const fetchReviews = useCallback(async (nextPage: number) => {
     setLoading(true)
     setError(null)
     try {
@@ -60,7 +60,7 @@ export function ReviewsPage() {
         rating,
         isVisible: visibleFilter === 'all' ? 'all' : visibleFilter === 'visible',
         page: nextPage,
-        pageSize: PAGE_SIZE,
+        pageSize,
       })
       setReviews(response.data)
       setTotalItems(response.totalItem)
@@ -70,17 +70,22 @@ export function ReviewsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [pageSize, rating, search, visibleFilter])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetching data on filter change
     void fetchReviews(1)
-  }, [search, rating, visibleFilter])
+  }, [fetchReviews])
 
   function handleSearchInput(value: string) {
     setSearchInput(value)
     if (searchTimer.current) clearTimeout(searchTimer.current)
     searchTimer.current = setTimeout(() => setSearch(value.trim()), 300)
+  }
+
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize)
+    setPage(1)
   }
 
   async function handleVisibility(item: AdminReviewItem) {
@@ -250,7 +255,10 @@ export function ReviewsPage() {
       </section>
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-        <span>Tổng: {totalItems} đánh giá</span>
+        <div className="flex items-center gap-3">
+          <span>Tổng: {totalItems} đánh giá</span>
+          <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} disabled={loading} />
+        </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" disabled={page <= 1 || loading} onClick={() => fetchReviews(page - 1)} aria-label="Trang trước">
             <ChevronLeft className="size-4" />
