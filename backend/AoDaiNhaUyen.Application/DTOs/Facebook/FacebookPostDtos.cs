@@ -4,7 +4,8 @@ public sealed record CreateFacebookPostRequest(
   string Message,
   string? Link,
   DateTimeOffset? ScheduledPublishTime,
-  bool Published = true);
+  bool Published = true,
+  IReadOnlyList<string>? MediaUrls = null);
 
 public sealed record UpdateFacebookPostRequest(string Message);
 

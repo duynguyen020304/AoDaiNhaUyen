@@ -199,6 +199,20 @@ public sealed class AdminAiController(
     return Ok(ApiResponseFactory.Success<object>(health, "Lấy điểm sức khỏe cửa hàng thành công."));
   }
 
+  /// <summary>Run safe admin AI tool diagnostics without approving mutating actions.</summary>
+  [HttpPost("tools/test-run")]
+  public async Task<ActionResult<ApiResponse<AdminToolDiagnosticsResponse>>> RunToolDiagnostics(
+    AdminToolDiagnosticsRequest request,
+    CancellationToken cancellationToken)
+  {
+    var adminUserId = GetAdminUserId();
+    if (adminUserId is null)
+      return Unauthorized(ApiResponseFactory.Failure("Không xác thực.", "unauthorized", "Vui lòng đăng nhập lại."));
+
+    var report = await agentService.RunDiagnosticsAsync(request, adminUserId.Value, cancellationToken);
+    return Ok(ApiResponseFactory.Success(report, "Chạy diagnostics tool AI thành công."));
+  }
+
   private static string? ValidateChatRequest(AdminAiChatRequest request)
   {
     const int maxMessageLength = 4000;

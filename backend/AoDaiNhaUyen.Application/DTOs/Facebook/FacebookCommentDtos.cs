@@ -28,7 +28,7 @@ public sealed record FacebookCommentAuthorDto(
 
 public sealed record CreateFacebookCommentRequest(string Message);
 
-public sealed record ReplyFacebookCommentRequest(string Message);
+public sealed record ReplyFacebookCommentRequest(string Message, string? PostId = null);
 
 public sealed record ToggleFacebookCommentHiddenRequest(bool IsHidden);
 

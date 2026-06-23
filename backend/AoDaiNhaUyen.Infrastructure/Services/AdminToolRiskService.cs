@@ -180,6 +180,7 @@ public sealed class AdminToolRiskService(
 
       // Blog content
       new() { ToolName = "generate_blog_draft", RiskLevel = "Read", RequiresConfirmation = false, Description = "Tạo bản nháp blog AI", Category = "Content" },
+      new() { ToolName = "generate_blog_images", RiskLevel = "Low", RequiresConfirmation = false, Description = "Tạo và upload ảnh blog bằng AI", Category = "Content" },
       new() { ToolName = "save_blog_draft", RiskLevel = "Low", RequiresConfirmation = false, Description = "Lưu bài viết nháp", Category = "Content" },
       new() { ToolName = "publish_blog_post", RiskLevel = "High", RequiresConfirmation = true, Description = "Xuất bản bài viết", Category = "Content" },
       new() { ToolName = "list_blog_posts", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê bài viết blog", Category = "Content" },
@@ -192,10 +193,16 @@ public sealed class AdminToolRiskService(
       new() { ToolName = "generate_daily_report", RiskLevel = "Read", RequiresConfirmation = false, Description = "Báo cáo doanh thu hôm nay", Category = "Intelligence" },
 
       // Facebook Page (social)
+      new() { ToolName = "generate_facebook_post_plan", RiskLevel = "Read", RequiresConfirmation = false, Description = "Tạo kế hoạch bài Facebook AI", Category = "Social" },
+      new() { ToolName = "publish_facebook_post", RiskLevel = "High", RequiresConfirmation = true, Description = "Đăng bài lên Facebook Page", Category = "Social" },
+      new() { ToolName = "delete_facebook_post", RiskLevel = "High", RequiresConfirmation = true, Description = "Gỡ/xóa bài viết Facebook", Category = "Social" },
       new() { ToolName = "list_facebook_pages", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê trang Facebook đã kết nối", Category = "Social" },
       new() { ToolName = "list_facebook_posts", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê bài đăng Facebook", Category = "Social" },
       new() { ToolName = "list_facebook_post_comments", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê bình luận bài Facebook", Category = "Social" },
       new() { ToolName = "reply_facebook_comment", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Trả lời bình luận Facebook bằng trang", Category = "Social" },
+      new() { ToolName = "list_facebook_conversations", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê hội thoại Messenger fanpage", Category = "Social" },
+      new() { ToolName = "list_facebook_conversation_messages", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê tin nhắn trong hội thoại Messenger", Category = "Social" },
+      new() { ToolName = "send_facebook_message", RiskLevel = "Medium", RequiresConfirmation = true, Description = "Gửi tin nhắn Messenger bằng fanpage", Category = "Social" },
 
       // Autonomy Mode
       new() { ToolName = "toggle_autonomy", RiskLevel = "High", RequiresConfirmation = true, Description = "Bật/tắt chế độ tự động", Category = "System" },

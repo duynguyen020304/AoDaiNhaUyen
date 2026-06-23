@@ -139,7 +139,16 @@ public sealed class ZernioService(
     CreateSocialPostRequest request,
     CancellationToken cancellationToken = default)
   {
-    var content = NormalizeRequired(request.Content, "content");
+    var mediaUrls = request.MediaUrls?
+      .Where(url => !string.IsNullOrWhiteSpace(url))
+      .Select(url => url.Trim())
+      .ToList() ?? [];
+    var content = request.Content?.Trim() ?? string.Empty;
+    if (string.IsNullOrWhiteSpace(content) && mediaUrls.Count == 0)
+    {
+      throw new ZernioApiException("Bài đăng cần có nội dung hoặc media.", "zernio_post_empty", 400);
+    }
+
     if (request.AccountIds.Count == 0)
     {
       throw new ZernioApiException("Vui lòng chọn ít nhất một fanpage.", "zernio_account_required", 400);
@@ -154,11 +163,6 @@ public sealed class ZernioService(
     {
       throw new ZernioApiException("Một hoặc nhiều fanpage không còn hoạt động.", "zernio_account_inactive", 400);
     }
-
-    var mediaUrls = request.MediaUrls?
-      .Where(url => !string.IsNullOrWhiteSpace(url))
-      .Select(url => url.Trim())
-      .ToList() ?? [];
 
     var body = new Dictionary<string, object?>
     {
@@ -206,9 +210,9 @@ public sealed class ZernioService(
       query["platform"] = NormalizePlatform(platform);
     }
 
-    if (!string.IsNullOrWhiteSpace(profileId))
+    if (ShouldSendProfileId(profileId))
     {
-      query["profileId"] = profileId.Trim();
+      query["profileId"] = profileId!.Trim();
     }
 
     if (accountId.HasValue)
@@ -1012,9 +1016,17 @@ public sealed class ZernioService(
       ["sortOrder"] = "desc"
     };
     if (!string.IsNullOrWhiteSpace(accountId)) query["accountId"] = accountId.Trim();
-    if (!string.IsNullOrWhiteSpace(profileId)) query["profileId"] = profileId.Trim();
+    if (ShouldSendProfileId(profileId)) query["profileId"] = profileId!.Trim();
     if (!string.IsNullOrWhiteSpace(cursor)) query["cursor"] = cursor.Trim();
     return query;
+  }
+
+  private static bool ShouldSendProfileId(string? profileId)
+  {
+    // Older account syncs persisted "default" when Zernio did not return a profileId.
+    // Zernio inbox/posts endpoints validate profileId format and reject this placeholder.
+    return !string.IsNullOrWhiteSpace(profileId)
+      && !string.Equals(profileId.Trim(), "default", StringComparison.OrdinalIgnoreCase);
   }
 
   private static string? GetPaginationCursor(JsonElement response)

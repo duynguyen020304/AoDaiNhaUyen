@@ -124,6 +124,29 @@ function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
           </div>
         </div>
       )}
+      {toolCall.generatedImages && toolCall.generatedImages.length > 0 && (
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {toolCall.generatedImages.slice(0, 4).map((image) => (
+            <a
+              key={image.url}
+              href={image.url}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:border-wine/30 hover:shadow-md"
+            >
+              <img
+                src={image.url}
+                alt={image.alt || image.label || 'Ảnh AI đã tạo'}
+                loading="lazy"
+                className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+              />
+              <div className="px-2 py-1.5 text-[11px] font-medium text-gray-600 line-clamp-1">
+                {image.label || image.kind || 'Ảnh AI đã tạo'}
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
       {hasMore && (
         <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-800">
           Còn trang khác → dữ liệu hiện tại chưa đầy đủ

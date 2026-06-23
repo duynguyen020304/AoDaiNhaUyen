@@ -86,6 +86,12 @@ public static class ServiceRegistration
       .Bind(configuration.GetSection(FacebookApiSettings.SectionName))
       .ValidateDataAnnotations()
       .Validate(
+        settings => settings.UseMockData || !string.IsNullOrWhiteSpace(settings.AppId),
+        "FacebookApi:AppId is required unless FacebookApi:UseMockData is true.")
+      .Validate(
+        settings => settings.UseMockData || !string.IsNullOrWhiteSpace(settings.AppSecret),
+        "FacebookApi:AppSecret is required unless FacebookApi:UseMockData is true.")
+      .Validate(
         settings => settings.GraphApiVersion.StartsWith('v') || Version.TryParse(settings.GraphApiVersion, out _),
         "FacebookApi:GraphApiVersion must be like v25.0 or 25.0.")
       .ValidateOnStart();
@@ -249,6 +255,10 @@ public static class ServiceRegistration
     services.AddSingleton<IPendingActionStore, PendingActionStore>();
     services.AddSingleton<IConversationStore, ConversationStore>();
     services.AddScoped<IBlogAiDraftService, BlogAiDraftService>();
+    services.AddHttpClient<IAdminBlogImageGenerationService, VertexAiAdminBlogImageGenerationService>(httpClient =>
+    {
+      httpClient.Timeout = Timeout.InfiniteTimeSpan;
+    });
     services.AddSingleton<IAdminToolInstructionRegistry, AdminToolInstructionRegistry>();
     services.AddSingleton<AdminToolInstructionPromptBuilder>();
     services.AddScoped<AdminToolArgumentValidator>();

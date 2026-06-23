@@ -61,9 +61,6 @@ public sealed class UserProfileRepository(AppDbContext dbContext, IImageVisibili
             .AsNoTracking()
             .Include(o => o.Payment)
             .Include(o => o.Items)
-              .ThenInclude(oi => oi.Variant)
-                .ThenInclude(variant => variant!.Images)
-            .Include(o => o.Items)
               .ThenInclude(oi => oi.Product)
                 .ThenInclude(product => product!.Images)
             .Where(o => o.UserId == userId)
@@ -81,10 +78,14 @@ public sealed class UserProfileRepository(AppDbContext dbContext, IImageVisibili
             var items = new List<OrderItemDto>();
             foreach (var oi in o.Items)
             {
-                var rawImageUrl = ResolveOrderItemImage(oi);
-                var imageUrl = rawImageUrl is not null && !rawImageUrl.StartsWith("/upload/", StringComparison.OrdinalIgnoreCase)
-                    ? await imageVisibilityService.ResolveUrlAsync(rawImageUrl, false, null, cancellationToken)
-                    : rawImageUrl;
+                var publicProductImage = ResolveOrderItemPublicProductImage(oi);
+                var imageUrl = publicProductImage is not null
+                    ? await imageVisibilityService.ResolveUrlAsync(
+                        publicProductImage.ImageUrl,
+                        publicProductImage.IsPublic,
+                        publicProductImage.PublicObjectKey,
+                        cancellationToken)
+                    : null;
 
                 items.Add(new OrderItemDto(
                     oi.Id,
@@ -132,20 +133,20 @@ public sealed class UserProfileRepository(AppDbContext dbContext, IImageVisibili
         return new PagedResult<UserOrderDto>(orders, totalCount, page, pageSize);
     }
 
-    private static string? ResolveOrderItemImage(OrderItem orderItem)
+    private static ProductImage? ResolveOrderItemPublicProductImage(OrderItem orderItem)
     {
-        if (orderItem.Variant != null)
+        if (orderItem.Product is null)
         {
-            return orderItem.Variant.Images.OrderBy(image => image.SortOrder).FirstOrDefault(image => image.IsPrimary)?.ImageUrl
-                ?? orderItem.Variant.Images.OrderBy(image => image.SortOrder).FirstOrDefault()?.ImageUrl;
+            return null;
         }
 
-        if (orderItem.Product != null)
-        {
-            return orderItem.Product.Images.OrderBy(image => image.SortOrder).FirstOrDefault(image => image.IsPrimary)?.ImageUrl
-                ?? orderItem.Product.Images.OrderBy(image => image.SortOrder).FirstOrDefault()?.ImageUrl;
-        }
-
-        return null;
+        return orderItem.Product.Images
+            .Where(image => image.IsPublic && !string.IsNullOrWhiteSpace(image.PublicObjectKey))
+            .OrderBy(image => image.SortOrder)
+            .FirstOrDefault(image => image.IsPrimary)
+            ?? orderItem.Product.Images
+                .Where(image => image.IsPublic && !string.IsNullOrWhiteSpace(image.PublicObjectKey))
+                .OrderBy(image => image.SortOrder)
+                .FirstOrDefault();
     }
 }
