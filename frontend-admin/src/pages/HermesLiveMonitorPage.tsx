@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Bot, DatabaseZap, Radio, Store } from 'lucide-react'
-import { HERMES_FEED_SSE_URL, getHermesEvents, getHermesFeedSnapshot } from '@/api/hermes'
-import type { HermesEventListItem, HermesFeedHeartbeat, HermesFeedHermesMessage, HermesFeedItem, HermesFeedSnapshot } from '@/types/hermes'
+import { Bot, Radio, Store } from 'lucide-react'
+import { HERMES_FEED_SSE_URL, getHermesFeedSnapshot } from '@/api/hermes'
+import type { HermesFeedHeartbeat, HermesFeedHermesMessage, HermesFeedItem, HermesFeedSnapshot } from '@/types/hermes'
 
 const statusLabel: Record<string, string> = {
   pending: 'Chờ xử lý',
@@ -76,8 +76,6 @@ type ConnectionState = 'connecting' | 'live' | 'polling' | 'error'
 
 export function HermesLiveMonitorPanel() {
   const [snapshot, setSnapshot] = useState<HermesFeedSnapshot | null>(null)
-  const [events, setEvents] = useState<HermesEventListItem[]>([])
-  const [eventTotal, setEventTotal] = useState(0)
   const [connection, setConnection] = useState<ConnectionState>('connecting')
   const [error, setError] = useState<string | null>(null)
 
@@ -104,31 +102,15 @@ export function HermesLiveMonitorPanel() {
 
     async function poll() {
       try {
-        const [feedData, eventData] = await Promise.all([
-          getHermesFeedSnapshot(),
-          getHermesEvents({ page: 1, pageSize: 30 }),
-        ])
+        const data = await getHermesFeedSnapshot()
         if (cancelled) return
-        setSnapshot(feedData)
-        setEvents(eventData.data)
-        setEventTotal(eventData.totalItem)
+        setSnapshot(data)
         setConnection('polling')
         setError(null)
       } catch {
         if (cancelled) return
         setConnection('error')
-        setError('Không tải được live feed/event outbox Hermes.')
-      }
-    }
-
-    async function refreshEvents() {
-      try {
-        const eventData = await getHermesEvents({ page: 1, pageSize: 30 })
-        if (cancelled) return
-        setEvents(eventData.data)
-        setEventTotal(eventData.totalItem)
-      } catch {
-        // Feed SSE may still work; keep last event-outbox snapshot.
+        setError('Không tải được live feed Hermes.')
       }
     }
 
@@ -172,7 +154,6 @@ export function HermesLiveMonitorPanel() {
         clearConnectTimeout()
         const data = JSON.parse((event as MessageEvent).data) as HermesFeedSnapshot
         setSnapshot(data)
-        void refreshEvents()
         setConnection('live')
         setError(null)
       })
@@ -210,7 +191,7 @@ export function HermesLiveMonitorPanel() {
               Monitor toàn cửa hàng
             </div>
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-950">Hermes Live Monitor</h1>
-            <p className="mt-1 text-sm text-zinc-600">Cửa hàng, Hermes Agent và event outbox cập nhật trực tiếp.</p>
+            <p className="mt-1 text-sm text-zinc-600">Cửa hàng ở bên trái. Hermes Agent phân tích ở bên phải.</p>
           </div>
           <StatusBar connection={connection} heartbeat={heartbeat} count={items.length} generatedAt={snapshot?.generatedAt ?? null} />
         </div>
@@ -218,7 +199,7 @@ export function HermesLiveMonitorPanel() {
       </header>
 
 
-      <main className="grid min-h-0 flex-1 gap-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_24rem]">
+      <main className="grid min-h-0 flex-1 gap-0 lg:grid-cols-2">
         <ChatPanel title="Cửa hàng" subtitle="Sự kiện đang xảy ra" icon={<Store className="size-5" />} tone="store">
           {items.length === 0 ? <EmptyStore /> : items.map((item) => <StoreBubble key={item.eventId} item={item} />)}
         </ChatPanel>
@@ -226,8 +207,6 @@ export function HermesLiveMonitorPanel() {
         <ChatPanel title="Hermes Agent" subtitle="Suy nghĩ an toàn và kết quả" icon={<Bot className="size-5" />} tone="agent">
           {hermesMessages.length === 0 ? <EmptyAgent /> : hermesMessages.map((message) => <HermesBubble key={message.key} message={message.message} />)}
         </ChatPanel>
-
-        <OutboxPanel events={events} total={eventTotal} />
       </main>
     </div>
   )
@@ -283,60 +262,6 @@ function ChatPanel({ title, subtitle, icon, tone, children }: { title: string; s
   )
 }
 
-function OutboxPanel({ events, total }: { events: HermesEventListItem[]; total: number }) {
-  const pending = events.filter((item) => item.status === 'pending').length
-  const processing = events.filter((item) => item.status === 'processing').length
-  const failed = events.filter((item) => item.status === 'failed' || item.status === 'dead').length
-
-  return (
-    <section className="flex min-h-0 flex-col border-t border-zinc-200 bg-zinc-950 text-zinc-100 xl:border-l xl:border-t-0">
-      <div className="shrink-0 border-b border-white/10 bg-zinc-900/95 px-4 py-3 backdrop-blur lg:px-5">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-full bg-emerald-500 text-zinc-950"><DatabaseZap className="size-5" /></div>
-          <div>
-            <h2 className="font-bold text-white">Event Outbox</h2>
-            <p className="text-xs text-zinc-400">{total} event · {pending} chờ · {processing} xử lý · {failed} lỗi</p>
-          </div>
-        </div>
-      </div>
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
-        {events.length === 0 ? (
-          <div className="flex h-full min-h-80 flex-col items-center justify-center text-center text-zinc-500">
-            <DatabaseZap className="mb-3 size-12 text-zinc-700" />
-            <p className="font-semibold text-zinc-300">Chưa có event outbox.</p>
-            <p className="mt-1 text-sm">Webhook social/order/admin event sẽ xuất hiện ở đây.</p>
-          </div>
-        ) : events.map((event) => <OutboxEventCard key={event.id} event={event} />)}
-      </div>
-    </section>
-  )
-}
-
-function OutboxEventCard({ event }: { event: HermesEventListItem }) {
-  const shortId = event.id.slice(0, 8)
-  return (
-    <article className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-white">{event.eventType}</p>
-          <p className="mt-0.5 truncate text-xs text-zinc-400">{event.aggregateType} · {event.aggregateId}</p>
-        </div>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ring-1 ${statusClass[event.status] ?? 'bg-zinc-800 text-zinc-300 ring-zinc-700'}`}>
-          {statusLabel[event.status] ?? event.status}
-        </span>
-      </div>
-      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-zinc-400">
-        <span>#{shortId}</span>
-        <span className="text-right">{relativeTime(event.createdAt)}</span>
-        <span>Thử: {event.attempts}/{event.maxAttempts}</span>
-        <span className="truncate text-right">Corr: {event.correlationId ?? '—'}</span>
-      </div>
-      {event.lastError && (
-        <p className="mt-2 line-clamp-3 rounded-lg bg-rose-500/10 p-2 text-[11px] leading-4 text-rose-200 ring-1 ring-rose-500/20">{event.lastError}</p>
-      )}
-    </article>
-  )
-}
 
 function StoreBubble({ item }: { item: HermesFeedItem }) {
   return (
