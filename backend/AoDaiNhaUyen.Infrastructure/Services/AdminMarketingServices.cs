@@ -496,8 +496,14 @@ public sealed class AdminEmailJobService(
 
   private async Task<EmailJob?> FindExistingByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken)
   {
-    var needle = $"\"idempotencyKey\":\"{idempotencyKey}\"";
-    return await dbContext.EmailJobs.AsNoTracking().Where(x => x.PayloadJson.Contains(needle)).OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync(cancellationToken);
+    // payload_json is a jsonb column. EF translates string.Contains(...) into a SQL LIKE
+    // ('~~'), which Postgres has no operator for on jsonb (error 42883:
+    // "operator does not exist: jsonb ~~ jsonb") — this made every single-email POST 500.
+    // Query the JSON field directly with the ->> operator instead (parameterized, safe).
+    return await dbContext.EmailJobs
+      .FromSqlInterpolated($"SELECT * FROM email_jobs WHERE payload_json->>'idempotencyKey' = {idempotencyKey} AND is_deleted = FALSE ORDER BY created_at DESC LIMIT 1")
+      .AsNoTracking()
+      .FirstOrDefaultAsync(cancellationToken);
   }
 
   private async Task<SingleEmailRecipient> ResolveRecipientAsync(QueueSingleEmailJobRequest request, CancellationToken cancellationToken)
