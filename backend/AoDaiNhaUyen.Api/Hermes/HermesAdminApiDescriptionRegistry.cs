@@ -192,7 +192,7 @@ public sealed class HermesAdminApiDescriptionRegistry
     Delete("/api/admin/facebook/posts/{postId}", "Xóa bài đăng Facebook.", "FacebookDeleteResultDto", path: [StringId("postId", "Facebook Post ID (chuỗi số)")], notes: ["Risk: high vì xóa public, không hoàn tác được trên Facebook.", "Chỉ khi admin yêu cầu rõ; cân nhắc ẩn thay vì xóa.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
     Get("/api/admin/facebook/{pageId}/posts/{postId}/comments", "List bình luận trên bài Facebook.", "FacebookPostCommentListDto", path: [StringId("pageId", "Facebook Page ID"), StringId("postId", "Facebook Post ID")], query: [Param("after", "string", false, "Cursor"), Param("limit", "int", false, "Số bình luận, mặc định 25")]),
     Post("/api/admin/facebook/{pageId}/posts/{postId}/comments", "Bình luận vào bài Facebook bằng page.", "FacebookCommentActionResultDto", FacebookCommentBody(), path: [StringId("pageId", "Facebook Page ID"), StringId("postId", "Facebook Post ID")], notes: ["Risk: medium vì bình luận công khai đại diện page.", "Message lịch sự, đúng giọng thương hiệu; không tranh cãi với khách.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
-    Post("/api/admin/facebook/{pageId}/comments/{commentId}/replies", "Trả lời bình luận Facebook bằng page.", "FacebookCommentActionResultDto", FacebookCommentBody(), path: [StringId("pageId", "Facebook Page ID"), StringId("commentId", "Facebook Comment ID")], notes: ["Risk: medium.", "Reply ngắn, ấm, lịch sự; cảm ơn khách khi tích cực, xin lỗi + giải quyết khi tiêu cực.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
+    Post("/api/admin/facebook/{pageId}/comments/{commentId}/replies", "Trả lời bình luận Facebook bằng page.", "FacebookCommentActionResultDto", FacebookCommentReplyBody(), path: [StringId("pageId", "Facebook Page ID"), StringId("commentId", "Facebook Comment ID")], notes: ["Risk: medium.", "Reply ngắn, ấm, lịch sự; cảm ơn khách khi tích cực, xin lỗi + giải quyết khi tiêu cực.", "postId là bắt buộc: dùng ThreadId/postId từ event social_comment_received hoặc từ GET comments.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
     Patch("/api/admin/facebook/{pageId}/comments/{commentId}/visibility", "Ẩn/hiện bình luận Facebook.", "FacebookCommentActionResultDto", FacebookToggleHiddenBody(), path: [StringId("pageId", "Facebook Page ID"), StringId("commentId", "Facebook Comment ID")], notes: ["Risk: medium.", "IsHidden=true để ẩn bình luận tiêu cực/spam khỏi public; không xóa để giữ audit.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
     Delete("/api/admin/facebook/{pageId}/comments/{commentId}", "Xóa bình luận Facebook.", "FacebookCommentActionResultDto", path: [StringId("pageId", "Facebook Page ID"), StringId("commentId", "Facebook Comment ID")], notes: ["Risk: high vì xóa public, không hoàn tác.", "Ưu tiên ẩn (PATCH visibility) thay vì xóa khi bình luận tiêu cực/spam.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
     Get("/api/admin/facebook/{pageId}/conversations", "List hội thoại inbox Facebook.", "FacebookConversationListDto", path: [StringId("pageId", "Facebook Page ID")], query: [Param("limit", "int", false, "Số hội thoại, mặc định 25")]),
@@ -500,6 +500,12 @@ public sealed class HermesAdminApiDescriptionRegistry
 
   private static HermesBodyDescription FacebookCommentBody() =>
     Body([Field("message", "string", true, "Nội dung bình luận/reply (lịch sự, đúng giọng thương hiệu)")], new { message = "Cảm ơn chị đã quan tâm ạ 💝" });
+
+  private static HermesBodyDescription FacebookCommentReplyBody() =>
+    Body([
+      Field("message", "string", true, "Nội dung reply lịch sự, đúng giọng thương hiệu"),
+      Field("postId", "string", true, "Facebook Post ID chứa bình luận; bắt buộc để Zernio/Facebook reply đúng thread")
+    ], new { message = "Cảm ơn chị đã quan tâm ạ 💝", postId = "123456789_10111213" });
 
   private static HermesBodyDescription FacebookToggleHiddenBody() =>
     Body([Field("isHidden", "bool", true, "true để ẩn, false để hiện")], new { isHidden = true });
