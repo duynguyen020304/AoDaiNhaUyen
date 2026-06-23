@@ -10,6 +10,7 @@ import type {
   AdminConversationMessage,
   AiToolCall,
   AiToolResultMeta,
+  AiGeneratedImagePreview,
   AdminChatMode,
   HermesStatus,
 } from '@/types/ai'
@@ -61,6 +62,61 @@ function parseBlogDraftPayload(raw?: string): AiBlogDraft | undefined {
   }
 }
 
+function isHttpUrl(value: unknown): value is string {
+  if (typeof value !== 'string' || !value.trim()) return false
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+function pushImagePreview(images: AiGeneratedImagePreview[], url: unknown, alt?: unknown, label?: unknown, kind?: unknown) {
+  if (!isHttpUrl(url)) return
+  if (images.some((image) => image.url === url)) return
+  images.push({
+    url,
+    alt: typeof alt === 'string' ? alt : undefined,
+    label: typeof label === 'string' ? label : undefined,
+    kind: typeof kind === 'string' ? kind : undefined,
+  })
+}
+
+function parseGeneratedImagesPayload(raw?: string): AiGeneratedImagePreview[] | undefined {
+  if (!raw) return undefined
+
+  try {
+    const parsed = JSON.parse(raw)
+    const data = parsed?.data ?? parsed?.result?.data ?? parsed?.result ?? parsed
+    if (data?.kind !== 'blog_generated_images') return undefined
+
+    const images: AiGeneratedImagePreview[] = []
+    pushImagePreview(images, data.featuredPublicUrl ?? data.featuredPreviewUrl, 'Ảnh AI đã tạo', 'Ảnh nổi bật', 'featured')
+
+    if (Array.isArray(data.publicImageUrls)) {
+      data.publicImageUrls.forEach((url: unknown, index: number) => {
+        pushImagePreview(images, url, `Ảnh AI đã tạo ${index + 1}`, `Ảnh ${index + 1}`)
+      })
+    }
+
+    const collect = (items: unknown) => {
+      if (!Array.isArray(items)) return
+      items.forEach((rawItem) => {
+        const item = rawItem as Record<string, unknown>
+        pushImagePreview(images, item.publicUrl ?? item.previewUrl, item.altText, item.label, item.kind)
+      })
+    }
+    collect(data.inlineImages)
+    collect(data.galleryImages)
+
+    return images.length > 0 ? images : undefined
+  } catch (err) {
+    logAiWarn('Không đọc được ảnh sinh từ AI', err)
+    return undefined
+  }
+}
+
 function persistBlogDraftHandoff(draft: AiBlogDraft) {
   try {
     sessionStorage.setItem(AI_BLOG_DRAFT_STORAGE_KEY, JSON.stringify(draft))
@@ -78,12 +134,14 @@ function makeToolCall(toolName: string, input: string): AiToolCall {
 
 function applyToolResult(toolCall: AiToolCall, result: string): AiToolCall {
   const blogDraft = toolCall.toolName === 'generate_blog_draft' ? parseBlogDraftPayload(result) : undefined
+  const generatedImages = toolCall.toolName === 'generate_blog_images' ? parseGeneratedImagesPayload(result) : undefined
 
   return {
     ...toolCall,
     result,
     meta: parseToolResultMeta(result),
     blogDraft,
+    generatedImages,
   }
 }
 
@@ -120,7 +178,13 @@ function parseToolCalls(message: AdminConversationMessage): AiMessage['toolCalls
     const parsed = JSON.parse(message.toolCallsJson) as { name?: string; callId?: string }
     const toolName = parsed.name || parsed.callId || 'unknown'
     const base = makeToolCall(toolName, '')
-    return [{ ...base, result: message.content, meta: parseToolResultMeta(message.content), blogDraft: toolName === 'generate_blog_draft' ? parseBlogDraftPayload(message.content) : undefined }]
+    return [{
+      ...base,
+      result: message.content,
+      meta: parseToolResultMeta(message.content),
+      blogDraft: toolName === 'generate_blog_draft' ? parseBlogDraftPayload(message.content) : undefined,
+      generatedImages: toolName === 'generate_blog_images' ? parseGeneratedImagesPayload(message.content) : undefined,
+    }]
   } catch (err) {
     logAiWarn('Không đọc được metadata tool call', err)
     return undefined

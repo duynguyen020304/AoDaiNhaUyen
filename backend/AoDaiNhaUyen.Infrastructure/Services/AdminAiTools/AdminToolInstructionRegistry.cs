@@ -15,12 +15,12 @@ public sealed class AdminToolInstructionRegistry : IAdminToolInstructionRegistry
     "create_variant", "update_variant", "update_variant_stock", "delete_variant",
     "create_category", "update_category", "delete_category",
     "reply_to_review", "reply_to_comment", "hide_review", "show_review", "delete_review",
-    "save_blog_draft", "publish_blog_post", "update_blog_post", "delete_blog_post",
+    "generate_blog_images", "save_blog_draft", "publish_blog_post", "update_blog_post", "delete_blog_post",
     "send_marketing_campaign", "unsubscribe_subscriber", "delete_subscriber",
     "retry_email_job", "cancel_email_job", "delete_email_job",
     "create_promo_code", "update_promo_code", "toggle_promo_code", "delete_promo_code",
     "create_purchase_note",
-    "toggle_autonomy", "upload_media", "delete_media", "reply_facebook_comment"
+    "toggle_autonomy", "upload_media", "delete_media", "publish_facebook_post", "delete_facebook_post", "reply_facebook_comment", "send_facebook_message"
   ];
 
   private readonly Dictionary<string, ToolInstruction> _instructions;

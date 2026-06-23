@@ -70,7 +70,7 @@ public sealed class AdminToolPreparationService(
     if (options.Value.LlmGateToolNames is { Length: > 0 }
       && !options.Value.LlmGateToolNames.Contains(toolName, StringComparer.Ordinal))
       return false;
-    return await safety.ClassifyAsync(toolName, ct) != RiskLevel.Read;
+    return await safety.ClassifyAsync(toolName, ct) >= RiskLevel.Medium;
   }
 
   private static bool CriticalTargetsUnchanged(string beforeJson, string afterJson)

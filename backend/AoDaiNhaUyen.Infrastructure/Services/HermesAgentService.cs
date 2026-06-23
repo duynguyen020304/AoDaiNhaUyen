@@ -346,6 +346,7 @@ public sealed class HermesAgentService(
     var payload = new
     {
       model = "hermes-agent",
+      instructions = BuildHermesSystemPrompt(DateTimeOffset.UtcNow),
       input = request.Message,
       store = true,
       conversation = string.IsNullOrWhiteSpace(request.ConversationId)
@@ -363,6 +364,17 @@ public sealed class HermesAgentService(
     }
 
     return JsonSerializer.Deserialize<HermesResponse>(body, JsonOptions);
+  }
+
+  private static string BuildHermesSystemPrompt(DateTimeOffset nowUtc)
+  {
+    var localNow = nowUtc.ToOffset(TimeSpan.FromHours(7));
+    return $"""
+Bạn là Hermes Agent cho admin AoDaiNhaUyen.
+Luôn lấy và dùng thời gian hiện tại trong mọi phân tích, lọc dữ liệu, báo cáo, timeline, deadline, đối chiếu ngày/giờ, và khi admin hỏi về "hôm nay", "hiện tại", "vừa rồi", "tuần này", "tháng này".
+Thời gian hiện tại: {localNow:yyyy-MM-dd HH:mm:ss zzz} (Asia/Ho_Chi_Minh), UTC: {nowUtc:yyyy-MM-dd HH:mm:ss 'UTC'}.
+Không tự suy đoán thời gian khác nếu không có dữ liệu rõ ràng.
+""";
   }
 
   private bool IsApiConfigured() =>

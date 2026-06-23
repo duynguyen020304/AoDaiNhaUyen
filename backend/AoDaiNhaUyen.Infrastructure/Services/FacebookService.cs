@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AoDaiNhaUyen.Application.DTOs.Facebook;
+using AoDaiNhaUyen.Application.DTOs.Social;
 using AoDaiNhaUyen.Application.Exceptions;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
@@ -21,6 +22,7 @@ public sealed class FacebookService(
   IOptions<FacebookApiSettings> facebookApiSettings,
   IDataProtectionProvider dataProtectionProvider,
   AppDbContext dbContext,
+  ISocialService socialService,
   ILogger<FacebookService> logger) : IFacebookService
 {
   private const string PostFields = "id,message,created_time,updated_time,permalink_url,full_picture,is_published,scheduled_publish_time,status_type,type";
@@ -30,22 +32,131 @@ public sealed class FacebookService(
   private const string OAuthScopes = "pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_metadata,pages_messaging";
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
   private readonly FacebookApiSettings facebookApiSettings = facebookApiSettings.Value;
+  private bool UseMockData => facebookApiSettings.UseMockData;
   private readonly IDataProtector tokenProtector = dataProtectionProvider.CreateProtector("AoDaiNhaUyen.Facebook.PageAccessToken.v1");
   private readonly IDataProtector oauthConnectTokenProtector = dataProtectionProvider.CreateProtector("AoDaiNhaUyen.Facebook.OAuthConnectToken.v1");
 
   public async Task<IReadOnlyList<FacebookConnectionDto>> GetConnectionsAsync(CancellationToken cancellationToken = default)
   {
-    return await dbContext.FacebookPageConnections
-      .AsNoTracking()
-      .OrderBy(x => x.PageName ?? x.PageId)
-      .Select(x => new FacebookConnectionDto(
-        x.PageId,
-        x.PageName,
-        x.TokenLast4,
-        x.ExpiresAt,
-        x.LastValidatedAt,
-        x.IsActive))
-      .ToListAsync(cancellationToken);
+    if (UseMockData)
+    {
+      var realConnections = await dbContext.FacebookPageConnections
+        .AsNoTracking()
+        .OrderBy(x => x.PageName ?? x.PageId)
+        .Select(x => new FacebookConnectionDto(
+          x.PageId,
+          x.PageName,
+          x.TokenLast4,
+          x.ExpiresAt,
+          x.LastValidatedAt,
+          x.IsActive))
+        .ToListAsync(cancellationToken);
+      return realConnections.Count > 0 ? realConnections : MockConnections;
+    }
+
+    var accounts = await socialService.GetAccountsAsync("facebook", sync: true, cancellationToken: cancellationToken);
+    return accounts
+      .Where(account => account.IsActive)
+      .OrderBy(account => account.DisplayName ?? account.Username ?? account.ZernioAccountId)
+      .Select(ToFacebookConnection)
+      .ToList();
+  }
+
+  private static readonly IReadOnlyList<FacebookConnectionDto> MockConnections =
+  [
+    new("mock_page_aodai_nha_uyen", "MOCK - Áo Dài Nhã Uyên", "MOCK", null, DateTimeOffset.UtcNow, true)
+  ];
+
+  private static bool IsMockPage(string pageId) => pageId.StartsWith("mock_page_", StringComparison.OrdinalIgnoreCase);
+
+  private static FacebookPostListDto MockPosts(string? cursor, int limit)
+  {
+    var take = Math.Clamp(limit, 1, 50);
+    var firstPage = string.IsNullOrWhiteSpace(cursor);
+    var posts = Enumerable.Range(firstPage ? 1 : 1 + take, take)
+      .Select(i => new FacebookPostDto(
+        $"mock_post_{i}",
+        $"MOCK: Bài đăng mẫu #{i} về áo dài Nhã Uyên, dùng để test workflow Facebook an toàn.",
+        DateTimeOffset.UtcNow.AddDays(-i),
+        DateTimeOffset.UtcNow.AddDays(-i),
+        $"https://facebook.test/mock_page_aodai_nha_uyen/posts/mock_post_{i}",
+        null,
+        true,
+        null,
+        "published",
+        "status"))
+      .ToList();
+
+    return new FacebookPostListDto(posts, null, firstPage ? "mock_cursor_2" : null, firstPage ? "https://facebook.test/mock_next" : null);
+  }
+
+  private static FacebookPostCommentListDto MockComments(string postId, string? after, int limit)
+  {
+    var take = Math.Clamp(limit, 1, 50);
+    var firstPage = string.IsNullOrWhiteSpace(after);
+    var comments = Enumerable.Range(firstPage ? 1 : 1 + take, take)
+      .Select(i => new FacebookCommentDto(
+        $"mock_comment_{i}",
+        postId,
+        null,
+        new FacebookCommentAuthorDto($"mock_user_{i}", $"Khách mẫu {i}", null),
+        i % 2 == 0 ? "Mẫu áo dài này còn size M không ạ?" : "Áo đẹp quá, shop tư vấn giúp mình nhé.",
+        DateTimeOffset.UtcNow.AddHours(-i),
+        i,
+        0,
+        true,
+        true,
+        false,
+        false,
+        []))
+      .ToList();
+
+    return new FacebookPostCommentListDto(comments, null, firstPage ? "mock_comment_cursor_2" : null, firstPage ? "https://facebook.test/mock_comments_next" : null);
+  }
+
+
+  private static FacebookConversationListDto MockConversations(string pageId, string? after, int limit)
+  {
+    var take = Math.Clamp(limit, 1, 50);
+    var firstPage = string.IsNullOrWhiteSpace(after);
+    var conversations = Enumerable.Range(firstPage ? 1 : 1 + take, take)
+      .Select(i => new FacebookConversationDto(
+        $"mock_conversation_{i}",
+        pageId,
+        $"mock_customer_{i}",
+        $"Khách Messenger {i}",
+        null,
+        i % 2 == 0 ? "Shop tư vấn giúp mình mẫu áo dài cưới." : "Mình muốn hỏi còn lịch fitting tuần này không?",
+        DateTimeOffset.UtcNow.AddMinutes(-15 * i),
+        i % 3 == 0 ? 1 : 0,
+        3 + i,
+        $"https://facebook.test/{pageId}/inbox/mock_conversation_{i}",
+        [
+          new FacebookParticipantDto(pageId, "MOCK - Áo Dài Nhã Uyên", null, true),
+          new FacebookParticipantDto($"mock_customer_{i}", $"Khách Messenger {i}", null, false)
+        ]))
+      .ToList();
+
+    return new FacebookConversationListDto(conversations, null, firstPage ? "mock_conversation_cursor_2" : null, null);
+  }
+
+  private static FacebookMessageListDto MockMessages(string pageId, string conversationId, string? before, int limit)
+  {
+    var take = Math.Clamp(limit, 1, 100);
+    var firstPage = string.IsNullOrWhiteSpace(before);
+    var messages = Enumerable.Range(firstPage ? 1 : 1 + take, take)
+      .Select(i => new FacebookMessageDto(
+        $"mock_message_{i}",
+        conversationId,
+        i % 2 == 0 ? pageId : $"mock_customer_{i}",
+        i % 2 == 0 ? "MOCK - Áo Dài Nhã Uyên" : $"Khách Messenger {i}",
+        i % 2 == 0,
+        i % 2 == 0 ? "Dạ shop có thể tư vấn mẫu phù hợp ạ." : "Mình muốn xem mẫu áo dài mới nhất.",
+        DateTimeOffset.UtcNow.AddMinutes(-10 * i),
+        []))
+      .ToList();
+
+    return new FacebookMessageListDto(messages, null, firstPage ? "mock_message_cursor_2" : null, null);
   }
 
   public async Task<FacebookConnectionDto> ConnectPageAsync(
@@ -159,30 +270,31 @@ public sealed class FacebookService(
     CancellationToken cancellationToken = default)
   {
     pageId = NormalizeRequired(pageId, "pageId");
-    if (string.IsNullOrWhiteSpace(request.Message) && string.IsNullOrWhiteSpace(request.Link))
+    if (UseMockData && IsMockPage(pageId))
     {
-      throw new FacebookApiException("Bài viết cần có nội dung hoặc liên kết.", "facebook_post_empty", 400);
+      var id = $"mock_post_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+      return new FacebookPublishResultDto(id, id, $"https://facebook.test/{pageId}/posts/{id}");
     }
 
-    var parameters = new Dictionary<string, string>
-    {
-      ["message"] = request.Message?.Trim() ?? string.Empty,
-      ["published"] = ShouldSchedule(request.ScheduledPublishTime) || !request.Published ? "false" : "true"
-    };
+    var mediaUrls = request.MediaUrls?
+      .Where(url => !string.IsNullOrWhiteSpace(url))
+      .Select(url => url.Trim())
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .ToList() ?? [];
 
-    if (!string.IsNullOrWhiteSpace(request.Link))
+    if (string.IsNullOrWhiteSpace(request.Message) && string.IsNullOrWhiteSpace(request.Link) && mediaUrls.Count == 0)
     {
-      parameters["link"] = request.Link.Trim();
+      throw new FacebookApiException("Bài viết cần có nội dung, liên kết hoặc URL ảnh public.", "facebook_post_empty", 400);
     }
 
-    if (ShouldSchedule(request.ScheduledPublishTime))
-    {
-      parameters["scheduled_publish_time"] = ToUnixSeconds(request.ScheduledPublishTime!.Value).ToString();
-    }
+    var account = await ResolveZernioAccountAsync(pageId, cancellationToken);
+    var content = BuildSocialPostContent(request.Message, request.Link);
+    var publishNow = request.Published && !ShouldSchedule(request.ScheduledPublishTime);
+    var post = await socialService.CreatePostAsync(
+      new CreateSocialPostRequest(content, [account.Id], publishNow, request.ScheduledPublishTime, mediaUrls),
+      cancellationToken);
 
-    var token = await GetPageTokenAsync(pageId, cancellationToken);
-    var response = await SendFormAsync<FacebookPublishResponse>(HttpMethod.Post, $"{pageId}/feed", token, parameters, cancellationToken);
-    return new FacebookPublishResultDto(response.Id, null, null);
+    return new FacebookPublishResultDto(post.Id, post.Platforms.FirstOrDefault()?.PlatformPostId, post.PlatformPostUrl);
   }
 
   public async Task<FacebookPublishResultDto> PublishPhotoAsync(
@@ -218,24 +330,19 @@ public sealed class FacebookService(
     CancellationToken cancellationToken = default)
   {
     pageId = NormalizeRequired(pageId, "pageId");
-    var token = await GetPageTokenAsync(pageId, cancellationToken);
-    var query = new Dictionary<string, string>
-    {
-      ["fields"] = PostFields,
-      ["limit"] = Math.Clamp(limit, 1, 100).ToString()
-    };
+    if (UseMockData && IsMockPage(pageId)) return MockPosts(cursor, limit);
 
-    if (!string.IsNullOrWhiteSpace(cursor))
-    {
-      query["after"] = cursor.Trim();
-    }
+    var account = await ResolveZernioAccountAsync(pageId, cancellationToken);
+    var page = ParseCursorPage(cursor);
+    var normalizedLimit = Math.Clamp(limit, 1, 100);
+    var posts = await socialService.GetPostsAsync("facebook", account.Id, account.ZernioProfileId, page, normalizedLimit, cancellationToken);
+    var nextCursor = posts.Items.Count >= normalizedLimit ? (page + 1).ToString() : null;
 
-    var response = await SendGetAsync<FacebookListResponse<FacebookPostResponse>>($"{pageId}/feed", token, query, cancellationToken);
     return new FacebookPostListDto(
-      response.Data.Select(MapPost).ToList(),
-      response.Paging?.Cursors?.Before,
-      response.Paging?.Cursors?.After,
-      response.Paging?.Next);
+      posts.Items.Select(MapPost).ToList(),
+      page > 1 ? (page - 1).ToString() : null,
+      nextCursor,
+      null);
   }
 
   public async Task<FacebookPostDto> GetPostAsync(string postId, CancellationToken cancellationToken = default)
@@ -261,9 +368,13 @@ public sealed class FacebookService(
   public async Task<FacebookDeleteResultDto> DeletePostAsync(string postId, CancellationToken cancellationToken = default)
   {
     postId = NormalizeRequired(postId, "postId");
-    var token = await GetAnyActiveTokenAsync(cancellationToken);
-    var response = await SendFormAsync<FacebookSuccessResponse>(HttpMethod.Delete, postId, token, new Dictionary<string, string>(), cancellationToken);
-    return new FacebookDeleteResultDto(response.Success);
+    if (UseMockData && postId.StartsWith("mock_", StringComparison.OrdinalIgnoreCase))
+    {
+      return new FacebookDeleteResultDto(true);
+    }
+
+    await socialService.DeletePostAsync(postId, cancellationToken);
+    return new FacebookDeleteResultDto(true);
   }
 
   public async Task<FacebookPostCommentListDto> GetPostCommentsAsync(
@@ -275,26 +386,21 @@ public sealed class FacebookService(
   {
     pageId = NormalizeRequired(pageId, "pageId");
     postId = NormalizeRequired(postId, "postId");
-    var token = await GetPageTokenAsync(pageId, cancellationToken);
-    var query = new Dictionary<string, string>
-    {
-      ["fields"] = CommentFields,
-      ["filter"] = "stream",
-      ["order"] = "chronological",
-      ["limit"] = Math.Clamp(limit, 1, 100).ToString()
-    };
+    if (UseMockData && IsMockPage(pageId)) return MockComments(postId, after, limit);
 
-    if (!string.IsNullOrWhiteSpace(after))
-    {
-      query["after"] = after.Trim();
-    }
+    var account = await ResolveZernioAccountAsync(pageId, cancellationToken);
+    var comments = await socialService.GetCommentsAsync(
+      postId,
+      account.ZernioAccountId,
+      after,
+      Math.Clamp(limit, 1, 100),
+      cancellationToken);
 
-    var response = await SendGetAsync<FacebookListResponse<FacebookCommentResponse>>($"{postId}/comments", token, query, cancellationToken);
     return new FacebookPostCommentListDto(
-      response.Data.Select(comment => MapComment(comment, postId)).ToList(),
-      response.Paging?.Cursors?.Before,
-      response.Paging?.Cursors?.After,
-      response.Paging?.Next);
+      comments.Items.Select(comment => MapComment(comment, postId)).ToList(),
+      null,
+      comments.NextCursor,
+      null);
   }
 
   public async Task<FacebookCommentActionResultDto> CommentOnPostAsync(
@@ -319,10 +425,17 @@ public sealed class FacebookService(
   {
     pageId = NormalizeRequired(pageId, "pageId");
     commentId = NormalizeRequired(commentId, "commentId");
+    var postId = NormalizeRequired(request.PostId, "postId");
     var message = NormalizeRequired(request.Message, "message");
-    var token = await GetPageTokenAsync(pageId, cancellationToken);
-    var response = await SendFormAsync<FacebookPublishResponse>(HttpMethod.Post, $"{commentId}/comments", token, new Dictionary<string, string> { ["message"] = message }, cancellationToken);
-    return new FacebookCommentActionResultDto(true, response.Id, "Đã trả lời bình luận.");
+    if (UseMockData && IsMockPage(pageId))
+      return new FacebookCommentActionResultDto(true, $"mock_reply_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", "MOCK: Đã giả lập trả lời bình luận Facebook.");
+
+    var account = await ResolveZernioAccountAsync(pageId, cancellationToken);
+    var response = await socialService.ReplyToCommentAsync(
+      postId,
+      new CreateSocialCommentReplyRequest(account.ZernioAccountId, message, commentId),
+      cancellationToken);
+    return new FacebookCommentActionResultDto(response.Success, response.Id, response.Message ?? "Đã trả lời bình luận qua Zernio.");
   }
 
   public async Task<FacebookCommentActionResultDto> ToggleCommentHiddenAsync(
@@ -357,24 +470,22 @@ public sealed class FacebookService(
     CancellationToken cancellationToken = default)
   {
     pageId = NormalizeRequired(pageId, "pageId");
-    var token = await GetPageTokenAsync(pageId, cancellationToken);
-    var query = new Dictionary<string, string>
-    {
-      ["fields"] = ConversationFields,
-      ["limit"] = Math.Clamp(limit, 1, 100).ToString()
-    };
+    if (UseMockData && IsMockPage(pageId)) return MockConversations(pageId, after, limit);
 
-    if (!string.IsNullOrWhiteSpace(after))
-    {
-      query["after"] = after.Trim();
-    }
+    var account = await ResolveZernioAccountAsync(pageId, cancellationToken);
+    var conversations = await socialService.GetConversationsAsync(
+      "facebook",
+      account.ZernioAccountId,
+      account.ZernioProfileId,
+      after,
+      Math.Clamp(limit, 1, 100),
+      cancellationToken);
 
-    var response = await SendGetAsync<FacebookListResponse<FacebookConversationResponse>>($"{pageId}/conversations", token, query, cancellationToken);
     return new FacebookConversationListDto(
-      response.Data.Select(conversation => MapConversation(conversation, pageId)).ToList(),
-      response.Paging?.Cursors?.Before,
-      response.Paging?.Cursors?.After,
-      response.Paging?.Next);
+      conversations.Items.Select(conversation => MapConversation(conversation, account.ZernioAccountId)).ToList(),
+      null,
+      conversations.NextCursor,
+      null);
   }
 
   public async Task<FacebookMessageListDto> GetConversationMessagesAsync(
@@ -386,24 +497,21 @@ public sealed class FacebookService(
   {
     pageId = NormalizeRequired(pageId, "pageId");
     conversationId = NormalizeRequired(conversationId, "conversationId");
-    var token = await GetPageTokenAsync(pageId, cancellationToken);
-    var query = new Dictionary<string, string>
-    {
-      ["fields"] = MessageFields,
-      ["limit"] = Math.Clamp(limit, 1, 100).ToString()
-    };
+    if (UseMockData && IsMockPage(pageId)) return MockMessages(pageId, conversationId, before, limit);
 
-    if (!string.IsNullOrWhiteSpace(before))
-    {
-      query["before"] = before.Trim();
-    }
+    var account = await ResolveZernioAccountAsync(pageId, cancellationToken);
+    var messages = await socialService.GetConversationMessagesAsync(
+      conversationId,
+      account.ZernioAccountId,
+      before,
+      Math.Clamp(limit, 1, 100),
+      cancellationToken);
 
-    var response = await SendGetAsync<FacebookListResponse<FacebookMessageResponse>>($"{conversationId}/messages", token, query, cancellationToken);
     return new FacebookMessageListDto(
-      response.Data.Select(message => MapMessage(message, conversationId, pageId)).ToList(),
-      response.Paging?.Cursors?.Before,
-      response.Paging?.Cursors?.After,
-      response.Paging?.Next);
+      messages.Items.Select(message => MapMessage(message, conversationId, account.ZernioAccountId)).ToList(),
+      null,
+      messages.NextCursor,
+      null);
   }
 
   public async Task<FacebookMessageSendResultDto> SendMessageAsync(
@@ -421,31 +529,22 @@ public sealed class FacebookService(
       throw new FacebookApiException("Tin nhắn cần có nội dung hoặc media.", "facebook_message_empty", 400);
     }
 
-    var token = await GetPageTokenAsync(pageId, cancellationToken);
-    var recipientId = await GetConversationCustomerIdAsync(pageId, conversationId, token, cancellationToken);
-    var messagePayload = hasAttachment
-      ? new Dictionary<string, object?>
-      {
-        ["attachment"] = new Dictionary<string, object?>
-        {
-          ["type"] = NormalizeAttachmentType(request.AttachmentType),
-          ["payload"] = new Dictionary<string, object?> { ["url"] = NormalizeAbsoluteUri(request.AttachmentUrl, "attachmentUrl") }
-        }
-      }
-      : new Dictionary<string, object?> { ["text"] = request.Text!.Trim() };
+    if (UseMockData && IsMockPage(pageId))
+    {
+      return new FacebookMessageSendResultDto(true, $"mock_message_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}");
+    }
 
-    var response = await SendFormAsync<FacebookMessengerSendResponse>(
-      HttpMethod.Post,
-      $"{pageId}/messages",
-      token,
-      new Dictionary<string, string>
-      {
-        ["recipient"] = JsonSerializer.Serialize(new Dictionary<string, string> { ["id"] = recipientId }, JsonOptions),
-        ["message"] = JsonSerializer.Serialize(messagePayload, JsonOptions)
-      },
+    var account = await ResolveZernioAccountAsync(pageId, cancellationToken);
+    var response = await socialService.SendMessageAsync(
+      conversationId,
+      new SendSocialMessageRequest(
+        account.ZernioAccountId,
+        request.Text,
+        request.AttachmentUrl,
+        hasAttachment ? NormalizeAttachmentType(request.AttachmentType) : null),
       cancellationToken);
 
-    return new FacebookMessageSendResultDto(!string.IsNullOrWhiteSpace(response.MessageId), response.MessageId);
+    return new FacebookMessageSendResultDto(response.Success || !string.IsNullOrWhiteSpace(response.Id), response.Id);
   }
 
   public async Task<MarkConversationReadResultDto> MarkConversationReadAsync(
@@ -455,20 +554,15 @@ public sealed class FacebookService(
   {
     pageId = NormalizeRequired(pageId, "pageId");
     conversationId = NormalizeRequired(conversationId, "conversationId");
-    var token = await GetPageTokenAsync(pageId, cancellationToken);
-    var recipientId = await GetConversationCustomerIdAsync(pageId, conversationId, token, cancellationToken);
-    var response = await SendFormAsync<FacebookMessengerSendResponse>(
-      HttpMethod.Post,
-      $"{pageId}/messages",
-      token,
-      new Dictionary<string, string>
-      {
-        ["recipient"] = JsonSerializer.Serialize(new Dictionary<string, string> { ["id"] = recipientId }, JsonOptions),
-        ["sender_action"] = "mark_seen"
-      },
+    if (UseMockData && IsMockPage(pageId)) return new MarkConversationReadResultDto(true);
+
+    var account = await ResolveZernioAccountAsync(pageId, cancellationToken);
+    var response = await socialService.MarkConversationReadAsync(
+      conversationId,
+      account.ZernioAccountId,
       cancellationToken);
 
-    return new MarkConversationReadResultDto(!string.IsNullOrWhiteSpace(response.RecipientId));
+    return new MarkConversationReadResultDto(response.Success);
   }
 
   private async Task<string> GetConversationCustomerIdAsync(
@@ -536,6 +630,45 @@ public sealed class FacebookService(
     var response = await SendAsync<FacebookPublishResponse>(request, cancellationToken);
     return new FacebookPublishResultDto(response.Id, response.PostId, null);
   }
+
+  private async Task<SocialAccountConnectionDto> ResolveZernioAccountAsync(string pageId, CancellationToken cancellationToken)
+  {
+    var normalizedPageId = NormalizeRequired(pageId, "pageId");
+    var accounts = await socialService.GetAccountsAsync("facebook", sync: true, cancellationToken: cancellationToken);
+    var match = accounts.FirstOrDefault(account => account.IsActive && (
+      string.Equals(account.ZernioAccountId, normalizedPageId, StringComparison.Ordinal)
+      || string.Equals(account.Id.ToString(), normalizedPageId, StringComparison.OrdinalIgnoreCase)));
+
+    if (match is null)
+    {
+      throw new FacebookApiException("Chưa kết nối trang Facebook qua Zernio hoặc pageId/accountId không hợp lệ.", "zernio_facebook_not_connected", 404);
+    }
+
+    return match;
+  }
+
+  private static FacebookConnectionDto ToFacebookConnection(SocialAccountConnectionDto account) => new(
+    account.ZernioAccountId,
+    account.DisplayName ?? account.Username ?? account.ZernioAccountId,
+    "ZERNIO",
+    null,
+    account.LastSyncedAt,
+    account.IsActive);
+
+  private static string BuildSocialPostContent(string? message, string? link)
+  {
+    var content = (message ?? string.Empty).Trim();
+    if (!string.IsNullOrWhiteSpace(link))
+    {
+      content = string.IsNullOrWhiteSpace(content)
+        ? link.Trim()
+        : content + "\n" + link.Trim();
+    }
+    return content;
+  }
+
+  private static int ParseCursorPage(string? cursor) =>
+    int.TryParse(cursor, out var page) && page > 0 ? page : 1;
 
   private async Task<FacebookConnectionDto> UpsertPageConnectionAsync(
     string pageId,
@@ -821,6 +954,91 @@ public sealed class FacebookService(
       $"facebook_{code}",
       (int)response.StatusCode,
       retryAfter);
+  }
+
+  private static FacebookConversationDto MapConversation(SocialConversationDto conversation, string fallbackPageId)
+  {
+    return new FacebookConversationDto(
+      conversation.Id,
+      string.IsNullOrWhiteSpace(conversation.AccountId) ? fallbackPageId : conversation.AccountId,
+      conversation.ParticipantId,
+      conversation.ParticipantName,
+      conversation.ParticipantPicture,
+      conversation.LastMessage,
+      conversation.UpdatedTime,
+      conversation.UnreadCount,
+      null,
+      conversation.Url,
+      [
+        new FacebookParticipantDto(
+          string.IsNullOrWhiteSpace(conversation.AccountId) ? fallbackPageId : conversation.AccountId,
+          conversation.AccountUsername,
+          null,
+          true),
+        new FacebookParticipantDto(
+          conversation.ParticipantId,
+          conversation.ParticipantName,
+          null,
+          false)
+      ]);
+  }
+
+  private static FacebookMessageDto MapMessage(SocialMessageDto message, string fallbackConversationId, string pageId)
+  {
+    var isFromPage = string.Equals(message.Direction, "outgoing", StringComparison.OrdinalIgnoreCase)
+      || string.Equals(message.SenderId, pageId, StringComparison.Ordinal);
+
+    return new FacebookMessageDto(
+      message.Id,
+      string.IsNullOrWhiteSpace(message.ConversationId) ? fallbackConversationId : message.ConversationId,
+      message.SenderId,
+      message.SenderName,
+      isFromPage,
+      message.Text,
+      message.CreatedAt,
+      message.Attachments.Select(MapAttachment).ToList());
+  }
+
+  private static FacebookMessageAttachmentDto MapAttachment(SocialMessageAttachmentDto attachment) => new(
+    attachment.Type,
+    attachment.Url ?? attachment.PreviewUrl,
+    attachment.FileName,
+    null,
+    null);
+
+  private static FacebookPostDto MapPost(SocialPostDto post)
+  {
+    var platform = post.Platforms.FirstOrDefault(p => string.Equals(p.Platform, "facebook", StringComparison.OrdinalIgnoreCase))
+      ?? post.Platforms.FirstOrDefault();
+    return new FacebookPostDto(
+      string.IsNullOrWhiteSpace(platform?.PlatformPostId) ? post.Id : platform.PlatformPostId!,
+      post.Content,
+      post.PublishedAt ?? post.ScheduledFor,
+      post.PublishedAt,
+      platform?.PlatformPostUrl ?? post.PlatformPostUrl,
+      post.MediaItems.FirstOrDefault(media => string.Equals(media.Type, "image", StringComparison.OrdinalIgnoreCase))?.Url,
+      string.Equals(post.Status, "published", StringComparison.OrdinalIgnoreCase) || post.PublishedAt.HasValue,
+      post.ScheduledFor,
+      post.Status,
+      post.MediaItems.FirstOrDefault()?.Type ?? "status");
+  }
+
+  private static FacebookCommentDto MapComment(SocialCommentDto comment, string? fallbackPostId)
+  {
+    return new FacebookCommentDto(
+      comment.Id,
+      fallbackPostId,
+      comment.ParentId,
+      comment.Author is null ? null : new FacebookCommentAuthorDto(comment.Author.Id, comment.Author.Name ?? comment.Author.Username, comment.Author.Picture),
+      comment.Message,
+      comment.CreatedTime,
+      comment.LikeCount,
+      comment.ReplyCount,
+      comment.CanReply,
+      comment.CanHide,
+      comment.CanDelete,
+      comment.IsHidden,
+      comment.Replies.Select(reply => MapComment(reply, fallbackPostId)).ToList());
   }
 
   private static FacebookPostDto MapPost(FacebookPostResponse post)

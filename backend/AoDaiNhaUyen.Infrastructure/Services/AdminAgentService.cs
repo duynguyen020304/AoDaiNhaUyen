@@ -4,6 +4,7 @@ using System.Text.Json;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.DTOs.BlogPost;
 using AoDaiNhaUyen.Application.DTOs.Facebook;
+using AoDaiNhaUyen.Application.Exceptions;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Common;
 using AoDaiNhaUyen.Domain.Entities;
@@ -32,6 +33,8 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IAdminMediaService _media;
   private readonly IBlogAiDraftService _blogAiDrafts;
   private readonly IBlogPostService _blogPosts;
+  private readonly IAdminBlogImageGenerationService _blogImageGeneration;
+  private readonly IStorageService _storageService;
   private readonly IAdminMarketingCampaignService _marketingCampaigns;
   private readonly IAdminSubscriberService _subscribers;
   private readonly IAdminEmailJobService _emailJobs;
@@ -80,6 +83,8 @@ public sealed class AdminAgentService : IAdminAgentService
     IAdminMediaService media,
     IBlogAiDraftService blogAiDrafts,
     IBlogPostService blogPosts,
+    IAdminBlogImageGenerationService blogImageGeneration,
+    IStorageService storageService,
     IAdminMarketingCampaignService marketingCampaigns,
     IAdminSubscriberService subscribers,
     IAdminEmailJobService emailJobs,
@@ -112,6 +117,8 @@ public sealed class AdminAgentService : IAdminAgentService
     _media = media;
     _blogAiDrafts = blogAiDrafts;
     _blogPosts = blogPosts;
+    _blogImageGeneration = blogImageGeneration;
+    _storageService = storageService;
     _marketingCampaigns = marketingCampaigns;
     _subscribers = subscribers;
     _emailJobs = emailJobs;
@@ -203,6 +210,8 @@ public sealed class AdminAgentService : IAdminAgentService
       P(
         ("page", O("integer", "Trang, 1-based. Mặc định: 1")),
         ("pageSize", O("integer", "Số báo cáo mỗi trang. Mặc định: 10")),
+        ("autoPage", O("boolean", "true để tự tải nhiều trang khi cần dữ liệu đầy đủ; mặc định false")),
+        ("maxItems", O("integer", "Giới hạn số item khi autoPage=true. Mặc định pageSize, tối đa 250")),
         ("type", O("string", "Lọc loại báo cáo: risk, revenue, seo, growth, crm, operations (tùy chọn)")),
         ("severity", O("string", "Lọc mức độ: info, warning, critical (tùy chọn)")),
         ("status", O("string", "Lọc trạng thái: open, resolved, dismissed (tùy chọn)")),
@@ -217,6 +226,8 @@ public sealed class AdminAgentService : IAdminAgentService
       P(
         ("page", O("integer", "Trang, 1-based. Mặc định: 1")),
         ("pageSize", O("integer", "Số event mỗi trang. Mặc định: 20")),
+        ("autoPage", O("boolean", "true để tự tải nhiều trang khi cần dữ liệu đầy đủ; mặc định false")),
+        ("maxItems", O("integer", "Giới hạn số item khi autoPage=true. Mặc định pageSize, tối đa 250")),
         ("status", O("string", "Lọc trạng thái: pending, processing, completed, failed, dead, cancelled (tùy chọn)")),
         ("eventType", O("string", "Lọc chính xác theo eventType, ví dụ checkout_completed, low_stock, negative_review_detected (tùy chọn)")),
         ("aggregateType", O("string", "Lọc theo aggregate: order, product, promo, review, social... (tùy chọn)")),
@@ -228,6 +239,8 @@ public sealed class AdminAgentService : IAdminAgentService
       P(
         ("page", O("integer", "Trang hiện tại, 1-based, mặc định 1. Dùng >1 khi còn tiếp = có")),
         ("pageSize", O("integer", "Số sản phẩm mỗi trang, mặc định 20; dùng 50 cho yêu cầu liệt kê/tổng hợp catalog rộng")),
+        ("autoPage", O("boolean", "true để tự tải nhiều trang khi admin cần toàn bộ/tổng hợp đầy đủ; mặc định false")),
+        ("maxItems", O("integer", "Giới hạn số sản phẩm khi autoPage=true. Mặc định pageSize, tối đa 250")),
         ("search", O("string", "Từ khóa từ admin; chỉ dùng khi admin nêu tên/nhóm cụ thể, không dùng cho yêu cầu liệt kê toàn bộ catalog")),
         ("status", O("string", "Lọc theo trạng thái: active, inactive, draft (tùy chọn)")))),
 
@@ -328,6 +341,8 @@ public sealed class AdminAgentService : IAdminAgentService
       P(
         ("page", O("integer", "Trang hiện tại, 1-based, mặc định 1. Dùng >1 khi còn tiếp = có")),
         ("pageSize", O("integer", "Số người dùng mỗi trang, mặc định 20; response có thể chỉ hiển thị tối đa 10 mục")),
+        ("autoPage", O("boolean", "true để tự tải nhiều trang khi admin cần toàn bộ/tổng hợp đầy đủ; mặc định false")),
+        ("maxItems", O("integer", "Giới hạn số người dùng khi autoPage=true. Mặc định pageSize, tối đa 250")),
         ("search", O("string", "Từ khóa tên/email/sđt từ admin; ưu tiên khi tìm người dùng cụ thể")))),
 
     T("get_user", "Lấy chi tiết một người dùng.",
@@ -501,7 +516,7 @@ public sealed class AdminAgentService : IAdminAgentService
     T("list_promo_codes", "Liệt kê tất cả mã khuyến mãi.", P()),
 
     // Blog content
-    T("generate_blog_draft", "Tạo bản nháp blog tiếng Việt dạng JSON BlogBlock[] kèm SEO/E-E-A-T để admin mở trong trình soạn. Không tự xuất bản.",
+    T("generate_blog_draft", "Tạo bản nháp blog tiếng Việt dạng JSON BlogBlock[] kèm SEO/E-E-A-T để admin mở trong trình soạn. Workflow tích hợp: tạo khung -> soạn nội dung -> tạo prompt ảnh -> chuẩn bị handoff AI try-on tại http://localhost:5173/ai-tryon -> validate nội dung. Không tự xuất bản. Nếu admin yêu cầu tự tạo/chèn ảnh, gọi generate_blog_images sau tool này rồi mới save_blog_draft/update_blog_post.",
       P(
         ("topic", O("string", "Chủ đề bài viết, bắt buộc")),
         ("targetKeyword", O("string", "Từ khóa SEO chính (tùy chọn)")),
@@ -511,6 +526,14 @@ public sealed class AdminAgentService : IAdminAgentService
         ("length", O("string", "short, standard, long")),
         ("includeFaq", O("boolean", "Có thêm FAQ hay không")),
         ("notes", O("string", "Ghi chú bổ sung từ admin")))),
+
+    T("generate_blog_images", "Tạo ảnh blog bằng API ảnh dùng chung model với trang AI try-on, upload vào private/blog, trả URL ảnh nổi bật + block image/gallery để chèn vào save_blog_draft/update_blog_post. Dùng khi admin yêu cầu tự tạo ảnh, ảnh nổi bật, ảnh đơn lẻ hoặc gallery cho blog.",
+      P(
+        ("topic", O("string", "Chủ đề/bài blog cần tạo ảnh — bắt buộc")),
+        ("prompt", O("string", "Prompt chi tiết, có thể lấy từ imagePrompt của generate_blog_draft (tùy chọn)")),
+        ("inlineCount", O("integer", "Số ảnh đơn lẻ trong bài. Mặc định 0, tối đa 3; không chỉ định thì chỉ tạo ảnh nổi bật")),
+        ("galleryCount", O("integer", "Số ảnh gallery. Mặc định 0, tối đa 6; chỉ tạo khi admin yêu cầu gallery")),
+        ("style", O("string", "Phong cách ảnh: editorial, studio, lookbook, texture... (tùy chọn)")))),
 
     T("save_blog_draft", "Tự động lưu bài viết ở trạng thái nháp.",
       P(
@@ -533,6 +556,8 @@ public sealed class AdminAgentService : IAdminAgentService
       P(
         ("page", O("integer", "Trang hiện tại, 1-based, mặc định 1")),
         ("pageSize", O("integer", "Số bài mỗi trang, mặc định 20; dùng 50 cho yêu cầu liệt kê rộng")),
+        ("autoPage", O("boolean", "true để tự tải nhiều trang khi admin cần toàn bộ/tổng hợp đầy đủ; mặc định false")),
+        ("maxItems", O("integer", "Giới hạn số bài khi autoPage=true. Mặc định pageSize, tối đa 250")),
         ("status", O("string", "Lọc trạng thái: Draft, Published, Archived (tùy chọn)")),
         ("search", O("string", "Từ khóa tìm theo tiêu đề (tùy chọn)")))),
 
@@ -601,28 +626,73 @@ public sealed class AdminAgentService : IAdminAgentService
     T("delete_email_job", "Xóa mềm một email job đã kết thúc. Không xóa job đang queued/sending.",
       P(("id", O("string", "ID email job (GUID) — bắt buộc")))),
 
-    // Facebook Page (social): đọc bài/bình luận và trả lời bình luận trên trang Facebook.
-    T("list_facebook_pages", "Liệt kê các trang Facebook đã kết nối (pageId + tên trang). Gọi trước khi thao tác Facebook để lấy pageId. Chỉ trả về pageId/tên, không bao giờ lộ access token.",
+    // Facebook/Zernio social tools: all admin-agent reads/writes go through ISocialService/Zernio.
+    T("generate_facebook_post_plan", "Tạo kế hoạch nội dung Facebook tiếng Việt theo workflow: tạo khung -> soạn nội dung -> tạo prompt ảnh -> chuẩn bị handoff AI try-on -> validate nội dung. Không tự đăng bài.",
+      P(
+        ("topic", O("string", "Chủ đề bài post — bắt buộc")),
+        ("audience", O("string", "Độc giả mục tiêu (tùy chọn)")),
+        ("tone", O("string", "Giọng văn: trang nhã, thân thiện, tư vấn...")),
+        ("ctaUrl", O("string", "Link CTA nếu có (tùy chọn)")),
+        ("productName", O("string", "Tên sản phẩm liên quan (tùy chọn)")))),
+
+    T("publish_facebook_post", "Đăng bài viết Facebook kèm text/link và URL ảnh public qua Zernio API. BẮT BUỘC gọi list_facebook_pages trước để lấy pageId = zernioAccountId. Nếu dùng ảnh do AI tạo, phải lấy publicUrl/publicImageUrls từ generate_blog_images và truyền vào imageUrls/mediaUrls; cần admin xác nhận trước khi đăng.",
+      P(
+        ("pageId", O("string", "zernioAccountId của Facebook Page — bắt buộc (lấy từ list_facebook_pages)")),
+        ("message", O("string", "Nội dung bài đăng — bắt buộc nếu không có imageUrls/mediaUrls")),
+        ("link", O("string", "Link gắn kèm (tùy chọn)")),
+        ("imageUrl", O("string", "Một URL ảnh public đính kèm (tùy chọn; ưu tiên dùng publicUrl từ generate_blog_images)")),
+        ("imageUrls", O("string", "Danh sách URL ảnh public đính kèm, phân tách bằng dấu phẩy hoặc xuống dòng (tùy chọn)")),
+        ("mediaUrls", O("string", "Alias của imageUrls; danh sách URL media public cho Zernio, phân tách bằng dấu phẩy hoặc xuống dòng (tùy chọn)")),
+        ("published", O("boolean", "true đăng ngay, false lưu/schedule theo Zernio. Mặc định true")))),
+
+    T("delete_facebook_post", "Gỡ/xóa một bài viết Facebook qua Zernio API. BẮT BUỘC dùng postId lấy từ list_facebook_posts; cần admin xác nhận trước khi gỡ.",
+      P(
+        ("postId", O("string", "Facebook/Zernio Post ID — bắt buộc (lấy từ list_facebook_posts)")),
+        ("pageId", O("string", "zernioAccountId của Facebook Page (tùy chọn, dùng để kiểm tra ngữ cảnh)")))),
+
+    T("list_facebook_pages", "Liệt kê fanpage Facebook đã kết nối qua Zernio API. Trả pageId/zernioAccountId + connectionId. Không bao giờ lộ token.",
       P()),
 
-    T("list_facebook_posts", "Liệt kê bài đăng trên một trang Facebook (mới nhất trước). Dùng để admin xem các bài đã đăng, hoặc lấy postId trước khi xem/ trả lời bình luận.",
+    T("list_facebook_posts", "Liệt kê bài đăng Facebook của fanpage qua Zernio API. Gọi sau list_facebook_pages.",
       P(
-        ("pageId", O("string", "Facebook Page ID — bắt buộc (lấy từ list_facebook_pages)")),
+        ("pageId", O("string", "zernioAccountId của Facebook Page — bắt buộc (lấy từ list_facebook_pages)")),
         ("limit", O("integer", "Số bài tối đa. Mặc định: 15, tối đa 50")),
-        ("cursor", O("string", "Cursor trang kế tiếp để lấy thêm bài cũ hơn (tùy chọn)")))),
+        ("cursor", O("string", "Cursor dạng số trang Zernio, mặc định 1 (tùy chọn)")))),
 
-    T("list_facebook_post_comments", "Liệt kê bình luận trên MỘT bài đăng Facebook (kèm tên người bình luận, nội dung, thời gian, đã ẩn chưa, có trả lời được không). Dùng để admin xem bình luận và lấy commentId trước khi trả lời.",
+    T("list_facebook_post_comments", "Liệt kê bình luận của một bài đăng Facebook qua Zernio API. Gọi sau list_facebook_posts để lấy postId/commentId.",
       P(
-        ("pageId", O("string", "Facebook Page ID — bắt buộc")),
-        ("postId", O("string", "Facebook Post ID — bắt buộc (lấy từ list_facebook_posts)")),
+        ("pageId", O("string", "zernioAccountId của Facebook Page — bắt buộc")),
+        ("postId", O("string", "Facebook/Zernio Post ID — bắt buộc")),
         ("limit", O("integer", "Số bình luận tối đa. Mặc định: 25, tối đa 50")),
         ("after", O("string", "Cursor trang kế tiếp (tùy chọn)")))),
 
-    T("reply_facebook_comment", "Trả lời một bình luận trên bài đăng Facebook bằng tư cách trang. Reply ngắn, ấm, lịch sự, đúng giọng thương hiệu; cảm ơn khi tích cực, xin lỗi + hỗ trợ khi tiêu cực. KHÔNG tranh cãi với khách.",
+    T("reply_facebook_comment", "Trả lời một bình luận Facebook bằng tư cách Page qua Zernio API. BẮT BUỘC đã gọi list_facebook_post_comments để lấy postId/commentId và cần admin xác nhận.",
       P(
-        ("pageId", O("string", "Facebook Page ID — bắt buộc")),
-        ("commentId", O("string", "Facebook Comment ID cần trả lời — bắt buộc (lấy từ list_facebook_post_comments)")),
-        ("message", O("string", "Nội dung trả lời — bắt buộc")))),
+        ("pageId", O("string", "zernioAccountId của Facebook Page — bắt buộc")),
+        ("postId", O("string", "Facebook/Zernio Post ID chứa bình luận — bắt buộc")),
+        ("commentId", O("string", "Facebook/Zernio Comment ID — bắt buộc")),
+        ("message", O("string", "Nội dung trả lời lịch sự, đúng giọng thương hiệu")))),
+
+    T("list_facebook_conversations", "Liệt kê tin nhắn/hội thoại Messenger hiện tại của fanpage qua Zernio API. Gọi sau list_facebook_pages.",
+      P(
+        ("pageId", O("string", "zernioAccountId của Facebook Page — bắt buộc (lấy từ list_facebook_pages)")),
+        ("limit", O("integer", "Số hội thoại tối đa. Mặc định: 15, tối đa 50")),
+        ("cursor", O("string", "Cursor trang kế tiếp (tùy chọn)")))),
+
+    T("list_facebook_conversation_messages", "Liệt kê tin nhắn trong một hội thoại Messenger fanpage qua Zernio API.",
+      P(
+        ("pageId", O("string", "zernioAccountId của Facebook Page — bắt buộc")),
+        ("conversationId", O("string", "Zernio/Facebook Conversation ID — bắt buộc")),
+        ("limit", O("integer", "Số tin nhắn tối đa. Mặc định: 30, tối đa 100")),
+        ("cursor", O("string", "Cursor trang kế tiếp (tùy chọn)")))),
+
+    T("send_facebook_message", "Gửi tin nhắn Messenger trong hội thoại fanpage qua Zernio API. Cần admin xác nhận.",
+      P(
+        ("pageId", O("string", "zernioAccountId của Facebook Page — bắt buộc")),
+        ("conversationId", O("string", "Zernio/Facebook Conversation ID — bắt buộc")),
+        ("message", O("string", "Nội dung tin nhắn lịch sự, đúng giọng thương hiệu")),
+        ("attachmentUrl", O("string", "URL media đính kèm (tùy chọn)")),
+        ("attachmentType", O("string", "Loại media: image, video, file... (tùy chọn)")))),
 
     // Autonomy Mode
     T("toggle_autonomy", "Bật/tắt chế độ tự động cho AI. Khi bật, các hành động Medium risk được tự động thực hiện.",
@@ -1282,6 +1352,98 @@ public sealed class AdminAgentService : IAdminAgentService
     return suggestions;
   }
 
+  public async Task<AdminToolDiagnosticsResponse> RunDiagnosticsAsync(
+    AdminToolDiagnosticsRequest request,
+    Guid adminUserId,
+    CancellationToken ct)
+  {
+    var maxPerTool = ClampInt(request.MaxPerTool, 1, 5);
+    var selectedTools = request.ToolNames?.Count > 0
+      ? request.ToolNames.ToHashSet(StringComparer.Ordinal)
+      : null;
+
+    var items = new List<AdminToolDiagnosticsItem>();
+    var samples = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+      ["get_dashboard_summary"] = "{}",
+      ["get_revenue"] = "{\"period\":7}",
+      ["get_orders_by_status"] = "{}",
+      ["get_recent_orders"] = "{\"limit\":3}",
+      ["get_top_products"] = "{\"limit\":3}",
+      ["list_products"] = "{\"page\":1,\"pageSize\":10,\"autoPage\":true,\"maxItems\":25}",
+      ["list_categories"] = "{}",
+      ["list_users"] = "{\"page\":1,\"pageSize\":10,\"autoPage\":true,\"maxItems\":25}",
+      ["list_orders"] = "{\"limit\":3}",
+      ["get_store_health_score"] = "{}",
+      ["list_blog_posts"] = "{\"page\":1,\"pageSize\":10,\"autoPage\":true,\"maxItems\":25}",
+      ["generate_blog_draft"] = "{\"topic\":\"Cách chọn áo dài dự tiệc\",\"length\":\"short\"}",
+      ["list_hermes_reports"] = "{\"page\":1,\"pageSize\":10,\"autoPage\":true,\"maxItems\":25}",
+      ["list_hermes_events"] = "{\"page\":1,\"pageSize\":10,\"autoPage\":true,\"maxItems\":25}",
+      ["list_facebook_pages"] = "{}",
+      ["list_facebook_posts"] = "{\"pageId\":\"zernio_account_id_from_list_facebook_pages\",\"limit\":5}",
+      ["list_facebook_post_comments"] = "{\"pageId\":\"zernio_account_id_from_list_facebook_pages\",\"postId\":\"post_id_from_list_facebook_posts\",\"limit\":5}",
+      ["list_facebook_conversations"] = "{\"pageId\":\"zernio_account_id_from_list_facebook_pages\",\"limit\":5}",
+      ["list_facebook_conversation_messages"] = "{\"pageId\":\"zernio_account_id_from_list_facebook_pages\",\"conversationId\":\"conversation_id_from_list_facebook_conversations\",\"limit\":5}",
+      ["create_product"] = "{\"name\":\"DIAGNOSTIC ONLY\",\"categoryId\":\"00000000-0000-0000-0000-000000000000\"}",
+      ["update_product"] = "{\"id\":\"00000000-0000-0000-0000-000000000000\",\"name\":\"DIAGNOSTIC ONLY\"}",
+      ["delete_product"] = "{\"id\":\"00000000-0000-0000-0000-000000000000\"}",
+      ["publish_blog_post"] = "{\"id\":\"00000000-0000-0000-0000-000000000000\"}",
+      ["reply_facebook_comment"] = "{\"pageId\":\"zernio_account_id_from_list_facebook_pages\",\"postId\":\"post_id_from_list_facebook_posts\",\"commentId\":\"comment_id_from_list_facebook_post_comments\",\"message\":\"Cảm ơn bạn đã quan tâm.\"}",
+      ["send_facebook_message"] = "{\"pageId\":\"zernio_account_id_from_list_facebook_pages\",\"conversationId\":\"conversation_id_from_list_facebook_conversations\",\"message\":\"Cảm ơn bạn đã nhắn tin cho Áo Dài Nhã Uyên.\"}"
+    };
+
+    foreach (var (toolName, argsJson) in samples.Where(x => selectedTools is null || selectedTools.Contains(x.Key)).Take(Math.Max(1, maxPerTool) * samples.Count))
+    {
+      var started = DateTimeOffset.UtcNow;
+      var risk = await _safety.ClassifyAsync(toolName, ct);
+      var requiresConfirmation = await _safety.RequiresConfirmationAsync(toolName, ct);
+
+      try
+      {
+        if (requiresConfirmation)
+        {
+          items.Add(new AdminToolDiagnosticsItem(
+            toolName,
+            "confirmation_required",
+            risk.ToString(),
+            true,
+            "Tool mutating được gate đúng; diagnostics không approve/execute.",
+            null,
+            (int)(DateTimeOffset.UtcNow - started).TotalMilliseconds));
+          continue;
+        }
+
+        var result = await ExecuteToolAsync(toolName, argsJson, adminUserId, ct, false);
+        items.Add(new AdminToolDiagnosticsItem(
+          toolName,
+          result.IsError ? "failed" : "passed",
+          risk.ToString(),
+          false,
+          result.Description,
+          result.ErrorCode,
+          (int)(DateTimeOffset.UtcNow - started).TotalMilliseconds));
+      }
+      catch (Exception ex)
+      {
+        items.Add(new AdminToolDiagnosticsItem(
+          toolName,
+          "failed",
+          risk.ToString(),
+          requiresConfirmation,
+          ex.Message,
+          "diagnostic_exception",
+          (int)(DateTimeOffset.UtcNow - started).TotalMilliseconds));
+      }
+    }
+
+    return new AdminToolDiagnosticsResponse(
+      items.Count(i => i.Status == "passed"),
+      items.Count(i => i.Status == "failed"),
+      items.Count(i => i.Status == "skipped"),
+      items.Count(i => i.Status == "confirmation_required"),
+      items);
+  }
+
   // --- Tool execution ---
 
   private async Task<ToolResult> ExecuteToolAsync(
@@ -1308,7 +1470,9 @@ public sealed class AdminAgentService : IAdminAgentService
             SerializeToolError(lookupRequired, "lookup_required", riskLevel.ToString()),
             false,
             lookupRequired,
-            riskLevel.ToString());
+            riskLevel.ToString(),
+            IsError: true,
+            ErrorCode: "lookup_required");
       }
 
       var requiresConfirmation = await _safety.RequiresConfirmationAsync(toolName, ct);
@@ -1342,9 +1506,7 @@ public sealed class AdminAgentService : IAdminAgentService
         "list_hermes_events" => await ListHermesEvents(args, ct),
 
         // Products
-        "list_products" => await ListProducts(
-          ClampInt(GetIntArg(args, "page", 1), 1, 10000), ClampInt(GetIntArg(args, "pageSize", 20), 1, 50),
-          GetStrArg(args, "search"), GetStrArg(args, "status"), ct),
+        "list_products" => await ListProducts(args, ct),
         "get_product" => await GetProduct(RequiredGuid(args, "id"), ct),
         "create_product" => await CreateProduct(args, ct),
         "update_product" => await UpdateProduct(args, ct),
@@ -1366,9 +1528,7 @@ public sealed class AdminAgentService : IAdminAgentService
         "delete_category" => await DeleteCategory(RequiredGuid(args, "id"), ct),
 
         // Users
-        "list_users" => await ListUsers(
-          ClampInt(GetIntArg(args, "page", 1), 1, 10000), ClampInt(GetIntArg(args, "pageSize", 20), 1, 50),
-          GetStrArg(args, "search"), ct),
+        "list_users" => await ListUsers(args, ct),
         "get_user" => await GetUser(RequiredGuid(args, "id"), ct),
         "update_user_status" => await UpdateUserStatus(
           RequiredGuid(args, "id"), RequiredEnum(args, "status", "active", "inactive", "blocked"), adminUserId, ct),
@@ -1430,11 +1590,10 @@ public sealed class AdminAgentService : IAdminAgentService
 
         // Blog content
         "generate_blog_draft" => await GenerateBlogDraft(args, ct),
+        "generate_blog_images" => await GenerateBlogImages(args, ct),
         "save_blog_draft" => await SaveBlogPost(args, BlogPostStatus.Draft, ct),
         "publish_blog_post" => await PublishBlogPost(args, ct),
-        "list_blog_posts" => await ListBlogPosts(
-          ClampInt(GetIntArg(args, "page", 1), 1, 10000), ClampInt(GetIntArg(args, "pageSize", 20), 1, 50),
-          OptionalEnum(args, "status", "Draft", "Published", "Archived"), GetStrArg(args, "search"), ct),
+        "list_blog_posts" => await ListBlogPosts(args, ct),
         "get_blog_post" => await GetBlogPost(RequiredGuid(args, "id"), ct),
         "update_blog_post" => await UpdateBlogPost(args, ct),
         "delete_blog_post" => await DeleteBlogPost(RequiredGuid(args, "id"), ct),
@@ -1451,10 +1610,16 @@ public sealed class AdminAgentService : IAdminAgentService
         "delete_email_job" => await DeleteEmailJob(RequiredGuid(args, "id"), ct),
 
         // Facebook Page (social)
+        "generate_facebook_post_plan" => GenerateFacebookPostPlan(args),
+        "publish_facebook_post" => await PublishFacebookPost(args, ct),
+        "delete_facebook_post" => await DeleteFacebookPost(args, ct),
         "list_facebook_pages" => await ListFacebookPages(ct),
         "list_facebook_posts" => await ListFacebookPosts(args, ct),
         "list_facebook_post_comments" => await ListFacebookPostComments(args, ct),
         "reply_facebook_comment" => await ReplyFacebookComment(args, ct),
+        "list_facebook_conversations" => await ListFacebookConversations(args, ct),
+        "list_facebook_conversation_messages" => await ListFacebookConversationMessages(args, ct),
+        "send_facebook_message" => await SendFacebookMessage(args, ct),
 
         // Autonomy Mode
         "toggle_autonomy" => ToggleAutonomy(adminUserId, args),
@@ -1469,7 +1634,14 @@ public sealed class AdminAgentService : IAdminAgentService
       };
 
       var wrappedResult = MaybeWrapToolResult(result, riskLevel.ToString(), requiresConfirmation);
-      return new ToolResult(wrappedResult, false, wrappedResult, riskLevel.ToString());
+      var isStructuredError = TryReadAdminToolError(wrappedResult, out var errorMessage, out var errorCode);
+      return new ToolResult(
+        wrappedResult,
+        false,
+        isStructuredError ? errorMessage ?? wrappedResult : wrappedResult,
+        riskLevel.ToString(),
+        IsError: isStructuredError,
+        ErrorCode: errorCode);
     }
     catch (OperationCanceledException) when (!ct.IsCancellationRequested)
     {
@@ -1547,6 +1719,38 @@ public sealed class AdminAgentService : IAdminAgentService
   {
     var value = GetStrArg(args, name);
     if (string.IsNullOrWhiteSpace(value)) return null;
+    value = value.Trim();
+    return value.Length <= maxLength ? value : value[..maxLength];
+  }
+
+  private static IReadOnlyList<string> GetOptionalStringList(JsonElement args, string name, int maxItemLength = 1000)
+  {
+    if (!args.TryGetProperty(name, out var el)) return [];
+
+    if (el.ValueKind == JsonValueKind.String)
+    {
+      var value = el.GetString();
+      if (string.IsNullOrWhiteSpace(value)) return [];
+      return value.Split([',', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Where(item => !string.IsNullOrWhiteSpace(item))
+        .Select(item => TrimTo(item, maxItemLength))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+    }
+
+    if (el.ValueKind != JsonValueKind.Array) return [];
+
+    return el.EnumerateArray()
+      .Where(item => item.ValueKind == JsonValueKind.String)
+      .Select(item => item.GetString())
+      .Where(value => !string.IsNullOrWhiteSpace(value))
+      .Select(value => TrimTo(value!, maxItemLength))
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .ToList();
+  }
+
+  private static string TrimTo(string value, int maxLength)
+  {
     value = value.Trim();
     return value.Length <= maxLength ? value : value[..maxLength];
   }
@@ -1656,6 +1860,33 @@ public sealed class AdminAgentService : IAdminAgentService
     return SerializeToolResult(new { message = result }, riskLevel, requiresConfirmation);
   }
 
+  private static bool TryReadAdminToolError(string result, out string? message, out string? code)
+  {
+    message = null;
+    code = null;
+    if (string.IsNullOrWhiteSpace(result)) return false;
+
+    try
+    {
+      using var doc = JsonDocument.Parse(result);
+      var root = doc.RootElement;
+      if (root.ValueKind != JsonValueKind.Object ||
+          !root.TryGetProperty("success", out var successElement) ||
+          successElement.ValueKind != JsonValueKind.False)
+      {
+        return false;
+      }
+
+      message = root.TryGetProperty("message", out var messageElement) ? messageElement.GetString() : null;
+      code = root.TryGetProperty("code", out var codeElement) ? codeElement.GetString() : null;
+      return true;
+    }
+    catch (JsonException)
+    {
+      return false;
+    }
+  }
+
   private static bool IsAdminToolResultJson(string result)
   {
     if (string.IsNullOrWhiteSpace(result)) return false;
@@ -1696,21 +1927,40 @@ public sealed class AdminAgentService : IAdminAgentService
     int pageSize,
     object? filtersApplied = null,
     string riskLevel = "read",
-    string? successMessage = null)
+    string? successMessage = null,
+    int? itemsLoaded = null,
+    bool? allItemsLoaded = null,
+    bool? truncated = null,
+    int? nextPage = null,
+    object? nextPageArgs = null,
+    string? completenessOverride = null)
   {
     var totalPages = total == 0 ? 0 : (int)Math.Ceiling(total / (double)pageSize);
     var hasMore = page < totalPages;
-    var completeness = total == 0 ? "empty_result" : hasMore ? "partial_page" : "complete_page";
+    var completeness = completenessOverride ?? (total == 0 ? "empty_result" : hasMore ? "partial_page" : "complete_page");
     var code = items.Count == 0 && total > 0 ? "empty_page_but_results_exist" : "ok";
     var message = code == "empty_page_but_results_exist"
       ? "Trang này không có dữ liệu nhưng vẫn có kết quả ở trang khác."
       : successMessage;
 
     return SerializeToolResult(
-      new { items, total, page, pageSize },
+      new { items, total, page, pageSize, itemsLoaded = itemsLoaded ?? items.Count },
       riskLevel,
       false,
-      new AdminToolResultMeta(page, pageSize, total, totalPages, hasMore, completeness, filtersApplied),
+      new AdminToolResultMeta(
+        page,
+        pageSize,
+        total,
+        totalPages,
+        hasMore,
+        completeness,
+        filtersApplied,
+        itemsLoaded ?? items.Count,
+        allItemsLoaded,
+        truncated,
+        nextPage,
+        null,
+        nextPageArgs),
       code,
       message);
   }
@@ -1816,8 +2066,10 @@ public sealed class AdminAgentService : IAdminAgentService
   {
     var page = ClampInt(GetIntArg(args, "page", 1), 1, 10000);
     var pageSize = ClampInt(GetIntArg(args, "pageSize", 10), 1, 50);
+    var maxItems = ClampInt(GetIntArg(args, "maxItems", pageSize), 1, 250);
+    var autoPage = GetBoolArg(args, "autoPage", false);
     var (startDate, endDate) = ParseDateRangeArgs(args);
-    var search = new HermesReportSearchRequest
+    var baseSearch = new HermesReportSearchRequest
     {
       Page = page,
       PageSize = pageSize,
@@ -1829,11 +2081,49 @@ public sealed class AdminAgentService : IAdminAgentService
       StartDate = startDate,
       EndDate = endDate
     };
-    var result = await _hermesAgent.ListReportsAsync(search, ct);
+
+    if (!autoPage)
+    {
+      var result = await _hermesAgent.ListReportsAsync(baseSearch, ct);
+      var hasMore = page * pageSize < result.TotalCount;
+      return SerializePaginatedToolResult(
+        result.Items,
+        result.TotalCount,
+        page,
+        pageSize,
+        new { type = baseSearch.Type, severity = baseSearch.Severity, status = baseSearch.Status, q = baseSearch.Q, startDate, endDate, autoPage = false },
+        successMessage: $"Tìm thấy {result.TotalCount} báo cáo Hermes (còn tiếp: {(hasMore ? "có" : "không")})." + (hasMore ? " Gợi ý: dùng autoPage=true,maxItems=250 cho yêu cầu cần toàn bộ dữ liệu." : string.Empty),
+        nextPage: hasMore ? page + 1 : null,
+        nextPageArgs: hasMore ? new { page = page + 1, pageSize, type = baseSearch.Type, severity = baseSearch.Severity, status = baseSearch.Status, q = baseSearch.Q } : null);
+    }
+
+    var allItems = new List<HermesReportListItemResponse>();
+    var currentPage = page;
+    var totalCount = 0;
+    while (allItems.Count < maxItems)
+    {
+      var result = await _hermesAgent.ListReportsAsync(baseSearch with { Page = currentPage, PageSize = pageSize }, ct);
+      totalCount = result.TotalCount;
+      if (result.Items.Count == 0) break;
+      allItems.AddRange(result.Items.Take(maxItems - allItems.Count));
+      if (currentPage * pageSize >= result.TotalCount) break;
+      currentPage++;
+    }
+
+    var truncated = allItems.Count < totalCount;
     return SerializePaginatedToolResult(
-      result.Items, result.TotalCount, page, pageSize,
-      new { type = search.Type, severity = search.Severity, status = search.Status, q = search.Q, startDate, endDate },
-      successMessage: $"Tìm thấy {result.TotalCount} báo cáo Hermes.");
+      allItems,
+      totalCount,
+      page,
+      pageSize,
+      new { type = baseSearch.Type, severity = baseSearch.Severity, status = baseSearch.Status, q = baseSearch.Q, startDate, endDate, autoPage = true, maxItems },
+      successMessage: truncated ? $"Đã tải {allItems.Count}/{totalCount} báo cáo Hermes (chạm maxItems={maxItems})." : $"Đã tải đủ {allItems.Count}/{totalCount} báo cáo Hermes.",
+      itemsLoaded: allItems.Count,
+      allItemsLoaded: !truncated,
+      truncated: truncated,
+      nextPage: truncated ? currentPage + 1 : null,
+      nextPageArgs: truncated ? new { page = currentPage + 1, pageSize, type = baseSearch.Type, severity = baseSearch.Severity, status = baseSearch.Status, q = baseSearch.Q, autoPage = true, maxItems } : null,
+      completenessOverride: totalCount == 0 ? "empty_result" : truncated ? "truncated" : "complete_all_pages");
   }
 
   private async Task<string> GetHermesReport(Guid id, CancellationToken ct)
@@ -1847,8 +2137,10 @@ public sealed class AdminAgentService : IAdminAgentService
   {
     var page = ClampInt(GetIntArg(args, "page", 1), 1, 10000);
     var pageSize = ClampInt(GetIntArg(args, "pageSize", 20), 1, 50);
+    var maxItems = ClampInt(GetIntArg(args, "maxItems", pageSize), 1, 250);
+    var autoPage = GetBoolArg(args, "autoPage", false);
     var (startDate, endDate) = ParseDateRangeArgs(args);
-    var search = new HermesEventOutboxSearchRequest
+    var baseSearch = new HermesEventOutboxSearchRequest
     {
       Page = page,
       PageSize = pageSize,
@@ -1859,11 +2151,49 @@ public sealed class AdminAgentService : IAdminAgentService
       StartDate = startDate,
       EndDate = endDate
     };
-    var result = await _hermesEvents.ListEventsAsync(search, ct);
+
+    if (!autoPage)
+    {
+      var result = await _hermesEvents.ListEventsAsync(baseSearch, ct);
+      var hasMore = page * pageSize < result.TotalCount;
+      return SerializePaginatedToolResult(
+        result.Items,
+        result.TotalCount,
+        page,
+        pageSize,
+        new { status = baseSearch.Status, eventType = baseSearch.EventType, aggregateType = baseSearch.AggregateType, startDate, endDate, autoPage = false },
+        successMessage: $"Tìm thấy {result.TotalCount} sự kiện Hermes outbox (còn tiếp: {(hasMore ? "có" : "không")})." + (hasMore ? " Gợi ý: dùng autoPage=true,maxItems=250 cho yêu cầu cần toàn bộ dữ liệu." : string.Empty),
+        nextPage: hasMore ? page + 1 : null,
+        nextPageArgs: hasMore ? new { page = page + 1, pageSize, status = baseSearch.Status, eventType = baseSearch.EventType, aggregateType = baseSearch.AggregateType } : null);
+    }
+
+    var allItems = new List<HermesEventOutboxListItemResponse>();
+    var currentPage = page;
+    var totalCount = 0;
+    while (allItems.Count < maxItems)
+    {
+      var result = await _hermesEvents.ListEventsAsync(baseSearch with { Page = currentPage, PageSize = pageSize }, ct);
+      totalCount = result.TotalCount;
+      if (result.Items.Count == 0) break;
+      allItems.AddRange(result.Items.Take(maxItems - allItems.Count));
+      if (currentPage * pageSize >= result.TotalCount) break;
+      currentPage++;
+    }
+
+    var truncated = allItems.Count < totalCount;
     return SerializePaginatedToolResult(
-      result.Items, result.TotalCount, page, pageSize,
-      new { status = search.Status, eventType = search.EventType, aggregateType = search.AggregateType, startDate, endDate },
-      successMessage: $"Tìm thấy {result.TotalCount} sự kiện Hermes outbox.");
+      allItems,
+      totalCount,
+      page,
+      pageSize,
+      new { status = baseSearch.Status, eventType = baseSearch.EventType, aggregateType = baseSearch.AggregateType, startDate, endDate, autoPage = true, maxItems },
+      successMessage: truncated ? $"Đã tải {allItems.Count}/{totalCount} sự kiện Hermes outbox (chạm maxItems={maxItems})." : $"Đã tải đủ {allItems.Count}/{totalCount} sự kiện Hermes outbox.",
+      itemsLoaded: allItems.Count,
+      allItemsLoaded: !truncated,
+      truncated: truncated,
+      nextPage: truncated ? currentPage + 1 : null,
+      nextPageArgs: truncated ? new { page = currentPage + 1, pageSize, status = baseSearch.Status, eventType = baseSearch.EventType, aggregateType = baseSearch.AggregateType, autoPage = true, maxItems } : null,
+      completenessOverride: totalCount == 0 ? "empty_result" : truncated ? "truncated" : "complete_all_pages");
   }
 
   // --- Date-range queries ---
@@ -2196,17 +2526,65 @@ public sealed class AdminAgentService : IAdminAgentService
     return cleaned.Length <= maxLength ? cleaned : cleaned[..(maxLength - 1)] + "…";
   }
 
-  private async Task<string> ListProducts(int page, int pageSize, string? search, string? status, CancellationToken ct)
+  private async Task<string> ListProducts(JsonElement args, CancellationToken ct)
   {
-    var cleanSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
-    var cleanStatus = string.IsNullOrWhiteSpace(status) ? null : status.Trim().ToLowerInvariant();
-    var (items, total) = await _products.GetPagedAsync(cleanSearch, cleanStatus, page, pageSize, false, ct);
-    var displayLimit = 10;
-    var shown = Math.Min(items.Count, displayLimit);
-    var hasMore = page * pageSize < total || items.Count > displayLimit;
-    var message = $"Tìm thấy {total} sản phẩm (hiển thị {shown}/{items.Count}, còn tiếp: {(hasMore ? "có" : "không")})." +
-                  (hasMore ? " Gợi ý: dùng search cụ thể hoặc page tiếp theo trước khi kết luận thiếu dữ liệu." : string.Empty);
-    return SerializePaginatedToolResult(items, total, page, pageSize, new { search = cleanSearch, status = cleanStatus }, successMessage: message);
+    var page = ClampInt(GetIntArg(args, "page", 1), 1, 10000);
+    var pageSize = ClampInt(GetIntArg(args, "pageSize", 20), 1, 50);
+    var maxItems = ClampInt(GetIntArg(args, "maxItems", pageSize), 1, 250);
+    var autoPage = GetBoolArg(args, "autoPage", false);
+    var cleanSearch = string.IsNullOrWhiteSpace(GetStrArg(args, "search")) ? null : GetStrArg(args, "search")!.Trim();
+    var cleanStatus = string.IsNullOrWhiteSpace(GetStrArg(args, "status")) ? null : GetStrArg(args, "status")!.Trim().ToLowerInvariant();
+
+    if (!autoPage)
+    {
+      var (items, total) = await _products.GetPagedAsync(cleanSearch, cleanStatus, page, pageSize, false, ct);
+      var displayLimit = 10;
+      var shown = Math.Min(items.Count, displayLimit);
+      var hasMore = page * pageSize < total || items.Count > displayLimit;
+      var message = $"Tìm thấy {total} sản phẩm (hiển thị {shown}/{items.Count}, còn tiếp: {(hasMore ? "có" : "không")})." +
+                    (hasMore ? " Gợi ý: dùng search cụ thể để lọc hoặc autoPage=true,maxItems=250 cho yêu cầu cần toàn bộ dữ liệu." : string.Empty);
+      return SerializePaginatedToolResult(
+        items,
+        total,
+        page,
+        pageSize,
+        new { search = cleanSearch, status = cleanStatus, autoPage = false },
+        successMessage: message,
+        nextPage: hasMore ? page + 1 : null,
+        nextPageArgs: hasMore ? new { page = page + 1, pageSize, search = cleanSearch, status = cleanStatus } : null);
+    }
+
+    var allItems = new List<AdminProductListItemResponse>();
+    var currentPage = page;
+    var totalCount = 0;
+    while (allItems.Count < maxItems)
+    {
+      var (pageItems, total) = await _products.GetPagedAsync(cleanSearch, cleanStatus, currentPage, pageSize, false, ct);
+      totalCount = total;
+      if (pageItems.Count == 0) break;
+      allItems.AddRange(pageItems.Take(maxItems - allItems.Count));
+      if (currentPage * pageSize >= total) break;
+      currentPage++;
+    }
+
+    var truncated = allItems.Count < totalCount;
+    var messageAll = truncated
+      ? $"Đã tải {allItems.Count}/{totalCount} sản phẩm (đã chạm giới hạn maxItems={maxItems})."
+      : $"Đã tải đủ {allItems.Count}/{totalCount} sản phẩm.";
+
+    return SerializePaginatedToolResult(
+      allItems,
+      totalCount,
+      page,
+      pageSize,
+      new { search = cleanSearch, status = cleanStatus, autoPage = true, maxItems },
+      successMessage: messageAll,
+      itemsLoaded: allItems.Count,
+      allItemsLoaded: !truncated,
+      truncated: truncated,
+      nextPage: truncated ? currentPage + 1 : null,
+      nextPageArgs: truncated ? new { page = currentPage + 1, pageSize, search = cleanSearch, status = cleanStatus, autoPage = true, maxItems } : null,
+      completenessOverride: totalCount == 0 ? "empty_result" : truncated ? "truncated" : "complete_all_pages");
   }
 
   private async Task<string> GetProduct(Guid id, CancellationToken ct)
@@ -2443,11 +2821,56 @@ public sealed class AdminAgentService : IAdminAgentService
     return ok ? "✅ Đã xóa danh mục." : "❌ Không tìm thấy danh mục.";
   }
 
-  private async Task<string> ListUsers(int page, int pageSize, string? search, CancellationToken ct)
+  private async Task<string> ListUsers(JsonElement args, CancellationToken ct)
   {
-    var cleanSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
-    var r = await _users.GetUsersAsync(cleanSearch, page, pageSize, false, ct);
-    return SerializePaginatedToolResult(r.Items, r.TotalCount, page, pageSize, new { search = cleanSearch });
+    var page = ClampInt(GetIntArg(args, "page", 1), 1, 10000);
+    var pageSize = ClampInt(GetIntArg(args, "pageSize", 20), 1, 50);
+    var maxItems = ClampInt(GetIntArg(args, "maxItems", pageSize), 1, 250);
+    var autoPage = GetBoolArg(args, "autoPage", false);
+    var cleanSearch = string.IsNullOrWhiteSpace(GetStrArg(args, "search")) ? null : GetStrArg(args, "search")!.Trim();
+
+    if (!autoPage)
+    {
+      var r = await _users.GetUsersAsync(cleanSearch, page, pageSize, false, ct);
+      var hasMore = page * pageSize < r.TotalCount;
+      return SerializePaginatedToolResult(
+        r.Items,
+        r.TotalCount,
+        page,
+        pageSize,
+        new { search = cleanSearch, autoPage = false },
+        successMessage: $"Tìm thấy {r.TotalCount} người dùng (còn tiếp: {(hasMore ? "có" : "không")})." + (hasMore ? " Gợi ý: dùng autoPage=true,maxItems=250 cho yêu cầu cần toàn bộ dữ liệu." : string.Empty),
+        nextPage: hasMore ? page + 1 : null,
+        nextPageArgs: hasMore ? new { page = page + 1, pageSize, search = cleanSearch } : null);
+    }
+
+    var allItems = new List<AdminUserListItemDto>();
+    var currentPage = page;
+    var totalCount = 0;
+    while (allItems.Count < maxItems)
+    {
+      var r = await _users.GetUsersAsync(cleanSearch, currentPage, pageSize, false, ct);
+      totalCount = r.TotalCount;
+      if (r.Items.Count == 0) break;
+      allItems.AddRange(r.Items.Take(maxItems - allItems.Count));
+      if (currentPage * pageSize >= r.TotalCount) break;
+      currentPage++;
+    }
+
+    var truncated = allItems.Count < totalCount;
+    return SerializePaginatedToolResult(
+      allItems,
+      totalCount,
+      page,
+      pageSize,
+      new { search = cleanSearch, autoPage = true, maxItems },
+      successMessage: truncated ? $"Đã tải {allItems.Count}/{totalCount} người dùng (chạm maxItems={maxItems})." : $"Đã tải đủ {allItems.Count}/{totalCount} người dùng.",
+      itemsLoaded: allItems.Count,
+      allItemsLoaded: !truncated,
+      truncated: truncated,
+      nextPage: truncated ? currentPage + 1 : null,
+      nextPageArgs: truncated ? new { page = currentPage + 1, pageSize, search = cleanSearch, autoPage = true, maxItems } : null,
+      completenessOverride: totalCount == 0 ? "empty_result" : truncated ? "truncated" : "complete_all_pages");
   }
 
   private async Task<string> GetUser(Guid id, CancellationToken ct)
@@ -3131,6 +3554,164 @@ TỔNG QUAN:
       message: "Đã tạo bản nháp blog AI.");
   }
 
+  private async Task<string> GenerateBlogImages(JsonElement args, CancellationToken ct)
+  {
+    var topic = RequiredString(args, "topic", 500);
+    var basePrompt = GetOptionalString(args, "prompt", 1200) ?? topic;
+    var style = GetOptionalString(args, "style", 200) ?? "luxury Vietnamese áo dài editorial, premium boutique, cinematic natural light";
+    // Keep default light: one generated image. Extra inline/gallery images must be requested explicitly.
+    // Vertex image generation is quota-heavy; the old default (featured + 1 inline + 4 gallery = 6 calls)
+    // could exhaust provider quota and then be multiplied by tool retry loops.
+    var inlineCount = ClampInt(GetIntArg(args, "inlineCount", 0), 0, 3);
+    var galleryCount = ClampInt(GetIntArg(args, "galleryCount", 0), 0, 6);
+
+    var specs = new List<BlogImageGenerationSpec>
+    {
+      new("featured", "Ảnh nổi bật", BuildBlogImagePrompt(topic, basePrompt, style, "hero featured image, horizontal editorial cover, spacious composition"))
+    };
+
+    for (var i = 1; i <= inlineCount; i++)
+    {
+      specs.Add(new(
+        $"inline-{i}",
+        $"Ảnh đơn lẻ {i}",
+        BuildBlogImagePrompt(topic, basePrompt, style, $"single in-article image {i}, detailed scene, no text overlay")));
+    }
+
+    for (var i = 1; i <= galleryCount; i++)
+    {
+      specs.Add(new(
+        $"gallery-{i}",
+        $"Gallery {i}",
+        BuildBlogImagePrompt(topic, basePrompt, style, $"gallery lookbook image {i}, varied pose/composition, consistent palette")));
+    }
+
+    var uploaded = new List<GeneratedBlogImageItem>();
+    foreach (var spec in specs)
+    {
+      AdminGeneratedImageDto image;
+      try
+      {
+        image = await _blogImageGeneration.GenerateAsync(spec.Prompt, ct);
+      }
+      catch (AiTryOnProviderException ex) when (IsProviderQuotaExhausted(ex.Message))
+      {
+        return SerializeToolResult(
+          new
+          {
+            kind = "blog_images_skipped",
+            reason = "image_quota_exhausted",
+            retryRecommended = false,
+            saveDraftWithoutImages = true,
+            generatedCount = uploaded.Count,
+            guidance = "Không retry generate_blog_images trong lượt này. Nếu đã có draft, hãy gọi save_blog_draft không có featuredImage để lưu nội dung trước; admin có thể thêm ảnh sau."
+          },
+          "low",
+          false,
+          code: "image_quota_exhausted",
+          message: "Hệ thống tạo ảnh Vertex/Gemini đang quá tải hoặc hết quota. Bỏ qua ảnh trong lượt này và lưu nháp nội dung trước.");
+      }
+
+      var extension = ImageExtension(image.MimeType);
+      var fileName = $"blog-ai-{spec.Kind}-{Guid.NewGuid():N}{extension}";
+
+      await using var stream = new MemoryStream(image.Bytes);
+      var upload = await _storageService.UploadAsync(stream, fileName, image.MimeType, "private/blog", ct);
+      var publicUrl = await _storageService.CopyToPublicBlogAsync(upload.ObjectKey, ct);
+      var publicObjectKey = $"aodainhauyen/public/blog/{upload.ObjectKey.Split('/').Last()}";
+      var entity = new BlogImage
+      {
+        ImageUrl = upload.ObjectKey,
+        AltText = $"{spec.Label} cho bài viết {topic}",
+        IsPublic = true,
+        PublicObjectKey = publicObjectKey,
+        SortOrder = uploaded.Count
+      };
+      _db.BlogImages.Add(entity);
+      await _db.SaveChangesAsync(ct);
+
+      uploaded.Add(new GeneratedBlogImageItem(
+        spec.Kind,
+        spec.Label,
+        entity.Id,
+        upload.ObjectKey,
+        publicUrl,
+        publicUrl,
+        image.MimeType,
+        image.Bytes.LongLength,
+        entity.AltText,
+        spec.Prompt));
+    }
+
+    var featured = uploaded.First(item => item.Kind == "featured");
+    var inlineImages = uploaded.Where(item => item.Kind.StartsWith("inline-", StringComparison.Ordinal)).ToList();
+    var galleryImages = uploaded.Where(item => item.Kind.StartsWith("gallery-", StringComparison.Ordinal)).ToList();
+
+    var contentBlocks = new List<Dictionary<string, object?>>();
+    foreach (var image in inlineImages)
+    {
+      contentBlocks.Add(new()
+      {
+        ["type"] = "image",
+        ["src"] = image.ObjectKey,
+        ["alt"] = image.AltText,
+        ["caption"] = image.Label,
+        ["width"] = "contained"
+      });
+    }
+
+    if (galleryImages.Count > 0)
+    {
+      contentBlocks.Add(new()
+      {
+        ["type"] = "gallery",
+        ["images"] = galleryImages.Select(image => new Dictionary<string, object?>
+        {
+          ["src"] = image.ObjectKey,
+          ["alt"] = image.AltText,
+          ["caption"] = image.Label
+        }).ToList(),
+        ["caption"] = $"Bộ ảnh minh họa cho {topic}"
+      });
+    }
+
+    return SerializeToolResult(
+      new
+      {
+        kind = "blog_generated_images",
+        featuredImage = featured.ObjectKey,
+        featuredPreviewUrl = featured.PreviewUrl,
+        featuredPublicUrl = featured.PublicUrl,
+        publicImageUrls = uploaded.Select(image => image.PublicUrl).ToList(),
+        previewMarkdown = string.Join("\n", uploaded.Select(image => $"![{image.AltText}]({image.PublicUrl})")),
+        inlineImages,
+        galleryImages,
+        contentBlocksJson = JsonSerializer.Serialize(contentBlocks, ToolResultJsonOptions),
+        guidance = "Dùng featuredImage làm featuredImage của save_blog_draft/update_blog_post. Dùng featuredPublicUrl/publicImageUrls để đính kèm ảnh khi gọi publish_facebook_post. Ảnh đã được lưu public và có thể xem trong chat."
+      },
+      "low",
+      false,
+      code: "blog_images_generated",
+      message: $"Đã tạo {uploaded.Count} ảnh blog bằng API ảnh và upload vào thư viện blog.");
+  }
+
+  private static string BuildBlogImagePrompt(string topic, string basePrompt, string style, string shotType) =>
+    $"Topic: {topic}. Creative brief: {basePrompt}. Style: {style}. Shot: {shotType}. Requirements: premium Vietnamese áo dài fashion image, realistic fabric, elegant model/editorial detail, no text, no watermark, no logo, safe commercial blog illustration.";
+
+  private static bool IsProviderQuotaExhausted(string message) =>
+    message.Contains("Resource exhausted", StringComparison.OrdinalIgnoreCase)
+    || message.Contains("RESOURCE_EXHAUSTED", StringComparison.OrdinalIgnoreCase)
+    || message.Contains("quota", StringComparison.OrdinalIgnoreCase)
+    || message.Contains("429", StringComparison.OrdinalIgnoreCase);
+
+  private static string ImageExtension(string mimeType) => mimeType.ToLowerInvariant() switch
+  {
+    "image/jpeg" => ".jpg",
+    "image/webp" => ".webp",
+    "image/gif" => ".gif",
+    _ => ".png"
+  };
+
   private async Task<string> SaveBlogPost(JsonElement args, BlogPostStatus status, CancellationToken ct)
   {
     var request = BuildBlogPostRequest(args, status);
@@ -3218,17 +3799,60 @@ TỔNG QUAN:
     return Enum.TryParse<BlogPostStatus>(status, true, out var parsed) ? parsed : null;
   }
 
-  private async Task<string> ListBlogPosts(int page, int pageSize, string? status, string? search, CancellationToken ct)
+  private async Task<string> ListBlogPosts(JsonElement args, CancellationToken ct)
   {
-    var cleanSearch = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
-    var statusFilter = ParseBlogStatus(status);
+    var page = ClampInt(GetIntArg(args, "page", 1), 1, 10000);
+    var pageSize = ClampInt(GetIntArg(args, "pageSize", 20), 1, 50);
+    var maxItems = ClampInt(GetIntArg(args, "maxItems", pageSize), 1, 250);
+    var autoPage = GetBoolArg(args, "autoPage", false);
+    var cleanSearch = string.IsNullOrWhiteSpace(GetStrArg(args, "search")) ? null : GetStrArg(args, "search")!.Trim();
+    var statusFilter = ParseBlogStatus(OptionalEnum(args, "status", "Draft", "Published", "Archived"));
 
-    var result = await _blogPosts.GetPostsAsync(statusFilter, null, null, cleanSearch, page, pageSize, false, ct);
-    var shown = Math.Min(result.Items.Count, 10);
-    var hasMore = page * pageSize < result.TotalCount || result.Items.Count > shown;
-    var message = $"Tìm thấy {result.TotalCount} bài viết (hiển thị {shown}/{result.Items.Count}, còn tiếp: {(hasMore ? "có" : "không")})." +
-                  (hasMore ? " Gợi ý: dùng search cụ thể hoặc page tiếp theo trước khi kết luận thiếu dữ liệu." : string.Empty);
-    return SerializePaginatedToolResult(result.Items, result.TotalCount, page, pageSize, new { status = statusFilter?.ToString(), search = cleanSearch }, successMessage: message);
+    if (!autoPage)
+    {
+      var result = await _blogPosts.GetPostsAsync(statusFilter, null, null, cleanSearch, page, pageSize, false, ct);
+      var shown = Math.Min(result.Items.Count, 10);
+      var hasMore = page * pageSize < result.TotalCount || result.Items.Count > shown;
+      var message = $"Tìm thấy {result.TotalCount} bài viết (hiển thị {shown}/{result.Items.Count}, còn tiếp: {(hasMore ? "có" : "không")})." +
+                    (hasMore ? " Gợi ý: dùng autoPage=true,maxItems=250 cho yêu cầu cần toàn bộ dữ liệu." : string.Empty);
+      return SerializePaginatedToolResult(
+        result.Items,
+        result.TotalCount,
+        page,
+        pageSize,
+        new { status = statusFilter?.ToString(), search = cleanSearch, autoPage = false },
+        successMessage: message,
+        nextPage: hasMore ? page + 1 : null,
+        nextPageArgs: hasMore ? new { page = page + 1, pageSize, status = statusFilter?.ToString(), search = cleanSearch } : null);
+    }
+
+    var allItems = new List<BlogPostListItemDto>();
+    var currentPage = page;
+    var totalCount = 0;
+    while (allItems.Count < maxItems)
+    {
+      var result = await _blogPosts.GetPostsAsync(statusFilter, null, null, cleanSearch, currentPage, pageSize, false, ct);
+      totalCount = result.TotalCount;
+      if (result.Items.Count == 0) break;
+      allItems.AddRange(result.Items.Take(maxItems - allItems.Count));
+      if (currentPage * pageSize >= result.TotalCount) break;
+      currentPage++;
+    }
+
+    var truncated = allItems.Count < totalCount;
+    return SerializePaginatedToolResult(
+      allItems,
+      totalCount,
+      page,
+      pageSize,
+      new { status = statusFilter?.ToString(), search = cleanSearch, autoPage = true, maxItems },
+      successMessage: truncated ? $"Đã tải {allItems.Count}/{totalCount} bài viết (chạm maxItems={maxItems})." : $"Đã tải đủ {allItems.Count}/{totalCount} bài viết.",
+      itemsLoaded: allItems.Count,
+      allItemsLoaded: !truncated,
+      truncated: truncated,
+      nextPage: truncated ? currentPage + 1 : null,
+      nextPageArgs: truncated ? new { page = currentPage + 1, pageSize, status = statusFilter?.ToString(), search = cleanSearch, autoPage = true, maxItems } : null,
+      completenessOverride: totalCount == 0 ? "empty_result" : truncated ? "truncated" : "complete_all_pages");
   }
 
   private async Task<string> GetBlogPost(Guid id, CancellationToken ct)
@@ -3412,22 +4036,149 @@ TỔNG QUAN:
 
   // --- Facebook Page (social) ---
 
+  private string GenerateFacebookPostPlan(JsonElement args)
+  {
+    var topic = RequiredString(args, "topic", 300);
+    var audience = GetOptionalString(args, "audience", 200) ?? "khách hàng yêu áo dài";
+    var tone = GetOptionalString(args, "tone", 100) ?? "trang nhã, thân thiện, tư vấn";
+    var ctaUrl = GetOptionalString(args, "ctaUrl", 1000);
+    var productName = GetOptionalString(args, "productName", 200);
+
+    var outline = new[]
+    {
+      $"Hook: nêu nhu cầu/điểm đẹp của {topic}",
+      "Giá trị chính: tư vấn chọn kiểu dáng, chất liệu, dịp mặc",
+      "Gợi ý trải nghiệm: thử phối bằng AI try-on trước khi quyết định",
+      "CTA: nhắn tin/shop now/đặt lịch tư vấn"
+    };
+
+    var productLine = string.IsNullOrWhiteSpace(productName) ? "" : $"\n✨ Gợi ý nổi bật: {productName}";
+    var linkLine = string.IsNullOrWhiteSpace(ctaUrl) ? "" : $"\nXem thêm: {ctaUrl}";
+    var postText = $"Áo dài đẹp nhất khi vừa tôn dáng, vừa đúng khoảnh khắc bạn muốn xuất hiện.\n\nVới {topic}, Nhã Uyên gợi ý chọn phom mềm, chất liệu thoáng và điểm nhấn tinh tế để ảnh lên dáng thanh lịch hơn.{productLine}\n\nBạn có thể thử phối trước bằng AI Try-on để xem kiểu áo có hợp vóc dáng, màu da và phụ kiện không.{linkLine}\n\nNhắn Nhã Uyên để được tư vấn mẫu phù hợp nhé.\n#AoDaiNhaUyen #AoDaiVietNam #ThoiTrangViet";
+    var imagePrompt = $"Premium Vietnamese áo dài social campaign image about {topic}. Elegant boutique editorial, silk texture, graceful model pose, soft natural light, refined Vietnamese cultural styling, no text overlay, brand-safe.";
+    var warnings = new List<string>();
+    if (postText.Length > 2200) warnings.Add("Nội dung Facebook dài; nên rút gọn trước khi đăng.");
+    if (string.IsNullOrWhiteSpace(productName)) warnings.Add("Chưa gắn sản phẩm cụ thể; nếu muốn trigger try-on chính xác cần chọn garmentProductId ở trang AI Try-on.");
+
+    return SerializeToolResult(
+      new
+      {
+        kind = "facebook_post_plan",
+        workflow = new
+        {
+          outline,
+          draftContent = postText,
+          imagePrompt,
+          tryOnHandoff = new
+          {
+            frontendUrl = "http://localhost:5173/ai-tryon",
+            apiEndpoint = "/api/v1/ai-tryon",
+            status = "needs_admin_image",
+            requiredInputs = new[] { "personImage", "garmentProductId" },
+            note = "Backend tool không mở frontend page trực tiếp. Mở URL này, upload ảnh người mẫu/khách và chọn sản phẩm để trigger API thử đồ."
+          },
+          validation = new
+          {
+            passed = warnings.Count == 0,
+            warnings,
+            checks = new[] { "outline_generated", "draft_content_generated", "image_prompt_generated", "tryon_handoff_prepared", "brand_tone_checked" }
+          }
+        },
+        audience,
+        tone,
+        ctaUrl,
+        productName
+      },
+      message: "Đã tạo kế hoạch bài Facebook theo workflow khung → nội dung → prompt ảnh → AI try-on handoff → validation.");
+  }
+
+  private async Task<string> PublishFacebookPost(JsonElement args, CancellationToken ct)
+  {
+    var pageId = RequiredString(args, "pageId", 128);
+    var message = GetOptionalString(args, "message", 5000) ?? string.Empty;
+    var link = GetOptionalString(args, "link", 1000);
+    var published = GetBoolArg(args, "published", true);
+    var mediaUrls = GetFacebookPostMediaUrls(args);
+
+    if (string.IsNullOrWhiteSpace(message) && string.IsNullOrWhiteSpace(link) && mediaUrls.Count == 0)
+    {
+      throw new ToolValidationException("Bài đăng Facebook cần có nội dung, link hoặc ít nhất một URL ảnh public.");
+    }
+
+    var result = await _facebook.PublishPostAsync(pageId, new CreateFacebookPostRequest(message, link, null, published, mediaUrls), ct);
+    var data = new
+    {
+      kind = "facebook_post_published",
+      result.Id,
+      result.PostId,
+      result.PermalinkUrl,
+      mediaUrls,
+      mediaCount = mediaUrls.Count
+    };
+
+    return SerializeToolResult(
+      data,
+      "high",
+      true,
+      code: "facebook_post_published",
+      message: result.Id.StartsWith("mock_", StringComparison.OrdinalIgnoreCase)
+        ? $"MOCK: Đã giả lập đăng bài Facebook kèm {mediaUrls.Count} ảnh/media (ID: {result.Id})."
+        : $"Đã đăng bài Facebook kèm {mediaUrls.Count} ảnh/media (ID: {result.Id}).");
+  }
+
+  private async Task<string> DeleteFacebookPost(JsonElement args, CancellationToken ct)
+  {
+    var postId = RequiredString(args, "postId", 128);
+    var result = await _facebook.DeletePostAsync(postId, ct);
+    return SerializeToolResult(
+      new { kind = "facebook_post_deleted", postId, result.Success },
+      "high",
+      true,
+      code: result.Success ? "facebook_post_deleted" : "facebook_post_delete_failed",
+      message: result.Success ? "Đã gỡ/xóa bài viết Facebook." : "Không thể gỡ/xóa bài viết Facebook.");
+  }
+
+  private static IReadOnlyList<string> GetFacebookPostMediaUrls(JsonElement args)
+  {
+    var urls = new List<string>();
+    urls.AddRange(GetOptionalStringList(args, "mediaUrls", 2000));
+    urls.AddRange(GetOptionalStringList(args, "imageUrls", 2000));
+    if (GetOptionalString(args, "imageUrl", 2000) is { } imageUrl) urls.Add(imageUrl);
+
+    return urls
+      .Where(IsHttpUrl)
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .Take(10)
+      .ToList();
+  }
+
+  private static bool IsHttpUrl(string value) =>
+    Uri.TryCreate(value, UriKind.Absolute, out var uri)
+    && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+
   private async Task<string> ListFacebookPages(CancellationToken ct)
   {
     var pages = await _facebook.GetConnectionsAsync(ct);
-    // Only expose pageId + name; never the access token (DTO already strips it to TokenLast4).
+    // Zernio-backed DTO: PageId is the Zernio accountId. Never expose tokens.
     var items = pages
       .Where(p => p.IsActive)
-      .Select(p => new { p.PageId, name = p.PageName })
+      .Select(p => new
+      {
+        pageId = p.PageId,
+        zernioAccountId = p.PageId,
+        name = p.PageName,
+        lastSyncedAt = p.LastValidatedAt,
+        isActive = p.IsActive
+      })
       .ToList();
     return SerializeToolResult(items, message: items.Count == 0
-      ? "Chưa có trang Facebook nào được kết nối."
-      : $"Tìm thấy {items.Count} trang Facebook đã kết nối.");
+      ? "Chưa có fanpage Facebook nào được kết nối qua Zernio."
+      : $"Tìm thấy {items.Count} fanpage Facebook đã kết nối qua Zernio.");
   }
 
   private async Task<string> ListFacebookPosts(JsonElement args, CancellationToken ct)
   {
-    var pageId = RequiredString(args, "pageId", 64);
+    var pageId = RequiredString(args, "pageId", 128);
     var limit = ClampInt(GetIntArg(args, "limit", 15), 1, 50);
     var cursor = GetStrArg(args, "cursor");
     var result = await _facebook.GetPostsAsync(pageId, cursor, limit, ct);
@@ -3447,7 +4198,7 @@ TỔNG QUAN:
 
   private async Task<string> ListFacebookPostComments(JsonElement args, CancellationToken ct)
   {
-    var pageId = RequiredString(args, "pageId", 64);
+    var pageId = RequiredString(args, "pageId", 128);
     var postId = RequiredString(args, "postId", 128);
     var limit = ClampInt(GetIntArg(args, "limit", 25), 1, 50);
     var after = GetStrArg(args, "after");
@@ -3471,13 +4222,93 @@ TỔNG QUAN:
 
   private async Task<string> ReplyFacebookComment(JsonElement args, CancellationToken ct)
   {
-    var pageId = RequiredString(args, "pageId", 64);
+    var pageId = RequiredString(args, "pageId", 128);
+    var postId = RequiredString(args, "postId", 128);
     var commentId = RequiredString(args, "commentId", 128);
     var message = RequiredString(args, "message", 2000);
-    var result = await _facebook.ReplyToCommentAsync(pageId, commentId, new ReplyFacebookCommentRequest(message), ct);
+    var result = await _facebook.ReplyToCommentAsync(pageId, commentId, new ReplyFacebookCommentRequest(message, postId), ct);
     return result.Success
-      ? "✅ Đã trả lời bình luận Facebook."
-      : $"❌ Không thể trả lời bình luận: {result.Message}";
+      ? "✅ Đã trả lời bình luận Facebook qua Zernio."
+      : $"❌ Không thể trả lời bình luận qua Zernio: {result.Message}";
+  }
+
+  private async Task<string> ListFacebookConversations(JsonElement args, CancellationToken ct)
+  {
+    var pageId = RequiredString(args, "pageId", 128);
+    var limit = ClampInt(GetIntArg(args, "limit", 15), 1, 50);
+    var cursor = GetStrArg(args, "cursor");
+    var result = await _facebook.GetConversationsAsync(pageId, cursor, limit, ct);
+    var items = result.Items.Select(conversation => new
+    {
+      conversation.Id,
+      conversation.PageId,
+      customerId = conversation.CustomerId,
+      customerName = conversation.CustomerName,
+      customerAvatarUrl = conversation.CustomerAvatarUrl,
+      snippet = conversation.Snippet,
+      updatedTime = conversation.UpdatedTime,
+      unreadCount = conversation.UnreadCount,
+      messageCount = conversation.MessageCount,
+      link = conversation.Link
+    }).ToList();
+    var hasMore = !string.IsNullOrEmpty(result.AfterCursor);
+    return SerializeToolResult(
+      new { items, afterCursor = result.AfterCursor, hasMore },
+      message: $"Tìm thấy {items.Count} hội thoại Messenger của fanpage qua Zernio (còn tiếp: {(hasMore ? "có" : "không")}).");
+  }
+
+  private async Task<string> ListFacebookConversationMessages(JsonElement args, CancellationToken ct)
+  {
+    var pageId = RequiredString(args, "pageId", 128);
+    var conversationId = RequiredString(args, "conversationId", 128);
+    var limit = ClampInt(GetIntArg(args, "limit", 30), 1, 100);
+    var cursor = GetStrArg(args, "cursor");
+    var result = await _facebook.GetConversationMessagesAsync(pageId, conversationId, cursor, limit, ct);
+    var items = result.Items.Select(message => new
+    {
+      message.Id,
+      message.ConversationId,
+      message.SenderId,
+      message.SenderName,
+      message.IsFromPage,
+      text = message.Text,
+      createdTime = message.CreatedTime,
+      attachments = message.Attachments.Select(attachment => new
+      {
+        attachment.Type,
+        attachment.Url,
+        name = attachment.Name,
+        attachment.MimeType,
+        attachment.Size
+      }).ToList()
+    }).ToList();
+    var hasMore = !string.IsNullOrEmpty(result.AfterCursor);
+    return SerializeToolResult(
+      new { items, afterCursor = result.AfterCursor, hasMore },
+      message: $"Tìm thấy {items.Count} tin nhắn trong hội thoại qua Zernio (còn tiếp: {(hasMore ? "có" : "không")}).");
+  }
+
+  private async Task<string> SendFacebookMessage(JsonElement args, CancellationToken ct)
+  {
+    var pageId = RequiredString(args, "pageId", 128);
+    var conversationId = RequiredString(args, "conversationId", 128);
+    var message = GetOptionalString(args, "message", 2000);
+    var attachmentUrl = GetOptionalString(args, "attachmentUrl", 1000);
+    var attachmentType = GetOptionalString(args, "attachmentType", 40);
+    if (string.IsNullOrWhiteSpace(message) && string.IsNullOrWhiteSpace(attachmentUrl))
+    {
+      throw new ToolValidationException("Tin nhắn cần có nội dung hoặc media.");
+    }
+
+    var result = await _facebook.SendMessageAsync(
+      pageId,
+      conversationId,
+      new SendFacebookMessageRequest(message, attachmentUrl, attachmentType),
+      ct);
+
+    return result.Success
+      ? SerializeToolResult(new { result.MessageId }, message: "Đã gửi tin nhắn Messenger qua Zernio.")
+      : "❌ Không thể gửi tin nhắn qua Zernio.";
   }
 
 
@@ -3681,6 +4512,17 @@ TOP 5 SẢN PHẨM:";
     return d;
   }
 
+  private static Dictionary<string, object?> A(string itemType, string? desc = null)
+  {
+    var d = new Dictionary<string, object?>
+    {
+      ["type"] = "array",
+      ["items"] = new Dictionary<string, object?> { ["type"] = itemType }
+    };
+    if (desc is not null) d["description"] = desc;
+    return d;
+  }
+
   private static string Slugify(string text)
   {
     if (string.IsNullOrWhiteSpace(text)) return "untitled";
@@ -3698,6 +4540,20 @@ TOP 5 SẢN PHẨM:";
     // Append short random suffix for uniqueness
     return $"{slug}-{Random.Shared.Next(1000, 9999)}";
   }
+
+  private sealed record BlogImageGenerationSpec(string Kind, string Label, string Prompt);
+
+  private sealed record GeneratedBlogImageItem(
+    string Kind,
+    string Label,
+    Guid ImageId,
+    string ObjectKey,
+    string PreviewUrl,
+    string PublicUrl,
+    string MimeType,
+    long FileSizeBytes,
+    string AltText,
+    string Prompt);
 
   private sealed record ToolResult(
     string Content,

@@ -81,7 +81,7 @@ export function AiChatPage() {
               className="inline-flex items-center gap-2 rounded-lg bg-wine px-3 py-2 text-sm font-medium text-white"
             >
               <MessageSquare className="size-4" />
-              Chat Hermes
+              Chat
             </button>
             <button
               type="button"
@@ -89,7 +89,7 @@ export function AiChatPage() {
               className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
             >
               <FileText className="size-4" />
-              Báo cáo Hermes
+              Báo cáo
             </button>
             <button
               type="button"

@@ -43,6 +43,20 @@ export interface AiToolResultMeta {
   totalPages?: number
   hasMore?: boolean
   completeness?: string
+  filtersApplied?: unknown
+  itemsLoaded?: number
+  allItemsLoaded?: boolean
+  truncated?: boolean
+  nextPage?: number
+  nextCursor?: string
+  nextPageArgs?: unknown
+}
+
+export interface AiGeneratedImagePreview {
+  url: string
+  alt?: string
+  label?: string
+  kind?: string
 }
 
 export interface AiToolCall {
@@ -52,6 +66,7 @@ export interface AiToolCall {
   riskLevel?: string
   meta?: AiToolResultMeta
   blogDraft?: AiBlogDraft
+  generatedImages?: AiGeneratedImagePreview[]
   /** Error message when this specific tool call failed terminally */
   error?: string
 }

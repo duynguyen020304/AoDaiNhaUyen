@@ -23,40 +23,116 @@ public sealed class BlogAiDraftService(
     "step", "quote", "divider", "callout", "code", "embed"
   ];
 
+  private static readonly object BlogDraftResponseSchema = new
+  {
+    type = "object",
+    properties = new Dictionary<string, object?>
+    {
+      ["title"] = new { type = "string" },
+      ["slug"] = new { type = "string" },
+      ["excerpt"] = new { type = "string" },
+      ["template"] = new { type = "string" },
+      ["content"] = new
+      {
+        type = "array",
+        items = new
+        {
+          type = "object",
+          properties = new Dictionary<string, object?>
+          {
+            ["type"] = new { type = "string" },
+            ["level"] = new { type = "integer" },
+            ["content"] = new { type = "string" },
+            ["variant"] = new { type = "string" },
+            ["stepNumber"] = new { type = "integer" },
+            ["title"] = new { type = "string" },
+            ["tip"] = new { type = "string" },
+            ["productSlugs"] = new { type = "array", items = new { type = "string" } }
+          }
+        }
+      },
+      ["tags"] = new { type = "array", items = new { type = "string" } },
+      ["metaTitle"] = new { type = "string" },
+      ["metaDescription"] = new { type = "string" },
+      ["canonicalUrl"] = new { type = "string", nullable = true },
+      ["informationGain"] = new { type = "string" },
+      ["authorNameOverride"] = new { type = "string" },
+      ["authorBio"] = new { type = "string" },
+      ["reviewedBy"] = new { type = "string", nullable = true },
+      ["blogCategoryId"] = new { type = "string", nullable = true },
+      ["qualityWarnings"] = new { type = "array", items = new { type = "string" } },
+      ["outline"] = new { type = "array", items = new { type = "string" } },
+      ["imagePrompt"] = new { type = "string" }
+    },
+    required = new[] { "title", "slug", "excerpt", "template", "content", "tags", "metaTitle", "metaDescription", "informationGain", "authorNameOverride", "authorBio", "qualityWarnings", "outline", "imagePrompt" }
+  };
+
   public async Task<GeneratedBlogDraftResponse> GenerateDraftAsync(
     GenerateBlogDraftRequest request,
     CancellationToken cancellationToken = default)
   {
     var cleanRequest = NormalizeRequest(request);
-    var history = new List<AdminLlmMessage>
-    {
-      new(AdminLlmRole.System, BuildSystemPrompt()),
-      new(AdminLlmRole.User, BuildUserPrompt(cleanRequest))
-    };
-
-    var sb = new StringBuilder();
-    await foreach (var chunk in llm.StreamChatAsync(history, [], cancellationToken))
-    {
-      if (chunk.Type == "text") sb.Append(chunk.Content);
-      if (chunk.Type == "error") logger.LogWarning("[BlogAI] LLM error while generating draft: {Error}", chunk.Content);
-    }
-
-    var raw = sb.ToString().Trim();
-    if (string.IsNullOrWhiteSpace(raw))
-      return BuildFallbackDraft(cleanRequest, ["AI không trả về nội dung; hệ thống tạo bản nháp khung để chỉnh sửa thủ công."]);
+    Exception? firstJsonError = null;
 
     try
     {
-      var json = ExtractJson(raw);
-      var draft = JsonSerializer.Deserialize<GeneratedBlogDraftModel>(json, JsonOptions)
-        ?? throw new JsonException("Draft payload was null.");
+      var draft = await llm.CompleteJsonAsync<GeneratedBlogDraftModel>(
+        BuildSystemPrompt(),
+        BuildUserPrompt(cleanRequest),
+        BlogDraftResponseSchema,
+        cancellationToken);
       return ValidateAndNormalize(draft, cleanRequest);
     }
     catch (Exception ex) when (ex is JsonException or InvalidOperationException)
     {
-      logger.LogWarning(ex, "[BlogAI] Invalid draft JSON. Falling back to safe draft.");
-      return BuildFallbackDraft(cleanRequest, ["AI trả về JSON không hợp lệ; hệ thống tạo bản nháp khung để chỉnh sửa thủ công."]);
+      firstJsonError = ex;
+      logger.LogWarning(ex, "[BlogAI] Structured JSON draft failed; retrying once with repair prompt.");
     }
+
+    try
+    {
+      var repaired = await llm.CompleteJsonAsync<GeneratedBlogDraftModel>(
+        BuildSystemPrompt(),
+        BuildRepairPrompt(cleanRequest, firstJsonError?.Message),
+        BlogDraftResponseSchema,
+        cancellationToken);
+      return ValidateAndNormalize(repaired, cleanRequest);
+    }
+    catch (Exception ex) when (ex is JsonException or InvalidOperationException)
+    {
+      logger.LogWarning(ex, "[BlogAI] Structured JSON repair failed; falling back to stream extraction.");
+    }
+
+    try
+    {
+      var history = new List<AdminLlmMessage>
+      {
+        new(AdminLlmRole.System, BuildSystemPrompt()),
+        new(AdminLlmRole.User, BuildUserPrompt(cleanRequest))
+      };
+
+      var sb = new StringBuilder();
+      await foreach (var chunk in llm.StreamChatAsync(history, [], cancellationToken))
+      {
+        if (chunk.Type == "text") sb.Append(chunk.Content);
+        if (chunk.Type == "error") logger.LogWarning("[BlogAI] LLM error while generating draft: {Error}", chunk.Content);
+      }
+
+      var raw = sb.ToString().Trim();
+      if (!string.IsNullOrWhiteSpace(raw))
+      {
+        var json = ExtractJson(raw);
+        var draft = JsonSerializer.Deserialize<GeneratedBlogDraftModel>(json, JsonOptions)
+          ?? throw new JsonException("Draft payload was null.");
+        return ValidateAndNormalize(draft, cleanRequest);
+      }
+    }
+    catch (Exception ex) when (ex is JsonException or InvalidOperationException)
+    {
+      logger.LogWarning(ex, "[BlogAI] Stream JSON extraction failed.");
+    }
+
+    return BuildFallbackDraft(cleanRequest, ["AI trả về JSON không hợp lệ sau retry; hệ thống tạo bản nháp khung để chỉnh sửa thủ công."]);
   }
 
   private static GenerateBlogDraftRequest NormalizeRequest(GenerateBlogDraftRequest request)
@@ -102,10 +178,13 @@ Schema JSON bắt buộc:
   "authorBio": "string",
   "reviewedBy": "string|null",
   "blogCategoryId": null,
-  "qualityWarnings": ["string"]
+  "qualityWarnings": ["string"],
+  "outline": ["string"],
+  "imagePrompt": "prompt tạo ảnh minh họa/try-on, không chứa claims sai"
 }
 Allowed block types: heading(level 1|2|3), paragraph, quote, callout(variant info|warning|tip), step, divider, product_spotlight.
 Ưu tiên heading/paragraph/quote/callout; tránh image/video/embed nếu không có URL an toàn.
+Quy trình bắt buộc: tạo outline -> soạn nội dung -> tạo imagePrompt -> tự kiểm nội dung trong qualityWarnings.
 """;
 
   private static string BuildUserPrompt(GenerateBlogDraftRequest request) => $"""
@@ -125,6 +204,14 @@ Yêu cầu chất lượng:
 - Có `informationGain` nêu giá trị độc đáo.
 - Có metaTitle/metaDescription tự nhiên, không nhồi keyword.
 - Nếu thiếu dữ liệu thực tế, thêm cảnh báo trong qualityWarnings thay vì bịa.
+""";
+
+  private static string BuildRepairPrompt(GenerateBlogDraftRequest request, string? error) => $"""
+JSON trước đó không hợp lệ hoặc thiếu schema.
+Lỗi cần sửa: {error ?? "không rõ"}
+
+Hãy tạo lại TOÀN BỘ JSON theo đúng schema, không markdown, không lời dẫn.
+{BuildUserPrompt(request)}
 """;
 
   private static GeneratedBlogDraftResponse ValidateAndNormalize(GeneratedBlogDraftModel draft, GenerateBlogDraftRequest request)
@@ -151,7 +238,11 @@ Yêu cầu chất lượng:
       SafeNullableText(draft.AuthorBio, 1000) ?? "Nội dung được biên tập cho khách hàng quan tâm áo dài, phong cách mặc và bảo quản trang phục truyền thống Việt Nam.",
       SafeNullableText(draft.ReviewedBy, 200),
       draft.BlogCategoryId ?? request.CategoryId,
-      warnings);
+      warnings,
+      BuildOutline(draft, blocks, request),
+      BuildImagePrompt(draft, title, request),
+      BuildTryOnHandoff(request),
+      BuildValidation(warnings, blocks));
   }
 
   private static List<Dictionary<string, object?>> NormalizeBlocks(JsonElement content, GenerateBlogDraftRequest request)
@@ -212,7 +303,11 @@ Yêu cầu chất lượng:
       "Nội dung được biên tập cho khách hàng quan tâm áo dài, phong cách mặc và bảo quản trang phục truyền thống Việt Nam.",
       null,
       request.CategoryId,
-      warnings);
+      warnings,
+      BuildFallbackOutline(request),
+      BuildImagePrompt(null, request.Topic, request),
+      BuildTryOnHandoff(request),
+      BuildValidation(warnings, blocks));
   }
 
   private static List<Dictionary<string, object?>> FallbackBlocks(GenerateBlogDraftRequest request) =>
@@ -223,6 +318,74 @@ Yêu cầu chất lượng:
     new() { ["type"] = "paragraph", ["content"] = "Giới thiệu nhu cầu của người đọc, tiêu chí chọn áo dài phù hợp, lỗi thường gặp và lời khuyên bảo quản sau khi sử dụng." },
     new() { ["type"] = "callout", ["variant"] = "warning", ["content"] = "Bản nháp cần được người phụ trách nội dung kiểm duyệt trước khi xuất bản." }
   ];
+
+  private static IReadOnlyList<string> BuildOutline(
+    GeneratedBlogDraftModel draft,
+    List<Dictionary<string, object?>> blocks,
+    GenerateBlogDraftRequest request)
+  {
+    var outline = (draft.Outline ?? [])
+      .Select(item => SafeText(item, 160))
+      .Where(item => !string.IsNullOrWhiteSpace(item))
+      .Take(10)
+      .ToList();
+
+    if (outline.Count > 0) return outline;
+
+    outline = blocks
+      .Where(b => b.TryGetValue("type", out var type) && Equals(type, "heading"))
+      .Select(b => b.TryGetValue("content", out var content) ? SafeText(content?.ToString(), 160) : string.Empty)
+      .Where(item => !string.IsNullOrWhiteSpace(item))
+      .Take(10)
+      .ToList();
+
+    return outline.Count > 0 ? outline : BuildFallbackOutline(request);
+  }
+
+  private static IReadOnlyList<string> BuildFallbackOutline(GenerateBlogDraftRequest request) =>
+  [
+    request.Topic,
+    "Vấn đề/nhu cầu của người đọc",
+    "Gợi ý chọn áo dài phù hợp",
+    "Cách phối và bảo quản",
+    "Checklist trước khi xuất bản"
+  ];
+
+  private static string BuildImagePrompt(GeneratedBlogDraftModel? draft, string title, GenerateBlogDraftRequest request)
+  {
+    var provided = SafeNullableText(draft?.ImagePrompt, 1000);
+    if (!string.IsNullOrWhiteSpace(provided)) return provided;
+
+    var keyword = request.TargetKeyword ?? request.Topic;
+    return $"Premium Vietnamese áo dài editorial image for blog '{title}', focus on {keyword}, elegant silk texture, soft natural light, refined boutique styling, no text overlay, no false brand claims.";
+  }
+
+  private static BlogTryOnHandoffDto BuildTryOnHandoff(GenerateBlogDraftRequest request) =>
+    new(
+      "http://localhost:5173/ai-tryon",
+      "/api/v1/ai-tryon",
+      "needs_admin_image",
+      ["personImage", "garmentProductId"],
+      request.ProductSlugs.FirstOrDefault(),
+      null,
+      "Backend tool không mở frontend page trực tiếp. Mở URL này, upload ảnh người mẫu/khách và chọn sản phẩm để trigger API thử đồ.");
+
+  private static BlogDraftValidationDto BuildValidation(IReadOnlyList<string> warnings, List<Dictionary<string, object?>> blocks)
+  {
+    var checks = new List<string>
+    {
+      "outline_generated",
+      "draft_content_generated",
+      "image_prompt_generated",
+      "tryon_handoff_prepared",
+      "content_sanitized"
+    };
+
+    if (blocks.Any(b => b.TryGetValue("type", out var t) && Equals(t, "heading"))) checks.Add("headings_present");
+    if (blocks.Any(b => b.TryGetValue("type", out var t) && Equals(t, "paragraph"))) checks.Add("paragraphs_present");
+
+    return new BlogDraftValidationDto(warnings.Count == 0, warnings, checks);
+  }
 
   private static void AddQualityWarnings(List<string> warnings, GeneratedBlogDraftModel draft, List<Dictionary<string, object?>> blocks)
   {
@@ -294,6 +457,8 @@ Yêu cầu chất lượng:
     public string? ReviewedBy { get; init; }
     public Guid? BlogCategoryId { get; init; }
     public IReadOnlyList<string>? QualityWarnings { get; init; }
+    public IReadOnlyList<string>? Outline { get; init; }
+    public string? ImagePrompt { get; init; }
   }
 }
 

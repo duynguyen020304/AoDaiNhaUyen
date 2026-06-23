@@ -35,4 +35,22 @@ public sealed record GeneratedBlogDraftResponse(
   string? AuthorBio,
   string? ReviewedBy,
   Guid? BlogCategoryId,
-  IReadOnlyList<string> QualityWarnings);
+  IReadOnlyList<string> QualityWarnings,
+  IReadOnlyList<string>? Outline = null,
+  string? ImagePrompt = null,
+  BlogTryOnHandoffDto? TryOnHandoff = null,
+  BlogDraftValidationDto? Validation = null);
+
+public sealed record BlogTryOnHandoffDto(
+  string FrontendUrl,
+  string ApiEndpoint,
+  string Status,
+  IReadOnlyList<string> RequiredInputs,
+  string? ProductId = null,
+  string? ProductName = null,
+  string? Note = null);
+
+public sealed record BlogDraftValidationDto(
+  bool Passed,
+  IReadOnlyList<string> Warnings,
+  IReadOnlyList<string> Checks);
