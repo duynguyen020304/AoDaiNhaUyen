@@ -14,5 +14,6 @@ public sealed class HermesRun : BaseEntity
   public DateTimeOffset StartedAt { get; set; } = DateTimeOffset.UtcNow;
   public DateTimeOffset? CompletedAt { get; set; }
 
+  public ICollection<HermesFanOutSubBatch> FanOutSubBatches { get; set; } = new List<HermesFanOutSubBatch>();
   public ICollection<HermesReport> Reports { get; set; } = new List<HermesReport>();
 }

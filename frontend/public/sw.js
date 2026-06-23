@@ -1,4 +1,7 @@
-const SW_VERSION = 'v2';
+// Bumped from v2 → v3: poisoned/broken cross-origin image responses (opaque,
+// unverifiable) were cached and served for 7+ days. The new version's cache
+// names mismatch the old ones, so cleanupOldCaches wipes them on activate.
+const SW_VERSION = 'v3';
 const MINUTE = 60 * 1000;
 const DAY = 24 * 60 * MINUTE;
 
@@ -71,7 +74,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (request.destination === 'image') {
+  // Only cache same-origin images. Product/blog images are served from a
+  // cross-origin S3 host and arrive as opaque responses (status 0) that cannot
+  // be verified or safely cached — intercepting them only adds risk (broken
+  // responses poisoned the cache, and the 503 text fallback broke <img>s).
+  // Letting cross-origin images bypass the SW entirely is the safe default.
+  if (request.destination === 'image' && url.origin === self.location.origin) {
     event.respondWith(staleWhileRevalidate(request, CACHE_NAMES.images, IMAGE_TTL));
     return;
   }
@@ -166,6 +174,9 @@ async function staleWhileRevalidate(request, cacheName, fallbackMaxAge) {
     })
     .catch(() => undefined);
 
+  // Serve stale immediately; the fresh fetch (if it succeeds and is OK) writes
+  // through in the background. Only same-origin images reach this path, so the
+  // responses are verifiable and never opaque.
   if (cachedResponse) {
     return cachedResponse;
   }
@@ -249,8 +260,8 @@ async function cacheImageResponse(cache, request, response, fallbackMaxAge) {
   await cache.put(request, response.clone());
   await writeMetadata(request, {
     cachedAt: Date.now(),
-    maxAge: response.type === 'opaque' ? fallbackMaxAge : getMaxAge(response, fallbackMaxAge),
-    etag: response.type === 'opaque' ? undefined : response.headers.get('ETag') ?? undefined,
+    maxAge: getMaxAge(response, fallbackMaxAge),
+    etag: response.headers.get('ETag') ?? undefined,
     cacheVersion: currentContentVersion ?? SW_VERSION,
   });
 }
@@ -265,10 +276,10 @@ function isCacheableResponse(response) {
 }
 
 function isCacheableImageResponse(response) {
-  if (response.type === 'opaque') {
-    return true;
-  }
-
+  // Opaque responses have status:0 — we cannot tell a real 200 image from a
+  // 403/404/500 S3 error. Previously we cached them unconditionally, which let
+  // transient S3 errors and expired signed URLs poison the image cache for the
+  // full 7-day TTL. Require a verifiable OK response before caching.
   return isCacheableResponse(response);
 }
 
@@ -401,11 +412,13 @@ async function invalidateAllRuntimeCaches() {
   await Promise.all([
     caches.delete(CACHE_NAMES.api),
     caches.delete(CACHE_NAMES.html),
+    caches.delete(CACHE_NAMES.images),
   ]);
 
   await Promise.all([
     caches.open(CACHE_NAMES.api),
     caches.open(CACHE_NAMES.html),
+    caches.open(CACHE_NAMES.images),
     clearRuntimeMetadata(),
   ]);
 }

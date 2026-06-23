@@ -1,10 +1,13 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -14,6 +17,7 @@ public sealed class HermesEventProcessor(
   IHttpClientFactory httpClientFactory,
   IOptions<HermesAgentOptions> agentOptions,
   IOptions<HermesOutboxOptions> outboxOptions,
+  IHermesReportCompressorService reportCompressor,
   AppDbContext dbContext,
   ILogger<HermesEventProcessor> logger) : IHermesEventProcessor
 {
@@ -85,7 +89,14 @@ public sealed class HermesEventProcessor(
     await CompleteRunAsync(run, "completed", result, null, cancellationToken);
   }
 
-  public async Task<IReadOnlyList<Guid>> ProcessBatchAsync(IReadOnlyList<HermesEventOutbox> items, CancellationToken cancellationToken)
+  public Task<IReadOnlyList<Guid>> ProcessBatchAsync(IReadOnlyList<HermesEventOutbox> items, CancellationToken cancellationToken)
+  {
+    return _outboxOptions.FanOutFanInEnabled
+      ? ProcessFanOutFanInBatchAsync(items, cancellationToken)
+      : ProcessLegacyBatchAsync(items, cancellationToken);
+  }
+
+  private async Task<IReadOnlyList<Guid>> ProcessLegacyBatchAsync(IReadOnlyList<HermesEventOutbox> items, CancellationToken cancellationToken)
   {
     if (items is null || items.Count == 0) return Array.Empty<Guid>();
 
@@ -248,6 +259,343 @@ public sealed class HermesEventProcessor(
     return valid.Select(x => x.Id).ToArray();
   }
 
+  private async Task<IReadOnlyList<Guid>> ProcessFanOutFanInBatchAsync(IReadOnlyList<HermesEventOutbox> items, CancellationToken cancellationToken)
+  {
+    if (items is null || items.Count == 0) return Array.Empty<Guid>();
+
+    var valid = new List<HermesEventOutbox>(items.Count);
+    foreach (var item in items)
+    {
+      try { ValidatePayload(item.PayloadJson); valid.Add(item); }
+      catch (JsonException) { /* excluded — caller falls back to per-event */ }
+    }
+
+    if (valid.Count == 0) return Array.Empty<Guid>();
+    if (valid.Count == 1 || _outboxOptions.DryRun || !IsApiConfigured())
+    {
+      return await ProcessLegacyBatchAsync(items, cancellationToken);
+    }
+
+    var fanOutId = BuildFanOutId(valid);
+    var subBatchSize = Math.Clamp(_outboxOptions.FanOutSubBatchSize, 1, Math.Max(1, _outboxOptions.MaxBatchEvents));
+    var subBatches = valid
+      .Chunk(subBatchSize)
+      .Select((chunk, index) => new HermesSubBatch(index, chunk.ToArray()))
+      .ToArray();
+
+    var run = await dbContext.HermesRuns
+      .FirstOrDefaultAsync(x => x.Trigger == "admin_event_fanout" && x.ConversationId == fanOutId, cancellationToken);
+
+    var reusedSuccessful = Array.Empty<HermesSubBatchResult>();
+    if (run is null)
+    {
+      run = CreateFanOutRun(valid, fanOutId);
+      dbContext.HermesRuns.Add(run);
+
+      var now = DateTimeOffset.UtcNow;
+      foreach (var item in valid)
+      {
+        dbContext.HermesAgentTraceSteps.Add(new HermesAgentTraceStep
+        {
+          Id = Guid.NewGuid(),
+          EventOutboxId = item.Id,
+          RunId = run.Id,
+          Kind = "fan_out_started",
+          Title = "Gộp vào fan-out batch",
+          Summary = "Sự kiện được đưa vào batch Hermes song song để tạo báo cáo thành phần.",
+          Status = "running",
+          StartedAt = now,
+          CompletedAt = null,
+          CreatedAt = now.UtcDateTime,
+          UpdatedAt = now.UtcDateTime
+        });
+      }
+    }
+    else
+    {
+      reusedSuccessful = await LoadReusableSubBatchResultsAsync(run.Id, subBatches, cancellationToken);
+      if (reusedSuccessful.Length > 0)
+      {
+        var resumedAt = DateTimeOffset.UtcNow;
+        dbContext.HermesAgentTraceSteps.Add(new HermesAgentTraceStep
+        {
+          Id = Guid.NewGuid(),
+          RunId = run.Id,
+          Kind = "fan_out_resumed",
+          Title = "Tiếp tục từ batch cũ",
+          Summary = $"Tái sử dụng {reusedSuccessful.Length} báo cáo thành phần đã lưu trước đó.",
+          Status = "success",
+          StartedAt = resumedAt,
+          CompletedAt = resumedAt,
+          CreatedAt = resumedAt.UtcDateTime,
+          UpdatedAt = resumedAt.UtcDateTime
+        });
+      }
+    }
+
+    var reusedIndexes = reusedSuccessful.Select(x => x.Index).ToHashSet();
+    var pendingSubBatches = subBatches.Where(x => !reusedIndexes.Contains(x.Index)).ToArray();
+
+    var maxParallel = Math.Clamp(_outboxOptions.MaxParallelFanOutBatches, 1, 10);
+    using var throttler = new SemaphoreSlim(maxParallel);
+    var tasks = pendingSubBatches.Select(async subBatch =>
+    {
+      await throttler.WaitAsync(cancellationToken);
+      try
+      {
+        return await ProcessHermesSubBatchAsync(subBatch.Items, fanOutId, subBatch.Index, cancellationToken);
+      }
+      finally
+      {
+        throttler.Release();
+      }
+    });
+
+    var newResults = await Task.WhenAll(tasks);
+    foreach (var result in newResults.OrderBy(x => x.Index))
+    {
+      await PersistSubBatchCheckpointAsync(run.Id, result, cancellationToken);
+      AddSubBatchTrace(run.Id, result);
+    }
+    if (run.Id != Guid.Empty)
+    {
+      await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    var successful = reusedSuccessful.Concat(newResults.Where(x => x.Success)).OrderBy(x => x.Index).ToArray();
+    var failed = newResults.Where(x => !x.Success).OrderBy(x => x.Index).ToArray();
+
+    if (successful.Length == 0)
+    {
+      run.Status = "failed";
+      run.Error = NormalizeOptionalText(string.Join("; ", failed.Select(x => x.Error).Where(x => !string.IsNullOrWhiteSpace(x))));
+      run.CompletedAt = DateTimeOffset.UtcNow;
+      run.UpdatedAt = DateTime.UtcNow;
+      await dbContext.SaveChangesAsync(cancellationToken);
+      return Array.Empty<Guid>();
+    }
+
+    HermesCompressedReportResult compressed;
+    string? compressionFallbackError = null;
+    try
+    {
+      compressed = await reportCompressor.CompressAsync(
+        successful.Select(x => new HermesPartialReportInput(
+          x.Index,
+          x.EventIds,
+          x.ReportText ?? string.Empty,
+          x.Severity,
+          x.ReportType)).ToArray(),
+        cancellationToken);
+    }
+    catch (Exception ex) when (ex is not OperationCanceledException)
+    {
+      compressionFallbackError = ex.Message;
+      compressed = BuildProcessorCompressionFallback(successful);
+    }
+
+    await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+    var successfulIds = successful.SelectMany(x => x.EventIds).ToHashSet();
+    var successfulItems = valid.Where(x => successfulIds.Contains(x.Id)).ToArray();
+    var completedAt = DateTimeOffset.UtcNow;
+
+    dbContext.HermesAgentTraceSteps.Add(new HermesAgentTraceStep
+    {
+      Id = Guid.NewGuid(),
+      RunId = run.Id,
+      Kind = compressionFallbackError is null ? "fan_in_compression" : "fan_in_compression_failed",
+      Title = compressionFallbackError is null ? "Đã nén báo cáo thành phần" : "Nén AI lỗi, dùng bản tổng hợp dự phòng",
+      Summary = compressionFallbackError is null
+        ? $"Vertex/Gemini đã tổng hợp {successful.Length} báo cáo thành phần thành một báo cáo cuối."
+        : $"Nén AI lỗi; hệ thống dùng bản tổng hợp dự phòng cho {successful.Length} báo cáo thành phần.",
+      Status = compressionFallbackError is null ? "success" : "warning",
+      StartedAt = completedAt,
+      CompletedAt = completedAt,
+      Error = NormalizeOptionalText(compressionFallbackError),
+      SafePayloadJson = JsonSerializer.Serialize(new
+      {
+        fanOutId,
+        partialReportCount = successful.Length,
+        eventCount = successfulItems.Length,
+        failedSubBatchCount = failed.Length,
+        compressed.KeyFindings,
+        compressed.RecommendedActions
+      }, JsonOptions),
+      CreatedAt = completedAt.UtcDateTime,
+      UpdatedAt = completedAt.UtcDateTime
+    });
+
+    dbContext.HermesReports.Add(new HermesReport
+    {
+      Id = Guid.NewGuid(),
+      ReportType = NormalizeReportType(compressed.ReportType),
+      Severity = NormalizeSeverity(compressed.Severity),
+      Title = Limit(compressed.Title, 200),
+      Summary = Limit(string.IsNullOrWhiteSpace(compressed.Summary) ? compressed.Markdown : compressed.Summary, 4000),
+      PayloadJson = BuildFanOutReportPayload(successfulItems, compressed, fanOutId, successful, failed),
+      Source = "hermes_agent",
+      CorrelationId = fanOutId,
+      RunId = run.Id,
+      Status = "open",
+      CreatedAt = completedAt.UtcDateTime,
+      UpdatedAt = completedAt.UtcDateTime
+    });
+
+    foreach (var item in successfulItems)
+    {
+      dbContext.HermesAgentTraceSteps.Add(new HermesAgentTraceStep
+      {
+        Id = Guid.NewGuid(),
+        EventOutboxId = item.Id,
+        RunId = run.Id,
+        Kind = "agent_response",
+        Title = "Phân tích xong",
+        Summary = "Hermes đã hoàn thành phân tích fan-out cho sự kiện.",
+        Status = "success",
+        StartedAt = completedAt,
+        CompletedAt = completedAt,
+        CreatedAt = completedAt.UtcDateTime,
+        UpdatedAt = completedAt.UtcDateTime
+      });
+
+      item.Status = "completed";
+      item.ProcessedAt = completedAt;
+      item.LockedAt = null;
+      item.LockedBy = null;
+      item.LastError = null;
+      item.UpdatedAt = DateTime.UtcNow;
+    }
+
+    run.Status = "completed";
+    run.ResultPreview = NormalizeOptionalText(compressed.Markdown);
+    run.Error = NormalizeOptionalText(string.Join(" ", new[]
+    {
+      failed.Length == 0 ? null : $"{failed.Length} Hermes sub-batch failed; worker will retry those events.",
+      compressionFallbackError is null ? null : $"AI compression failed; used deterministic fallback: {compressionFallbackError}"
+    }.Where(x => !string.IsNullOrWhiteSpace(x))));
+    run.CompletedAt = completedAt;
+    run.UpdatedAt = DateTime.UtcNow;
+
+    await dbContext.SaveChangesAsync(cancellationToken);
+    await transaction.CommitAsync(cancellationToken);
+
+    return successfulIds.ToArray();
+  }
+
+  private async Task<HermesSubBatchResult> ProcessHermesSubBatchAsync(
+    IReadOnlyList<HermesEventOutbox> items,
+    string fanOutId,
+    int index,
+    CancellationToken cancellationToken)
+  {
+    var stopwatch = Stopwatch.StartNew();
+    var eventIds = items.Select(x => x.Id).ToArray();
+    var profile = BuildBatchReportProfile(items);
+
+    try
+    {
+      var client = httpClientFactory.CreateClient();
+      client.Timeout = TimeSpan.FromMinutes(6);
+      client.BaseAddress = new Uri(_agentOptions.ApiServerUrl!, UriKind.Absolute);
+      client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _agentOptions.ApiServerKey);
+
+      var payload = new
+      {
+        model = "hermes-agent",
+        input = BuildBatchInput(items),
+        store = true,
+        conversation = $"aodai-admin-fanout-{fanOutId}-{index}",
+        metadata = new { fanOutId, subBatchIndex = index, eventCount = items.Count, eventIds }
+      };
+
+      using var content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
+      using var response = await client.PostAsync(_outboxOptions.EventPath, content, cancellationToken);
+      var body = await response.Content.ReadAsStringAsync(cancellationToken);
+      stopwatch.Stop();
+
+      if (!response.IsSuccessStatusCode)
+      {
+        return HermesSubBatchResult.Failed(index, eventIds, profile, stopwatch.ElapsedMilliseconds, $"Hermes API returned {(int)response.StatusCode}: {body}");
+      }
+
+      var result = ExtractAssistantText(body);
+      var reportSummary = NormalizeAgentReportText(result);
+      return string.IsNullOrWhiteSpace(reportSummary)
+        ? HermesSubBatchResult.Failed(index, eventIds, profile, stopwatch.ElapsedMilliseconds, "Hermes sub-batch trả về nội dung rỗng.")
+        : HermesSubBatchResult.Succeeded(index, eventIds, profile, stopwatch.ElapsedMilliseconds, reportSummary);
+    }
+    catch (Exception ex) when (ex is not OperationCanceledException)
+    {
+      stopwatch.Stop();
+      return HermesSubBatchResult.Failed(index, eventIds, profile, stopwatch.ElapsedMilliseconds, ex.Message);
+    }
+  }
+
+  private async Task PersistSubBatchCheckpointAsync(Guid runId, HermesSubBatchResult result, CancellationToken cancellationToken)
+  {
+    var existing = await dbContext.HermesFanOutSubBatches
+      .FirstOrDefaultAsync(x => x.RunId == runId && x.SubBatchIndex == result.Index, cancellationToken);
+
+    if (existing is null)
+    {
+      existing = new HermesFanOutSubBatch
+      {
+        Id = Guid.NewGuid(),
+        RunId = runId,
+        SubBatchIndex = result.Index,
+        CreatedAt = DateTime.UtcNow
+      };
+      dbContext.HermesFanOutSubBatches.Add(existing);
+    }
+
+    existing.EventCount = result.EventCount;
+    existing.EventIdsJson = JsonSerializer.Serialize(result.EventIds, JsonOptions);
+    existing.Status = result.Success ? "success" : "failed";
+    existing.DurationMs = result.DurationMs > int.MaxValue ? int.MaxValue : (int)result.DurationMs;
+    existing.ReportType = result.ReportType;
+    existing.Severity = result.Severity;
+    existing.ReportPreview = Limit(result.ReportText, 4000);
+    existing.ReportTextForCompression = result.Success
+      ? Limit(result.ReportText, Math.Clamp(_outboxOptions.MaxPartialReportCharsForCompression, 1000, 20000))
+      : null;
+    existing.Error = NormalizeOptionalText(result.Error);
+    existing.UpdatedAt = DateTime.UtcNow;
+  }
+
+  private void AddSubBatchTrace(Guid runId, HermesSubBatchResult result)
+  {
+    var now = DateTimeOffset.UtcNow;
+    dbContext.HermesAgentTraceSteps.Add(new HermesAgentTraceStep
+    {
+      Id = Guid.NewGuid(),
+      RunId = runId,
+      EventOutboxId = result.EventIds.Count == 1 ? result.EventIds[0] : null,
+      Kind = "partial_report",
+      Title = result.Success ? $"Báo cáo thành phần #{result.Index + 1}" : $"Báo cáo thành phần #{result.Index + 1} lỗi",
+      Summary = result.Success
+        ? Limit(result.ReportText, 1000)
+        : $"Hermes sub-batch #{result.Index + 1} lỗi: {Limit(result.Error, 800)}",
+      Status = result.Success ? "success" : "failed",
+      StartedAt = now.AddMilliseconds(-Math.Min(result.DurationMs, int.MaxValue)),
+      CompletedAt = now,
+      DurationMs = result.DurationMs > int.MaxValue ? int.MaxValue : (int)result.DurationMs,
+      Error = NormalizeOptionalText(result.Error),
+      SafePayloadJson = JsonSerializer.Serialize(new
+      {
+        subBatchIndex = result.Index,
+        eventIds = result.EventIds,
+        result.EventCount,
+        result.DurationMs,
+        result.ReportType,
+        result.Severity,
+        reportPreview = Limit(result.ReportText, 4000)
+      }, JsonOptions),
+      CreatedAt = now.UtcDateTime,
+      UpdatedAt = now.UtcDateTime
+    });
+  }
+
   private async Task AddTraceAsync(Guid eventId, Guid runId, string kind, string title, string summary, string status, string? error, CancellationToken cancellationToken)
   {
     var now = DateTimeOffset.UtcNow;
@@ -386,6 +734,23 @@ public sealed class HermesEventProcessor(
       // matching ConversationId to an event id.
       ConversationId = batchId,
       PromptPreview = Limit($"batch:{items.Count} events [{types}]", 500),
+      StartedAt = now,
+      CreatedAt = now.UtcDateTime,
+      UpdatedAt = now.UtcDateTime
+    };
+  }
+
+  private static HermesRun CreateFanOutRun(IReadOnlyList<HermesEventOutbox> items, string fanOutId)
+  {
+    var now = DateTimeOffset.UtcNow;
+    var types = string.Join(",", items.Select(x => x.EventType).Distinct().Take(8));
+    return new HermesRun
+    {
+      Id = Guid.NewGuid(),
+      Status = "running",
+      Trigger = "admin_event_fanout",
+      ConversationId = fanOutId,
+      PromptPreview = Limit($"fanout:{items.Count} events [{types}]", 500),
       StartedAt = now,
       CreatedAt = now.UtcDateTime,
       UpdatedAt = now.UtcDateTime
@@ -649,6 +1014,150 @@ public sealed class HermesEventProcessor(
     return value.Trim();
   }
 
+  private async Task<HermesSubBatchResult[]> LoadReusableSubBatchResultsAsync(Guid runId, IReadOnlyList<HermesSubBatch> subBatches, CancellationToken cancellationToken)
+  {
+    var checkpoints = await dbContext.HermesFanOutSubBatches
+      .AsNoTracking()
+      .Where(x => x.RunId == runId && x.Status == "success")
+      .OrderBy(x => x.SubBatchIndex)
+      .ToListAsync(cancellationToken);
+
+    var results = new List<HermesSubBatchResult>();
+    foreach (var checkpoint in checkpoints)
+    {
+      if (string.IsNullOrWhiteSpace(checkpoint.ReportTextForCompression)) continue;
+      var target = subBatches.FirstOrDefault(x => x.Index == checkpoint.SubBatchIndex);
+      if (target is null) continue;
+
+      var storedEventIds = TryReadEventIds(checkpoint.EventIdsJson);
+      var targetIds = target.Items.Select(x => x.Id).ToArray();
+      if (!storedEventIds.SequenceEqual(targetIds)) continue;
+
+      results.Add(HermesSubBatchResult.Succeeded(
+        checkpoint.SubBatchIndex,
+        storedEventIds,
+        new ReportProfile(checkpoint.ReportType, checkpoint.Severity, "Báo cáo tổng hợp", string.Empty, string.Empty),
+        checkpoint.DurationMs ?? 0,
+        checkpoint.ReportTextForCompression));
+    }
+
+    return results.ToArray();
+  }
+
+  private static Guid[] TryReadEventIds(string? eventIdsJson)
+  {
+    if (string.IsNullOrWhiteSpace(eventIdsJson)) return [];
+    try
+    {
+      return JsonSerializer.Deserialize<Guid[]>(eventIdsJson, JsonOptions) ?? [];
+    }
+    catch (JsonException)
+    {
+      return [];
+    }
+  }
+
+  private static string BuildFanOutId(IReadOnlyList<HermesEventOutbox> items)
+  {
+    var key = string.Join('|', items.Select(x => x.Id).OrderBy(x => x).Select(x => x.ToString("N")));
+    var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(key));
+    return Convert.ToHexString(bytes).ToLowerInvariant()[..32];
+  }
+
+  private static HermesCompressedReportResult BuildProcessorCompressionFallback(IReadOnlyList<HermesSubBatchResult> successful)
+  {
+    var severity = successful.Select(x => NormalizeSeverity(x.Severity)).OrderByDescending(SeverityRank).FirstOrDefault() ?? "info";
+    var reportTypes = successful.Select(x => NormalizeReportType(x.ReportType)).Distinct().ToArray();
+    var reportType = reportTypes.Length == 1 ? reportTypes[0] : "mixed";
+
+    var builder = new StringBuilder();
+    builder.AppendLine("## Nhận định");
+    builder.AppendLine($"Hermes đã tạo {successful.Count} báo cáo thành phần. Hệ thống dùng bản tổng hợp dự phòng.");
+    builder.AppendLine();
+    builder.AppendLine("## Hành động đã thực hiện");
+    foreach (var subBatch in successful.OrderBy(x => x.Index))
+    {
+      builder.AppendLine($"### Nhóm {subBatch.Index + 1} ({subBatch.EventCount} sự kiện)");
+      builder.AppendLine(Limit(subBatch.ReportText, 4000));
+      builder.AppendLine();
+    }
+    builder.AppendLine("## Kết quả & Tác động");
+    builder.AppendLine("Các tín hiệu đã được gom lại thành một báo cáo duy nhất để admin theo dõi.");
+    builder.AppendLine();
+    builder.AppendLine("## Mức ưu tiên");
+    builder.AppendLine(severity);
+
+    var markdown = builder.ToString().Trim();
+    return new HermesCompressedReportResult(
+      $"Báo cáo tổng hợp Hermes: {successful.Sum(x => x.EventCount)} sự kiện",
+      Limit(markdown, 4000),
+      severity,
+      reportType,
+      [],
+      [],
+      markdown);
+  }
+
+  private static string BuildFanOutReportPayload(
+    IReadOnlyList<HermesEventOutbox> items,
+    HermesCompressedReportResult compressed,
+    string fanOutId,
+    IReadOnlyList<HermesSubBatchResult> successful,
+    IReadOnlyList<HermesSubBatchResult> failed)
+  {
+    var payload = new
+    {
+      agentGenerated = true,
+      batch = true,
+      fanOut = true,
+      fanOutId,
+      reportType = NormalizeReportType(compressed.ReportType),
+      severity = NormalizeSeverity(compressed.Severity),
+      eventCount = items.Count,
+      partialReportCount = successful.Count,
+      failedSubBatchCount = failed.Count,
+      events = items.Select(x => new
+      {
+        eventId = x.Id,
+        x.EventType,
+        x.AggregateType,
+        x.AggregateId,
+        x.CorrelationId
+      }).ToArray(),
+      partialReports = successful.Select(x => new
+      {
+        x.Index,
+        x.EventCount,
+        x.EventIds,
+        x.ReportType,
+        x.Severity,
+        resultPreview = Limit(x.ReportText, 1200)
+      }).ToArray(),
+      failedSubBatches = failed.Select(x => new
+      {
+        x.Index,
+        x.EventIds,
+        x.Error
+      }).ToArray(),
+      compressed.KeyFindings,
+      compressed.RecommendedActions,
+      resultPreview = Limit(compressed.Markdown, 1200)
+    };
+    return JsonSerializer.Serialize(payload, JsonOptions);
+  }
+
+  private static string NormalizeSeverity(string? severity)
+  {
+    var normalized = severity?.Trim().ToLowerInvariant();
+    return normalized is "info" or "warning" or "high" or "critical" ? normalized : "info";
+  }
+
+  private static string NormalizeReportType(string? reportType)
+  {
+    var normalized = reportType?.Trim().ToLowerInvariant();
+    return normalized is "growth" or "revenue" or "risk" or "seo" or "crm" or "operations" or "mixed" ? normalized : "mixed";
+  }
+
   private static string Limit(string? value, int maxLength)
   {
     if (string.IsNullOrWhiteSpace(value)) return string.Empty;
@@ -663,6 +1172,36 @@ public sealed class HermesEventProcessor(
     if (Guid.TryParse(trimmed, out var id)) return $"#{id.ToString("N")[..8]}";
     return trimmed.Length <= 18 ? trimmed : $"{trimmed[..17]}…";
   }
+
+  private sealed record HermesSubBatch(int Index, IReadOnlyList<HermesEventOutbox> Items);
+
+  private sealed record HermesSubBatchResult(
+    int Index,
+    IReadOnlyList<Guid> EventIds,
+    int EventCount,
+    bool Success,
+    string? ReportText,
+    string? Error,
+    long DurationMs,
+    string ReportType,
+    string Severity)
+  {
+    public static HermesSubBatchResult Succeeded(int index, IReadOnlyList<Guid> eventIds, ReportProfile profile, long durationMs, string reportText) =>
+      new(index, eventIds, eventIds.Count, true, reportText, null, durationMs, profile.ReportType, profile.Severity);
+
+    public static HermesSubBatchResult Failed(int index, IReadOnlyList<Guid> eventIds, ReportProfile profile, long durationMs, string error) =>
+      new(index, eventIds, eventIds.Count, false, null, error, durationMs, profile.ReportType, profile.Severity);
+  }
+
+  private sealed record StoredPartialTracePayload(
+    int SubBatchIndex,
+    Guid[] EventIds,
+    int EventCount,
+    long DurationMs,
+    string ReportType,
+    string Severity,
+    string? ReportTextForCompression,
+    string? ReportPreview);
 
   private sealed record ReportProfile(string ReportType, string Severity, string TitlePrefix, string Impact, string PriorityReason);
 }

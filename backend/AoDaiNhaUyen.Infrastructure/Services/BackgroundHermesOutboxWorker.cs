@@ -16,6 +16,7 @@ public sealed class BackgroundHermesOutboxWorker(
   ILogger<BackgroundHermesOutboxWorker> logger) : BackgroundService
 {
   private readonly HermesOutboxOptions _options = options.Value;
+  private DateTimeOffset _nextFanOutSubBatchCleanupAt = DateTimeOffset.MinValue;
 
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
@@ -48,6 +49,7 @@ public sealed class BackgroundHermesOutboxWorker(
     var processor = scope.ServiceProvider.GetRequiredService<IHermesEventProcessor>();
 
     await RequeueStaleProcessingAsync(dbContext, cancellationToken);
+    await CleanupFanOutSubBatchesAsync(dbContext, cancellationToken);
 
     var runner = string.IsNullOrWhiteSpace(_options.RunnerName) ? "aodai-hermes-outbox-worker" : _options.RunnerName;
     var batchSize = Math.Clamp(_options.BatchSize, 1, 100);
@@ -199,6 +201,22 @@ public sealed class BackgroundHermesOutboxWorker(
         .SetProperty(x => x.LastError, "Hermes worker marked stale event dead.")
         .SetProperty(x => x.ProcessedAt, DateTimeOffset.UtcNow)
         .SetProperty(x => x.UpdatedAt, DateTime.UtcNow), cancellationToken);
+  }
+
+  private async Task CleanupFanOutSubBatchesAsync(AppDbContext dbContext, CancellationToken cancellationToken)
+  {
+    var now = DateTimeOffset.UtcNow;
+    if (now < _nextFanOutSubBatchCleanupAt) return;
+
+    var retentionDays = Math.Max(1, _options.FanOutSubBatchRetentionDays);
+    var intervalMinutes = Math.Max(5, _options.FanOutSubBatchCleanupIntervalMinutes);
+    var cutoff = now.UtcDateTime.AddDays(-retentionDays);
+
+    await dbContext.HermesFanOutSubBatches
+      .Where(x => x.UpdatedAt < cutoff && x.Run != null && x.Run.CompletedAt != null)
+      .ExecuteDeleteAsync(cancellationToken);
+
+    _nextFanOutSubBatchCleanupAt = now.AddMinutes(intervalMinutes);
   }
 
   private static async Task ProcessItemAsync(

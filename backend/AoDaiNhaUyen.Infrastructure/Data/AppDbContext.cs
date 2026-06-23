@@ -64,6 +64,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<HermesEventOutbox> HermesEventOutbox => Set<HermesEventOutbox>();
   public DbSet<HermesMonitorLink> HermesMonitorLinks => Set<HermesMonitorLink>();
   public DbSet<HermesAgentTraceStep> HermesAgentTraceSteps => Set<HermesAgentTraceStep>();
+  public DbSet<HermesFanOutSubBatch> HermesFanOutSubBatches => Set<HermesFanOutSubBatch>();
   public DbSet<HermesActionAudit> HermesActionAudits => Set<HermesActionAudit>();
   public DbSet<SocialAccountConnection> SocialAccountConnections => Set<SocialAccountConnection>();
   public DbSet<SocialInboxConversation> SocialInboxConversations => Set<SocialInboxConversation>();
@@ -870,10 +871,33 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
       builder.HasIndex(x => new { x.EventOutboxId, x.StartedAt }).HasDatabaseName("idx_hermes_trace_steps_event_started_at");
       builder.HasIndex(x => new { x.RunId, x.StartedAt }).HasDatabaseName("idx_hermes_trace_steps_run_started_at");
+      builder.HasIndex(x => new { x.RunId, x.Kind }).HasDatabaseName("idx_hermes_trace_steps_run_kind");
       builder.HasIndex(x => new { x.Kind, x.StartedAt }).HasDatabaseName("idx_hermes_trace_steps_kind_started_at");
       builder.HasOne(x => x.Run).WithMany().HasForeignKey(x => x.RunId).OnDelete(DeleteBehavior.SetNull);
       builder.HasOne(x => x.EventOutbox).WithMany().HasForeignKey(x => x.EventOutboxId).OnDelete(DeleteBehavior.SetNull);
       builder.ToTable(t => t.HasCheckConstraint("ck_hermes_agent_trace_steps_status", "status IN ('success','failed','running','skipped')"));
+    });
+
+    modelBuilder.Entity<HermesFanOutSubBatch>(builder =>
+    {
+      builder.ToTable("hermes_fanout_sub_batches");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.SubBatchIndex).IsRequired();
+      builder.Property(x => x.EventCount).IsRequired();
+      builder.Property(x => x.EventIdsJson).HasColumnType("jsonb").IsRequired();
+      builder.Property(x => x.Status).HasMaxLength(40).HasDefaultValue("pending").IsRequired();
+      builder.Property(x => x.ReportType).HasMaxLength(80).HasDefaultValue("mixed").IsRequired();
+      builder.Property(x => x.Severity).HasMaxLength(30).HasDefaultValue("info").IsRequired();
+      builder.Property(x => x.ReportPreview).HasColumnType("text");
+      builder.Property(x => x.ReportTextForCompression).HasColumnType("text");
+      builder.Property(x => x.Error).HasColumnType("text");
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.RunId, x.SubBatchIndex }).IsUnique().HasDatabaseName("ux_hermes_fanout_sub_batches_run_sub_batch");
+      builder.HasIndex(x => new { x.RunId, x.Status }).HasDatabaseName("idx_hermes_fanout_sub_batches_run_status");
+      builder.HasOne(x => x.Run).WithMany(x => x.FanOutSubBatches).HasForeignKey(x => x.RunId).OnDelete(DeleteBehavior.Cascade);
+      builder.ToTable(t => t.HasCheckConstraint("ck_hermes_fanout_sub_batches_status", "status IN ('pending','success','failed')"));
+      builder.ToTable(t => t.HasCheckConstraint("ck_hermes_fanout_sub_batches_severity", "severity IN ('info', 'warning', 'high', 'critical')"));
     });
 
     modelBuilder.Entity<HermesActionAudit>(builder =>

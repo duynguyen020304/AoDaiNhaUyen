@@ -34,6 +34,34 @@ public sealed class HermesOutboxOptions
   /// </summary>
   public int MaxBatchPayloadBytes { get; init; } = 500_000;
 
+  /// <summary>
+  /// Enables fan-out/fan-in batch processing: split claimed events into smaller
+  /// concurrent Hermes sub-batches, then compress their partial reports into one
+  /// final admin-visible report. Default false for safe rollout.
+  /// </summary>
+  public bool FanOutFanInEnabled { get; init; }
+
+  /// <summary>Maximum events per fan-out Hermes sub-batch. Default 3.</summary>
+  public int FanOutSubBatchSize { get; init; } = 3;
+
+  /// <summary>Maximum concurrent Hermes sub-batch HTTP calls. Default 3.</summary>
+  public int MaxParallelFanOutBatches { get; init; } = 3;
+
+  /// <summary>When true, Vertex/Gemini compresses partial reports into one final report.</summary>
+  public bool FanInCompressionEnabled { get; init; } = true;
+
+  /// <summary>When true, use deterministic concatenation if AI compression fails.</summary>
+  public bool FanInFallbackToConcatenation { get; init; } = true;
+
+  /// <summary>Maximum characters from each partial report sent to the compressor.</summary>
+  public int MaxPartialReportCharsForCompression { get; init; } = 6000;
+
+  /// <summary>Retention days for persisted Hermes fan-out sub-batch checkpoints.</summary>
+  public int FanOutSubBatchRetentionDays { get; init; } = 30;
+
+  /// <summary>Minutes between cleanup passes for old Hermes fan-out sub-batch checkpoints.</summary>
+  public int FanOutSubBatchCleanupIntervalMinutes { get; init; } = 1440;
+
   public decimal HighValueOrderThreshold { get; init; } = 5_000_000m;
   public int LowStockThreshold { get; init; } = 3;
   public string EventPath { get; init; } = "/v1/responses";

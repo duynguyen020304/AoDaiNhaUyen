@@ -70,6 +70,12 @@ public sealed partial class HermesFeedService(AppDbContext dbContext) : IHermesF
         .ToListAsync(cancellationToken);
       runs.AddRange(batchRuns);
       runIds = runs.Select(x => x.Id).ToArray();
+
+      var extraTraces = await dbContext.HermesAgentTraceSteps.AsNoTracking()
+        .Where(x => x.RunId != null && traceRunIds.Contains(x.RunId.Value))
+        .OrderBy(x => x.StartedAt)
+        .ToListAsync(cancellationToken);
+      traces.AddRange(extraTraces.Where(x => traces.All(existing => existing.Id != x.Id)));
     }
 
     var reports = await dbContext.HermesReports.AsNoTracking()
@@ -82,7 +88,14 @@ public sealed partial class HermesFeedService(AppDbContext dbContext) : IHermesF
       .Select(item =>
       {
         var itemConversationId = item.Id.ToString("N");
-        var itemRuns = runs.Where(run => run.ConversationId == itemConversationId || (!string.IsNullOrWhiteSpace(item.CorrelationId) && run.ConversationId == item.CorrelationId)).ToArray();
+        var traceLinkedRunIds = traces
+          .Where(step => step.EventOutboxId == item.Id && step.RunId.HasValue)
+          .Select(step => step.RunId!.Value)
+          .ToHashSet();
+        var itemRuns = runs.Where(run =>
+          run.ConversationId == itemConversationId ||
+          (!string.IsNullOrWhiteSpace(item.CorrelationId) && run.ConversationId == item.CorrelationId) ||
+          traceLinkedRunIds.Contains(run.Id)).ToArray();
         var itemRunIds = itemRuns.Select(x => x.Id).ToHashSet();
         return MapItem(
           item,
