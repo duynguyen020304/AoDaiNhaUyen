@@ -21,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getEmailTemplates, getSubscribers } from "@/api/emailMarketing";
 import { useFeedback } from "@/components/ui/feedbackContext";
 import { useEmailMarketingStore } from "@/stores/emailMarketingStore";
+import { PageSizeSelect } from "@/components/admin/PageSizeSelect";
 import {
   emailTemplateRegistry,
   resolveEmailTemplateType,
@@ -141,7 +142,7 @@ export function MarketingSendPage() {
   const [attachmentTypeFilter, setAttachmentTypeFilter] = useState<string | null>(null);
   const [attachmentSearch, setAttachmentSearch] = useState("");
   const [attachmentPage, setAttachmentPage] = useState(1);
-  const ATTACHMENT_PAGE_SIZE = 9;
+  const [attachmentPageSize, setAttachmentPageSize] = useState(9);
 
   useEffect(() => {
     fetchContentOptions().catch(() => {});
@@ -546,9 +547,9 @@ export function MarketingSendPage() {
                       return [o.title, o.subtitle, o.url, o.badge, o.type]
                         .some((v) => v && v.toLowerCase().includes(q));
                     });
-                  const totalPages = Math.max(1, Math.ceil(filtered.length / ATTACHMENT_PAGE_SIZE));
+                  const totalPages = Math.max(1, Math.ceil(filtered.length / attachmentPageSize));
                   const safePage = Math.min(attachmentPage, totalPages);
-                  const pageItems = filtered.slice(0, safePage * ATTACHMENT_PAGE_SIZE).slice(-ATTACHMENT_PAGE_SIZE);
+                  const pageItems = filtered.slice((safePage - 1) * attachmentPageSize, safePage * attachmentPageSize);
                   return (
                     <>
                       <div className="flex items-center justify-between text-sm text-gray-500">
@@ -595,9 +596,13 @@ export function MarketingSendPage() {
                           </div>
                         )}
                       </div>
-                      {totalPages > 1 && (
+                      {filtered.length > 0 && (
                         <div className="flex items-center justify-between">
-                          <span />
+                          <PageSizeSelect
+                            value={attachmentPageSize}
+                            onChange={(value) => { setAttachmentPageSize(value); setAttachmentPage(1); }}
+                            options={[9, 18, 36, 72]}
+                          />
                           <div className="flex items-center gap-2">
                             <Button
                               variant="outline"

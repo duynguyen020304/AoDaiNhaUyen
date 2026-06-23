@@ -17,6 +17,7 @@ import { getEmailTemplate } from "@/api/emailMarketing";
 import { buildEmailPreviewDocument, openEmailPreviewInNewTab } from "@/lib/emailPreview";
 import { renderEmailTemplateHtml, normalizeTemplateConfig, resolveEmailTemplateType } from "@/lib/reactEmailTemplates";
 import { useFeedback } from "@/components/ui/feedbackContext";
+import { PageSizeSelect } from "@/components/admin/PageSizeSelect";
 import type { EmailTemplateDetail, EmailTemplateListItem } from "@/types/admin";
 
 async function renderPreviewTemplate(template: EmailTemplateDetail) {
@@ -38,8 +39,11 @@ export function EmailTemplatesPage() {
     loading,
     error,
     totalPages,
+    totalItems,
     currentPage,
+    pageSize,
     fetchTemplates,
+    setPageSize,
   } = useEmailMarketingStore();
   const { toast } = useFeedback();
   const prevError = useRef(error);
@@ -55,6 +59,11 @@ export function EmailTemplatesPage() {
   useEffect(() => {
     fetchTemplates(search).catch(() => {});
   }, [fetchTemplates, search]);
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize);
+    queueMicrotask(() => fetchTemplates(search, 1).catch(() => {}));
+  }
+
   async function openPreviewTemplate(template: EmailTemplateListItem) {
     setPreviewHtml("");
     const detail = await getEmailTemplate(template.id);
@@ -148,7 +157,12 @@ Danh sách template React Email do dev lập trình sẵn. Admin chỉ xem và p
           </TableBody>
         </Table>
       </Card>
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span>Tổng: {totalItems} mẫu</span>
+          <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} disabled={loading} />
+        </div>
+        <div className="flex justify-end gap-2">
         <Button
           variant="outline"
           disabled={currentPage <= 1}
@@ -166,6 +180,7 @@ Danh sách template React Email do dev lập trình sẵn. Admin chỉ xem và p
         >
           Sau
         </Button>
+        </div>
       </div>
       {preview && (
         <div

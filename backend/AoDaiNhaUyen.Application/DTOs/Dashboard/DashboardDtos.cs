@@ -49,7 +49,8 @@ public sealed record RecentOrderDto(
   string CustomerName,
   decimal TotalAmount,
   string Status,
-  DateTimeOffset CreatedAt);
+  DateTimeOffset CreatedAt,
+  DateTimeOffset? CompletedAt);
 
 /// <summary>
 /// Sản phẩm bán chạy.

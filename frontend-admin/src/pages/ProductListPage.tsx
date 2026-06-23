@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
+import { PageSizeSelect } from '@/components/admin/PageSizeSelect'
 
 function statusBadge(status: string) {
   switch (status) {
@@ -30,8 +31,8 @@ function typeBadge(productType: string) {
 
 export function ProductListPage() {
   const {
-    products, totalPages, totalItems, currentPage, search, statusFilter, includeDeleted, loading, error,
-    fetchProducts, deleteProduct, restoreProduct, setSearch, setStatusFilter, setIncludeDeleted, clearError,
+    products, totalPages, totalItems, currentPage, pageSize, search, statusFilter, includeDeleted, loading, error,
+    fetchProducts, deleteProduct, restoreProduct, setSearch, setStatusFilter, setIncludeDeleted, setPageSize, clearError,
   } = useProductStore()
 
   const [searchInput, setSearchInput] = useState(search)
@@ -67,6 +68,11 @@ export function ProductListPage() {
 
   function handlePageChange(page: number) {
     fetchProducts(undefined, page)
+  }
+
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize)
+    queueMicrotask(() => fetchProducts(undefined, 1))
   }
 
   async function handleDelete() {
@@ -219,9 +225,12 @@ export function ProductListPage() {
       </Card>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground mt-4">
-          <span>Tổng: {totalItems} sản phẩm</span>
+      {totalItems > 0 && (
+        <div className="flex flex-col gap-3 text-sm text-muted-foreground mt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span>Tổng: {totalItems} sản phẩm</span>
+            <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} disabled={loading} />
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"

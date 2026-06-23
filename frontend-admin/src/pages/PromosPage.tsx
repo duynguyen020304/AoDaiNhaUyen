@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { PageSizeSelect } from '@/components/admin/PageSizeSelect'
 
 const currency = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' })
 
@@ -26,7 +27,7 @@ function statusBadge(promo: AdminPromoItem) {
 }
 
 export function PromosPage() {
-  const { promos, totalPages, totalItems, currentPage, search, activeFilter, includeDeleted, loading, error, fetchPromos, deletePromo, restorePromo, togglePromoStatus, setSearch, setActiveFilter, setIncludeDeleted, clearError } = usePromoStore()
+  const { promos, totalPages, totalItems, currentPage, pageSize, search, activeFilter, includeDeleted, loading, error, fetchPromos, deletePromo, restorePromo, togglePromoStatus, setSearch, setActiveFilter, setIncludeDeleted, setPageSize, clearError } = usePromoStore()
   const [searchInput, setSearchInput] = useState(search)
   const [deleteTarget, setDeleteTarget] = useState<AdminPromoItem | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<AdminPromoItem | null>(null)
@@ -53,6 +54,11 @@ export function PromosPage() {
   function handleToggleDeleted() {
     setIncludeDeleted(!includeDeleted)
     setTimeout(() => fetchPromos({ page: 1 }), 0)
+  }
+
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize)
+    queueMicrotask(() => fetchPromos({ page: 1 }))
   }
 
   async function handleDelete() {
@@ -169,9 +175,12 @@ export function PromosPage() {
         )}
       </Card>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground mt-4">
-          <span>Tổng: {totalItems} mã</span>
+      {totalItems > 0 && (
+        <div className="flex flex-col gap-3 text-sm text-muted-foreground mt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span>Tổng: {totalItems} mã</span>
+            <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} disabled={loading} />
+          </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" disabled={currentPage <= 1} onClick={() => fetchPromos({ page: currentPage - 1 })} aria-label="Trang trước"><ChevronLeft className="size-4" /></Button>
             <span>Trang {currentPage} / {totalPages}</span>

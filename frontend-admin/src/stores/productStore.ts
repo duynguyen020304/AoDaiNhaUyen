@@ -31,6 +31,7 @@ interface ProductState {
   setSearch: (search: string) => void
   setStatusFilter: (status: string) => void
   setIncludeDeleted: (value: boolean) => void
+  setPageSize: (pageSize: number) => void
   clearError: () => void
 }
 
@@ -244,5 +245,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
   setSearch: (search: string) => set({ search }),
   setStatusFilter: (status: string) => set({ statusFilter: status }),
   setIncludeDeleted: (value: boolean) => set({ includeDeleted: value }),
+  setPageSize: (pageSize: number) => set({ pageSize, currentPage: 1 }),
   clearError: () => set({ error: null }),
 }))

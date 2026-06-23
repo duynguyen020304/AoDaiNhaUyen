@@ -24,6 +24,7 @@ interface UserState {
   restoreUser: (id: string) => Promise<void>
   setSearch: (search: string) => void
   setIncludeDeleted: (value: boolean) => void
+  setPageSize: (pageSize: number) => void
   clearError: () => void
 }
 
@@ -148,5 +149,6 @@ export const useUserStore = create<UserState>((set, get) => ({
 
   setSearch: (search: string) => set({ search }),
   setIncludeDeleted: (value: boolean) => set({ includeDeleted: value }),
+  setPageSize: (pageSize: number) => set({ pageSize, currentPage: 1 }),
   clearError: () => set({ error: null }),
 }))

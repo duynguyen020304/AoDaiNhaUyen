@@ -1,3 +1,5 @@
+using AoDaiNhaUyen.Application.DTOs;
+using AoDaiNhaUyen.Application.DTOs.Dashboard;
 using AoDaiNhaUyen.Application.DTOs.Order;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Domain.Entities;
@@ -19,6 +21,85 @@ public sealed class OrderService(
     ["shipping"] = ["completed", "failed"],
     ["completed"] = ["returned"],
   };
+
+  public async Task<PagedResult<RecentOrderDto>> GetAdminOrdersAsync(
+    string? status,
+    string? search,
+    DateTime? fromDate,
+    DateTime? toDate,
+    decimal? minTotal,
+    decimal? maxTotal,
+    string? sort,
+    int page,
+    int pageSize,
+    CancellationToken cancellationToken = default)
+  {
+    page = Math.Max(page, 1);
+    pageSize = Math.Clamp(pageSize, 1, 100);
+
+    var query = dbContext.Orders
+      .AsNoTracking()
+      .Where(o => !o.IsDeleted);
+
+    if (!string.IsNullOrWhiteSpace(status) && !string.Equals(status, "all", StringComparison.OrdinalIgnoreCase))
+    {
+      query = query.Where(o => o.OrderStatus == status);
+    }
+
+    if (!string.IsNullOrWhiteSpace(search))
+    {
+      var term = search.Trim().ToLower();
+      query = query.Where(o =>
+        o.OrderCode.ToLower().Contains(term) ||
+        o.RecipientName.ToLower().Contains(term) ||
+        o.RecipientPhone.Contains(term) ||
+        o.User.FullName.ToLower().Contains(term) ||
+        (o.User.Email != null && o.User.Email.ToLower().Contains(term)) ||
+        (o.User.Phone != null && o.User.Phone.Contains(term)));
+    }
+
+    if (fromDate.HasValue)
+    {
+      var start = DateTime.SpecifyKind(fromDate.Value.Date, DateTimeKind.Utc);
+      query = query.Where(o => o.CreatedAt >= start);
+    }
+
+    if (toDate.HasValue)
+    {
+      var endExclusive = DateTime.SpecifyKind(toDate.Value.Date.AddDays(1), DateTimeKind.Utc);
+      query = query.Where(o => o.CreatedAt < endExclusive);
+    }
+
+    if (minTotal.HasValue)
+      query = query.Where(o => o.TotalAmount >= minTotal.Value);
+
+    if (maxTotal.HasValue)
+      query = query.Where(o => o.TotalAmount <= maxTotal.Value);
+
+    query = sort switch
+    {
+      "oldest" => query.OrderBy(o => o.CreatedAt),
+      "amount_desc" => query.OrderByDescending(o => o.TotalAmount).ThenByDescending(o => o.CreatedAt),
+      "amount_asc" => query.OrderBy(o => o.TotalAmount).ThenByDescending(o => o.CreatedAt),
+      _ => query.OrderByDescending(o => o.CreatedAt),
+    };
+
+    var total = await query.CountAsync(cancellationToken);
+    var items = await query
+      .Skip((page - 1) * pageSize)
+      .Take(pageSize)
+      .Select(o => new RecentOrderDto(
+        o.Id,
+        o.OrderCode,
+        o.User.FullName,
+        o.TotalAmount,
+        o.OrderStatus,
+        new DateTimeOffset(o.CreatedAt, TimeSpan.Zero),
+        o.CompletedAt.HasValue ? new DateTimeOffset(o.CompletedAt.Value, TimeSpan.Zero) : null))
+      .ToListAsync(cancellationToken);
+
+    return new PagedResult<RecentOrderDto>(items, total, page, pageSize);
+  }
 
   public async Task<OrderUpdateResult> UpdateStatusAsync(Guid orderId, string newStatus, CancellationToken cancellationToken = default)
   {

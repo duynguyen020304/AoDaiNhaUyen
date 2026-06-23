@@ -3,9 +3,8 @@ import { CheckCircle2, Loader2, RefreshCw, Star, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { getAiTryOnFeedback, updateAiTryOnFeedbackStatus } from '@/api/admin'
+import { PageSizeSelect } from '@/components/admin/PageSizeSelect'
 import type { AdminAiTryOnFeedbackItem } from '@/types/admin'
-
-const PAGE_SIZE = 12
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -23,13 +22,14 @@ export function AiTryOnFeedbackPage() {
   const [items, setItems] = useState<AdminAiTryOnFeedbackItem[]>([])
   const [totalItems, setTotalItems] = useState(0)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(12)
   const [rating, setRating] = useState<'all' | number>('all')
   const [status, setStatus] = useState<'all' | 'open' | 'resolved'>('all')
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
 
   const fetchItems = useCallback(async (nextPage: number) => {
     setLoading(true)
@@ -37,7 +37,7 @@ export function AiTryOnFeedbackPage() {
     try {
       const response = await getAiTryOnFeedback({
         page: nextPage,
-        pageSize: PAGE_SIZE,
+        pageSize,
         rating,
         isResolved: status === 'all' ? 'all' : status === 'resolved',
       })
@@ -49,7 +49,7 @@ export function AiTryOnFeedbackPage() {
     } finally {
       setLoading(false)
     }
-  }, [rating, status])
+  }, [pageSize, rating, status])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -68,6 +68,11 @@ export function AiTryOnFeedbackPage() {
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [previewImageUrl])
+
+  function handlePageSizeChange(nextPageSize: number) {
+    setPageSize(nextPageSize)
+    setPage(1)
+  }
 
   async function handleToggle(item: AdminAiTryOnFeedbackItem) {
     setBusyId(item.id)
@@ -159,7 +164,10 @@ export function AiTryOnFeedbackPage() {
       </section>
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>Tổng: {totalItems} đánh giá</span>
+        <div className="flex items-center gap-3">
+          <span>Tổng: {totalItems} đánh giá</span>
+          <PageSizeSelect value={pageSize} onChange={handlePageSizeChange} disabled={loading} />
+        </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" disabled={page <= 1 || loading} onClick={() => fetchItems(page - 1)}>Trước</Button>
           <span>Trang {page} / {totalPages}</span>

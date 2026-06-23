@@ -195,7 +195,8 @@ public sealed class AdminDashboardService(
         o.User.FullName,
         o.TotalAmount,
         o.OrderStatus,
-        new DateTimeOffset(o.CreatedAt, TimeSpan.Zero)))
+        new DateTimeOffset(o.CreatedAt, TimeSpan.Zero),
+        o.CompletedAt.HasValue ? new DateTimeOffset(o.CompletedAt.Value, TimeSpan.Zero) : null))
       .ToListAsync(ct);
 
     return orders;

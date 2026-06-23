@@ -884,7 +884,12 @@ public sealed class AdminAgentService : IAdminAgentService
             var pending = pendingDraft with { ActionId = actionId };
             _pendingStore.Add(actionId, pending);
 
-            yield return new LlmChunk("confirmation", toolResult.Description, preparedToolName, actionId);
+            yield return new LlmChunk(
+              "confirmation",
+              toolResult.Description,
+              preparedToolName,
+              actionId,
+              RiskLevel: toolResult.RiskLevel);
             yield return new LlmChunk("done", "", null, null);
             yield break; // Stop until user confirms
           }

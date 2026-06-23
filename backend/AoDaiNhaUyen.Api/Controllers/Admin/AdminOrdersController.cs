@@ -15,6 +15,32 @@ public sealed class AdminOrdersController(
   ICacheInvalidationService cacheInvalidation) : ControllerBase
 {
   /// <summary>
+  /// Lấy danh sách đơn hàng cho trang admin với lọc trạng thái và phân trang.
+  /// </summary>
+  [HttpGet]
+  public async Task<IActionResult> GetOrders(
+    [FromQuery] string? status,
+    [FromQuery] string? search,
+    [FromQuery] DateTime? fromDate,
+    [FromQuery] DateTime? toDate,
+    [FromQuery] decimal? minTotal,
+    [FromQuery] decimal? maxTotal,
+    [FromQuery] string? sort,
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 20,
+    CancellationToken cancellationToken = default)
+  {
+    var result = await orderService.GetAdminOrdersAsync(
+      status, search, fromDate, toDate, minTotal, maxTotal, sort, page, pageSize, cancellationToken);
+    return Ok(ApiResponseFactory.PaginatedSuccess(
+      result.Items,
+      result.Page,
+      result.PageSize,
+      result.TotalCount,
+      "Lấy danh sách đơn hàng thành công."));
+  }
+
+  /// <summary>
   /// Cập nhật trạng thái đơn hàng.
   /// </summary>
   [HttpPatch("{orderId:guid}/status")]

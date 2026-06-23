@@ -20,6 +20,7 @@ interface BlogState {
   setStatus: (status: BlogStatus | '') => void
   setSearch: (search: string) => void
   setPage: (page: number) => void
+  setPageSize: (pageSize: number) => void
   clearError: () => void
 }
 
@@ -109,5 +110,6 @@ export const useBlogStore = create<BlogState>((set, get) => ({
   setStatus: (status) => set({ status, page: 1 }),
   setSearch: (search) => set({ search, page: 1 }),
   setPage: (page) => set({ page }),
+  setPageSize: (pageSize) => set({ pageSize, page: 1 }),
   clearError: () => set({ error: null }),
 }))

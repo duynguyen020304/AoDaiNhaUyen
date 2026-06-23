@@ -404,7 +404,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                 actionId: chunk.toolCallId || genId(),
                 toolName: chunk.toolName || 'unknown',
                 description: chunk.content,
-                riskLevel: 'medium',
+                riskLevel: chunk.riskLevel || 'Medium',
                 requestedAt: new Date().toISOString(),
                 status: 'pending',
               }
@@ -615,7 +615,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
                 actionId: chunk.toolCallId || genId(),
                 toolName: chunk.toolName || 'unknown',
                 description: chunk.content,
-                riskLevel: 'medium',
+                riskLevel: chunk.riskLevel || 'Medium',
                 requestedAt: new Date().toISOString(),
                 status: 'pending',
               }

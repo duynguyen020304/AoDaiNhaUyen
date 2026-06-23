@@ -23,6 +23,7 @@ interface PromoState {
   setSearch: (search: string) => void
   setActiveFilter: (activeFilter: string) => void
   setIncludeDeleted: (includeDeleted: boolean) => void
+  setPageSize: (pageSize: number) => void
   clearError: () => void
 }
 
@@ -137,5 +138,6 @@ export const usePromoStore = create<PromoState>((set, get) => ({
   setSearch: (search) => set({ search }),
   setActiveFilter: (activeFilter) => set({ activeFilter }),
   setIncludeDeleted: (includeDeleted) => set({ includeDeleted }),
+  setPageSize: (pageSize) => set({ pageSize, currentPage: 1 }),
   clearError: () => set({ error: null }),
 }))
