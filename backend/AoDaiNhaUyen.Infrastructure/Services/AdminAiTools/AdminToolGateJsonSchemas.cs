@@ -8,9 +8,11 @@ public static class AdminToolGateJsonSchemas
     properties = new Dictionary<string, object?>
     {
       ["action"] = new { type = "string", @enum = new[] { "execute", "ask_clarification", "reject", "require_prerequisite_tool" } },
-      ["toolName"] = new { type = new[] { "string", "null" } },
-      ["arguments"] = new { type = new[] { "object", "null" } },
-      ["message"] = new { type = new[] { "string", "null" } }
+      // Gemini response_schema does not support JSON Schema union types like ["string", "null"].
+      // Use empty string/object instead of null for optional values.
+      ["toolName"] = new { type = "string" },
+      ["arguments"] = new { type = "object" },
+      ["message"] = new { type = "string" }
     },
     required = new[] { "action", "toolName", "arguments", "message" }
   };

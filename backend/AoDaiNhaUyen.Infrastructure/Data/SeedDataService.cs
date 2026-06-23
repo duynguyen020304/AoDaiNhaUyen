@@ -116,6 +116,9 @@ public sealed class SeedDataService(
     await SeedRolesAsync();
     await SeedAdminAsync();
     await SeedEmailTemplatesAsync();
+    // Tool risk configs are operational metadata, not demo catalog data.
+    // Seed them before the catalog-data early return so existing/prod DBs receive newly added tools.
+    await SeedToolRiskConfigsAsync();
 
     if (await HasExistingCatalogDataAsync())
     {
@@ -137,7 +140,6 @@ public sealed class SeedDataService(
     await SeedLowStockVariantsAsync();
     await SeedDemoReviewsAsync();
     await SeedBlogPostsAsync();
-    await SeedToolRiskConfigsAsync();
     await RemoveStaleCategoriesAsync();
   }
 
