@@ -125,6 +125,8 @@ public sealed class HermesBatchProcessorTests
     Assert.Equal("admin_event", run.Trigger); // per-event path, not batch
     var report = Assert.Single(db.HermesReports.ToList());
     Assert.Equal(events[0].Id.ToString("N"), report.CorrelationId); // per-event correlation
+    // A returned id must be durably completed — not left 'processing' for stale recovery.
+    Assert.Equal("completed", Assert.Single(db.HermesEventOutbox.ToList()).Status);
   }
 
   // ---- helpers ----

@@ -107,11 +107,23 @@ public sealed class HermesEventProcessor(
     if (valid.Count == 0) return Array.Empty<Guid>();
 
     // A single valid event has no batching benefit and keeps the existing 1:1
-    // run/report identity — delegate to the per-event path.
+    // run/report identity — delegate to the per-event path. On success own the outbox
+    // row's completion here: returning the id signals the worker the event is durably
+    // done and must NOT be re-processed, so the status has to be committed now (the
+    // multi-event path does this inside its transaction). On failure ProcessAsync
+    // throws and the worker's per-event fallback applies retry/backoff/dead-letter.
     if (valid.Count == 1)
     {
-      await ProcessAsync(valid[0], cancellationToken);
-      return new[] { valid[0].Id };
+      var single = valid[0];
+      await ProcessAsync(single, cancellationToken);
+      single.Status = "completed";
+      single.ProcessedAt = DateTimeOffset.UtcNow;
+      single.LockedAt = null;
+      single.LockedBy = null;
+      single.LastError = null;
+      single.UpdatedAt = DateTime.UtcNow;
+      await dbContext.SaveChangesAsync(cancellationToken);
+      return new[] { single.Id };
     }
 
     var batchId = Guid.NewGuid().ToString("N");
