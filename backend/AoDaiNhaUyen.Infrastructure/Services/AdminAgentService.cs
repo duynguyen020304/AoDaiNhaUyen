@@ -527,12 +527,13 @@ public sealed class AdminAgentService : IAdminAgentService
         ("includeFaq", O("boolean", "Có thêm FAQ hay không")),
         ("notes", O("string", "Ghi chú bổ sung từ admin")))),
 
-    T("generate_blog_images", "Tạo ảnh blog bằng API ảnh dùng chung model với trang AI try-on, upload vào private/blog, trả URL ảnh nổi bật + block image/gallery để chèn vào save_blog_draft/update_blog_post. Dùng khi admin yêu cầu tự tạo ảnh, ảnh nổi bật, ảnh đơn lẻ hoặc gallery cho blog.",
+    T("generate_blog_images", "Tạo ảnh blog bằng API ảnh dùng chung model với trang AI try-on, upload vào private/blog, trả URL ảnh nổi bật + block image/gallery để chèn vào save_blog_draft/update_blog_post. Mỗi lượt chỉ nên tạo ảnh nổi bật hoặc tối đa 1 ảnh phụ; nếu cần nhiều ảnh phải gọi tuần tự nhiều lần. Ví dụ muốn 3 ảnh gallery: lượt 1 {includeFeatured:true}, lượt 2 {includeFeatured:false,galleryCount:1}, lượt 3 {includeFeatured:false,galleryCount:1}, lượt 4 {includeFeatured:false,galleryCount:1}.",
       P(
         ("topic", O("string", "Chủ đề/bài blog cần tạo ảnh — bắt buộc")),
         ("prompt", O("string", "Prompt chi tiết, có thể lấy từ imagePrompt của generate_blog_draft (tùy chọn)")),
-        ("inlineCount", O("integer", "Số ảnh đơn lẻ trong bài. Mặc định 0, tối đa 3; không chỉ định thì chỉ tạo ảnh nổi bật")),
-        ("galleryCount", O("integer", "Số ảnh gallery. Mặc định 0, tối đa 6; chỉ tạo khi admin yêu cầu gallery")),
+        ("includeFeatured", O("boolean", "true để tạo kèm ảnh nổi bật. Mặc định true. Nếu cần nhiều ảnh thì chỉ lượt đầu dùng true; các lượt tạo ảnh phụ tiếp theo nên đặt false để tránh tạo trùng featured image")),
+        ("inlineCount", O("integer", "Số ảnh đơn lẻ trong bài cho MỖI LƯỢT. Chỉ dùng 0 hoặc 1; nếu cần nhiều ảnh hãy gọi tool tuần tự nhiều lần")),
+        ("galleryCount", O("integer", "Số ảnh gallery cho MỖI LƯỢT. Chỉ dùng 0 hoặc 1. Nếu cần 3 ảnh gallery, phải gọi tool 3 lượt riêng với includeFeatured=false và galleryCount=1 cho từng lượt sau lượt đầu")),
         ("style", O("string", "Phong cách ảnh: editorial, studio, lookbook, texture... (tùy chọn)")))),
 
     T("save_blog_draft", "Tự động lưu bài viết ở trạng thái nháp.",
@@ -1816,9 +1817,9 @@ public sealed class AdminAgentService : IAdminAgentService
 
   private static string BuildConfirmationDescription(string toolName, JsonElement args, RiskLevel riskLevel)
   {
-    var argsPreview = args.GetRawText();
-    if (argsPreview.Length > 600) argsPreview = argsPreview[..600] + "...";
-    return $"Cần xác nhận hành động {riskLevel}: {toolName}. Tham số: {argsPreview}";
+    var argsPreview = JsonSerializer.Serialize(args, ToolResultJsonOptions);
+    if (argsPreview.Length > 1200) argsPreview = argsPreview[..1200] + "...";
+    return $"Cần xác nhận hành động {riskLevel}: {toolName}.\nTham số:\n{argsPreview}";
   }
 
   private static string SerializeToolResult<T>(
@@ -3564,16 +3565,33 @@ TỔNG QUAN:
     var topic = RequiredString(args, "topic", 500);
     var basePrompt = GetOptionalString(args, "prompt", 1200) ?? topic;
     var style = GetOptionalString(args, "style", 200) ?? "luxury Vietnamese áo dài editorial, premium boutique, cinematic natural light";
+    var includeFeatured = GetBoolArg(args, "includeFeatured", true);
     // Keep default light: one generated image. Extra inline/gallery images must be requested explicitly.
-    // Vertex image generation is quota-heavy; the old default (featured + 1 inline + 4 gallery = 6 calls)
-    // could exhaust provider quota and then be multiplied by tool retry loops.
+    // To avoid quota spikes, each tool call only supports one extra non-featured image.
     var inlineCount = ClampInt(GetIntArg(args, "inlineCount", 0), 0, 3);
     var galleryCount = ClampInt(GetIntArg(args, "galleryCount", 0), 0, 6);
 
-    var specs = new List<BlogImageGenerationSpec>
+    if (inlineCount > 1 || galleryCount > 1 || (inlineCount > 0 && galleryCount > 0))
     {
-      new("featured", "Ảnh nổi bật", BuildBlogImagePrompt(topic, basePrompt, style, "hero featured image, horizontal editorial cover, spacious composition"))
-    };
+      return SerializeToolError(
+        "Mỗi lượt generate_blog_images chỉ tạo tối đa 1 ảnh phụ. Nếu cần nhiều ảnh gallery/inline, hãy gọi tool tuần tự nhiều lần; lượt đầu có thể includeFeatured=true, các lượt sau includeFeatured=false.",
+        "split_image_generation_required",
+        "low");
+    }
+
+    if (!includeFeatured && inlineCount == 0 && galleryCount == 0)
+    {
+      return SerializeToolError(
+        "Khi includeFeatured=false, cần yêu cầu ít nhất 1 ảnh phụ bằng inlineCount=1 hoặc galleryCount=1.",
+        "image_request_empty",
+        "low");
+    }
+
+    var specs = new List<BlogImageGenerationSpec>();
+    if (includeFeatured)
+    {
+      specs.Add(new("featured", "Ảnh nổi bật", BuildBlogImagePrompt(topic, basePrompt, style, "hero featured image, horizontal editorial cover, spacious composition")));
+    }
 
     for (var i = 1; i <= inlineCount; i++)
     {
@@ -3601,6 +3619,15 @@ TỔNG QUAN:
       }
       catch (AiTryOnProviderException ex) when (IsProviderQuotaExhausted(ex.Message))
       {
+        var canRetryThisTurn = uploaded.Count == 0;
+        if (canRetryThisTurn)
+        {
+          return SerializeToolError(
+            "Hệ thống tạo ảnh Vertex/Gemini đang quá tải hoặc hết quota tạm thời. Hãy chờ ngắn rồi gọi lại generate_blog_images với cùng prompt.",
+            "image_quota_exhausted",
+            "low");
+        }
+
         return SerializeToolResult(
           new
           {
@@ -3609,12 +3636,12 @@ TỔNG QUAN:
             retryRecommended = false,
             saveDraftWithoutImages = true,
             generatedCount = uploaded.Count,
-            guidance = "Không retry generate_blog_images trong lượt này. Nếu đã có draft, hãy gọi save_blog_draft không có featuredImage để lưu nội dung trước; admin có thể thêm ảnh sau."
+            guidance = "Đã tạo được một phần ảnh trước khi hết quota. Không nên retry trong cùng lượt vì dễ tạo trùng ảnh; hãy lưu nháp trước hoặc retry thủ công sau."
           },
           "low",
           false,
-          code: "image_quota_exhausted",
-          message: "Hệ thống tạo ảnh Vertex/Gemini đang quá tải hoặc hết quota. Bỏ qua ảnh trong lượt này và lưu nháp nội dung trước.");
+          code: "image_quota_exhausted_partial",
+          message: "Hệ thống tạo ảnh Vertex/Gemini bị hết quota sau khi đã tạo một phần ảnh. Nên lưu nháp hiện tại và bổ sung ảnh sau.");
       }
 
       var extension = ImageExtension(image.MimeType);
@@ -3648,7 +3675,7 @@ TỔNG QUAN:
         spec.Prompt));
     }
 
-    var featured = uploaded.First(item => item.Kind == "featured");
+    var featured = uploaded.FirstOrDefault(item => item.Kind == "featured");
     var inlineImages = uploaded.Where(item => item.Kind.StartsWith("inline-", StringComparison.Ordinal)).ToList();
     var galleryImages = uploaded.Where(item => item.Kind.StartsWith("gallery-", StringComparison.Ordinal)).ToList();
 
@@ -3684,15 +3711,17 @@ TỔNG QUAN:
       new
       {
         kind = "blog_generated_images",
-        featuredImage = featured.ObjectKey,
-        featuredPreviewUrl = featured.PreviewUrl,
-        featuredPublicUrl = featured.PublicUrl,
+        featuredImage = featured?.ObjectKey,
+        featuredPreviewUrl = featured?.PreviewUrl,
+        featuredPublicUrl = featured?.PublicUrl,
         publicImageUrls = uploaded.Select(image => image.PublicUrl).ToList(),
         previewMarkdown = string.Join("\n", uploaded.Select(image => $"![{image.AltText}]({image.PublicUrl})")),
         inlineImages,
         galleryImages,
         contentBlocksJson = JsonSerializer.Serialize(contentBlocks, ToolResultJsonOptions),
-        guidance = "Dùng featuredImage làm featuredImage của save_blog_draft/update_blog_post. Dùng featuredPublicUrl/publicImageUrls để đính kèm ảnh khi gọi publish_facebook_post. Ảnh đã được lưu public và có thể xem trong chat."
+        guidance = featured is not null
+          ? "Dùng featuredImage làm featuredImage của save_blog_draft/update_blog_post. Dùng featuredPublicUrl/publicImageUrls để đính kèm ảnh khi gọi publish_facebook_post. Ảnh đã được lưu public và có thể xem trong chat."
+          : "Đây là lượt tạo ảnh phụ không kèm featured image. Dùng publicImageUrls/contentBlocksJson để chèn thêm vào bài viết hoặc đính kèm Facebook."
       },
       "low",
       false,
@@ -3701,7 +3730,7 @@ TỔNG QUAN:
   }
 
   private static string BuildBlogImagePrompt(string topic, string basePrompt, string style, string shotType) =>
-    $"Topic: {topic}. Creative brief: {basePrompt}. Style: {style}. Shot: {shotType}. Requirements: premium Vietnamese áo dài fashion image, realistic fabric, elegant model/editorial detail, no text, no watermark, no logo, safe commercial blog illustration.";
+    $"Topic: {topic}. Creative brief: {basePrompt}. Style: {style}. Shot: {shotType}. Requirements: Vietnamese áo dài fashion image with moderate production quality, clean readable composition, realistic but not hyper-detailed fabric, elegant model/editorial detail, limited visual complexity for stable downstream publishing, no text, no watermark, no logo, safe commercial blog illustration.";
 
   private static bool IsProviderQuotaExhausted(string message) =>
     message.Contains("Resource exhausted", StringComparison.OrdinalIgnoreCase)
@@ -3792,7 +3821,7 @@ TỔNG QUAN:
 
     return JsonSerializer.Serialize(new[]
     {
-      new { type = "paragraph", text }
+      new { type = "paragraph", content = text }
     }, ToolResultJsonOptions);
   }
 
@@ -4051,18 +4080,14 @@ TỔNG QUAN:
 
     var outline = new[]
     {
-      $"Hook: nêu nhu cầu/điểm đẹp của {topic}",
-      "Giá trị chính: tư vấn chọn kiểu dáng, chất liệu, dịp mặc",
-      "Gợi ý trải nghiệm: thử phối bằng AI try-on trước khi quyết định",
-      "CTA: nhắn tin/shop now/đặt lịch tư vấn"
+      $"Hook: mở bằng cảm xúc hoặc bối cảnh gắn với {topic}",
+      "Giá trị chính: nêu điểm khác biệt, trải nghiệm mặc hoặc câu chuyện thẩm mỹ",
+      "Chi tiết gợi mở: chất liệu, phom dáng, dịp mặc, mood hoặc hình ảnh hình dung",
+      "CTA: nhắn tin/shop now/đặt lịch tư vấn hoặc thử phối"
     };
 
-    var productLine = string.IsNullOrWhiteSpace(productName) ? "" : $"\n✨ Gợi ý nổi bật: {productName}";
-    var linkLine = string.IsNullOrWhiteSpace(ctaUrl) ? "" : $"\nXem thêm: {ctaUrl}";
-    var postText = $"Áo dài đẹp nhất khi vừa tôn dáng, vừa đúng khoảnh khắc bạn muốn xuất hiện.\n\nVới {topic}, Nhã Uyên gợi ý chọn phom mềm, chất liệu thoáng và điểm nhấn tinh tế để ảnh lên dáng thanh lịch hơn.{productLine}\n\nBạn có thể thử phối trước bằng AI Try-on để xem kiểu áo có hợp vóc dáng, màu da và phụ kiện không.{linkLine}\n\nNhắn Nhã Uyên để được tư vấn mẫu phù hợp nhé.\n#AoDaiNhaUyen #AoDaiVietNam #ThoiTrangViet";
-    var imagePrompt = $"Premium Vietnamese áo dài social campaign image about {topic}. Elegant boutique editorial, silk texture, graceful model pose, soft natural light, refined Vietnamese cultural styling, no text overlay, brand-safe.";
+    var imagePrompt = $"Moderate-quality Vietnamese áo dài social campaign image about {topic}. Clean boutique editorial composition, controlled silk texture, graceful model pose, soft natural light, refined Vietnamese cultural styling, limited visual complexity for easier downstream publishing, no text overlay, brand-safe.";
     var warnings = new List<string>();
-    if (postText.Length > 2200) warnings.Add("Nội dung Facebook dài; nên rút gọn trước khi đăng.");
     if (string.IsNullOrWhiteSpace(productName)) warnings.Add("Chưa gắn sản phẩm cụ thể; nếu muốn trigger try-on chính xác cần chọn garmentProductId ở trang AI Try-on.");
 
     return SerializeToolResult(
@@ -4072,7 +4097,31 @@ TỔNG QUAN:
         workflow = new
         {
           outline,
-          draftContent = postText,
+          contentStrategy = new
+          {
+            source = "ai_generated",
+            instruction = "AI cần tự viết nội dung bài đăng mới dựa trên topic/audience/tone/ctaUrl/productName. Không được coi draft này là nội dung cuối cố định, không sao chép máy móc các câu mẫu hệ thống.",
+            creativeDirection = new[]
+            {
+              "ưu tiên hook tự nhiên, giàu hình ảnh, giàu cảm xúc",
+              "có thể chọn một góc riêng: cảm hứng mùa, chất liệu, dáng áo, khoảnh khắc xuất hiện, nghi thức, lifestyle, quà tặng, thử đồ",
+              "tránh copy các mẫu quen tay như 'Áo dài đẹp nhất khi...' hoặc 'Bạn có thể thử phối trước bằng AI Try-on...' nếu không thật sự phù hợp",
+              "mỗi bài nên có nhịp kể và CTA riêng"
+            },
+            suggestedHooks = new[]
+            {
+              "một khoảnh khắc xuất hiện đẹp thường bắt đầu từ chiếc áo dài đúng tâm trạng",
+              "có những chất liệu chạm vào là đã gợi ra cả một mùa",
+              "nếu muốn ảnh lên dáng thanh lịch, điều đầu tiên không chỉ là màu sắc mà là phom rơi đúng người"
+            },
+            guardrails = new[]
+            {
+              "không bịa ưu đãi, giá, khẳng định y khoa hoặc cam kết không có dữ liệu",
+              "giữ giọng thương hiệu Áo Dài Nhã Uyên: tinh tế, mềm mại, có gu",
+              "nội dung có thể ngắn hoặc vừa, tối ưu cho Facebook và dễ chỉnh sửa tiếp"
+            }
+          },
+          draftContent = string.Empty,
           imagePrompt,
           tryOnHandoff = new
           {
@@ -4086,7 +4135,7 @@ TỔNG QUAN:
           {
             passed = warnings.Count == 0,
             warnings,
-            checks = new[] { "outline_generated", "draft_content_generated", "image_prompt_generated", "tryon_handoff_prepared", "brand_tone_checked" }
+            checks = new[] { "outline_generated", "creative_content_guidance_prepared", "image_prompt_generated", "tryon_handoff_prepared", "brand_tone_checked" }
           }
         },
         audience,
@@ -4094,7 +4143,7 @@ TỔNG QUAN:
         ctaUrl,
         productName
       },
-      message: "Đã tạo kế hoạch bài Facebook theo workflow khung → nội dung → prompt ảnh → AI try-on handoff → validation.");
+      message: "Đã tạo kế hoạch bài Facebook theo workflow khung → định hướng AI viết nội dung → prompt ảnh → AI try-on handoff → validation.");
   }
 
   private async Task<string> PublishFacebookPost(JsonElement args, CancellationToken ct)

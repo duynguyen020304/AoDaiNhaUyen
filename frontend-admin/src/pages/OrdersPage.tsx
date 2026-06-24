@@ -1,13 +1,15 @@
-import { useEffect, useState, useCallback } from 'react'
-import { RefreshCw, Truck, CheckCircle2, ArrowRight, ChevronLeft, ChevronRight, Search, FilterX } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { RefreshCw, Truck, CheckCircle2, ArrowRight, ChevronLeft, ChevronRight, Search, FilterX, Eye, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { getAdminOrders, updateOrderStatus, createShipment } from '@/api/admin'
+import { useFeedback } from '@/components/ui/feedbackContext'
+import { getAdminOrderDetail, getAdminOrders, updateOrderStatus, createShipment } from '@/api/admin'
+import { HttpError } from '@/api/client'
 import { invalidateAdminDashboardQueries } from '@/queries/invalidateAdminQueries'
-import type { AdminOrderListItem } from '@/types/admin'
+import type { AdminOrderDetail, AdminOrderListItem } from '@/types/admin'
 import { PageSizeSelect } from '@/components/admin/PageSizeSelect'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -55,7 +57,13 @@ const SORT_OPTIONS = [
   { value: 'amount_asc', label: 'Tổng tiền thấp → cao' },
 ]
 
+function getErrorMessage(error: unknown) {
+  if (error instanceof HttpError || error instanceof Error) return error.message
+  return 'Đã xảy ra lỗi. Vui lòng thử lại.'
+}
+
 export function OrdersPage() {
+  const { toast } = useFeedback()
   const [orders, setOrders] = useState<AdminOrderListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -73,6 +81,10 @@ export function OrdersPage() {
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [showShipModal, setShowShipModal] = useState<AdminOrderListItem | null>(null)
   const [carrier, setCarrier] = useState('')
+  const [selectedOrder, setSelectedOrder] = useState<AdminOrderDetail | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const detailRequestIdRef = useRef(0)
   const [trackingNumber, setTrackingNumber] = useState('')
 
   const fetchOrders = useCallback(() => {
@@ -161,6 +173,36 @@ export function OrdersPage() {
     } finally {
       setProcessingId(null)
     }
+  }
+
+  async function handleOpenDetail(orderId: string) {
+    const requestId = detailRequestIdRef.current + 1
+    detailRequestIdRef.current = requestId
+
+    setDetailOpen(true)
+    setDetailLoading(true)
+    setSelectedOrder(null)
+
+    try {
+      const detail = await getAdminOrderDetail(orderId)
+      if (detailRequestIdRef.current !== requestId) return
+      setSelectedOrder(detail)
+    } catch (error) {
+      if (detailRequestIdRef.current !== requestId) return
+      toast(getErrorMessage(error), 'error')
+      setDetailOpen(false)
+    } finally {
+      if (detailRequestIdRef.current === requestId) {
+        setDetailLoading(false)
+      }
+    }
+  }
+
+  function closeDetail() {
+    detailRequestIdRef.current += 1
+    setDetailOpen(false)
+    setSelectedOrder(null)
+    setDetailLoading(false)
   }
 
   function formatDate(iso: string) {
@@ -308,6 +350,16 @@ export function OrdersPage() {
                     <TableCell className="text-muted-foreground">{order.completedAt ? formatDate(order.completedAt) : '—'}</TableCell>
                     <TableCell className="text-center">
                       <div className="flex justify-center items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs gap-1"
+                          onClick={() => handleOpenDetail(order.id)}
+                        >
+                          <Eye className="size-3.5" />
+                          Chi tiết
+                        </Button>
+
                         {order.status === 'processing' ? (
                           <Button
                             variant="outline"
@@ -401,6 +453,150 @@ export function OrdersPage() {
           </Button>
         </div>
       </div>
+
+      {detailOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={closeDetail}>
+          <div
+            className="w-full max-w-4xl rounded-xl bg-white shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between border-b px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-ink">
+                  Chi tiết đơn hàng {selectedOrder?.orderCode ? `#${selectedOrder.orderCode}` : ''}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Xem thông tin khách hàng, địa chỉ, ghi chú và sản phẩm trong đơn.
+                </p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={closeDetail} aria-label="Đóng chi tiết đơn hàng">
+                <X className="size-4" />
+              </Button>
+            </div>
+
+            <div className="max-h-[80vh] overflow-y-auto px-6 py-5">
+              {detailLoading ? (
+                <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+                  Đang tải chi tiết đơn hàng...
+                </div>
+              ) : !selectedOrder ? (
+                <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+                  Không có dữ liệu đơn hàng.
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <Card className="p-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Khách hàng</p>
+                      <p className="mt-2 text-sm font-semibold text-ink">{selectedOrder.customerName || 'Khách lẻ'}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{selectedOrder.customerEmail || 'Chưa có email'}</p>
+                    </Card>
+                    <Card className="p-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Trạng thái</p>
+                      <div className="mt-2">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[selectedOrder.orderStatus] ?? 'bg-gray-100 text-gray-700'}`}>
+                          {STATUS_LABELS[selectedOrder.orderStatus] ?? selectedOrder.orderStatus}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-muted-foreground">Tạo lúc {formatDate(selectedOrder.createdAt)}</p>
+                    </Card>
+                    <Card className="p-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Địa chỉ giao hàng</p>
+                      <p className="mt-2 text-sm text-ink">
+                        {[selectedOrder.addressLine, selectedOrder.ward, selectedOrder.district, selectedOrder.province]
+                          .filter(Boolean)
+                          .join(', ') || 'Chưa có địa chỉ'}
+                      </p>
+                    </Card>
+                    <Card className="p-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ghi chú</p>
+                      <p className="mt-2 text-sm text-ink whitespace-pre-wrap">{selectedOrder.note || 'Không có ghi chú'}</p>
+                    </Card>
+                  </div>
+
+                  <Card className="overflow-hidden">
+                    <div className="border-b px-4 py-3">
+                      <h3 className="text-sm font-semibold text-ink">Sản phẩm trong đơn</h3>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Sản phẩm</TableHead>
+                          <TableHead>Phân loại</TableHead>
+                          <TableHead className="text-right">Đơn giá</TableHead>
+                          <TableHead className="text-center">SL</TableHead>
+                          <TableHead className="text-right">Thành tiền</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedOrder.items.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <p className="font-medium text-ink">{item.productName}</p>
+                                <p className="text-xs text-muted-foreground">SKU: {item.sku || '—'}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {[item.color, item.size].filter(Boolean).join(' / ') || '—'}
+                            </TableCell>
+                            <TableCell className="text-right font-medium text-ink">{formatPrice(item.unitPrice)}</TableCell>
+                            <TableCell className="text-center text-ink">{item.quantity}</TableCell>
+                            <TableCell className="text-right font-medium text-ink">{formatPrice(item.lineTotal)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </Card>
+
+                  <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_320px]">
+                    <Card className="p-4">
+                      <h3 className="text-sm font-semibold text-ink">Tóm tắt thanh toán</h3>
+                      <dl className="mt-4 space-y-3 text-sm">
+                        <div className="flex items-center justify-between gap-4">
+                          <dt className="text-muted-foreground">Tạm tính</dt>
+                          <dd className="font-medium text-ink">{formatPrice(selectedOrder.subtotal)}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <dt className="text-muted-foreground">Giảm giá</dt>
+                          <dd className="font-medium text-ink">-{formatPrice(selectedOrder.discountAmount)}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <dt className="text-muted-foreground">Phí vận chuyển</dt>
+                          <dd className="font-medium text-ink">{formatPrice(selectedOrder.shippingFee)}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 border-t pt-3 text-base">
+                          <dt className="font-semibold text-ink">Tổng cộng</dt>
+                          <dd className="font-semibold text-ink">{formatPrice(selectedOrder.totalAmount)}</dd>
+                        </div>
+                      </dl>
+                    </Card>
+                    <Card className="p-4">
+                      <h3 className="text-sm font-semibold text-ink">Thông tin nhanh</h3>
+                      <dl className="mt-4 space-y-3 text-sm">
+                        <div className="flex items-start justify-between gap-4">
+                          <dt className="text-muted-foreground">Mã đơn</dt>
+                          <dd className="font-mono text-ink">{selectedOrder.orderCode}</dd>
+                        </div>
+                        <div className="flex items-start justify-between gap-4">
+                          <dt className="text-muted-foreground">Số sản phẩm</dt>
+                          <dd className="text-ink">{selectedOrder.items.length}</dd>
+                        </div>
+                        <div className="flex items-start justify-between gap-4">
+                          <dt className="text-muted-foreground">Địa chỉ</dt>
+                          <dd className="max-w-[180px] text-right text-ink">
+                            {[selectedOrder.district, selectedOrder.province].filter(Boolean).join(', ') || '—'}
+                          </dd>
+                        </div>
+                      </dl>
+                    </Card>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showShipModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowShipModal(null)}>

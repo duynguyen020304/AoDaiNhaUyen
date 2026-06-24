@@ -4,6 +4,25 @@ import { useAdminAiStore } from '@/stores/adminAiStore'
 import { useFeedback } from '@/components/ui/feedbackContext'
 import type { AiPendingAction } from '@/types/ai'
 
+function formatJsonPreview(raw: string) {
+  try {
+    return JSON.stringify(JSON.parse(raw), null, 2)
+  } catch {
+    return raw
+  }
+}
+
+function splitConfirmationDescription(description: string) {
+  const marker = '\nTham số:\n'
+  const index = description.indexOf(marker)
+  if (index < 0) return { summary: description, payload: null as string | null }
+
+  return {
+    summary: description.slice(0, index),
+    payload: formatJsonPreview(description.slice(index + marker.length)),
+  }
+}
+
 export function ConfirmCard({
   action,
   onStatusChange,
@@ -16,6 +35,7 @@ export function ConfirmCard({
   const conversationId = useAdminAiStore((s) => s.conversationId)
   const { toast } = useFeedback()
   const [status, setStatus] = useState<'pending' | 'confirmed' | 'rejected'>('pending')
+  const { summary, payload } = splitConfirmationDescription(action.description)
 
   async function handleApprove() {
     const ok = await confirmAction(action.actionId, true)
@@ -45,9 +65,16 @@ export function ConfirmCard({
 
   return (
     <div className="mt-3 bg-amber-50/60 border border-amber-200/60 rounded-xl p-3.5 shadow-sm">
-      <div className="flex items-start gap-2 text-amber-850 text-xs mb-3 leading-relaxed">
-        <AlertTriangle className="size-4 shrink-0 text-amber-600 mt-0.5" />
-        <span className="font-medium">{action.description}</span>
+      <div className="mb-3 flex items-start gap-2 text-xs leading-relaxed text-amber-950">
+        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="font-medium whitespace-pre-wrap break-words">{summary}</div>
+          {payload && (
+            <pre className="overflow-x-auto whitespace-pre-wrap rounded-lg border border-amber-200 bg-white/80 p-2 text-[11px] font-mono text-amber-950 max-h-56 leading-relaxed">
+              {payload}
+            </pre>
+          )}
+        </div>
       </div>
       <div className="flex gap-2 justify-end">
         <button

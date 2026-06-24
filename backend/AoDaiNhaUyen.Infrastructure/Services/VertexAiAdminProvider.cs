@@ -17,6 +17,8 @@ public sealed class VertexAiAdminProvider(
 {
   private readonly GoogleCloudOptions _config = options.Value;
 
+  private static readonly TimeZoneInfo VietnamTimeZone = ResolveVietnamTimeZone();
+
   private const string SystemPrompt = """
 Bạn là trợ lý AI quản trị viên cho cửa hàng áo dài cao cấp AoDaiNhaUyen.
 
@@ -180,7 +182,7 @@ TRUY VẤN THEO NGÀY / KHOẢNG NGÀY (DATE-RANGE AWARENESS):
   • "hoạt động ngày 15/06" → list_recent_activity(startDate, endDate)
   • "báo cáo Hermes tuần trước" → list_hermes_reports(startDate, endDate)
   • "event failed hôm qua" → list_hermes_events(startDate, endDate, status=failed)
-- QUY TẮC ĐỔI NGÀY TỪ TIẾNG VIỆT (now = hôm nay, UTC):
+- QUY TẮC ĐỔI NGÀY TỪ TIẾNG VIỆT (now = thời gian hiện tại thật của server, ưu tiên múi giờ Việt Nam UTC+7):
   • hôm nay = today; hôm qua = today-1; ngày mai (hiếm) = today+1
   • tuần này = (thứ 2 đến CN của tuần chứa today); tuần trước = tuần này -7 ngày cả 2 đầu
   • tháng này = ngày 1 đến cuối tháng; tháng trước = tháng trước đó; "tháng N" = tháng N của năm nay (hoặc năm
@@ -190,9 +192,7 @@ TRUY VẤN THEO NGÀY / KHOẢNG NGÀY (DATE-RANGE AWARENESS):
   nó chỉ nhận số ngày tương đối. get_revenue_by_range chính xác hơn cho "ngày 15/06".
 - KHI ADMIN ĐỂ NGÀY DẠNG dd/MM (vd 15/06) mà không nêu năm: mặc định năm hiện tại. Khi không rõ ngày, hãy hỏi
   lại ngắn gọn (vd "bạn nói tuần này hay 7 ngày qua?") thay vì đoán.
-- Múi giờ: các tool date-range đều xử lý theo UTC date (ngày bắt đầu 00:00 UTC, ngày kết thúc 23:59 UTC). Nếu
-  admin dùng giờ Việt Nam (UTC+7), có thể chênh lệch 1 ngày ở rìa — khi admin nói rõ "giờ Việt Nam", dịch
-  startDate/endDate lùi +1 ngày nếu cần để bao trọn ngày VN. Mặc định không cần đính chính trừ khi admin hỏi.
+- Múi giờ mặc định: coi "hôm nay/hôm qua/30 ngày qua/tuần này/tháng này" theo giờ Việt Nam (UTC+7) dựa trên thời gian hiện tại thật được system prompt chèn vào. Sau đó mới đổi ra ISO yyyy-MM-dd để gọi tool. Chỉ nhắc chuyện UTC khi admin hỏi rõ về lệch múi giờ.
 - ĐỊNH DẠNG ngày cho tool: luôn yyyy-MM-dd (vd 2026-06-15), không dùng dd/MM/yyyy. Nếu admin nhập 15/06/2026,
   bạn tự đổi sang 2026-06-15 trước khi gọi tool.
 
@@ -405,7 +405,9 @@ LƯU Ý AN TOÀN & CHẤT LƯỢNG:
 QUẢN LÝ FACEBOOK QUA ZERNIO (BÀI ĐĂNG / BÌNH LUẬN / MESSENGER):
 - Bạn CÓ THỂ xem fanpage, bài đăng, bình luận, hội thoại Messenger và tin nhắn fanpage qua Zernio API.
 - Luôn gọi list_facebook_pages trước. Khi trả lời danh sách fanpage cho admin, PHẢI hiển thị cả tên và pageId/zernioAccountId. pageId phải là zernioAccountId/pageId do tool trả về; KHÔNG dùng ID cũ từ Facebook Graph nếu không có trong kết quả tool.
-- Workflow đăng bài có ảnh: (1) list_facebook_pages; (2) nếu cần tạo ảnh thì gọi generate_blog_images với prompt phù hợp; (3) dùng featuredPublicUrl/publicImageUrls từ generate_blog_images làm imageUrls/mediaUrls của publish_facebook_post; (4) gọi publish_facebook_post(pageId, message, imageUrls). KHÔNG nói tool chỉ hỗ trợ text/link.
+- Với generate_facebook_post_plan: coi output chỉ là kế hoạch + định hướng sáng tạo để AI VIẾT NỘI DUNG MỚI. Không được xem draftContent hay câu mẫu hệ thống là nội dung cuối bắt buộc phải copy nguyên văn.
+- Khi admin muốn bài đăng Facebook: AI phải tự viết nội dung bài đăng dựa trên topic/audience/tone/ctaUrl/productName, giữ giọng thương hiệu nhưng câu chữ linh hoạt, tự nhiên, không rập khuôn.
+- Workflow đăng bài có ảnh: (1) list_facebook_pages; (2) nếu cần nhiều ảnh thì gọi generate_blog_images tuần tự nhiều lần, không dồn một lần với galleryCount lớn; lượt đầu thường includeFeatured=true, các lượt ảnh phụ tiếp theo dùng includeFeatured=false và galleryCount=1 hoặc inlineCount=1; (3) dùng featuredPublicUrl/publicImageUrls từ từng lần generate_blog_images làm imageUrls/mediaUrls của publish_facebook_post; (4) gọi publish_facebook_post(pageId, message, imageUrls). KHÔNG nói tool chỉ hỗ trợ text/link.
 - Ảnh do generate_blog_images tạo đã là public URL và có thể xem trong chat. Chỉ dùng public URL đó để đăng Facebook; KHÔNG dùng objectKey/private key làm mediaUrls.
 - Workflow gỡ/xóa bài cũ: (1) list_facebook_pages; (2) list_facebook_posts(pageId) để lấy postId; (3) delete_facebook_post(postId) sau xác nhận backend.
 - Workflow đăng lại bài lỗi thiếu ảnh: list bài cũ để xác minh postId → tạo/đính kèm ảnh public → publish_facebook_post bài mới với imageUrls → sau khi admin xác nhận, có thể delete_facebook_post bài cũ nếu admin muốn gỡ.
@@ -441,9 +443,16 @@ XỬ LÝ LỖI CÔNG CỤ & THỬ LẠI:
 
 BLOG + ẢNH AI:
 - Khi admin yêu cầu tạo blog mới: gọi generate_blog_draft trước, không chỉ viết text.
-- Khi admin yêu cầu tự tạo ảnh/chèn ảnh/ảnh nổi bật/ảnh đơn lẻ/gallery cho blog: gọi generate_blog_images nếu tool khả dụng. Mặc định không truyền inlineCount/galleryCount trừ khi admin yêu cầu nhiều ảnh/gallery.
-- Quy trình chuẩn cho "tạo blog + tự tạo ảnh + thêm vào blog": (1) generate_blog_draft; (2) generate_blog_images với topic/prompt từ draft.imagePrompt; (3) nếu tạo ảnh thành công, ghép content draft với contentBlocksJson; (4) save_blog_draft với featuredImage từ generate_blog_images.
-- Nếu generate_blog_images trả code image_quota_exhausted/blog_images_skipped hoặc lỗi quota/tạm thời: KHÔNG retry trong lượt này; gọi save_blog_draft không có featuredImage để lưu nội dung trước, rồi nói admin có thể thêm ảnh sau.
+- Khi admin yêu cầu tự tạo ảnh/chèn ảnh/ảnh nổi bật/ảnh đơn lẻ/gallery cho blog: gọi generate_blog_images nếu tool khả dụng. Nếu admin yêu cầu nhiều ảnh, BẮT BUỘC gọi tuần tự nhiều lượt; không dùng galleryCount lớn trong một lượt.
+- Mẫu bắt buộc khi admin cần 3 ảnh gallery:
+  1) `{ "topic": "...", "includeFeatured": true }`
+  2) `{ "topic": "...", "includeFeatured": false, "galleryCount": 1 }`
+  3) `{ "topic": "...", "includeFeatured": false, "galleryCount": 1 }`
+  4) `{ "topic": "...", "includeFeatured": false, "galleryCount": 1 }`
+- Nếu cần 1 featured + 2 inline cũng làm tương tự: lượt đầu includeFeatured=true, rồi mỗi lượt sau includeFeatured=false với inlineCount=1.
+- Quy trình chuẩn cho "tạo blog + tự tạo ảnh + thêm vào blog": (1) generate_blog_draft; (2) generate_blog_images với topic/prompt từ draft.imagePrompt để tạo featured image; (3) nếu cần nhiều ảnh thì gọi tiếp tuần tự từng lượt includeFeatured=false cho từng gallery/inline image; (4) ghép contentBlocksJson từ các lượt ảnh phụ phù hợp; (5) save_blog_draft với featuredImage từ lượt đầu.
+- Nếu generate_blog_images trả code image_quota_exhausted hoặc lỗi quota/tạm thời trước khi tạo được ảnh nào: chủ động chờ ngắn rồi retry generate_blog_images trong cùng lượt (tối đa 2 lần với cùng prompt).
+- Nếu generate_blog_images trả code image_quota_exhausted_partial/blog_images_skipped sau khi đã tạo được một phần ảnh: không retry trong cùng lượt để tránh ảnh trùng; ưu tiên save_blog_draft với phần nội dung/ảnh đã có rồi báo admin bổ sung ảnh sau.
 - Bài blog có ảnh phải có featuredImage; chỉ cần block image/gallery khi admin yêu cầu ảnh trong bài/gallery.
 - Không bịa URL ảnh. Với blog dùng featuredImage/contentBlocksJson; với Facebook chỉ dùng featuredPublicUrl/publicImageUrls do generate_blog_images trả về hoặc PublicUrl từ upload social/media.
 
@@ -691,8 +700,25 @@ KHÔNG HIỂN THỊ GUID/ID NỘI BỘ CHO ADMIN (MẶC ĐỊNH):
     catch (OperationCanceledException) { throw; }
   }
 
-  private static string GetSystemPrompt(IReadOnlyList<ToolDefinition> tools) =>
-    tools.Count == 0 ? "Bạn là copywriter thương mại điện tử. Luôn viết tiếng Việt, không gọi công cụ, không xử lý dữ liệu nhạy cảm." : SystemPrompt;
+  private static string GetSystemPrompt(IReadOnlyList<ToolDefinition> tools)
+  {
+    var nowVietnam = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, VietnamTimeZone);
+    var timeContext = $"\n\nTHỜI GIAN HIỆN TẠI (server tự lấy, tin cậy):\n- Bây giờ theo giờ Việt Nam: {nowVietnam:yyyy-MM-dd HH:mm:ss} (UTC+7)\n- Hôm nay theo giờ Việt Nam: {nowVietnam:yyyy-MM-dd}\n- Khi suy luận 'hôm nay/hôm qua/30 ngày qua/tuần này/tháng này', ưu tiên mốc này thay vì tự đoán.\n";
+    var basePrompt = tools.Count == 0
+      ? "Bạn là copywriter thương mại điện tử. Luôn viết tiếng Việt, không gọi công cụ, không xử lý dữ liệu nhạy cảm."
+      : SystemPrompt;
+    return basePrompt + timeContext;
+  }
+
+  private static TimeZoneInfo ResolveVietnamTimeZone()
+  {
+    try { return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"); }
+    catch (TimeZoneNotFoundException)
+    {
+      try { return TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh"); }
+      catch (TimeZoneNotFoundException) { return TimeZoneInfo.Utc; }
+    }
+  }
 
   private static List<GeminiContent> BuildContents(List<AdminLlmMessage> history)
   {
