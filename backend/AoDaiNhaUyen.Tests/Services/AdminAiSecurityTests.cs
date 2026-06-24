@@ -661,8 +661,10 @@ public sealed class AdminAiSecurityTests
       new FakeReviewService(),
       promoSvc,
       new FakeMediaService(),
-      new FakeBlogAiDraftService(),
+      new FakeBlogGenerationCoordinator(),
       new FakeBlogPostService(),
+      new FakeBlogImageGenerationService(),
+      new FakeStorageService(),
       marketing ?? new FakeMarketingCampaignService(),
       new FakeSubscriberService(),
       new FakeEmailJobService(),
@@ -965,6 +967,33 @@ public sealed class AdminAiSecurityTests
     public Task<FacebookMessageListDto> GetConversationMessagesAsync(string pageId, string conversationId, string? before = null, int limit = 50, CancellationToken ct = default) => throw new NotImplementedException();
     public Task<FacebookMessageSendResultDto> SendMessageAsync(string pageId, string conversationId, SendFacebookMessageRequest request, CancellationToken ct = default) => throw new NotImplementedException();
     public Task<MarkConversationReadResultDto> MarkConversationReadAsync(string pageId, string conversationId, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<FacebookAttachmentDownloadDto?> DownloadAttachmentBytesAsync(string pageId, string attachmentUrl, long maxBytes, CancellationToken ct = default) => Task.FromResult<FacebookAttachmentDownloadDto?>(null);
+  }
+
+  // Minimal throw-stubs for AdminAgentService constructor drift (pre-existing
+  // test helper drift — these services were added to the constructor after the
+  // helper was written). They are never invoked by the security tests.
+  private sealed class FakeBlogGenerationCoordinator : IBlogGenerationCoordinator
+  {
+    public Task<BlogGenerationProgressResponse> GenerateAsync(GenerateBlogDraftRequest request, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+  }
+
+  private sealed class FakeBlogImageGenerationService : IAdminBlogImageGenerationService
+  {
+    public Task<AdminGeneratedImageDto> GenerateAsync(string prompt, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+  }
+
+  private sealed class FakeStorageService : IStorageService
+  {
+    public Task<UploadedFileResult> UploadAsync(Stream stream, string fileName, string contentType, string? folder = null, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<string> GeneratePresignedGetUrlAsync(string objectKey, int expirationSeconds = 3600, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task DeleteAsync(string objectKey, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<Stream> DownloadAsync(string objectKey, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task PutObjectWithKeyAsync(string objectKey, Stream stream, string contentType, CancellationToken ct = default) => throw new NotImplementedException();
+    public Task<bool> ExistsAsync(string objectKey, CancellationToken ct = default) => throw new NotImplementedException();
+    public string BuildCanonicalUrl(string objectKey) => throw new NotImplementedException();
+    public Task<string> CopyToPublicAsync(string objectKey, CancellationToken ct = default) => throw new NotImplementedException();
+    public bool IsConfigured() => false;
   }
 
   private sealed class FakeMarketingCampaignService : IAdminMarketingCampaignService
@@ -1132,6 +1161,13 @@ public sealed class AdminAiSecurityTests
         request.CategoryId,
         ["Fake draft for testing"]));
     }
+
+    public Task<GeneratedBlogDraftResponse> ExpandDraftAsync(
+      GenerateBlogDraftRequest request,
+      GeneratedBlogDraftResponse currentDraft,
+      string expansionGoal,
+      CancellationToken cancellationToken = default)
+      => Task.FromResult(currentDraft);
   }
 
   /// <summary>A promo service that throws on CreatePromoAsync to simulate a business-rule failure (duplicate code).</summary>

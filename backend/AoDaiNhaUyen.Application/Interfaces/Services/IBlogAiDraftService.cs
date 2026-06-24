@@ -8,4 +8,11 @@ public interface IBlogAiDraftService
   Task<GeneratedBlogDraftResponse> GenerateDraftAsync(
     GenerateBlogDraftRequest request,
     CancellationToken cancellationToken = default);
+
+
+  Task<GeneratedBlogDraftResponse> ExpandDraftAsync(
+    GenerateBlogDraftRequest request,
+    GeneratedBlogDraftResponse currentDraft,
+    string expansionGoal,
+    CancellationToken cancellationToken = default);
 }

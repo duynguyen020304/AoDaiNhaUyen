@@ -31,7 +31,7 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IAdminReviewService _reviews;
   private readonly IAdminPromoService _promos;
   private readonly IAdminMediaService _media;
-  private readonly IBlogAiDraftService _blogAiDrafts;
+  private readonly IBlogGenerationCoordinator _blogGeneration;
   private readonly IBlogPostService _blogPosts;
   private readonly IAdminBlogImageGenerationService _blogImageGeneration;
   private readonly IStorageService _storageService;
@@ -81,7 +81,7 @@ public sealed class AdminAgentService : IAdminAgentService
     IAdminReviewService reviews,
     IAdminPromoService promos,
     IAdminMediaService media,
-    IBlogAiDraftService blogAiDrafts,
+    IBlogGenerationCoordinator blogGeneration,
     IBlogPostService blogPosts,
     IAdminBlogImageGenerationService blogImageGeneration,
     IStorageService storageService,
@@ -115,7 +115,7 @@ public sealed class AdminAgentService : IAdminAgentService
     _reviews = reviews;
     _promos = promos;
     _media = media;
-    _blogAiDrafts = blogAiDrafts;
+    _blogGeneration = blogGeneration;
     _blogPosts = blogPosts;
     _blogImageGeneration = blogImageGeneration;
     _storageService = storageService;
@@ -525,7 +525,11 @@ public sealed class AdminAgentService : IAdminAgentService
         ("template", O("string", "StandardArticle, PhotoGallery, VideoFeature, ProductSpotlight, HowTo")),
         ("length", O("string", "short, standard, long")),
         ("includeFaq", O("boolean", "Có thêm FAQ hay không")),
-        ("notes", O("string", "Ghi chú bổ sung từ admin")))),
+        ("notes", O("string", "Ghi chú bổ sung từ admin")),
+        ("revisionInstruction", O("string", "Yêu cầu chỉnh sửa cụ thể cho bản nháp đã tạo, ví dụ: viết lại mở bài, làm dài mục 3, đổi giọng văn, thêm FAQ")),
+        ("targetSection", O("string", "Phần cụ thể cần chỉnh: mở bài, meta title, H2 cụ thể, đoạn kết, FAQ...")),
+        ("existingDraftJson", O("string", "JSON bản nháp hiện tại nếu đang chỉnh tiếp bài đã tạo ở lượt trước")),
+        ("hasAskedClarification", O("boolean", "Đặt true nếu đây là lượt gọi sau khi admin đã trả lời câu hỏi làm rõ; sau lượt này hệ thống không hỏi thêm")))),
 
     T("generate_blog_images", "Tạo ảnh blog bằng API ảnh dùng chung model với trang AI try-on, upload vào private/blog, trả URL ảnh nổi bật + block image/gallery để chèn vào save_blog_draft/update_blog_post. Dùng khi admin yêu cầu tự tạo ảnh, ảnh nổi bật, ảnh đơn lẻ hoặc gallery cho blog.",
       P(
@@ -3541,22 +3545,38 @@ TỔNG QUAN:
       Template = template,
       Length = OptionalEnum(args, "length", "short", "standard", "long") ?? "standard",
       IncludeFaq = GetBoolArg(args, "includeFaq", true),
-      Notes = GetOptionalString(args, "notes", 2000)
+      Notes = GetOptionalString(args, "notes", 2000),
+      ExistingDraftJson = GetRawStringOrJson(args, "existingDraftJson", 20000),
+      RevisionInstruction = GetOptionalString(args, "revisionInstruction", 1000),
+      TargetSection = GetOptionalString(args, "targetSection", 200),
+      HasAskedClarification = GetBoolArg(args, "hasAskedClarification", false)
     };
 
-    var draft = await _blogAiDrafts.GenerateDraftAsync(request, ct);
+    var result = await _blogGeneration.GenerateAsync(request, ct);
     return SerializeToolResult(
       new
       {
-        kind = "blog_draft",
-        draft,
-        handoffKey = "admin-blog-ai-draft",
-        guidance = "Admin cần mở trong trình soạn, kiểm duyệt, rồi tự lưu/xuất bản."
+        kind = result.Kind,
+        phase = result.Phase.ToString(),
+        selectedTemplate = result.SelectedTemplate,
+        templateReason = result.TemplateReason,
+        questions = result.Questions,
+        suggestedAnswers = result.SuggestedAnswers,
+        draft = result.Draft,
+        imagePlan = result.ImagePlan,
+        generatedImages = result.GeneratedImages,
+        imageResult = result.ImageResult,
+        phases = result.Phases,
+        warnings = result.Warnings,
+        handoffKey = result.Draft is null ? null : "admin-blog-ai-draft",
+        guidance = result.Kind == "blog_draft_clarification"
+          ? "Trả lời một lần ngắn gọn; nếu bỏ trống phần phụ, hệ thống sẽ tự dùng mặc định an toàn."
+          : "Admin cần mở trong trình soạn, kiểm duyệt, rồi tự lưu/xuất bản."
       },
       "read",
       false,
-      code: "blog_draft_generated",
-      message: "Đã tạo bản nháp blog AI.");
+      code: result.Kind == "blog_draft_clarification" ? "blog_draft_clarification" : "blog_draft_generated",
+      message: result.Kind == "blog_draft_clarification" ? "Cần thêm ít thông tin trước khi hoàn thiện bài blog." : "Đã tạo bản nháp blog AI.");
   }
 
   private async Task<string> GenerateBlogImages(JsonElement args, CancellationToken ct)
@@ -3765,18 +3785,49 @@ TỔNG QUAN:
     return $"✅ Đã tạo và xuất bản bài viết '{created.Title}' (ID: {created.Id}).";
   }
 
+  private static string? GetRawStringOrJson(JsonElement args, string name, int maxLength = 12000)
+  {
+    if (!args.TryGetProperty(name, out var value)) return null;
+
+    return value.ValueKind switch
+    {
+      JsonValueKind.String => SafeText(value.GetString(), maxLength),
+      JsonValueKind.Array or JsonValueKind.Object => value.GetRawText().Truncate(maxLength),
+      JsonValueKind.Null or JsonValueKind.Undefined => null,
+      _ => SafeText(value.ToString(), maxLength)
+    };
+  }
+
+  // NOTE: these mirror BlogAiDraftService.SafeText/StripUnsafe verbatim. The
+  // local refactor that introduced GetRawStringOrJson references SafeText; keep
+  // the helpers co-located so the file compiles independently.
+  private static string SafeText(string? value, int max) => StripUnsafe(value ?? string.Empty).Trim().Truncate(max);
+  private static string StripUnsafe(string value) => value.Replace("<script", "script", StringComparison.OrdinalIgnoreCase).Replace("</script", "/script", StringComparison.OrdinalIgnoreCase).Replace("javascript:", string.Empty, StringComparison.OrdinalIgnoreCase);
+
+  private IReadOnlyList<string> GetTagsArgOrExisting(JsonElement args, IReadOnlyList<string>? fallback = null)
+  {
+    if (!args.TryGetProperty("tags", out _)) return fallback ?? [];
+
+    var list = GetOptionalStringList(args, "tags", 1000);
+    if (list.Count > 0) return list.Select(tag => tag.Trim()).Where(tag => !string.IsNullOrWhiteSpace(tag)).ToList();
+
+    return ParseCsv(GetOptionalString(args, "tags", 1000));
+  }
+
   private CreateBlogPostRequest BuildBlogPostRequest(JsonElement args, BlogPostStatus status)
   {
     var title = RequiredString(args, "title", 500);
     var excerpt = GetOptionalString(args, "excerpt", 800) ?? title;
-    using var contentDoc = JsonDocument.Parse(NormalizeBlogContent(GetOptionalString(args, "content", 12000) ?? title));
+    using var contentDoc = JsonDocument.Parse(NormalizeBlogContent(GetRawStringOrJson(args, "content", 12000) ?? title));
     return new CreateBlogPostRequest
     {
       Title = title,
       Excerpt = excerpt,
       FeaturedImage = GetOptionalString(args, "featuredImage", 1000),
+      FeaturedImageWidth = args.TryGetProperty("featuredImageWidth", out _) ? GetIntArg(args, "featuredImageWidth", 1200) : null,
+      FeaturedImageHeight = args.TryGetProperty("featuredImageHeight", out _) ? GetIntArg(args, "featuredImageHeight", 630) : null,
       Content = contentDoc.RootElement.Clone(),
-      Tags = ParseCsv(GetOptionalString(args, "tags", 1000)),
+      Tags = GetTagsArgOrExisting(args),
       Status = status,
       PublishedAt = status == BlogPostStatus.Published ? DateTime.UtcNow : null,
       MetaTitle = GetOptionalString(args, "metaTitle", 200),
@@ -3792,7 +3843,7 @@ TỔNG QUAN:
 
     return JsonSerializer.Serialize(new[]
     {
-      new { type = "paragraph", text }
+      new { type = "paragraph", content = text }
     }, ToolResultJsonOptions);
   }
 
@@ -3876,13 +3927,13 @@ TỔNG QUAN:
     var title = GetOptionalString(args, "title", 500) ?? existing.Title;
     var excerpt = GetOptionalString(args, "excerpt", 800) ?? existing.Excerpt;
     var featuredImage = GetOptionalString(args, "featuredImage", 1000) ?? existing.FeaturedImage;
-    var tags = args.TryGetProperty("tags", out _) ? ParseCsv(GetOptionalString(args, "tags", 1000)) : existing.Tags;
+    var tags = GetTagsArgOrExisting(args, existing.Tags);
 
     // Content: keep existing unless a new value is provided.
     JsonElement contentElement;
-    if (args.TryGetProperty("content", out var contentArg) && contentArg.ValueKind == JsonValueKind.String)
+    if (args.TryGetProperty("content", out _))
     {
-      using var contentDoc = JsonDocument.Parse(NormalizeBlogContent(GetOptionalString(args, "content", 12000) ?? title));
+      using var contentDoc = JsonDocument.Parse(NormalizeBlogContent(GetRawStringOrJson(args, "content", 12000) ?? title));
       contentElement = contentDoc.RootElement.Clone();
     }
     else
@@ -3902,8 +3953,8 @@ TỔNG QUAN:
       Slug = existing.Slug,
       Excerpt = excerpt,
       FeaturedImage = featuredImage,
-      FeaturedImageWidth = existing.FeaturedImageWidth,
-      FeaturedImageHeight = existing.FeaturedImageHeight,
+      FeaturedImageWidth = args.TryGetProperty("featuredImageWidth", out _) ? GetIntArg(args, "featuredImageWidth", existing.FeaturedImageWidth ?? 1200) : existing.FeaturedImageWidth,
+      FeaturedImageHeight = args.TryGetProperty("featuredImageHeight", out _) ? GetIntArg(args, "featuredImageHeight", existing.FeaturedImageHeight ?? 630) : existing.FeaturedImageHeight,
       Template = existing.Template,
       Content = contentElement,
       Tags = tags,

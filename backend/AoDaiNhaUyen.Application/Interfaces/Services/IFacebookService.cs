@@ -128,4 +128,23 @@ public interface IFacebookService
     string pageId,
     string conversationId,
     CancellationToken cancellationToken = default);
+
+  /// <summary>
+  /// Downloads the binary of a Facebook Messenger attachment (e.g. an inbound
+  /// customer photo) using the Page Access Token. Facebook CDN attachment URLs
+  /// are token-gated and short-lived; this method appends the decrypted page
+  /// token to the request so callers receive stable bytes that can be persisted
+  /// to private storage for later AI try-on.
+  /// </summary>
+  /// <param name="pageId">Facebook Page ID that owns the conversation.</param>
+  /// <param name="attachmentUrl">Attachment URL captured from the inbound message payload.</param>
+  /// <param name="maxBytes">Maximum allowed payload size in bytes.</param>
+  /// <param name="cancellationToken">Cancellation token.</param>
+  /// <returns>The attachment bytes and detected mime type, or <c>null</c> when the
+  /// page is not connected, the URL is missing, or the download fails.</returns>
+  Task<FacebookAttachmentDownloadDto?> DownloadAttachmentBytesAsync(
+    string pageId,
+    string attachmentUrl,
+    long maxBytes,
+    CancellationToken cancellationToken = default);
 }

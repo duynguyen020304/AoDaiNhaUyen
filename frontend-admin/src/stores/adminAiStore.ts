@@ -11,10 +11,11 @@ import type {
   AiToolCall,
   AiToolResultMeta,
   AiGeneratedImagePreview,
+  AiBlogClarification,
   AdminChatMode,
   HermesStatus,
 } from '@/types/ai'
-import { AI_BLOG_DRAFT_STORAGE_KEY, type AiBlogDraft } from '@/types/blog'
+import { AI_BLOG_DRAFT_STORAGE_KEY, type AiBlogDraft, type AiGeneratedImageAsset, type AiImagePlan, type AiPhaseStatus } from '@/types/blog'
 import { request } from '@/api/client'
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5043'
@@ -55,9 +56,94 @@ function parseBlogDraftPayload(raw?: string): AiBlogDraft | undefined {
     const data = parsed?.data ?? parsed?.result?.data ?? parsed?.result ?? parsed
     const draft = data?.kind === 'blog_draft' ? data.draft : data?.draft
     if (!draft || typeof draft.title !== 'string' || !Array.isArray(draft.content)) return undefined
-    return draft as AiBlogDraft
+    const generatedImages = parseBlogImageAssets(raw)
+    const featured = generatedImages?.find((image) => image.kind === 'featured')
+    return {
+      ...(draft as AiBlogDraft),
+      selectedTemplate: typeof data?.selectedTemplate === 'string' ? data.selectedTemplate : undefined,
+      templateReason: typeof data?.templateReason === 'string' ? data.templateReason : undefined,
+      phases: parsePhaseStatusPayload(raw),
+      imagePlan: parseImagePlanPayload(raw),
+      generatedImages,
+      featuredImage: featured?.objectKey ?? draft.featuredImage ?? null,
+      featuredImageWidth: featured?.width ?? draft.featuredImageWidth ?? 1200,
+      featuredImageHeight: featured?.height ?? draft.featuredImageHeight ?? 630,
+      qualityWarnings: parseWarnings(raw) ?? draft.qualityWarnings,
+    } satisfies AiBlogDraft
   } catch (err) {
     logAiWarn('Không đọc được bản nháp blog từ AI', err)
+    return undefined
+  }
+}
+
+function parseBlogClarificationPayload(raw?: string): AiBlogClarification | undefined {
+  if (!raw) return undefined
+
+  try {
+    const parsed = JSON.parse(raw)
+    const data = parsed?.data ?? parsed?.result?.data ?? parsed?.result ?? parsed
+    if (data?.kind !== 'blog_draft_clarification') return undefined
+    if (!Array.isArray(data.questions)) return undefined
+    return {
+      selectedTemplate: typeof data.selectedTemplate === 'string' ? data.selectedTemplate : undefined,
+      templateReason: typeof data.templateReason === 'string' ? data.templateReason : undefined,
+      questions: data.questions.filter((x: unknown): x is string => typeof x === 'string'),
+      suggestedAnswers: Array.isArray(data.suggestedAnswers) ? data.suggestedAnswers.filter((x: unknown): x is string => typeof x === 'string') : undefined,
+      phases: Array.isArray(data.phases) ? data.phases as AiPhaseStatus[] : undefined,
+      warnings: Array.isArray(data.warnings) ? data.warnings.filter((x: unknown): x is string => typeof x === 'string') : undefined,
+    }
+  } catch (err) {
+    logAiWarn('Không đọc được yêu cầu bổ sung blog từ AI', err)
+    return undefined
+  }
+}
+
+function parseImagePlanPayload(raw?: string): AiImagePlan | undefined {
+  if (!raw) return undefined
+  try {
+    const parsed = JSON.parse(raw)
+    const data = parsed?.data ?? parsed?.result?.data ?? parsed?.result ?? parsed
+    const plan = data?.imagePlan
+    if (!plan || typeof plan !== 'object') return undefined
+    return plan as AiImagePlan
+  } catch (err) {
+    logAiWarn('Không đọc được image plan từ AI', err)
+    return undefined
+  }
+}
+
+function parsePhaseStatusPayload(raw?: string): AiPhaseStatus[] | undefined {
+  if (!raw) return undefined
+  try {
+    const parsed = JSON.parse(raw)
+    const data = parsed?.data ?? parsed?.result?.data ?? parsed?.result ?? parsed
+    return Array.isArray(data?.phases) ? data.phases as AiPhaseStatus[] : undefined
+  } catch (err) {
+    logAiWarn('Không đọc được phase trạng thái blog từ AI', err)
+    return undefined
+  }
+}
+
+function parseBlogImageAssets(raw?: string): AiGeneratedImageAsset[] | undefined {
+  if (!raw) return undefined
+  try {
+    const parsed = JSON.parse(raw)
+    const data = parsed?.data ?? parsed?.result?.data ?? parsed?.result ?? parsed
+    return Array.isArray(data?.generatedImages) ? data.generatedImages as AiGeneratedImageAsset[] : undefined
+  } catch (err) {
+    logAiWarn('Không đọc được generated image assets từ AI', err)
+    return undefined
+  }
+}
+
+function parseWarnings(raw?: string): string[] | undefined {
+  if (!raw) return undefined
+  try {
+    const parsed = JSON.parse(raw)
+    const data = parsed?.data ?? parsed?.result?.data ?? parsed?.result ?? parsed
+    return Array.isArray(data?.warnings) ? data.warnings.filter((x: unknown): x is string => typeof x === 'string') : undefined
+  } catch (err) {
+    logAiWarn('Không đọc được warnings từ AI', err)
     return undefined
   }
 }
@@ -134,13 +220,25 @@ function makeToolCall(toolName: string, input: string): AiToolCall {
 
 function applyToolResult(toolCall: AiToolCall, result: string): AiToolCall {
   const blogDraft = toolCall.toolName === 'generate_blog_draft' ? parseBlogDraftPayload(result) : undefined
-  const generatedImages = toolCall.toolName === 'generate_blog_images' ? parseGeneratedImagesPayload(result) : undefined
+  const blogClarification = toolCall.toolName === 'generate_blog_draft' ? parseBlogClarificationPayload(result) : undefined
+  const generatedImages = toolCall.toolName === 'generate_blog_images' || toolCall.toolName === 'generate_blog_draft'
+    ? (parseGeneratedImagesPayload(result) ?? parseBlogImageAssets(result)?.map((image) => ({
+        url: image.publicUrl,
+        alt: image.altText ?? undefined,
+        label: image.label ?? undefined,
+        kind: image.kind ?? undefined,
+      })))
+    : undefined
 
   return {
     ...toolCall,
     result,
     meta: parseToolResultMeta(result),
     blogDraft,
+    blogClarification,
+    imagePlan: parseImagePlanPayload(result),
+    phases: parsePhaseStatusPayload(result),
+    warnings: parseWarnings(result),
     generatedImages,
   }
 }
@@ -172,18 +270,36 @@ function makeTitle(messages: AiMessage[]): string {
   return text.length > 40 ? text.slice(0, 40) + '…' : text
 }
 
+function parseToolResultFromStoredMessage(message: AdminConversationMessage): string | undefined {
+  if (message.structuredPayloadJson) return message.structuredPayloadJson
+  if (message.role === 'tool_response') return message.content
+  return undefined
+}
+
 function parseToolCalls(message: AdminConversationMessage): AiMessage['toolCalls'] {
   if (!message.toolCallsJson) return undefined
   try {
     const parsed = JSON.parse(message.toolCallsJson) as { name?: string; callId?: string }
     const toolName = parsed.name || parsed.callId || 'unknown'
-    const base = makeToolCall(toolName, '')
+    const base = makeToolCall(toolName, message.content || '')
+    const result = parseToolResultFromStoredMessage(message)
     return [{
       ...base,
-      result: message.content,
-      meta: parseToolResultMeta(message.content),
-      blogDraft: toolName === 'generate_blog_draft' ? parseBlogDraftPayload(message.content) : undefined,
-      generatedImages: toolName === 'generate_blog_images' ? parseGeneratedImagesPayload(message.content) : undefined,
+      result,
+      meta: parseToolResultMeta(result),
+      blogDraft: toolName === 'generate_blog_draft' ? parseBlogDraftPayload(result) : undefined,
+      blogClarification: toolName === 'generate_blog_draft' ? parseBlogClarificationPayload(result) : undefined,
+      imagePlan: parseImagePlanPayload(result),
+      phases: parsePhaseStatusPayload(result),
+      warnings: parseWarnings(result),
+      generatedImages: toolName === 'generate_blog_images' || toolName === 'generate_blog_draft'
+        ? (parseGeneratedImagesPayload(result) ?? parseBlogImageAssets(result)?.map((image) => ({
+            url: image.publicUrl,
+            alt: image.altText ?? undefined,
+            label: image.label ?? undefined,
+            kind: image.kind ?? undefined,
+          })))
+        : undefined,
     }]
   } catch (err) {
     logAiWarn('Không đọc được metadata tool call', err)
@@ -213,12 +329,53 @@ function mapServerConversation(summary: AdminConversationSummary): SavedConversa
   }
 }
 
+function mergeToolResponses(messages: AdminConversationMessage[]): AdminConversationMessage[] {
+  const pendingResults = new Map<string, AdminConversationMessage>()
+  const merged: AdminConversationMessage[] = []
+
+  for (const message of messages) {
+    if (message.role === 'tool_response') {
+      if (message.toolCallsJson) {
+        try {
+          const parsed = JSON.parse(message.toolCallsJson) as { callId?: string; name?: string }
+          if (parsed.callId) pendingResults.set(parsed.callId, message)
+        } catch (err) {
+          logAiWarn('Không đọc được tool_response để ghép lịch sử', err)
+        }
+      }
+      continue
+    }
+
+    if (message.role === 'tool_call' && message.toolCallsJson) {
+      try {
+        const parsed = JSON.parse(message.toolCallsJson) as { callId?: string; name?: string }
+        const toolResponse = parsed.callId ? pendingResults.get(parsed.callId) : undefined
+        if (toolResponse) {
+          merged.push({
+            ...message,
+            structuredPayloadJson: toolResponse.structuredPayloadJson ?? toolResponse.content,
+          })
+          pendingResults.delete(parsed.callId!)
+          continue
+        }
+      } catch (err) {
+        logAiWarn('Không ghép được tool_call với tool_response', err)
+      }
+    }
+
+    merged.push(message)
+  }
+
+  return merged
+}
+
 function mapConversationDetail(detail: AdminConversationDetail): SavedConversation {
+  const mergedMessages = mergeToolResponses(detail.messages)
   return {
     id: detail.id,
     conversationId: detail.id,
     title: detail.title || 'Cuộc trò chuyện mới',
-    messages: detail.messages.map(mapServerMessage).filter((m): m is AiMessage => Boolean(m)),
+    messages: mergedMessages.map(mapServerMessage).filter((m): m is AiMessage => Boolean(m)),
     createdAt: detail.createdAt,
     updatedAt: detail.updatedAt,
   }
@@ -733,7 +890,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       messages: messages.map((m) => ({
         ...m,
         content: m.content,
-        toolCalls: m.toolCalls?.map((tc) => ({ toolName: tc.toolName, input: tc.input })),
+        toolCalls: m.toolCalls?.map((tc) => ({ ...tc })),
         pendingAction: undefined,
       })),
       createdAt: existing?.createdAt || now,

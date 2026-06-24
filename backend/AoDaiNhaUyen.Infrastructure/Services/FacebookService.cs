@@ -565,6 +565,122 @@ public sealed class FacebookService(
     return new MarkConversationReadResultDto(response.Success);
   }
 
+  public async Task<FacebookAttachmentDownloadDto?> DownloadAttachmentBytesAsync(
+    string pageId,
+    string attachmentUrl,
+    long maxBytes,
+    CancellationToken cancellationToken = default)
+  {
+    if (string.IsNullOrWhiteSpace(attachmentUrl)) return null;
+    if (!Uri.TryCreate(attachmentUrl, UriKind.Absolute, out var uri))
+    {
+      logger.LogWarning("Facebook attachment URL không hợp lệ: {Url}", attachmentUrl);
+      return null;
+    }
+
+    // SSRF / token-leak guard: only fetch from known Facebook-owned hosts. The
+    // page access token is appended to the request; an attacker who could
+    // control attachmentUrl (e.g. a tampered relay payload) must not be able to
+    // point us at an internal host (metadata service, intranet) and exfiltrate
+    // the token. Facebook serves attachments from graph.facebook.com,
+    // *.fbcdn.net, and *.fbsbx.com.
+    if (!IsFacebookHost(uri.Host))
+    {
+      logger.LogWarning("Từ chối download attachment từ host không thuộc Facebook: {Host} ({Url})", uri.Host, attachmentUrl);
+      return null;
+    }
+
+    // In mock mode there is no real page token; we cannot authenticate to the
+    // CDN. Return null so the caller records "no stored image" and the agent
+    // asks the customer to resend.
+    if (UseMockData)
+    {
+      logger.LogDebug("Bỏ qua download attachment trong mock mode Facebook.");
+      return null;
+    }
+
+    string token;
+    try
+    {
+      token = await GetPageTokenAsync(pageId, cancellationToken);
+    }
+    catch (FacebookApiException ex)
+    {
+      logger.LogWarning(ex, "Không có Page Access Token cho PageId={PageId}; bỏ qua download attachment.", pageId);
+      return null;
+    }
+
+    // Facebook CDN attachment URLs accept the page token either as a Bearer
+    // header or as an access_token query parameter. We append the query param
+    // to support both graph.facebook.com CDN URLs and legacy CDN hosts that
+    // ignore Authorization headers.
+    var builder = new UriBuilder(uri);
+    var existingQuery = builder.Query?.TrimStart('?') ?? string.Empty;
+    var tokenPair = $"access_token={WebUtility.UrlEncode(token)}";
+    builder.Query = string.IsNullOrWhiteSpace(existingQuery)
+      ? tokenPair
+      : $"{existingQuery}&{tokenPair}";
+
+    try
+    {
+      using var client = httpClientFactory.CreateClient();
+      using var response = await client.GetAsync(builder.Uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+      if (!response.IsSuccessStatusCode)
+      {
+        logger.LogWarning("Download attachment Facebook thất bại: {Status} {Url}", (int)response.StatusCode, attachmentUrl);
+        return null;
+      }
+
+      var declaredLength = response.Content.Headers.ContentLength;
+      if (DeclaredLengthExceedsLimit(declaredLength, maxBytes))
+      {
+        logger.LogWarning("Attachment Facebook quá lớn ({Length} bytes > {Max}); bỏ qua.", declaredLength, maxBytes);
+        return null;
+      }
+
+      await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+      using var memory = new MemoryStream();
+      var buffer = new byte[16 * 1024];
+      int read;
+      while ((read = await stream.ReadAsync(buffer, cancellationToken)) > 0)
+      {
+        if (memory.Length + read > maxBytes)
+        {
+          logger.LogWarning("Attachment Facebook vượt giới hạn {Max} bytes khi stream; bỏ qua.", maxBytes);
+          return null;
+        }
+        await memory.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+      }
+
+      var mime = response.Content.Headers.ContentType?.MediaType;
+      if (string.IsNullOrWhiteSpace(mime)) mime = "image/jpeg";
+
+      return new FacebookAttachmentDownloadDto(memory.ToArray(), mime);
+    }
+    catch (OperationCanceledException)
+    {
+      throw;
+    }
+    catch (Exception ex)
+    {
+      logger.LogWarning(ex, "Lỗi không xác định khi download attachment Facebook: {Url}", attachmentUrl);
+      return null;
+    }
+  }
+
+  private static bool DeclaredLengthExceedsLimit(long? declaredLength, long maxBytes) =>
+    declaredLength.HasValue && declaredLength.Value > maxBytes;
+
+  private static bool IsFacebookHost(string host)
+  {
+    if (string.IsNullOrWhiteSpace(host)) return false;
+    var lower = host.ToLowerInvariant();
+    if (lower == "graph.facebook.com") return true;
+    if (lower.EndsWith(".fbcdn.net", StringComparison.Ordinal)) return true;
+    if (lower.EndsWith(".fbsbx.com", StringComparison.Ordinal)) return true;
+    return false;
+  }
+
   private async Task<string> GetConversationCustomerIdAsync(
     string pageId,
     string conversationId,

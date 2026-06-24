@@ -2,11 +2,14 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using AoDaiNhaUyen.Api.Responses;
+using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.DTOs.Social;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
+using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace AoDaiNhaUyen.Api.Controllers;
@@ -17,6 +20,7 @@ namespace AoDaiNhaUyen.Api.Controllers;
 public sealed class SocialController(
   ISocialService socialService,
   IStorageService storageService,
+  AppDbContext dbContext,
   IOptions<ZernioSettings> zernioOptions) : ControllerBase
 {
   private readonly ZernioSettings zernioSettings = zernioOptions.Value;
@@ -205,6 +209,52 @@ public sealed class SocialController(
   {
     var messages = await socialService.GetConversationMessagesAsync(conversationId, accountId, cursor, limit, cancellationToken);
     return Ok(ApiResponseFactory.Success(messages));
+  }
+
+  /// <summary>
+  /// Returns a 1-hour presigned URL for the inbound image stored against a
+  /// social inbox message. Used by the Hermes agent to obtain a stable URL
+  /// (the original Facebook CDN URL is token-gated and short-lived) so it can
+  /// feed the person image into POST /api/admin/ai-tryon/generate.
+  /// </summary>
+  [HttpGet("messages/{messageId:guid}/image")]
+  public async Task<IActionResult> GetMessageImage(
+    Guid messageId,
+    CancellationToken cancellationToken)
+  {
+    var message = await dbContext.SocialInboxMessages
+      .AsNoTracking()
+      .FirstOrDefaultAsync(x => x.Id == messageId, cancellationToken);
+
+    if (message is null)
+    {
+      return NotFound(ApiResponseFactory.Failure(
+        "Không tìm thấy tin nhắn social",
+        "not_found",
+        "Tin nhắn không tồn tại."));
+    }
+
+    if (string.IsNullOrWhiteSpace(message.StoredImageKey))
+    {
+      return Ok(ApiResponseFactory.Success(new SocialMessageImageDto(
+        messageId,
+        PresignedUrl: null,
+        MimeType: null,
+        HasStoredImage: false),
+        "Tin nhắn không có ảnh đã lưu. Yêu cầu khách gửi lại ảnh."));
+    }
+
+    var url = await storageService.GeneratePresignedGetUrlAsync(
+      message.StoredImageKey,
+      expirationSeconds: 3600,
+      cancellationToken);
+
+    return Ok(ApiResponseFactory.Success(new SocialMessageImageDto(
+      messageId,
+      url,
+      message.StoredImageMimeType,
+      HasStoredImage: true),
+      "URL có hiệu lực 1 giờ."));
   }
 
   [HttpPost("conversations/{conversationId}/messages")]

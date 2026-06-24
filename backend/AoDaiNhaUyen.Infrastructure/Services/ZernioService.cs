@@ -10,6 +10,7 @@ using AoDaiNhaUyen.Application.Options;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -20,10 +21,14 @@ public sealed class ZernioService(
   IOptions<ZernioSettings> zernioOptions,
   AppDbContext dbContext,
   ILogger<ZernioService> logger,
+  IStorageService storageService,
+  IOptions<SocialInboxSyncOptions> socialInboxSyncOptions,
+  IServiceScopeFactory serviceScopeFactory,
   IHermesEventOutboxPublisher? hermesEventOutboxPublisher = null) : ISocialService
 {
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
   private readonly ZernioSettings settings = zernioOptions.Value;
+  private readonly SocialInboxSyncOptions socialInboxSync = socialInboxSyncOptions.Value;
 
   public async Task<IReadOnlyList<SocialAccountConnectionDto>> GetAccountsAsync(
     string? platform = null,
@@ -849,10 +854,87 @@ public sealed class ZernioService(
       existing.IsActive = true;
       existing.IsDeleted = false;
       existing.DeletedAt = null;
+
+      // Persist the inbound photo (if any) to private S3 so the Hermes agent
+      // can fetch a stable presigned URL for AI try-on without depending on
+      // Facebook's short-lived, token-gated CDN URL. Failures are non-fatal:
+      // StoredImageKey stays null and the agent asks the customer to resend.
+      if (socialInboxSync.DownloadInboundImages
+        && string.Equals(existing.Direction, "incoming", StringComparison.OrdinalIgnoreCase)
+        && string.IsNullOrEmpty(existing.StoredImageKey))
+      {
+        await TryPersistInboundImageAsync(existing, normalizedAccountId, message.Attachments, cancellationToken);
+      }
+
       existing.UpdatedAt = DateTime.UtcNow;
     }
 
     await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private async Task TryPersistInboundImageAsync(
+    SocialInboxMessage message,
+    string accountId,
+    IReadOnlyList<SocialMessageAttachmentDto>? attachments,
+    CancellationToken cancellationToken)
+  {
+    if (attachments is null || attachments.Count == 0) return;
+    var imageAttachment = attachments.FirstOrDefault(a =>
+      string.Equals(a?.Type, "image", StringComparison.OrdinalIgnoreCase)
+      && !string.IsNullOrWhiteSpace(a?.Url));
+    if (imageAttachment is null) return;
+
+    try
+    {
+      // accountId is the Zernio account id, which is interchangeable with the
+      // Facebook Page ID at the API boundary (see FacebookService.ResolveZernioAccountAsync).
+      // DownloadAttachmentBytesAsync returns null when the page is not connected,
+      // the token is missing, or the CDN URL has already expired.
+      await using var scope = serviceScopeFactory.CreateAsyncScope();
+      var facebookService = scope.ServiceProvider.GetRequiredService<IFacebookService>();
+      var download = await facebookService.DownloadAttachmentBytesAsync(
+        accountId,
+        imageAttachment.Url!,
+        socialInboxSync.MaxInboundImageBytes,
+        cancellationToken);
+      if (download is null || download.Bytes.Length == 0) return;
+
+      var extension = InferImageExtension(download.MimeType);
+      var fileName = $"fb-inbound-{SanitizeFolderSegment(message.MessageId)}{extension}";
+      var folder = $"private/social-inbox/{SanitizeFolderSegment(message.ConversationId)}";
+      await using var stream = new MemoryStream(download.Bytes);
+      var upload = await storageService.UploadAsync(stream, fileName, download.MimeType, folder, cancellationToken);
+
+      message.StoredImageKey = upload.ObjectKey;
+      message.StoredImageMimeType = download.MimeType;
+    }
+    catch (OperationCanceledException)
+    {
+      throw;
+    }
+    catch (Exception ex)
+    {
+      // Never let image persistence abort the message upsert — the conversation
+      // must still be saved so the agent can ask the customer to resend the photo.
+      logger.LogWarning(ex,
+        "Không thể lưu ảnh inbound Facebook cho messageId={MessageId}; agent sẽ xin khách gửi lại.",
+        message.MessageId);
+    }
+  }
+
+  private static string InferImageExtension(string mimeType)
+  {
+    var lower = (mimeType ?? string.Empty).ToLowerInvariant();
+    if (lower.Contains("png")) return ".png";
+    if (lower.Contains("webp")) return ".webp";
+    return ".jpg";
+  }
+
+  private static string SanitizeFolderSegment(string value)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return "unknown";
+    var clean = new string(value.Where(c => char.IsLetterOrDigit(c) || c == '-' || c == '_').ToArray());
+    return clean.Length == 0 ? "unknown" : clean;
   }
 
   private async Task UpsertCommentsAsync(string postId, string accountId, IEnumerable<SocialCommentDto> comments, CancellationToken cancellationToken)

@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Bot, User, Terminal, Check, X, AlertTriangle, A
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { AiMessage, AiToolCall } from '@/types/ai'
+import type { AiPhaseStatus } from '@/types/blog'
 import { AI_BLOG_DRAFT_STORAGE_KEY } from '@/types/blog'
 import { ConfirmCard } from './ConfirmCard'
 import { ChartBlock, ChartError, ChartSpecSchema } from './ChartBlock'
@@ -66,6 +67,25 @@ function openBlogDraftEditor(toolCall: AiToolCall, navigate: (to: string) => voi
   navigate('/admin/blog/new')
 }
 
+function appendClarificationToChat(reply: string) {
+  const input = document.querySelector('input[placeholder="Nhập yêu cầu..."]') as HTMLInputElement | null
+  if (!input || !reply.trim()) return
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set
+  setter?.call(input, reply)
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+  input.focus()
+}
+
+function PhaseBadge({ phase }: { phase: AiPhaseStatus }) {
+  const tone = phase.status === 'completed'
+    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    : phase.status === 'pending'
+      ? 'bg-gray-50 text-gray-600 border-gray-200'
+      : 'bg-amber-50 text-amber-700 border-amber-200'
+
+  return <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${tone}`}>{phase.label}</span>
+}
+
 function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
   const [expanded, setExpanded] = useState(false)
   const navigate = useNavigate()
@@ -92,6 +112,36 @@ function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
         </span>
         {expanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
       </button>
+      {toolCall.blogClarification && (
+        <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 shadow-sm">
+          <div className="space-y-2">
+            <div className="font-semibold">Cần thêm thông tin để hoàn thiện bài dài và chuẩn SEO</div>
+            {toolCall.blogClarification.templateReason && (
+              <p className="text-xs leading-relaxed">Template dự kiến: <span className="font-medium">{toolCall.blogClarification.selectedTemplate || 'Auto'}</span> — {toolCall.blogClarification.templateReason}</p>
+            )}
+            <ul className="list-disc pl-4 text-xs leading-relaxed space-y-1">
+              {toolCall.blogClarification.questions.map((question) => <li key={question}>{question}</li>)}
+            </ul>
+            <div className="flex flex-wrap gap-1">
+              {(toolCall.blogClarification.suggestedAnswers || []).map((answer) => (
+                <button
+                  key={answer}
+                  type="button"
+                  onClick={() => appendClarificationToChat(answer)}
+                  className="rounded-full border border-amber-300 bg-white px-2 py-1 text-[11px] font-medium text-amber-800 hover:bg-amber-100"
+                >
+                  {answer}
+                </button>
+              ))}
+            </div>
+            {toolCall.phases && toolCall.phases.length > 0 && (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {toolCall.phases.map((phase) => <PhaseBadge key={`${phase.phase}-${phase.label}`} phase={phase} />)}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {toolCall.blogDraft && (
         <div className="mt-2 rounded-xl border border-wine/15 bg-white p-3 text-sm text-gray-700 shadow-sm">
           <div className="flex items-start gap-2">
@@ -104,13 +154,33 @@ function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
               <div className="flex flex-wrap gap-1 text-[11px] text-gray-600">
                 <span className="rounded-full bg-gray-100 px-2 py-0.5">{toolCall.blogDraft.content.length} block</span>
                 <span className="rounded-full bg-gray-100 px-2 py-0.5">~{countBlogWords(toolCall)} từ</span>
+                <span className="rounded-full bg-gray-100 px-2 py-0.5">{toolCall.blogDraft.selectedTemplate || toolCall.blogDraft.template}</span>
                 {toolCall.blogDraft.tags.slice(0, 3).map((tag) => (
                   <span key={tag} className="rounded-full bg-wine/5 px-2 py-0.5 text-wine">{tag}</span>
                 ))}
               </div>
+              {toolCall.blogDraft.templateReason && (
+                <div className="text-[11px] leading-relaxed text-gray-600">Template: <span className="font-medium text-gray-800">{toolCall.blogDraft.selectedTemplate || toolCall.blogDraft.template}</span> — {toolCall.blogDraft.templateReason}</div>
+              )}
+              {toolCall.blogDraft.phases && toolCall.blogDraft.phases.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {toolCall.blogDraft.phases.map((phase) => <PhaseBadge key={`${phase.phase}-${phase.label}`} phase={phase} />)}
+                </div>
+              )}
+              {toolCall.blogDraft.imagePlan?.featuredPrompt && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] text-gray-700">
+                  <div className="font-medium text-gray-800">Prompt ảnh nổi bật</div>
+                  <div className="mt-1 line-clamp-3 leading-relaxed">{toolCall.blogDraft.imagePlan.featuredPrompt}</div>
+                </div>
+              )}
               {toolCall.blogDraft.qualityWarnings && toolCall.blogDraft.qualityWarnings.length > 0 && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-800">
-                  {toolCall.blogDraft.qualityWarnings.slice(0, 2).join(' • ')}
+                  {toolCall.blogDraft.qualityWarnings.slice(0, 3).join(' • ')}
+                </div>
+              )}
+              {toolCall.warnings && toolCall.warnings.length > 0 && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] text-amber-800">
+                  {toolCall.warnings.slice(0, 3).join(' • ')}
                 </div>
               )}
               <button

@@ -72,13 +72,32 @@ public sealed class BlogAiDraftService(
     CancellationToken cancellationToken = default)
   {
     var cleanRequest = NormalizeRequest(request);
+    return await GenerateWithPromptAsync(cleanRequest, BuildUserPrompt(cleanRequest), cancellationToken);
+  }
+
+  public async Task<GeneratedBlogDraftResponse> ExpandDraftAsync(
+    GenerateBlogDraftRequest request,
+    GeneratedBlogDraftResponse currentDraft,
+    string expansionGoal,
+    CancellationToken cancellationToken = default)
+  {
+    var cleanRequest = NormalizeRequest(request);
+    var userPrompt = BuildExpansionPrompt(cleanRequest, currentDraft, expansionGoal);
+    return await GenerateWithPromptAsync(cleanRequest, userPrompt, cancellationToken);
+  }
+
+  private async Task<GeneratedBlogDraftResponse> GenerateWithPromptAsync(
+    GenerateBlogDraftRequest cleanRequest,
+    string userPrompt,
+    CancellationToken cancellationToken)
+  {
     Exception? firstJsonError = null;
 
     try
     {
       var draft = await llm.CompleteJsonAsync<GeneratedBlogDraftModel>(
         BuildSystemPrompt(),
-        BuildUserPrompt(cleanRequest),
+        userPrompt,
         BlogDraftResponseSchema,
         cancellationToken);
       return ValidateAndNormalize(draft, cleanRequest);
@@ -93,7 +112,7 @@ public sealed class BlogAiDraftService(
     {
       var repaired = await llm.CompleteJsonAsync<GeneratedBlogDraftModel>(
         BuildSystemPrompt(),
-        BuildRepairPrompt(cleanRequest, firstJsonError?.Message),
+        BuildRepairPrompt(cleanRequest, firstJsonError?.Message, userPrompt),
         BlogDraftResponseSchema,
         cancellationToken);
       return ValidateAndNormalize(repaired, cleanRequest);
@@ -108,7 +127,7 @@ public sealed class BlogAiDraftService(
       var history = new List<AdminLlmMessage>
       {
         new(AdminLlmRole.System, BuildSystemPrompt()),
-        new(AdminLlmRole.User, BuildUserPrompt(cleanRequest))
+        new(AdminLlmRole.User, userPrompt)
       };
 
       var sb = new StringBuilder();
@@ -204,15 +223,47 @@ Yêu cầu chất lượng:
 - Có `informationGain` nêu giá trị độc đáo.
 - Có metaTitle/metaDescription tự nhiên, không nhồi keyword.
 - Nếu thiếu dữ liệu thực tế, thêm cảnh báo trong qualityWarnings thay vì bịa.
+- Bài mặc định phải đủ sâu, ưu tiên long-form 1500+ từ nếu không bị yêu cầu ngắn.
+- Không dừng ở bản nháp mỏng; cần nhiều heading/paragraph hữu ích.
 """;
 
-  private static string BuildRepairPrompt(GenerateBlogDraftRequest request, string? error) => $"""
+  private static string BuildRepairPrompt(GenerateBlogDraftRequest request, string? error, string originalPrompt) => $"""
 JSON trước đó không hợp lệ hoặc thiếu schema.
 Lỗi cần sửa: {error ?? "không rõ"}
 
 Hãy tạo lại TOÀN BỘ JSON theo đúng schema, không markdown, không lời dẫn.
-{BuildUserPrompt(request)}
+{originalPrompt}
 """;
+
+  private static string BuildExpansionPrompt(GenerateBlogDraftRequest request, GeneratedBlogDraftResponse currentDraft, string expansionGoal)
+  {
+    var currentBlocksJson = currentDraft.Content.GetRawText();
+    return $"""
+Tiếp tục hoàn thiện hoặc chỉnh sửa có mục tiêu cho bản nháp blog hiện có. Không được hỏi lại user. Tự điền phần thiếu bằng giả định an toàn phù hợp thương hiệu áo dài cao cấp.
+Mục tiêu mở rộng/chỉnh sửa: {expansionGoal}
+Chủ đề: {request.Topic}
+Từ khóa chính: {request.TargetKeyword ?? "tự tối ưu"}
+Độc giả: {request.Audience ?? "khách hàng quan tâm áo dài"}
+Template mục tiêu: {request.Template}
+Độ dài mục tiêu: {request.Length}
+
+Bản nháp hiện tại:
+- Title: {currentDraft.Title}
+- Excerpt: {currentDraft.Excerpt}
+- Tags: {string.Join(", ", currentDraft.Tags)}
+- Outline: {string.Join(" | ", currentDraft.Outline ?? [])}
+- Content JSON: {currentBlocksJson}
+
+Yêu cầu:
+- Giữ và cải thiện cấu trúc tốt sẵn có, không lặp nội dung cũ.
+- Nếu admin chỉ rõ phần cần sửa, ưu tiên sửa đúng phần đó và chỉ cập nhật các phần phụ thuộc cần thiết.
+- Bổ sung section còn thiếu, tăng chiều sâu, tăng số paragraph và heading có ích nếu cần.
+- Nếu template là HowTo phải có step blocks.
+- Nếu template là PhotoGallery phải có kế hoạch ảnh/gallery trong outline hoặc warning rõ ràng.
+- Nếu template là ProductSpotlight thì không được bịa sản phẩm.
+- Trả về TOÀN BỘ JSON hoàn chỉnh theo schema cuối cùng, không chỉ phần diff.
+""";
+  }
 
   private static GeneratedBlogDraftResponse ValidateAndNormalize(GeneratedBlogDraftModel draft, GenerateBlogDraftRequest request)
   {

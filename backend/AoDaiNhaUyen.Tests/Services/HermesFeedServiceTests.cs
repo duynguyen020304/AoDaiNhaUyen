@@ -38,6 +38,7 @@ public sealed class HermesFeedServiceTests
       Status = "completed",
       Trigger = "admin_event_fanout",
       ConversationId = fanOutId,
+      PromptPreview = "preview",
       ResultPreview = "preview",
       StartedAt = now,
       CompletedAt = now,

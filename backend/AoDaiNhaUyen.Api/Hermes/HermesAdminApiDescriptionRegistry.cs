@@ -226,6 +226,11 @@ public sealed class HermesAdminApiDescriptionRegistry
     Get("/api/admin/ai-tryon-feedback", "List feedback khách về AI try-on (rating/comment) để admin xử lý.", "Paginated AdminAiTryOnFeedbackDto[]", query: [Param("page", "int", false, "Trang"), Param("pageSize", "int", false, "Kích thước trang"), Param("status", "string", false, "Lọc theo trạng thái resolved"), Param("rating", "int", false, "Lọc theo số sao 1-5")]),
     Patch("/api/admin/ai-tryon-feedback/{id}/status", "Cập nhật trạng thái feedback AI try-on (resolved + ghi chú admin).", "AdminAiTryOnFeedbackDto", AiTryOnFeedbackStatusBody(), path: [Id("id", "ID feedback")], notes: ["Risk: low.", "IsResolved=true khi đã xử lý; AdminNote ghi hành động đã làm.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
 
+    // AI try-on generation (Facebook Messenger virtual try-on flow)
+    Get("/api/admin/ai-tryon/catalog", "List sản phẩm áo dài/phụ kiện ĐỦ ĐIỀU KIỆN thử đồ AI (có ProductAiAsset active). Dùng để đề xuất 2–4 mẫu cho khách chọn trước khi generate.", "AiTryOnCatalogDto", query: [Param("garmentPage", "int", false, "Trang áo dài"), Param("accessoryPage", "int", false, "Trang phụ kiện"), Param("pageSize", "int", false, "Số mẫu/trang"), Param("garmentCategory", "string", false, "Lọc danh mục áo dài"), Param("accessoryCategory", "string", false, "Lọc danh mục phụ kiện")]),
+    Post("/api/admin/ai-tryon/generate", "Sinh ảnh thử đồ AI từ ảnh người mặc + sản phẩm áo dài đã chọn. Trả về URL kết quả 1 giờ — gửi ngay qua POST /api/admin/social/conversations/{conversationId}/messages với attachmentType=image.", "AdminGenerateTryOnResultDto", AdminTryOnGenerateBody(), notes: AdminTryOnGenerateNotes),
+    Get("/api/admin/social/messages/{messageId}/image", "Lấy URL presigned (1 giờ) của ảnh gốc inbound đã lưu trong private storage, để truyền vào POST /api/admin/ai-tryon/generate. URL gốc Facebook CDN ngắn hạn nên phải dùng endpoint này.", "SocialMessageImageDto", path: [Id("messageId", "ID tin nhắn social (Guid)")], notes: ["Risk: low (read presigned URL).", "Nếu response.hasStoredImage=false: ảnh chưa được lưu (download thất bại/URL hết hạn) — xin khách gửi lại ảnh rõ hơn.", "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."]),
+
     // Hermes reports
     Get("/api/admin/hermes/reports", "List báo cáo Hermes đã lưu.", "Paginated HermesReportListItemResponse[]", query: [Param("severity", "string", false, "info/warning/high/critical"), Param("type", "string", false, "Loại báo cáo"), Param("status", "string", false, "Trạng thái"), Param("q", "string", false, "Từ khóa"), Param("page", "int", false, "Trang"), Param("pageSize", "int", false, "Kích thước trang")]),
     Get("/api/admin/hermes/reports/{id}", "Chi tiết báo cáo Hermes.", "HermesReportResponse", path: [Id("id", "ID báo cáo")]),
@@ -594,4 +599,23 @@ public sealed class HermesAdminApiDescriptionRegistry
       Field("isResolved", "bool", true, "true khi đã xử lý feedback"),
       Field("adminNote", "string", false, "Ghi chú hành động đã làm (vd: 'đã liên hệ khách', 'đã cải thiện prompt')")
     ], new { isResolved = true, adminNote = "Đã ghi nhận và cải thiện chất lượng render áo dài." });
+
+  private static HermesBodyDescription AdminTryOnGenerateBody() =>
+    Body([
+      Field("garmentProductId", "guid", true, "ID sản phẩm áo dài đã chọn (PHẢI có AI asset — lấy từ GET /api/admin/ai-tryon/catalog)"),
+      Field("garmentVariantId", "guid", false, "ID variant nếu sản phẩm có nhiều màu/size"),
+      Field("accessoryProductIds", "guid[]", false, "Danh sách phụ kiện đi kèm (mỗi cái phải có AI asset)"),
+      Field("personImageUrl", "string", true, "URL presigned HTTPS ảnh người mặc — lấy từ GET /api/admin/social/messages/{messageId}/image")
+    ], new { garmentProductId = "00000000-0000-0000-0000-000000000000", garmentVariantId = (Guid?)null, accessoryProductIds = (Guid[]?)null, personImageUrl = "https://storage.example.com/private/social-inbox/.../fb-inbound-...jpg?sig=..." });
+
+  private static readonly IReadOnlyList<string> AdminTryOnGenerateNotes =
+  [
+    "Risk: medium vì tốn quota Gemini virtual-try-on (~ vài giây/ảnh).",
+    "Chỉ dùng garmentProductId/accessoryProductIds thật từ GET /api/admin/ai-tryon/catalog (đảm bảo có ProductAiAsset active). Không bịia ID.",
+    "personImageUrl PHẢI lấy từ GET /api/admin/social/messages/{messageId}/image (URL Facebook CDN gốc ngắn hạn + cần token).",
+    "Ảnh kết quả resultImageUrl chỉ có hiệu lực 1 GIỜ — gửi ngay qua POST /api/admin/social/conversations/{conversationId}/messages với attachmentType=image kèm lời bàn ngắn.",
+    "Luôn hỏi khách chọn 1 trong 2–4 mẫu áo dài trước khi generate; không tự chọn thay khách.",
+    "Nếu endpoint trả lỗi image_validation_failed/missing_tryon_asset/vertex_ai_failed: xin khách gửi lại ảnh rõ hơn hoặc gợi ý mẫu khác thay vì thử lại vô ích.",
+    "Gọi lại cùng URL không có X-Hermes-Describe để thực thi."
+  ];
 }

@@ -1098,6 +1098,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.Text).HasColumnType("text");
       builder.Property(x => x.AttachmentsJson).HasColumnType("jsonb");
       builder.Property(x => x.DeliveryStatus).HasMaxLength(50);
+      builder.Property(x => x.StoredImageKey).HasMaxLength(500);
+      builder.Property(x => x.StoredImageMimeType).HasMaxLength(100);
       builder.Property(x => x.RawJson).HasColumnType("jsonb");
       builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
       builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");

@@ -58,3 +58,13 @@ public sealed record FacebookMessageSendResultDto(
   string? MessageId);
 
 public sealed record MarkConversationReadResultDto(bool Success);
+
+/// <summary>
+/// Result of downloading a Facebook Messenger attachment binary via the Page
+/// Access Token. Returned by <see cref="AoDaiNhaUyen.Application.Interfaces.Services.IFacebookService.DownloadAttachmentBytesAsync"/>.
+/// </summary>
+/// <param name="Bytes">Attachment bytes (already validated against the caller's size limit).</param>
+/// <param name="MimeType">Content-Type reported by Facebook's CDN (defaulted to image/jpeg when missing).</param>
+public sealed record FacebookAttachmentDownloadDto(
+  byte[] Bytes,
+  string MimeType);

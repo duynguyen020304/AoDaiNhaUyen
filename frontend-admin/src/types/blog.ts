@@ -60,6 +60,36 @@ export interface BlogPost extends BlogPostListItem {
   createdAt: string
 }
 
+export interface AiGeneratedImageAsset {
+  objectKey?: string | null
+  publicUrl: string
+  previewUrl?: string | null
+  altText?: string | null
+  label?: string | null
+  kind?: string | null
+  prompt?: string | null
+  width?: number | null
+  height?: number | null
+  caption?: string | null
+}
+
+export interface AiImagePlan {
+  featuredPrompt?: string | null
+  featuredAlt?: string | null
+  featuredCaption?: string | null
+  inlineCount?: number
+  galleryCount?: number
+  inlinePrompts?: string[]
+  galleryPrompts?: string[]
+}
+
+export interface AiPhaseStatus {
+  phase: string
+  label: string
+  status: string
+  detail?: string | null
+}
+
 export interface AiBlogDraft {
   title: string
   slug?: string | null
@@ -76,6 +106,16 @@ export interface AiBlogDraft {
   reviewedBy?: string | null
   informationGain?: string | null
   qualityWarnings?: string[]
+  selectedTemplate?: string | null
+  templateReason?: string | null
+  questions?: string[]
+  suggestedAnswers?: string[]
+  phases?: AiPhaseStatus[]
+  imagePlan?: AiImagePlan | null
+  generatedImages?: AiGeneratedImageAsset[]
+  featuredImage?: string | null
+  featuredImageWidth?: number | null
+  featuredImageHeight?: number | null
 }
 
 export const AI_BLOG_DRAFT_STORAGE_KEY = 'admin-blog-ai-draft'

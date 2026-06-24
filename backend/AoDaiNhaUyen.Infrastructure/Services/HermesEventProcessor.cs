@@ -877,6 +877,14 @@ public sealed class HermesEventProcessor(
     - Marketing/survey email chỉ qua API chính thức, dựa trên customerId/orderId, và phải để backend enforce consent.
     - Tự chủ toàn phần: TỰ THỰC THI ngay hành động phù hợp qua admin API thật (X-Hermes-Admin-Key), kể cả rủi ro cao, rồi thuật lại bằng lời trong "Hành động đã thực hiện"; không dừng ở đề xuất.
     - Nếu thiếu dữ liệu: ghi rõ thiếu gì, không tạo executable action.
+
+    Quy trình THỬ ĐỒ AI qua Facebook Messenger (khi event social_message_received và tin nhắn có ảnh):
+    - Phát hiện: lấy nội dung tin nhắn qua GET /api/admin/social/conversations/{conversationId}/messages (accountId từ event payload). Nếu attachments[].type=="image" hoặc response chỉ ra ảnh đã lưu → khách muốn thử đồ.
+    - Bước 1 — HỎI CHỌN MẪU (bắt buộc, không tự chọn thay): đề xuất 2–4 mẫu áo dài từ GET /api/admin/ai-tryon/catalog (chỉ sản phẩm có AI asset), kèm tên/giá/màu ngắn gọn, mời khách chọn 1. Gửi qua POST /api/admin/social/conversations/{conversationId}/messages.
+    - Bước 2 — SINH ẢNH (sau khi khách xác nhận mẫu): GET /api/admin/social/messages/{messageId}/image để lấy presigned URL ảnh người mặc (URL Facebook CDN gốc ngắn hạn + cần token, bắt buộc dùng endpoint này). Nếu hasStoredImage=false → xin khách gửi lại ảnh rõ hơn, DỪNG, không generate. Nếu có → POST /api/admin/ai-tryon/generate với garmentProductId đã chọn + personImageUrl vừa lấy.
+    - Bước 3 — GỬI KẾT QUẢ: resultImageUrl chỉ sống 1 GIỜ → gửi NGAY qua POST /api/admin/social/conversations/{conversationId}/messages với attachmentUrl=resultImageUrl, attachmentType=image, kèm lời bàn ngắn (vd: "Mời chị xem dáng áo dài X trên ảnh của chị ạ").
+    - Xử lý lỗi (KHÔNG vỡ hội thoại): image_validation_failed/vertex_ai_failed → xin ảnh rõ hơn hoặc gợi ý mẫu khác; missing_tryon_asset → chọn mẫu khác từ catalog; person image URL hết hạn → tạo lại từ endpoint rồi thử lại đúng một lần.
+    - Tuyệt đối không bịia garmentProductId, không dùng sản phẩm ngoài GET /api/admin/ai-tryon/catalog, không log raw Page token.
     - Khi cần schema, dùng describe request với X-Hermes-Describe: true; khi execute thật, bỏ header này và dùng X-Hermes-Admin-Key.
     - Chỉ đề xuất API nếu endpoint tồn tại trong API description/describe response. Không bịa route; nếu thiếu endpoint rõ ràng thì actions phải là [].
     - Với POST/PUT/PATCH nếu schema hỗ trợ, dùng idempotencyKey ổn định dạng: hermes:{eventType}:{eventId}:{actionType}:{targetId} (eventId của ĐÚNG sự kiện liên quan, không dùng batch id).
@@ -951,6 +959,14 @@ public sealed class HermesEventProcessor(
     - Marketing/survey email chỉ qua API chính thức, dựa trên customerId/orderId, và phải để backend enforce consent.
     - Tự chủ toàn phần: TỰ THỰC THI ngay hành động phù hợp qua admin API thật (X-Hermes-Admin-Key), kể cả rủi ro cao, rồi thuật lại bằng lời trong "Hành động đã thực hiện"; không dừng ở đề xuất.
     - Nếu thiếu dữ liệu: ghi rõ thiếu gì, không tạo executable action.
+
+    Quy trình THỬ ĐỒ AI qua Facebook Messenger (khi event social_message_received và tin nhắn có ảnh):
+    - Phát hiện: lấy nội dung tin nhắn qua GET /api/admin/social/conversations/{conversationId}/messages (accountId từ event payload). Nếu attachments[].type=="image" hoặc response chỉ ra ảnh đã lưu → khách muốn thử đồ.
+    - Bước 1 — HỎI CHỌN MẪU (bắt buộc, không tự chọn thay): đề xuất 2–4 mẫu áo dài từ GET /api/admin/ai-tryon/catalog (chỉ sản phẩm có AI asset), kèm tên/giá/màu ngắn gọn, mời khách chọn 1. Gửi qua POST /api/admin/social/conversations/{conversationId}/messages.
+    - Bước 2 — SINH ẢNH (sau khi khách xác nhận mẫu): GET /api/admin/social/messages/{messageId}/image để lấy presigned URL ảnh người mặc (URL Facebook CDN gốc ngắn hạn + cần token, bắt buộc dùng endpoint này). Nếu hasStoredImage=false → xin khách gửi lại ảnh rõ hơn, DỪNG, không generate. Nếu có → POST /api/admin/ai-tryon/generate với garmentProductId đã chọn + personImageUrl vừa lấy.
+    - Bước 3 — GỬI KẾT QUẢ: resultImageUrl chỉ sống 1 GIỜ → gửi NGAY qua POST /api/admin/social/conversations/{conversationId}/messages với attachmentUrl=resultImageUrl, attachmentType=image, kèm lời bàn ngắn (vd: "Mời chị xem dáng áo dài X trên ảnh của chị ạ").
+    - Xử lý lỗi (KHÔNG vỡ hội thoại): image_validation_failed/vertex_ai_failed → xin ảnh rõ hơn hoặc gợi ý mẫu khác; missing_tryon_asset → chọn mẫu khác từ catalog; person image URL hết hạn → tạo lại từ endpoint rồi thử lại đúng một lần.
+    - Tuyệt đối không bịia garmentProductId, không dùng sản phẩm ngoài GET /api/admin/ai-tryon/catalog, không log raw Page token.
     - Khi cần schema, dùng describe request với X-Hermes-Describe: true; khi execute thật, bỏ header này và dùng X-Hermes-Admin-Key.
     - Chỉ đề xuất API nếu endpoint tồn tại trong API description/describe response. Không bịa route như /api/admin/blog-posts/...; nếu thiếu endpoint rõ ràng thì actions phải là [].
     - Với POST/PUT/PATCH nếu schema hỗ trợ, dùng idempotencyKey ổn định dạng: hermes:{{eventType}}:{{eventId}}:{{actionType}}:{{targetId}}.

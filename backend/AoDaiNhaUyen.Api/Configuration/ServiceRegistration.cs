@@ -258,6 +258,7 @@ public static class ServiceRegistration
     services.AddSingleton<IPendingActionStore, PendingActionStore>();
     services.AddSingleton<IConversationStore, ConversationStore>();
     services.AddScoped<IBlogAiDraftService, BlogAiDraftService>();
+    services.AddScoped<IBlogGenerationCoordinator, BlogGenerationCoordinator>();
     services.AddHttpClient<IAdminBlogImageGenerationService, VertexAiAdminBlogImageGenerationService>(httpClient =>
     {
       httpClient.Timeout = Timeout.InfiniteTimeSpan;

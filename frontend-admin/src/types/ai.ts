@@ -35,7 +35,7 @@ export interface AiMessage {
   createdAt: string
 }
 
-import type { AiBlogDraft } from './blog'
+import type { AiBlogDraft, AiImagePlan, AiPhaseStatus } from './blog'
 
 export interface AiToolResultMeta {
   page?: number
@@ -60,6 +60,15 @@ export interface AiGeneratedImagePreview {
   kind?: string
 }
 
+export interface AiBlogClarification {
+  selectedTemplate?: string
+  templateReason?: string
+  questions: string[]
+  suggestedAnswers?: string[]
+  phases?: AiPhaseStatus[]
+  warnings?: string[]
+}
+
 export interface AiToolCall {
   toolName: string
   input: string
@@ -67,7 +76,11 @@ export interface AiToolCall {
   riskLevel?: string
   meta?: AiToolResultMeta
   blogDraft?: AiBlogDraft
+  blogClarification?: AiBlogClarification
+  imagePlan?: AiImagePlan
+  phases?: AiPhaseStatus[]
   generatedImages?: AiGeneratedImagePreview[]
+  warnings?: string[]
   /** Error message when this specific tool call failed terminally */
   error?: string
 }

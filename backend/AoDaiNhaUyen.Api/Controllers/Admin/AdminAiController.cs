@@ -110,7 +110,7 @@ public sealed class AdminAiController(
     var dto = new AdminConversationDetailDto(
       thread.Id,
       title,
-      messages.Select(m => new AdminMessageDto(m.Role, m.Content, m.ToolCallsJsonb, null, m.CreatedAt)).ToList(),
+      messages.Select(m => new AdminMessageDto(m.Role, m.Content, m.ToolCallsJsonb, m.StructuredPayloadJsonb, m.CreatedAt)).ToList(),
       thread.CreatedAt,
       thread.UpdatedAt);
 
