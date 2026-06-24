@@ -115,7 +115,7 @@ public sealed class BackgroundSocialAutoReplyBatchWorker(
         $"social:{batch.Platform}:{batch.ConversationId}",
         cancellationToken);
 
-      batch.Status = "queued";
+      batch.Status = "replied";
       batch.ProcessedAt = DateTimeOffset.UtcNow;
       batch.LockedAt = null;
       batch.LockedBy = null;

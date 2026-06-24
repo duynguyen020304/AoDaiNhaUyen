@@ -1091,7 +1091,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.LockedBy).HasMaxLength(120);
       builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
       builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
-      builder.HasIndex(x => new { x.Platform, x.AccountId, x.ConversationId }).IsUnique().HasFilter("status IN ('pending','processing','queued') AND NOT is_deleted").HasDatabaseName("idx_social_auto_reply_batches_active_unique");
+      builder.HasIndex(x => new { x.Platform, x.AccountId, x.ConversationId }).IsUnique().HasFilter("status = 'pending' AND NOT is_deleted").HasDatabaseName("idx_social_auto_reply_batches_active_unique");
       builder.HasIndex(x => new { x.Status, x.WindowEndsAt }).HasDatabaseName("idx_social_auto_reply_batches_status_window");
       builder.ToTable(t => t.HasCheckConstraint("ck_social_auto_reply_batches_status", "status IN ('pending','processing','queued','replied','cancelled','failed')"));
     });

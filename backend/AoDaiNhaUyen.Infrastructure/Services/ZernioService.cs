@@ -942,7 +942,7 @@ public sealed class ZernioService(
 
     var batch = await dbContext.SocialAutoReplyBatches
       .IgnoreQueryFilters()
-      .FirstOrDefaultAsync(x => x.Platform == platform && x.AccountId == accountId && x.ConversationId == conversationId && (x.Status == "pending" || x.Status == "processing" || x.Status == "queued"), cancellationToken);
+      .FirstOrDefaultAsync(x => x.Platform == platform && x.AccountId == accountId && x.ConversationId == conversationId && x.Status == "pending", cancellationToken);
 
     if (batch is null)
     {
@@ -987,7 +987,7 @@ public sealed class ZernioService(
 
       batch = await dbContext.SocialAutoReplyBatches
         .IgnoreQueryFilters()
-        .FirstAsync(x => x.Platform == platform && x.AccountId == accountId && x.ConversationId == conversationId && (x.Status == "pending" || x.Status == "processing" || x.Status == "queued"), cancellationToken);
+        .FirstAsync(x => x.Platform == platform && x.AccountId == accountId && x.ConversationId == conversationId && x.Status == "pending", cancellationToken);
       if (batch.Status == "pending")
       {
         var ids = DeserializeMessageIds(batch.MessageIdsJson);
