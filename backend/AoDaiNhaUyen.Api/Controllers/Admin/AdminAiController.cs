@@ -6,7 +6,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace AoDaiNhaUyen.Api.Controllers.Admin;
+
+namespace AoDaiNhaUyen.Api.Controllers.Admin
+{
+internal static class AdminAiSseJson
+{
+  public static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
+  {
+    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+  };
+}
 
 /// <summary>AI-powered admin assistant endpoints.</summary>
 [ApiController]
@@ -40,7 +49,7 @@ public sealed class AdminAiController(
     if (validationError is not null)
     {
       var errorChunk = new { type = "error", content = validationError };
-      await Response.WriteAsync($"data: {JsonSerializer.Serialize(errorChunk)}\n\n", cancellationToken);
+      await Response.WriteAsync($"data: {JsonSerializer.Serialize(errorChunk, AdminAiSseJson.Options)}\n\n", cancellationToken);
       await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
       return;
     }
@@ -49,7 +58,7 @@ public sealed class AdminAiController(
     {
       await foreach (var chunk in agentService.StreamChatAsync(request, adminUserId.Value, cancellationToken))
       {
-        var json = JsonSerializer.Serialize(chunk);
+        var json = JsonSerializer.Serialize(chunk, AdminAiSseJson.Options);
         await Response.WriteAsync($"data: {json}\n\n", cancellationToken);
         await Response.Body.FlushAsync(cancellationToken);
       }
@@ -63,7 +72,7 @@ public sealed class AdminAiController(
       var traceId = HttpContext.TraceIdentifier;
       logger.LogError(ex, "[AdminAI] StreamChat failed. TraceId={TraceId}", traceId);
       var errorChunk = new { type = "error", content = $"Lỗi hệ thống. Mã tra cứu: {traceId}" };
-      await Response.WriteAsync($"data: {JsonSerializer.Serialize(errorChunk)}\n\n", cancellationToken);
+      await Response.WriteAsync($"data: {JsonSerializer.Serialize(errorChunk, AdminAiSseJson.Options)}\n\n", cancellationToken);
     }
 
     await Response.WriteAsync("data: [DONE]\n\n", cancellationToken);
@@ -248,3 +257,4 @@ public sealed class AdminAiController(
 }
 
 public sealed record ToggleAutoModeRequest(bool Enabled);
+}

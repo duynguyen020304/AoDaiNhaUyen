@@ -115,11 +115,13 @@ public sealed class BlogPostService(
 
   public async Task<BlogPostDto> CreateAsync(CreateBlogPostRequest request, CancellationToken cancellationToken = default)
   {
-    ValidateRequest(request.Title, request.Excerpt, request.Content, request.CanonicalUrl);
+    var normalizedContentJson = NormalizeLegacyContentShape(request.Content.GetRawText());
+    using var normalizedContentDoc = JsonDocument.Parse(normalizedContentJson);
+    ValidateRequest(request.Title, request.Excerpt, normalizedContentDoc.RootElement, request.CanonicalUrl);
     var status = request.Status;
     var now = DateTime.UtcNow;
     var normalizedFeaturedImage = await NormalizeFeaturedImageForStatusAsync(request.FeaturedImage, status, cancellationToken);
-    var normalizedContent = await NormalizeContentForStatusAsync(request.Content.GetRawText(), status, cancellationToken);
+    var normalizedContent = await NormalizeContentForStatusAsync(normalizedContentJson, status, cancellationToken);
     var post = new BlogPost
     {
       Title = request.Title.Trim(),
@@ -161,12 +163,14 @@ public sealed class BlogPostService(
 
   public async Task<BlogPostDto> UpdateAsync(Guid id, UpdateBlogPostRequest request, CancellationToken cancellationToken = default)
   {
-    ValidateRequest(request.Title, request.Excerpt, request.Content, request.CanonicalUrl);
+    var normalizedContentJson = NormalizeLegacyContentShape(request.Content.GetRawText());
+    using var normalizedContentDoc = JsonDocument.Parse(normalizedContentJson);
+    ValidateRequest(request.Title, request.Excerpt, normalizedContentDoc.RootElement, request.CanonicalUrl);
     var post = await blogPostRepository.GetByIdAsync(id, true, cancellationToken)
       ?? throw new InvalidOperationException("Không tìm thấy bài viết.");
 
     var normalizedFeaturedImage = await NormalizeFeaturedImageForStatusAsync(request.FeaturedImage, request.Status, cancellationToken);
-    var normalizedContent = await NormalizeContentForStatusAsync(request.Content.GetRawText(), request.Status, cancellationToken);
+    var normalizedContent = await NormalizeContentForStatusAsync(normalizedContentJson, request.Status, cancellationToken);
 
     post.Title = request.Title.Trim();
     post.Slug = BuildSlug(request.Slug, request.Title);
@@ -338,6 +342,46 @@ public sealed class BlogPostService(
     return status == BlogPostStatus.Published
       ? await PromoteBlogImageReferenceAsync(value.Trim(), cancellationToken)
       : await DemoteBlogImageReferenceAsync(value.Trim(), cancellationToken);
+  }
+
+  private static string NormalizeLegacyContentShape(string rawContent)
+  {
+    using var document = JsonDocument.Parse(rawContent);
+    using var stream = new MemoryStream();
+    using (var writer = new Utf8JsonWriter(stream))
+    {
+      RewriteLegacyContentShape(writer, document.RootElement);
+    }
+
+    return Encoding.UTF8.GetString(stream.ToArray());
+  }
+
+  private static void RewriteLegacyContentShape(Utf8JsonWriter writer, JsonElement element)
+  {
+    switch (element.ValueKind)
+    {
+      case JsonValueKind.Object:
+        writer.WriteStartObject();
+        var isParagraph = element.TryGetProperty("type", out var typeElement)
+          && string.Equals(typeElement.GetString(), "paragraph", StringComparison.OrdinalIgnoreCase);
+        foreach (var property in element.EnumerateObject())
+        {
+          var propertyName = isParagraph && property.NameEquals("text") ? "content" : property.Name;
+          writer.WritePropertyName(propertyName);
+          RewriteLegacyContentShape(writer, property.Value);
+        }
+        writer.WriteEndObject();
+        break;
+      case JsonValueKind.Array:
+        writer.WriteStartArray();
+        foreach (var item in element.EnumerateArray())
+          RewriteLegacyContentShape(writer, item);
+        writer.WriteEndArray();
+        break;
+      default:
+        element.WriteTo(writer);
+        break;
+    }
   }
 
   private async Task<string> NormalizeContentForStatusAsync(string rawContent, BlogPostStatus status, CancellationToken cancellationToken)
