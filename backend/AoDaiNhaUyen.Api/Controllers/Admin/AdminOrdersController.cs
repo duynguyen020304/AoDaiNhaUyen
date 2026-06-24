@@ -12,6 +12,7 @@ namespace AoDaiNhaUyen.Api.Controllers.Admin;
 [Authorize(Policy = "RequireAdminRole")]
 public sealed class AdminOrdersController(
   IOrderService orderService,
+  IAdminOrderService adminOrderService,
   ICacheInvalidationService cacheInvalidation) : ControllerBase
 {
   /// <summary>
@@ -38,6 +39,24 @@ public sealed class AdminOrdersController(
       result.PageSize,
       result.TotalCount,
       "Lấy danh sách đơn hàng thành công."));
+  }
+
+  /// <summary>
+  /// Lấy chi tiết đơn hàng cho trang admin.
+  /// </summary>
+  [HttpGet("{orderId:guid}")]
+  public async Task<IActionResult> GetOrderById(Guid orderId, CancellationToken cancellationToken)
+  {
+    var order = await adminOrderService.GetOrderByIdAsync(orderId, cancellationToken);
+    if (order is null)
+    {
+      return NotFound(ApiResponseFactory.Failure(
+        "Không tìm thấy đơn hàng.",
+        "not_found",
+        "Không tìm thấy đơn hàng."));
+    }
+
+    return Ok(ApiResponseFactory.Success(order, "Lấy chi tiết đơn hàng thành công."));
   }
 
   /// <summary>

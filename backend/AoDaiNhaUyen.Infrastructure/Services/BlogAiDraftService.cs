@@ -162,6 +162,8 @@ Chỉ trả về JSON hợp lệ, không markdown, không lời dẫn.
 Không bịa số liệu, chứng nhận, địa chỉ, giá, bác sĩ/chuyên gia, hoặc nguồn ngoài nếu không được cung cấp.
 Không tạo HTML/script. Mọi nội dung phải là text thuần.
 Bài viết phải bằng tiếng Việt, hữu ích cho người đọc, có thông tin độc đáo về chọn/mặc/bảo quản áo dài.
+Chủ đề và góc triển khai phải đa dạng, sáng tạo theo ngữ cảnh yêu cầu; không lặp motif cũ, không đóng khung vào một vài mẫu hard-code như mẹo chọn đồ cơ bản. Chủ động mở rộng sang xu hướng cưới, lookbook mùa, chất liệu, màu sắc, nghi thức, phối phụ kiện, bảo quản theo thời tiết, câu chuyện bộ sưu tập, hậu trường may đo, trải nghiệm thử đồ, tình huống sử dụng thực tế và insight phong cách sống khi phù hợp.
+Mỗi bài nên có một góc tiếp cận riêng, tiêu đề riêng, outline riêng, informationGain riêng; tránh cảm giác cùng một bài viết đổi mỗi vài từ khóa.
 Schema JSON bắt buộc:
 {
   "title": "string",
@@ -202,6 +204,8 @@ Yêu cầu chất lượng:
 - Có mở bài rõ lợi ích.
 - Có nhiều H2, đoạn ngắn dễ đọc.
 - Có `informationGain` nêu giá trị độc đáo.
+- Chủ động chọn góc bài sáng tạo, không rập khuôn, không lặp lại chủ đề/mẫu viết quen tay nếu brief cho phép mở rộng.
+- Không tái sử dụng máy móc các mô-típ hard-code; mỗi brief cần được diễn giải lại thành concept, nhịp kể và outline riêng.
 - Có metaTitle/metaDescription tự nhiên, không nhồi keyword.
 - Nếu thiếu dữ liệu thực tế, thêm cảnh báo trong qualityWarnings thay vì bịa.
 """;

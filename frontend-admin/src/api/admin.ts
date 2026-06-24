@@ -3,6 +3,7 @@ import type { PaginatedApiEnvelope } from '@/types/api'
 import type {
   AdminUserListItem,
   AdminOrderListItem,
+  AdminOrderDetail,
   AdminProductListItem,
   AdminProductDetail,
   AdminImageResponse,
@@ -374,6 +375,10 @@ export async function getAdminOrders(params?: {
   qs.set('page', String(params?.page ?? 1))
   qs.set('pageSize', String(params?.pageSize ?? 20))
   return requestPaginated<AdminOrderListItem[]>(`/api/admin/orders?${qs}`)
+}
+
+export async function getAdminOrderDetail(orderId: string): Promise<AdminOrderDetail> {
+  return request<AdminOrderDetail>(`/api/admin/orders/${orderId}`)
 }
 
 export async function updateOrderStatus(orderId: string, status: string): Promise<void> {

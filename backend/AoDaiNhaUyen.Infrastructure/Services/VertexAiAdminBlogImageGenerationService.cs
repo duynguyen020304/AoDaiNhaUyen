@@ -14,6 +14,7 @@ public sealed class VertexAiAdminBlogImageGenerationService(
   IOptions<GoogleCloudOptions> options) : IAdminBlogImageGenerationService
 {
   private const string DefaultResponseMimeType = "image/png";
+  private const int MaxAttempts = 3;
   private readonly GoogleCloudOptions googleCloudOptions = options.Value;
 
   public async Task<AdminGeneratedImageDto> GenerateAsync(
@@ -27,31 +28,64 @@ public sealed class VertexAiAdminBlogImageGenerationService(
 
     ValidateOptions();
 
+    var trimmedPrompt = prompt.Trim();
     using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
     timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Max(googleCloudOptions.TimeoutSeconds, 1)));
 
-    using var request = new HttpRequestMessage(HttpMethod.Post, BuildEndpoint())
+    for (var attempt = 1; attempt <= MaxAttempts; attempt++)
     {
-      Content = JsonContent.Create(BuildPayload(prompt.Trim()))
-    };
-    request.Headers.Add("x-goog-api-key", googleCloudOptions.ApiKey);
+      using var request = new HttpRequestMessage(HttpMethod.Post, BuildEndpoint())
+      {
+        Content = JsonContent.Create(BuildPayload(trimmedPrompt))
+      };
+      request.Headers.Add("x-goog-api-key", googleCloudOptions.ApiKey);
 
-    using var response = await httpClient.SendAsync(request, timeoutCts.Token);
-    var responseBody = await response.Content.ReadAsStringAsync(timeoutCts.Token);
+      HttpResponseMessage response;
+      try
+      {
+        response = await httpClient.SendAsync(request, timeoutCts.Token);
+      }
+      catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+      {
+        throw;
+      }
+      catch (Exception) when (attempt < MaxAttempts)
+      {
+        await DelayBeforeRetryAsync(null, attempt, timeoutCts.Token);
+        continue;
+      }
+      catch (Exception ex)
+      {
+        throw new AiTryOnProviderException($"Vertex AI request failed after {MaxAttempts} attempts. {ex.Message}");
+      }
 
-    if (!response.IsSuccessStatusCode)
-    {
-      throw new AiTryOnProviderException(
-        $"Vertex AI returned {(int)response.StatusCode}. {GetProviderErrorMessage(responseBody)}");
+      using (response)
+      {
+        if (IsTransientStatus(response.StatusCode) && attempt < MaxAttempts)
+        {
+          await DelayBeforeRetryAsync(ReadRetryAfter(response), attempt, timeoutCts.Token);
+          continue;
+        }
+
+        var responseBody = await response.Content.ReadAsStringAsync(timeoutCts.Token);
+
+        if (!response.IsSuccessStatusCode)
+        {
+          throw new AiTryOnProviderException(
+            $"Vertex AI returned {(int)response.StatusCode}. {GetProviderErrorMessage(responseBody)}");
+        }
+
+        var generatedImage = TryExtractGeneratedImage(responseBody)
+          ?? throw new AiTryOnProviderException("Gemini did not return an image.");
+
+        return new AdminGeneratedImageDto(
+          Convert.FromBase64String(generatedImage.BytesBase64Encoded),
+          generatedImage.MimeType,
+          trimmedPrompt);
+      }
     }
 
-    var generatedImage = TryExtractGeneratedImage(responseBody)
-      ?? throw new AiTryOnProviderException("Gemini did not return an image.");
-
-    return new AdminGeneratedImageDto(
-      Convert.FromBase64String(generatedImage.BytesBase64Encoded),
-      generatedImage.MimeType,
-      prompt.Trim());
+    throw new AiTryOnProviderException("Vertex AI request failed.");
   }
 
   private void ValidateOptions()
@@ -77,9 +111,11 @@ public sealed class VertexAiAdminBlogImageGenerationService(
   {
     var safePrompt = string.Join("\n", new[]
     {
-      "Create one premium fashion editorial image for a Vietnamese áo dài e-commerce blog.",
+      "Create one clean, moderately detailed fashion editorial image for a Vietnamese áo dài e-commerce blog.",
+      "Target production quality should be good enough for social/blog publishing, but not ultra-high-fidelity or overly heavy.",
+      "Prefer simpler composition, moderate texture detail, controlled lighting, and efficient visual complexity to keep downstream media handling stable.",
       "No text overlay, no logo, no watermark, no fake claims.",
-      "Elegant Vietnamese áo dài styling, luxury boutique mood, realistic fabric texture, cinematic lighting.",
+      "Elegant Vietnamese áo dài styling, boutique mood, realistic but not hyper-detailed fabric texture, soft natural or studio light.",
       prompt
     });
 
@@ -182,6 +218,32 @@ public sealed class VertexAiAdminBlogImageGenerationService(
     }
 
     return null;
+  }
+
+  private static bool IsTransientStatus(System.Net.HttpStatusCode statusCode)
+  {
+    var code = (int)statusCode;
+    return code == 429 || (code >= 500 && code < 600);
+  }
+
+  private static TimeSpan? ReadRetryAfter(HttpResponseMessage response)
+  {
+    if (response.Headers.TryGetValues("Retry-After", out var values))
+    {
+      var raw = values.FirstOrDefault();
+      if (raw is not null && int.TryParse(raw, out var seconds) && seconds > 0)
+        return TimeSpan.FromSeconds(Math.Min(seconds, 30));
+    }
+
+    return null;
+  }
+
+  private static async Task DelayBeforeRetryAsync(TimeSpan? retryAfter, int attempt, CancellationToken ct)
+  {
+    var baseDelay = retryAfter ?? TimeSpan.FromMilliseconds(200 * Math.Pow(2, attempt - 1));
+    if (baseDelay > TimeSpan.FromSeconds(2)) baseDelay = TimeSpan.FromSeconds(2);
+    var jitter = TimeSpan.FromMilliseconds(Random.Shared.Next(0, 120));
+    await Task.Delay(baseDelay + jitter, ct);
   }
 
   private static string GetProviderErrorMessage(string responseBody)

@@ -48,6 +48,38 @@ export interface AdminOrderListItem {
   completedAt: string | null
 }
 
+export interface AdminOrderItemDetail {
+  id: string
+  productId: string | null
+  variantId: string | null
+  productName: string
+  sku: string | null
+  size: string | null
+  color: string | null
+  unitPrice: number
+  quantity: number
+  lineTotal: number
+}
+
+export interface AdminOrderDetail {
+  id: string
+  orderCode: string
+  customerName: string | null
+  customerEmail: string | null
+  province: string | null
+  district: string | null
+  ward: string | null
+  addressLine: string | null
+  subtotal: number
+  discountAmount: number
+  shippingFee: number
+  totalAmount: number
+  orderStatus: string
+  note: string | null
+  createdAt: string
+  items: AdminOrderItemDetail[]
+}
+
 // ── Products ──
 
 export interface AdminProductListItem {

@@ -51,6 +51,16 @@ function parseToolMeta(toolCall: AiToolCall) {
   }
 }
 
+function formatJsonPreview(raw?: string) {
+  if (!raw) return ''
+
+  try {
+    return JSON.stringify(JSON.parse(raw), null, 2)
+  } catch {
+    return raw
+  }
+}
+
 function countBlogWords(toolCall: AiToolCall) {
   return toolCall.blogDraft?.content.reduce((total, block) => {
     if ('content' in block && typeof block.content === 'string') {
@@ -125,26 +135,31 @@ function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
         </div>
       )}
       {toolCall.generatedImages && toolCall.generatedImages.length > 0 && (
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {toolCall.generatedImages.slice(0, 4).map((image) => (
-            <a
-              key={image.url}
-              href={image.url}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:border-wine/30 hover:shadow-md"
-            >
-              <img
-                src={image.url}
-                alt={image.alt || image.label || 'Ảnh AI đã tạo'}
-                loading="lazy"
-                className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-              />
-              <div className="px-2 py-1.5 text-[11px] font-medium text-gray-600 line-clamp-1">
-                {image.label || image.kind || 'Ảnh AI đã tạo'}
-              </div>
-            </a>
-          ))}
+        <div className="mt-2 space-y-2">
+          <div className="text-[11px] font-medium text-gray-500">
+            Preview {toolCall.generatedImages.length} ảnh AI
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {toolCall.generatedImages.map((image) => (
+              <a
+                key={image.url}
+                href={image.url}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:border-wine/30 hover:shadow-md"
+              >
+                <img
+                  src={image.url}
+                  alt={image.alt || image.label || 'Ảnh AI đã tạo'}
+                  loading="lazy"
+                  className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                />
+                <div className="px-2 py-1.5 text-[11px] font-medium text-gray-600 line-clamp-2">
+                  {image.label || image.kind || 'Ảnh AI đã tạo'}
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       )}
       {hasMore && (
@@ -158,9 +173,9 @@ function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
         </div>
       )}
       {expanded && (
-        <div className="mt-2 text-gray-500 font-mono text-[10px] bg-white border border-gray-100 rounded-lg p-2 overflow-x-auto whitespace-pre-wrap max-h-40">
-          {toolCall.input}
-        </div>
+        <pre className="mt-2 overflow-x-auto whitespace-pre-wrap rounded-lg border border-gray-100 bg-white p-2 text-[10px] font-mono text-gray-600 max-h-72 leading-relaxed">
+          {formatJsonPreview(toolCall.input)}
+        </pre>
       )}
     </div>
   )
