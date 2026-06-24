@@ -10,12 +10,12 @@ namespace AoDaiNhaUyen.Tests.Services;
 public sealed class HermesFeedServiceTests
 {
   [Fact]
-  public async Task GetRecentFeedAsync_AttachesFanOutRunAndReportViaTraceLinkedRunId()
+  public async Task GetRecentFeedAsync_AttachesBatchRunAndReportViaTraceLinkedRunId()
   {
     await using var db = CreateDb();
     var eventId = Guid.NewGuid();
     var runId = Guid.NewGuid();
-    var fanOutId = Guid.NewGuid().ToString("N");
+    var batchId = Guid.NewGuid().ToString("N");
     var now = DateTimeOffset.UtcNow;
 
     db.HermesEventOutbox.Add(new HermesEventOutbox
@@ -36,9 +36,10 @@ public sealed class HermesFeedServiceTests
     {
       Id = runId,
       Status = "completed",
-      Trigger = "admin_event_fanout",
-      ConversationId = fanOutId,
+      Trigger = "admin_event_batch",
+      ConversationId = batchId,
       ResultPreview = "preview",
+      PromptPreview = "batch:1 events",
       StartedAt = now,
       CompletedAt = now,
       CreatedAt = now.UtcDateTime,
@@ -50,9 +51,9 @@ public sealed class HermesFeedServiceTests
       Id = Guid.NewGuid(),
       EventOutboxId = eventId,
       RunId = runId,
-      Kind = "partial_report",
-      Title = "partial",
-      Summary = "partial summary",
+      Kind = "batch_member",
+      Title = "batch",
+      Summary = "batch summary",
       Status = "success",
       StartedAt = now,
       CompletedAt = now,
@@ -65,11 +66,11 @@ public sealed class HermesFeedServiceTests
       Id = Guid.NewGuid(),
       ReportType = "mixed",
       Severity = "warning",
-      Title = "Fan-out final report",
+      Title = "Batch final report",
       Summary = "compressed summary",
       PayloadJson = "{}",
       Source = "hermes_agent",
-      CorrelationId = fanOutId,
+      CorrelationId = batchId,
       RunId = runId,
       Status = "open",
       CreatedAt = now.UtcDateTime,
@@ -83,7 +84,7 @@ public sealed class HermesFeedServiceTests
 
     var item = Assert.Single(snapshot.Items);
     Assert.Equal("completed", item.RunStatus);
-    Assert.Contains(item.HermesMessages, x => x.Kind == "report" && x.Title == "Fan-out final report");
+    Assert.Contains(item.HermesMessages, x => x.Kind == "report" && x.Title == "Batch final report");
   }
 
   private static AppDbContext CreateDb()

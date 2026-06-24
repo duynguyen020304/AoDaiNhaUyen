@@ -2096,115 +2096,6 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.HermesFanOutSubBatch", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<int?>("DurationMs")
-                        .HasColumnType("integer")
-                        .HasColumnName("duration_ms");
-
-                    b.Property<string>("Error")
-                        .HasColumnType("text")
-                        .HasColumnName("error");
-
-                    b.Property<int>("EventCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("event_count");
-
-                    b.Property<string>("EventIdsJson")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("event_ids_json");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_deleted");
-
-                    b.Property<string>("ReportPreview")
-                        .HasColumnType("text")
-                        .HasColumnName("report_preview");
-
-                    b.Property<string>("ReportTextForCompression")
-                        .HasColumnType("text")
-                        .HasColumnName("report_text_for_compression");
-
-                    b.Property<string>("ReportType")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasDefaultValue("mixed")
-                        .HasColumnName("report_type");
-
-                    b.Property<Guid>("RunId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("run_id");
-
-                    b.Property<string>("Severity")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasDefaultValue("info")
-                        .HasColumnName("severity");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasDefaultValue("pending")
-                        .HasColumnName("status");
-
-                    b.Property<int>("SubBatchIndex")
-                        .HasColumnType("integer")
-                        .HasColumnName("sub_batch_index");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RunId", "Status")
-                        .HasDatabaseName("idx_hermes_fanout_sub_batches_run_status");
-
-                    b.HasIndex("RunId", "SubBatchIndex")
-                        .IsUnique()
-                        .HasDatabaseName("ux_hermes_fanout_sub_batches_run_sub_batch");
-
-                    b.ToTable("hermes_fanout_sub_batches", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_hermes_fanout_sub_batches_severity", "severity IN ('info', 'warning', 'high', 'critical')");
-
-                            t.HasCheckConstraint("ck_hermes_fanout_sub_batches_status", "status IN ('pending','success','failed')");
-                        });
-                });
-
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.HermesHeartbeat", b =>
                 {
                     b.Property<Guid>("Id")
@@ -6245,17 +6136,6 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.Navigation("Run");
                 });
 
-            modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.HermesFanOutSubBatch", b =>
-                {
-                    b.HasOne("AoDaiNhaUyen.Domain.Entities.HermesRun", "Run")
-                        .WithMany("FanOutSubBatches")
-                        .HasForeignKey("RunId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Run");
-                });
-
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.HermesReport", b =>
                 {
                     b.HasOne("AoDaiNhaUyen.Domain.Entities.HermesRun", "Run")
@@ -6701,8 +6581,6 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AoDaiNhaUyen.Domain.Entities.HermesRun", b =>
                 {
-                    b.Navigation("FanOutSubBatches");
-
                     b.Navigation("Reports");
                 });
 

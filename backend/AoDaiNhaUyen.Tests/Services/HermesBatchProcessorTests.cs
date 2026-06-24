@@ -127,153 +127,6 @@ public sealed class HermesBatchProcessorTests
     Assert.Equal(events[0].Id.ToString("N"), report.CorrelationId); // per-event correlation
   }
 
-  [Fact]
-  public async Task ProcessBatchAsync_FanOutFanIn_CreatesOneFinalReport()
-  {
-    var db = CreateDb();
-    var events = SeedEvents(db,
-      ("checkout_completed", "Order"), ("low_stock", "Inventory"), ("blog_seo_opportunity", "Content"),
-      ("promo_created", "Promotion"), ("email_campaign", "Campaign"), ("social_anomaly", "Social"),
-      ("review_negative", "Review"), ("high_value_order", "Order"), ("config_changed", "Config"));
-    var handler = new RecordingHandler(_ => Ok("Báo cáo thành phần."));
-    var compressor = new StubCompressor(new HermesCompressedReportResult(
-      "Báo cáo cuối",
-      "Tổng hợp cuối",
-      "warning",
-      "mixed",
-      ["Tín hiệu chính"],
-      ["Theo dõi xử lý"],
-      "## Nhận định\nTổng hợp cuối\n\n## Hành động đã thực hiện\nĐã phân tích.\n\n## Kết quả & Tác động\nMột báo cáo duy nhất.\n\n## Mức ưu tiên\nwarning"));
-    var processor = CreateProcessor(db, handler, FanOutOptions(), compressor);
-
-    var processed = await processor.ProcessBatchAsync(events, CancellationToken.None);
-
-    Assert.Equal(events.Select(e => e.Id).OrderBy(x => x), processed.OrderBy(x => x));
-    Assert.Equal(3, handler.CallCount);
-    Assert.Equal(1, compressor.CallCount);
-    Assert.All(handler.EventCounts, count => Assert.Equal(3, count));
-
-    var run = Assert.Single(db.HermesRuns.ToList());
-    Assert.Equal("admin_event_fanout", run.Trigger);
-    Assert.Equal("completed", run.Status);
-
-    var report = Assert.Single(db.HermesReports.ToList());
-    Assert.Equal("Báo cáo cuối", report.Title);
-    Assert.Equal("mixed", report.ReportType);
-    Assert.Equal("warning", report.Severity);
-
-    Assert.Equal(3, db.HermesAgentTraceSteps.Count(t => t.Kind == "partial_report"));
-    Assert.Equal(1, db.HermesAgentTraceSteps.Count(t => t.Kind == "fan_in_compression"));
-    Assert.All(db.HermesEventOutbox.ToList(), e => Assert.Equal("completed", e.Status));
-  }
-
-  [Fact]
-  public async Task ProcessBatchAsync_FanOutFanIn_RemainderChunkProcessedImmediately()
-  {
-    var db = CreateDb();
-    var events = SeedEvents(db, Enumerable.Range(0, 10).Select(i => ($"checkout_completed_{i}", "Order")).ToArray());
-    var handler = new RecordingHandler(_ => Ok("Báo cáo thành phần."));
-    var processor = CreateProcessor(db, handler, FanOutOptions(), new StubCompressor());
-
-    var processed = await processor.ProcessBatchAsync(events, CancellationToken.None);
-
-    Assert.Equal(10, processed.Count);
-    Assert.Equal(new[] { 3, 3, 3, 1 }, handler.EventCounts);
-    Assert.Equal(4, db.HermesAgentTraceSteps.Count(t => t.Kind == "partial_report"));
-    Assert.Single(db.HermesReports.ToList());
-    Assert.All(db.HermesEventOutbox.ToList(), e => Assert.Equal("completed", e.Status));
-  }
-
-  [Fact]
-  public async Task ProcessBatchAsync_FanOutFanIn_FiresSubBatchesConcurrently()
-  {
-    var db = CreateDb();
-    var events = SeedEvents(db, Enumerable.Range(0, 9).Select(i => ($"checkout_completed_{i}", "Order")).ToArray());
-    var handler = new RecordingHandler(_ => Ok("Báo cáo thành phần."), TimeSpan.FromMilliseconds(100));
-    var processor = CreateProcessor(db, handler, FanOutOptions(), new StubCompressor());
-
-    await processor.ProcessBatchAsync(events, CancellationToken.None);
-
-    Assert.True(handler.MaxConcurrentCalls > 1);
-    Assert.True(handler.MaxConcurrentCalls <= 3);
-  }
-
-  [Fact]
-  public async Task ProcessBatchAsync_FanOutFanIn_SubBatchFailure_CompletesOnlySuccessfulEvents()
-  {
-    var db = CreateDb();
-    var events = SeedEvents(db, Enumerable.Range(0, 6).Select(i => ($"checkout_completed_{i}", "Order")).ToArray());
-    var handler = new RecordingHandler(request =>
-    {
-      var body = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
-      return body.Contains("\"subBatchIndex\":1")
-        ? new HttpResponseMessage(HttpStatusCode.InternalServerError) { Content = new StringContent("boom") }
-        : Ok("Báo cáo thành phần.");
-    });
-    var processor = CreateProcessor(db, handler, FanOutOptions(), new StubCompressor());
-
-    var processed = await processor.ProcessBatchAsync(events, CancellationToken.None);
-
-    Assert.Equal(3, processed.Count);
-    Assert.Equal(3, db.HermesEventOutbox.Count(e => e.Status == "completed"));
-    Assert.Equal(3, db.HermesEventOutbox.Count(e => e.Status == "processing"));
-    Assert.Single(db.HermesReports.ToList());
-    Assert.Equal("partial", Assert.Single(db.HermesRuns.ToList()).Status);
-  }
-
-  [Fact]
-  public async Task ProcessBatchAsync_FanInCompressorThrows_UsesProcessorFallbackAndCompletes()
-  {
-    var db = CreateDb();
-    var events = SeedEvents(db, Enumerable.Range(0, 6).Select(i => ($"checkout_completed_{i}", "Order")).ToArray());
-    var handler = new RecordingHandler(_ => Ok("Báo cáo thành phần."));
-    var processor = CreateProcessor(db, handler, FanOutOptions(), new ThrowingCompressor());
-
-    var processed = await processor.ProcessBatchAsync(events, CancellationToken.None);
-
-    Assert.Equal(6, processed.Count);
-    Assert.Single(db.HermesReports.ToList());
-    var run = Assert.Single(db.HermesRuns.ToList());
-    Assert.Equal("completed", run.Status);
-    Assert.Contains("AI compression failed", run.Error);
-    Assert.Equal(1, db.HermesAgentTraceSteps.Count(t => t.Kind == "fan_in_compression_failed"));
-  }
-
-  [Fact]
-  public async Task ProcessBatchAsync_ReusesPersistedPartialReports_AfterCompressorCrash()
-  {
-    var db = CreateDb();
-    var events = SeedEvents(db, Enumerable.Range(0, 6).Select(i => ($"checkout_completed_{i}", "Order")).ToArray());
-    var firstHandler = new RecordingHandler(_ => Ok("Báo cáo thành phần."));
-    var failingProcessor = CreateProcessor(db, firstHandler, FanOutOptions(), new ThrowingCompressor());
-
-    var firstProcessed = await failingProcessor.ProcessBatchAsync(events, CancellationToken.None);
-
-    Assert.Equal(6, firstProcessed.Count);
-    Assert.Equal(2, firstHandler.CallCount);
-    Assert.Equal(2, db.HermesAgentTraceSteps.Count(t => t.Kind == "partial_report"));
-    Assert.Equal(2, db.HermesFanOutSubBatches.Count());
-
-    foreach (var item in events)
-    {
-      item.Status = "processing";
-      item.ProcessedAt = null;
-      item.UpdatedAt = DateTime.UtcNow;
-    }
-    db.HermesReports.RemoveRange(db.HermesReports);
-    await db.SaveChangesAsync();
-
-    var secondHandler = new RecordingHandler(_ => Ok("KHÔNG NÊN GỌI LẠI"));
-    var successProcessor = CreateProcessor(db, secondHandler, FanOutOptions(), new StubCompressor());
-
-    var secondProcessed = await successProcessor.ProcessBatchAsync(events, CancellationToken.None);
-
-    Assert.Equal(6, secondProcessed.Count);
-    Assert.Equal(0, secondHandler.CallCount);
-    Assert.Single(db.HermesReports.ToList());
-    Assert.Equal(1, db.HermesAgentTraceSteps.Count(t => t.Kind == "fan_out_resumed"));
-  }
-
   // ---- helpers ----
 
   private static HttpResponseMessage Ok(string assistantText)
@@ -309,22 +162,10 @@ public sealed class HermesBatchProcessorTests
     return list;
   }
 
-  private static HermesOutboxOptions FanOutOptions() => new()
-  {
-    DryRun = false,
-    BatchProcessingEnabled = true,
-    FanOutFanInEnabled = true,
-    FanOutSubBatchSize = 3,
-    MaxParallelFanOutBatches = 3,
-    FanInCompressionEnabled = true,
-    FanInFallbackToConcatenation = true
-  };
-
   private static HermesEventProcessor CreateProcessor(
     AppDbContext db,
     HttpMessageHandler handler,
-    HermesOutboxOptions? outbox = null,
-    IHermesReportCompressorService? compressor = null)
+    HermesOutboxOptions? outbox = null)
   {
     var agentOptions = Options.Create(new HermesAgentOptions { ApiServerUrl = "https://hermes.test", ApiServerKey = "key" });
     var outboxOptions = Options.Create(outbox ?? new HermesOutboxOptions { DryRun = false, BatchProcessingEnabled = true });
@@ -332,7 +173,6 @@ public sealed class HermesBatchProcessorTests
       new StubHttpClientFactory(handler),
       agentOptions,
       outboxOptions,
-      compressor ?? new StubCompressor(),
       db,
       NullLogger<HermesEventProcessor>.Instance);
   }
@@ -344,6 +184,11 @@ public sealed class HermesBatchProcessorTests
       .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
       .Options;
     return new AppDbContext(options);
+  }
+
+  private sealed class StubHttpClientFactory(HttpMessageHandler handler) : IHttpClientFactory
+  {
+    public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);
   }
 
   private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> responder) : HttpMessageHandler
@@ -409,32 +254,4 @@ public sealed class HermesBatchProcessorTests
     }
   }
 
-  private sealed class StubCompressor(HermesCompressedReportResult? result = null) : IHermesReportCompressorService
-  {
-    public int CallCount { get; private set; }
-
-    public Task<HermesCompressedReportResult> CompressAsync(IReadOnlyList<HermesPartialReportInput> partialReports, CancellationToken cancellationToken)
-    {
-      CallCount++;
-      return Task.FromResult(result ?? new HermesCompressedReportResult(
-        "Báo cáo tổng hợp Hermes",
-        "Tổng hợp các báo cáo thành phần.",
-        partialReports.Any(x => x.Severity == "warning") ? "warning" : "info",
-        partialReports.Select(x => x.ReportType).Distinct().Count() > 1 ? "mixed" : partialReports.FirstOrDefault()?.ReportType ?? "growth",
-        [],
-        [],
-        "## Nhận định\nTổng hợp các báo cáo thành phần.\n\n## Hành động đã thực hiện\nĐã phân tích.\n\n## Kết quả & Tác động\nMột báo cáo duy nhất.\n\n## Mức ưu tiên\ninfo"));
-    }
-  }
-
-  private sealed class ThrowingCompressor : IHermesReportCompressorService
-  {
-    public Task<HermesCompressedReportResult> CompressAsync(IReadOnlyList<HermesPartialReportInput> partialReports, CancellationToken cancellationToken) =>
-      throw new InvalidOperationException("compress failed");
-  }
-
-  private sealed class StubHttpClientFactory(HttpMessageHandler handler) : IHttpClientFactory
-  {
-    public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);
-  }
 }

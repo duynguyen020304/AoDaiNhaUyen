@@ -663,6 +663,8 @@ public sealed class AdminAiSecurityTests
       new FakeMediaService(),
       new FakeBlogAiDraftService(),
       new FakeBlogPostService(),
+      new FakeAdminBlogImageGenerationService(),
+      new FakeStorageService(),
       marketing ?? new FakeMarketingCampaignService(),
       new FakeSubscriberService(),
       new FakeEmailJobService(),
@@ -979,6 +981,38 @@ public sealed class AdminAiSecurityTests
     }
 
     public Task<MarketingCampaignSendResult> QueueCampaignAsync(SendMarketingCampaignRequest request, CancellationToken cancellationToken = default) => Task.FromResult(new MarketingCampaignSendResult(0, 0, []));
+  }
+
+  private sealed class FakeAdminBlogImageGenerationService : IAdminBlogImageGenerationService
+  {
+    public Task<AdminGeneratedImageDto> GenerateAsync(string prompt, CancellationToken cancellationToken = default) =>
+      Task.FromResult(new AdminGeneratedImageDto([], "image/png", prompt));
+  }
+
+  private sealed class FakeStorageService : IStorageService
+  {
+    public Task<UploadedFileResult> UploadAsync(Stream stream, string fileName, string contentType, string? folder = null, CancellationToken ct = default) =>
+      Task.FromResult(new UploadedFileResult($"{folder ?? "test"}/{fileName}", $"https://cdn.test/{fileName}", null, contentType, stream.Length, fileName));
+
+    public Task<string> GeneratePresignedGetUrlAsync(string objectKey, int expirationSeconds = 3600, CancellationToken ct = default) =>
+      Task.FromResult($"https://signed.test/{objectKey}");
+
+    public Task DeleteAsync(string objectKey, CancellationToken ct = default) => Task.CompletedTask;
+
+    public Task<Stream> DownloadAsync(string objectKey, CancellationToken ct = default) =>
+      Task.FromResult<Stream>(new MemoryStream());
+
+    public Task PutObjectWithKeyAsync(string objectKey, Stream stream, string contentType, CancellationToken ct = default) =>
+      Task.CompletedTask;
+
+    public Task<bool> ExistsAsync(string objectKey, CancellationToken ct = default) => Task.FromResult(true);
+
+    public string BuildCanonicalUrl(string objectKey) => $"https://cdn.test/{objectKey}";
+
+    public Task<string> CopyToPublicAsync(string objectKey, CancellationToken ct = default) =>
+      Task.FromResult(BuildCanonicalUrl(objectKey));
+
+    public bool IsConfigured() => true;
   }
 
   private sealed class FakeMediaService : IAdminMediaService
