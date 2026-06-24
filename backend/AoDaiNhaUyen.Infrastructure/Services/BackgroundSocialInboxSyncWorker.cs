@@ -63,7 +63,7 @@ public sealed class BackgroundSocialInboxSyncWorker(
       {
         if (_options.SyncComments)
         {
-          await SyncCommentsAsync(socialService, hermesEvents, account.ZernioAccountId, account.ZernioProfileId, cancellationToken);
+          await SyncCommentsAsync(dbContext, socialService, hermesEvents, account.ZernioAccountId, account.ZernioProfileId, cancellationToken);
         }
 
         if (_options.SyncMessages)
@@ -89,12 +89,14 @@ public sealed class BackgroundSocialInboxSyncWorker(
   }
 
   private async Task SyncCommentsAsync(
+    AppDbContext dbContext,
     ISocialService socialService,
     IHermesEventOutboxPublisher hermesEvents,
     string accountId,
     string profileId,
     CancellationToken cancellationToken)
   {
+    var socialAutomationInitializedAt = await GetSocialAutomationInitializedAtAsync(dbContext, cancellationToken);
     var posts = await socialService.GetCommentedPostsAsync(
       "facebook",
       accountId,
@@ -114,6 +116,8 @@ public sealed class BackgroundSocialInboxSyncWorker(
 
       foreach (var comment in Flatten(comments.Items).Where(x => x.Author?.IsOwner != true))
       {
+        if (IsBeforeSocialAutomationCutoff(comment.CreatedTime, socialAutomationInitializedAt)) continue;
+
         await EnqueueSocialEventAsync(
           hermesEvents,
           "social_comment_received",
@@ -152,21 +156,23 @@ public sealed class BackgroundSocialInboxSyncWorker(
         limit: Math.Clamp(_options.ItemLimit, 1, 100),
         cancellationToken);
 
-      foreach (var message in messages.Items.Where(x => string.Equals(x.Direction, "incoming", StringComparison.OrdinalIgnoreCase)))
-      {
-        await EnqueueSocialEventAsync(
-          hermesEvents,
-          "social_message_received",
-          "message.received",
-          message.Platform ?? "facebook",
-          message.Id,
-          accountId,
-          conversation.Id,
-          isComment: false,
-          cancellationToken);
-      }
+      // Message auto-replies are driven by signed webhooks + durable debounce batches.
+      // Polling only hydrates inbox state; enqueueing here would replay old backlog after reconnect/DB restore.
+      _ = messages;
     }
   }
+
+  private static async Task<DateTimeOffset?> GetSocialAutomationInitializedAtAsync(AppDbContext dbContext, CancellationToken cancellationToken)
+  {
+    return await dbContext.SocialAutomationStates
+      .AsNoTracking()
+      .Where(x => x.Key == "global")
+      .Select(x => (DateTimeOffset?)x.InitializedAt)
+      .FirstOrDefaultAsync(cancellationToken);
+  }
+
+  private static bool IsBeforeSocialAutomationCutoff(DateTimeOffset? occurredAt, DateTimeOffset? initializedAt) =>
+    occurredAt is not null && initializedAt is not null && occurredAt < initializedAt;
 
   private static Task EnqueueSocialEventAsync(
     IHermesEventOutboxPublisher hermesEvents,

@@ -66,6 +66,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<HermesAgentTraceStep> HermesAgentTraceSteps => Set<HermesAgentTraceStep>();
   public DbSet<HermesActionAudit> HermesActionAudits => Set<HermesActionAudit>();
   public DbSet<SocialAccountConnection> SocialAccountConnections => Set<SocialAccountConnection>();
+  public DbSet<SocialAutomationState> SocialAutomationStates => Set<SocialAutomationState>();
+  public DbSet<SocialWebhookReceipt> SocialWebhookReceipts => Set<SocialWebhookReceipt>();
+  public DbSet<SocialAutoReplyBatch> SocialAutoReplyBatches => Set<SocialAutoReplyBatch>();
   public DbSet<SocialInboxConversation> SocialInboxConversations => Set<SocialInboxConversation>();
   public DbSet<SocialInboxMessage> SocialInboxMessages => Set<SocialInboxMessage>();
   public DbSet<SocialInboxComment> SocialInboxComments => Set<SocialInboxComment>();
@@ -870,7 +873,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
       builder.HasIndex(x => new { x.EventOutboxId, x.StartedAt }).HasDatabaseName("idx_hermes_trace_steps_event_started_at");
       builder.HasIndex(x => new { x.RunId, x.StartedAt }).HasDatabaseName("idx_hermes_trace_steps_run_started_at");
-      builder.HasIndex(x => new { x.RunId, x.Kind }).HasDatabaseName("idx_hermes_trace_steps_run_kind");
       builder.HasIndex(x => new { x.Kind, x.StartedAt }).HasDatabaseName("idx_hermes_trace_steps_kind_started_at");
       builder.HasOne(x => x.Run).WithMany().HasForeignKey(x => x.RunId).OnDelete(DeleteBehavior.SetNull);
       builder.HasOne(x => x.EventOutbox).WithMany().HasForeignKey(x => x.EventOutboxId).OnDelete(DeleteBehavior.SetNull);
@@ -1030,12 +1032,68 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.Property(x => x.Username).HasMaxLength(255);
       builder.Property(x => x.AvatarUrl).HasMaxLength(1000);
       builder.Property(x => x.LastSyncedAt);
+      builder.Property(x => x.AutoReplyIgnoreBefore);
       builder.Property(x => x.MetadataJson).HasColumnType("jsonb");
       builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
       builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
       builder.HasIndex(x => new { x.Provider, x.ZernioAccountId }).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_social_accounts_provider_account_unique");
       builder.HasIndex(x => new { x.Platform, x.IsActive, x.DisplayName }).HasDatabaseName("idx_social_accounts_platform_active_name");
       builder.HasIndex(x => x.ZernioProfileId).HasDatabaseName("idx_social_accounts_zernio_profile_id");
+    });
+
+    modelBuilder.Entity<SocialAutomationState>(builder =>
+    {
+      builder.ToTable("social_automation_states");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Key).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.InitializedAt).HasDefaultValueSql("NOW()").IsRequired();
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => x.Key).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_social_automation_states_key_unique");
+    });
+
+    modelBuilder.Entity<SocialWebhookReceipt>(builder =>
+    {
+      builder.ToTable("social_webhook_receipts");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Provider).HasMaxLength(50).HasDefaultValue("zernio").IsRequired();
+      builder.Property(x => x.Platform).HasMaxLength(50).HasDefaultValue("facebook").IsRequired();
+      builder.Property(x => x.EventType).HasMaxLength(100).IsRequired();
+      builder.Property(x => x.ExternalEventId).HasMaxLength(200);
+      builder.Property(x => x.AccountId).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.ThreadId).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.MessageId).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.Direction).HasMaxLength(30).HasDefaultValue("incoming").IsRequired();
+      builder.Property(x => x.ReplyStatus).HasMaxLength(30).HasDefaultValue("pending").IsRequired();
+      builder.Property(x => x.ReplyMessageId).HasMaxLength(200);
+      builder.Property(x => x.SkipReason).HasMaxLength(120);
+      builder.Property(x => x.RawHash).HasMaxLength(128);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.Platform, x.AccountId, x.MessageId }).IsUnique().HasFilter("NOT is_deleted").HasDatabaseName("idx_social_webhook_receipts_message_unique");
+      builder.HasIndex(x => new { x.Provider, x.EventType, x.ExternalEventId }).IsUnique().HasFilter("external_event_id IS NOT NULL AND NOT is_deleted").HasDatabaseName("idx_social_webhook_receipts_event_unique");
+      builder.HasIndex(x => new { x.ReplyStatus, x.ReceivedAt }).HasDatabaseName("idx_social_webhook_receipts_status_received");
+      builder.HasIndex(x => new { x.Platform, x.AccountId, x.ThreadId, x.ReceivedAt }).HasDatabaseName("idx_social_webhook_receipts_thread_received");
+      builder.ToTable(t => t.HasCheckConstraint("ck_social_webhook_receipts_reply_status", "reply_status IN ('pending','skipped','batched','replied','failed')"));
+    });
+
+    modelBuilder.Entity<SocialAutoReplyBatch>(builder =>
+    {
+      builder.ToTable("social_auto_reply_batches");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.Platform).HasMaxLength(50).HasDefaultValue("facebook").IsRequired();
+      builder.Property(x => x.AccountId).HasMaxLength(120).IsRequired();
+      builder.Property(x => x.ConversationId).HasMaxLength(200).IsRequired();
+      builder.Property(x => x.Status).HasMaxLength(30).HasDefaultValue("pending").IsRequired();
+      builder.Property(x => x.MessageIdsJson).HasColumnType("jsonb").IsRequired();
+      builder.Property(x => x.ReplyMessageId).HasMaxLength(200);
+      builder.Property(x => x.LastError).HasColumnType("text");
+      builder.Property(x => x.LockedBy).HasMaxLength(120);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.Platform, x.AccountId, x.ConversationId }).IsUnique().HasFilter("status IN ('pending','processing','queued') AND NOT is_deleted").HasDatabaseName("idx_social_auto_reply_batches_active_unique");
+      builder.HasIndex(x => new { x.Status, x.WindowEndsAt }).HasDatabaseName("idx_social_auto_reply_batches_status_window");
+      builder.ToTable(t => t.HasCheckConstraint("ck_social_auto_reply_batches_status", "status IN ('pending','processing','queued','replied','cancelled','failed')"));
     });
 
     modelBuilder.Entity<SocialInboxConversation>(builder =>

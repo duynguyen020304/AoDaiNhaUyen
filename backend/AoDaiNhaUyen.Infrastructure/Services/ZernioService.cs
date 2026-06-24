@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AoDaiNhaUyen.Application.DTOs.Social;
@@ -18,12 +20,16 @@ namespace AoDaiNhaUyen.Infrastructure.Services;
 public sealed class ZernioService(
   IHttpClientFactory httpClientFactory,
   IOptions<ZernioSettings> zernioOptions,
+  IOptions<SocialAutoReplyOptions> socialAutoReplyOptions,
   AppDbContext dbContext,
   ILogger<ZernioService> logger,
   IHermesEventOutboxPublisher? hermesEventOutboxPublisher = null) : ISocialService
 {
   private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
   private readonly ZernioSettings settings = zernioOptions.Value;
+  private readonly SocialAutoReplyOptions autoReplyOptions = socialAutoReplyOptions.Value;
+
+  private sealed record MessageUpsertResult(HashSet<string> InsertedMessageIds, HashSet<string> ExistingMessageIds);
 
   public async Task<IReadOnlyList<SocialAccountConnectionDto>> GetAccountsAsync(
     string? platform = null,
@@ -634,11 +640,13 @@ public sealed class ZernioService(
           Username = GetString(account, "username", "handle"),
           AvatarUrl = GetString(account, "avatarUrl", "profilePicture", "image"),
           LastSyncedAt = DateTimeOffset.UtcNow,
+          AutoReplyIgnoreBefore = DateTimeOffset.UtcNow,
           MetadataJson = SanitizeMetadata(account)
         });
       }
       else
       {
+        var wasInactive = existing.IsDeleted || !existing.IsActive;
         existing.Platform = accountPlatform;
         existing.ZernioProfileId = accountProfileId;
         existing.DisplayName = GetString(account, "displayName", "name", "username") ?? existing.DisplayName;
@@ -646,6 +654,10 @@ public sealed class ZernioService(
         existing.AvatarUrl = GetString(account, "avatarUrl", "profilePicture", "image") ?? existing.AvatarUrl;
         existing.MetadataJson = SanitizeMetadata(account);
         existing.LastSyncedAt = DateTimeOffset.UtcNow;
+        if (wasInactive || existing.AutoReplyIgnoreBefore is null)
+        {
+          existing.AutoReplyIgnoreBefore = DateTimeOffset.UtcNow;
+        }
         existing.IsActive = true;
         existing.IsDeleted = false;
         existing.DeletedAt = null;
@@ -685,8 +697,36 @@ public sealed class ZernioService(
       if (message.HasValue)
       {
         var dto = MapWebhookMessage(message.Value, account, conversation);
-        await UpsertMessagesAsync(dto.ConversationId, dto.AccountId, [dto], cancellationToken);
-        await PublishSocialWebhookEventAsync(eventName, dto.Platform ?? "facebook", dto.Id, dto.AccountId, dto.ConversationId, cancellationToken);
+        var platform = dto.Platform ?? "facebook";
+        await UpsertWebhookReceiptAsync(eventName, platform, dto, GetString(payload, "id", "eventId", "webhookEventId"), message.Value, cancellationToken);
+
+        var upsert = await UpsertMessagesAsync(dto.ConversationId, dto.AccountId, [dto], cancellationToken);
+        if (!upsert.InsertedMessageIds.Contains(dto.Id))
+        {
+          await MarkReceiptSkippedAsync(platform, dto.AccountId, dto.Id, "duplicate_message", cancellationToken);
+          return;
+        }
+
+        if (!IsIncomingCustomerMessage(dto))
+        {
+          await MarkReceiptSkippedAsync(platform, dto.AccountId, dto.Id, "not_incoming_customer_message", cancellationToken);
+          return;
+        }
+
+        if (await IsBeforeInitialSocialAutomationCutoffAsync(dto.CreatedAt, cancellationToken))
+        {
+          await MarkReceiptSkippedAsync(platform, dto.AccountId, dto.Id, "before_initial_social_automation_cutoff", cancellationToken);
+          return;
+        }
+
+        if (await IsBeforeAutoReplyCutoffAsync(dto, cancellationToken))
+        {
+          await MarkReceiptSkippedAsync(platform, dto.AccountId, dto.Id, "before_auto_reply_cutoff", cancellationToken);
+          return;
+        }
+
+        var batch = await EnqueueOrExtendAutoReplyBatchAsync(dto, cancellationToken);
+        await MarkReceiptBatchedAsync(platform, dto.AccountId, dto.Id, batch.Id, cancellationToken);
       }
     }
     else if (eventName.StartsWith("comment.", StringComparison.OrdinalIgnoreCase))
@@ -699,7 +739,10 @@ public sealed class ZernioService(
         var accountId = GetString(account ?? default, "id", "accountId") ?? GetString(comment.Value, "accountId") ?? string.Empty;
         var dto = MapComment(comment.Value);
         await UpsertCommentsAsync(postId, accountId, [dto], cancellationToken);
-        await PublishSocialWebhookEventAsync(eventName, dto.Platform ?? GetString(account ?? default, "platform") ?? "facebook", dto.Id, accountId, postId, cancellationToken);
+        if (!await IsBeforeInitialSocialAutomationCutoffAsync(dto.CreatedTime, cancellationToken))
+        {
+          await PublishSocialWebhookEventAsync(eventName, dto.Platform ?? GetString(account ?? default, "platform") ?? "facebook", dto.Id, accountId, postId, cancellationToken);
+        }
       }
     }
   }
@@ -772,6 +815,223 @@ public sealed class ZernioService(
       cancellationToken);
   }
 
+  private async Task UpsertWebhookReceiptAsync(
+    string eventName,
+    string platform,
+    SocialMessageDto message,
+    string? externalEventId,
+    JsonElement rawMessage,
+    CancellationToken cancellationToken)
+  {
+    if (string.IsNullOrWhiteSpace(message.Id) || string.IsNullOrWhiteSpace(message.AccountId) || string.IsNullOrWhiteSpace(message.ConversationId)) return;
+
+    var normalizedPlatform = NormalizePlatform(platform);
+    var normalizedAccountId = message.AccountId.Trim();
+    var existing = await dbContext.SocialWebhookReceipts
+      .IgnoreQueryFilters()
+      .FirstOrDefaultAsync(x => x.Platform == normalizedPlatform && x.AccountId == normalizedAccountId && x.MessageId == message.Id, cancellationToken);
+
+    if (existing is null)
+    {
+      existing = new SocialWebhookReceipt
+      {
+        Provider = "zernio",
+        Platform = normalizedPlatform,
+        EventType = string.IsNullOrWhiteSpace(eventName) ? "message.received" : eventName.Trim().ToLowerInvariant(),
+        ExternalEventId = string.IsNullOrWhiteSpace(externalEventId) ? null : externalEventId.Trim(),
+        AccountId = normalizedAccountId,
+        ThreadId = message.ConversationId.Trim(),
+        MessageId = message.Id,
+        Direction = NormalizeDirection(message.Direction),
+        OccurredAt = message.CreatedAt,
+        ReceivedAt = DateTimeOffset.UtcNow,
+        ReplyStatus = "pending",
+        RawHash = HashJson(rawMessage),
+        CreatedAt = DateTime.UtcNow
+      };
+      dbContext.SocialWebhookReceipts.Add(existing);
+    }
+    else
+    {
+      existing.EventType = string.IsNullOrWhiteSpace(eventName) ? existing.EventType : eventName.Trim().ToLowerInvariant();
+      existing.ExternalEventId ??= string.IsNullOrWhiteSpace(externalEventId) ? null : externalEventId.Trim();
+      existing.ThreadId = message.ConversationId.Trim();
+      existing.Direction = NormalizeDirection(message.Direction);
+      existing.OccurredAt = message.CreatedAt ?? existing.OccurredAt;
+      existing.RawHash ??= HashJson(rawMessage);
+      existing.IsActive = true;
+      existing.IsDeleted = false;
+      existing.DeletedAt = null;
+      existing.UpdatedAt = DateTime.UtcNow;
+    }
+
+    try
+    {
+      await dbContext.SaveChangesAsync(cancellationToken);
+    }
+    catch (DbUpdateException)
+    {
+      foreach (var entry in dbContext.ChangeTracker.Entries<SocialWebhookReceipt>().Where(x => x.State == EntityState.Added))
+      {
+        entry.State = EntityState.Detached;
+      }
+    }
+  }
+
+  private async Task MarkReceiptSkippedAsync(string platform, string accountId, string messageId, string reason, CancellationToken cancellationToken)
+  {
+    await UpdateReceiptStatusAsync(platform, accountId, messageId, "skipped", null, reason, cancellationToken);
+  }
+
+  private async Task MarkReceiptBatchedAsync(string platform, string accountId, string messageId, Guid batchId, CancellationToken cancellationToken)
+  {
+    await UpdateReceiptStatusAsync(platform, accountId, messageId, "batched", null, $"batch:{batchId:N}", cancellationToken);
+  }
+
+  private async Task UpdateReceiptStatusAsync(string platform, string accountId, string messageId, string status, string? replyMessageId, string? reason, CancellationToken cancellationToken)
+  {
+    var normalizedPlatform = NormalizePlatform(platform);
+    var normalizedAccountId = accountId.Trim();
+    var receipt = await dbContext.SocialWebhookReceipts
+      .IgnoreQueryFilters()
+      .FirstOrDefaultAsync(x => x.Platform == normalizedPlatform && x.AccountId == normalizedAccountId && x.MessageId == messageId, cancellationToken);
+    if (receipt is null) return;
+
+    receipt.ReplyStatus = status;
+    receipt.ReplyMessageId = replyMessageId;
+    receipt.SkipReason = reason;
+    receipt.ProcessedAt = status is "skipped" or "replied" or "failed" ? DateTimeOffset.UtcNow : receipt.ProcessedAt;
+    receipt.UpdatedAt = DateTime.UtcNow;
+    await dbContext.SaveChangesAsync(cancellationToken);
+  }
+
+  private async Task<bool> IsBeforeInitialSocialAutomationCutoffAsync(DateTimeOffset? occurredAt, CancellationToken cancellationToken)
+  {
+    if (occurredAt is null) return false;
+
+    var initializedAt = await dbContext.SocialAutomationStates
+      .AsNoTracking()
+      .Where(x => x.Key == "global")
+      .Select(x => (DateTimeOffset?)x.InitializedAt)
+      .FirstOrDefaultAsync(cancellationToken);
+
+    return initializedAt is not null && occurredAt < initializedAt;
+  }
+
+  private async Task<bool> IsBeforeAutoReplyCutoffAsync(SocialMessageDto message, CancellationToken cancellationToken)
+  {
+    if (!autoReplyOptions.SkipBacklogBeforeConnection || message.CreatedAt is null || string.IsNullOrWhiteSpace(message.AccountId)) return false;
+
+    var accountId = message.AccountId.Trim();
+    var cutoff = await dbContext.SocialAccountConnections
+      .AsNoTracking()
+      .Where(x => x.Provider == "zernio" && x.ZernioAccountId == accountId)
+      .Select(x => x.AutoReplyIgnoreBefore)
+      .FirstOrDefaultAsync(cancellationToken);
+
+    return cutoff is not null && message.CreatedAt < cutoff;
+  }
+
+  private async Task<SocialAutoReplyBatch> EnqueueOrExtendAutoReplyBatchAsync(SocialMessageDto message, CancellationToken cancellationToken)
+  {
+    var platform = NormalizePlatform(message.Platform ?? "facebook");
+    var accountId = NormalizeRequired(message.AccountId, "accountId");
+    var conversationId = NormalizeRequired(message.ConversationId, "conversationId");
+    var now = DateTimeOffset.UtcNow;
+    var windowEnds = now.AddSeconds(Math.Clamp(autoReplyOptions.DebounceSeconds, 1, 300));
+
+    var batch = await dbContext.SocialAutoReplyBatches
+      .IgnoreQueryFilters()
+      .FirstOrDefaultAsync(x => x.Platform == platform && x.AccountId == accountId && x.ConversationId == conversationId && (x.Status == "pending" || x.Status == "processing" || x.Status == "queued"), cancellationToken);
+
+    if (batch is null)
+    {
+      batch = new SocialAutoReplyBatch
+      {
+        Id = Guid.NewGuid(),
+        Platform = platform,
+        AccountId = accountId,
+        ConversationId = conversationId,
+        Status = "pending",
+        WindowStartedAt = now,
+        WindowEndsAt = windowEnds,
+        LastMessageAt = message.CreatedAt ?? now,
+        MessageIdsJson = JsonSerializer.Serialize(new[] { message.Id }, JsonOptions),
+        MessageCount = 1,
+        CreatedAt = now.UtcDateTime,
+        UpdatedAt = now.UtcDateTime
+      };
+      dbContext.SocialAutoReplyBatches.Add(batch);
+    }
+    else if (batch.Status == "pending")
+    {
+      var ids = DeserializeMessageIds(batch.MessageIdsJson);
+      if (!ids.Contains(message.Id, StringComparer.Ordinal)) ids.Add(message.Id);
+      batch.MessageIdsJson = JsonSerializer.Serialize(ids, JsonOptions);
+      batch.MessageCount = ids.Count;
+      batch.LastMessageAt = message.CreatedAt ?? now;
+      batch.WindowEndsAt = windowEnds;
+      batch.UpdatedAt = now.UtcDateTime;
+    }
+
+    try
+    {
+      await dbContext.SaveChangesAsync(cancellationToken);
+    }
+    catch (DbUpdateException)
+    {
+      foreach (var entry in dbContext.ChangeTracker.Entries<SocialAutoReplyBatch>().Where(x => x.State == EntityState.Added))
+      {
+        entry.State = EntityState.Detached;
+      }
+
+      batch = await dbContext.SocialAutoReplyBatches
+        .IgnoreQueryFilters()
+        .FirstAsync(x => x.Platform == platform && x.AccountId == accountId && x.ConversationId == conversationId && (x.Status == "pending" || x.Status == "processing" || x.Status == "queued"), cancellationToken);
+      if (batch.Status == "pending")
+      {
+        var ids = DeserializeMessageIds(batch.MessageIdsJson);
+        if (!ids.Contains(message.Id, StringComparer.Ordinal)) ids.Add(message.Id);
+        batch.MessageIdsJson = JsonSerializer.Serialize(ids, JsonOptions);
+        batch.MessageCount = ids.Count;
+        batch.LastMessageAt = message.CreatedAt ?? now;
+        batch.WindowEndsAt = windowEnds;
+        batch.UpdatedAt = now.UtcDateTime;
+        await dbContext.SaveChangesAsync(cancellationToken);
+      }
+    }
+
+    return batch;
+  }
+
+  private static bool IsIncomingCustomerMessage(SocialMessageDto message) =>
+    string.Equals(NormalizeDirection(message.Direction), "incoming", StringComparison.Ordinal);
+
+  private static string NormalizeDirection(string? direction)
+  {
+    var value = string.IsNullOrWhiteSpace(direction) ? "incoming" : direction.Trim().ToLowerInvariant();
+    return value is "outgoing" or "sent" ? "outgoing" : "incoming";
+  }
+
+  private static List<string> DeserializeMessageIds(string? json)
+  {
+    if (string.IsNullOrWhiteSpace(json)) return [];
+    try
+    {
+      return JsonSerializer.Deserialize<List<string>>(json, JsonOptions)?.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.Ordinal).ToList() ?? [];
+    }
+    catch (JsonException)
+    {
+      return [];
+    }
+  }
+
+  private static string HashJson(JsonElement value)
+  {
+    var bytes = Encoding.UTF8.GetBytes(value.GetRawText());
+    return Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+  }
+
   private async Task UpsertConversationsAsync(IEnumerable<SocialConversationDto> conversations, string? profileId, CancellationToken cancellationToken)
   {
     foreach (var conversation in conversations.Where(x => !string.IsNullOrWhiteSpace(x.Id) && !string.IsNullOrWhiteSpace(x.AccountId)))
@@ -812,11 +1072,16 @@ public sealed class ZernioService(
     await dbContext.SaveChangesAsync(cancellationToken);
   }
 
-  private async Task UpsertMessagesAsync(string conversationId, string accountId, IEnumerable<SocialMessageDto> messages, CancellationToken cancellationToken)
+  private async Task<MessageUpsertResult> UpsertMessagesAsync(string conversationId, string accountId, IEnumerable<SocialMessageDto> messages, CancellationToken cancellationToken)
   {
+    var inserted = new HashSet<string>(StringComparer.Ordinal);
+    var existingIds = new HashSet<string>(StringComparer.Ordinal);
     var normalizedAccountId = accountId.Trim();
     var normalizedConversationId = conversationId.Trim();
-    if (string.IsNullOrWhiteSpace(normalizedAccountId) || string.IsNullOrWhiteSpace(normalizedConversationId)) return;
+    if (string.IsNullOrWhiteSpace(normalizedAccountId) || string.IsNullOrWhiteSpace(normalizedConversationId))
+    {
+      return new MessageUpsertResult(inserted, existingIds);
+    }
 
     foreach (var message in messages.Where(x => !string.IsNullOrWhiteSpace(x.Id)))
     {
@@ -835,6 +1100,11 @@ public sealed class ZernioService(
           CreatedAt = DateTime.UtcNow
         };
         dbContext.SocialInboxMessages.Add(existing);
+        inserted.Add(message.Id);
+      }
+      else
+      {
+        existingIds.Add(message.Id);
       }
 
       existing.ConversationId = string.IsNullOrWhiteSpace(message.ConversationId) ? normalizedConversationId : message.ConversationId;
@@ -852,7 +1122,21 @@ public sealed class ZernioService(
       existing.UpdatedAt = DateTime.UtcNow;
     }
 
-    await dbContext.SaveChangesAsync(cancellationToken);
+    try
+    {
+      await dbContext.SaveChangesAsync(cancellationToken);
+    }
+    catch (DbUpdateException) when (inserted.Count > 0)
+    {
+      foreach (var entry in dbContext.ChangeTracker.Entries<SocialInboxMessage>().Where(x => x.State == EntityState.Added))
+      {
+        entry.State = EntityState.Detached;
+      }
+      existingIds.UnionWith(inserted);
+      inserted.Clear();
+    }
+
+    return new MessageUpsertResult(inserted, existingIds);
   }
 
   private async Task UpsertCommentsAsync(string postId, string accountId, IEnumerable<SocialCommentDto> comments, CancellationToken cancellationToken)

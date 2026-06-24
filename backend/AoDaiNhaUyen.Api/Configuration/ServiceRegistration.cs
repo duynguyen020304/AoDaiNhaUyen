@@ -96,6 +96,7 @@ public static class ServiceRegistration
         "FacebookApi:GraphApiVersion must be like v25.0 or 25.0.")
       .ValidateOnStart();
     services.Configure<SocialInboxSyncOptions>(configuration.GetSection(SocialInboxSyncOptions.SectionName));
+    services.Configure<SocialAutoReplyOptions>(configuration.GetSection(SocialAutoReplyOptions.SectionName));
     services.Configure<HermesAgentOptions>(configuration.GetSection(HermesAgentOptions.SectionName));
     services.Configure<AdminToolGateOptions>(configuration.GetSection(AdminToolGateOptions.SectionName));
     services.Configure<HermesAdminAuthOptions>(configuration.GetSection(HermesAdminAuthOptions.SectionName));
@@ -180,6 +181,7 @@ public static class ServiceRegistration
     services.AddScoped<IAdminShopEventContextService, AdminShopEventContextService>();
     services.AddHostedService<BackgroundHermesOutboxWorker>();
     services.AddHostedService<BackgroundSocialInboxSyncWorker>();
+    services.AddHostedService<BackgroundSocialAutoReplyBatchWorker>();
     services.AddScoped<IAdminProductService, AdminProductService>();
     services.AddScoped<IAdminUserService, AdminUserService>();
     services.AddScoped<IAdminRoleService, AdminRoleService>();
