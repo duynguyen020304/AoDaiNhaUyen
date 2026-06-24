@@ -5,7 +5,7 @@ public sealed class SocialInboxSyncOptions
   public const string SectionName = "SocialInboxSync";
 
   public bool Enabled { get; init; } = true;
-  public int PollIntervalSeconds { get; init; } = 10;
+  public int PollIntervalSeconds { get; init; } = 3;
   public int AccountBatchSize { get; init; } = 10;
   public int ListLimit { get; init; } = 25;
   public int ItemLimit { get; init; } = 50;

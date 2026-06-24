@@ -42,7 +42,7 @@ public sealed class BackgroundSocialInboxSyncWorker(
         logger.LogError(ex, "Social inbox sync worker lỗi.");
       }
 
-      await Task.Delay(TimeSpan.FromSeconds(Math.Max(5, _options.PollIntervalSeconds)), stoppingToken);
+      await Task.Delay(TimeSpan.FromSeconds(Math.Max(2, _options.PollIntervalSeconds)), stoppingToken);
     }
   }
 
@@ -112,6 +112,7 @@ public sealed class BackgroundSocialInboxSyncWorker(
 
     foreach (var post in posts.Items.Take(Math.Clamp(_options.MaxPostsPerAccount, 1, 100)))
     {
+      var existingCommentIds = await GetExistingCommentIdsAsync(dbContext, accountId, post.Id, cancellationToken);
       var comments = await socialService.GetCommentsAsync(
         post.Id,
         accountId,
@@ -121,6 +122,7 @@ public sealed class BackgroundSocialInboxSyncWorker(
 
       foreach (var comment in Flatten(comments.Items).Where(x => x.Author?.IsOwner != true))
       {
+        if (string.IsNullOrWhiteSpace(comment.Id) || existingCommentIds.Contains(comment.Id)) continue;
         if (IsBeforeSocialAutomationCutoff(comment.CreatedTime, socialAutomationInitializedAt)) continue;
 
         await EnqueueSocialEventAsync(
@@ -133,6 +135,7 @@ public sealed class BackgroundSocialInboxSyncWorker(
           post.Id,
           isComment: true,
           cancellationToken);
+        existingCommentIds.Add(comment.Id);
       }
     }
   }
@@ -171,6 +174,7 @@ public sealed class BackgroundSocialInboxSyncWorker(
       if (socialAutomationInitializedAt is null) continue;
 
       var eligibleMessages = messages.Items
+        .Select(message => NormalizePolledMessage(message, accountId, conversation.Id))
         .Where(IsIncomingCustomerMessage)
         .Where(message => ShouldProcessPolledMessage(message, socialAutomationInitializedAt.Value, autoReplyIgnoreBefore))
         .OrderBy(message => message.CreatedAt)
@@ -187,6 +191,35 @@ public sealed class BackgroundSocialInboxSyncWorker(
         existingReceiptIds.Add(message.Id);
       }
     }
+  }
+
+  private static async Task<HashSet<string>> GetExistingCommentIdsAsync(AppDbContext dbContext, string accountId, string postId, CancellationToken cancellationToken)
+  {
+    var normalizedAccountId = accountId.Trim();
+    var normalizedPostId = postId.Trim();
+    if (string.IsNullOrWhiteSpace(normalizedAccountId) || string.IsNullOrWhiteSpace(normalizedPostId))
+    {
+      return new HashSet<string>(StringComparer.Ordinal);
+    }
+
+    var existing = await dbContext.SocialInboxComments
+      .IgnoreQueryFilters()
+      .AsNoTracking()
+      .Where(x => x.AccountId == normalizedAccountId && x.PostId == normalizedPostId && !x.IsDeleted)
+      .Select(x => x.CommentId)
+      .ToListAsync(cancellationToken);
+
+    return existing.ToHashSet(StringComparer.Ordinal);
+  }
+
+  private static SocialMessageDto NormalizePolledMessage(SocialMessageDto message, string accountId, string conversationId)
+  {
+    return message with
+    {
+      AccountId = string.IsNullOrWhiteSpace(message.AccountId) ? accountId : message.AccountId,
+      ConversationId = string.IsNullOrWhiteSpace(message.ConversationId) ? conversationId : message.ConversationId,
+      Platform = string.IsNullOrWhiteSpace(message.Platform) ? "facebook" : message.Platform
+    };
   }
 
   private bool ShouldProcessPolledMessage(SocialMessageDto message, DateTimeOffset socialAutomationInitializedAt, DateTimeOffset? autoReplyIgnoreBefore)

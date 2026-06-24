@@ -521,7 +521,7 @@ public sealed class ZernioService(
     {
       ["accountId"] = NormalizeRequired(accountId, "accountId"),
       ["limit"] = Math.Clamp(limit, 1, 100).ToString(),
-      ["sortOrder"] = "asc"
+      ["sortOrder"] = "desc"
     };
     if (!string.IsNullOrWhiteSpace(cursor)) query["cursor"] = cursor.Trim();
 
