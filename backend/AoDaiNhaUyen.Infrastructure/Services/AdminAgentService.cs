@@ -44,6 +44,9 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IAutoModeStore _autoMode;
   private readonly ILogger<AdminAgentService> _logger;
 
+  private const string StoreAddress = "98, 96/5A Đ. Nguyễn Công Hoan, Cầu Kiệu, Hồ Chí Minh 72200, Việt Nam";
+  private const string StorePhone = "0938 424 241";
+
   private static readonly JsonSerializerOptions ToolResultJsonOptions = new(JsonSerializerDefaults.Web)
   {
     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
@@ -636,7 +639,7 @@ public sealed class AdminAgentService : IAdminAgentService
         ("ctaUrl", O("string", "Link CTA nếu có (tùy chọn)")),
         ("productName", O("string", "Tên sản phẩm liên quan (tùy chọn)")))),
 
-    T("publish_facebook_post", "Đăng bài viết Facebook kèm text/link và URL ảnh public qua Zernio API. BẮT BUỘC gọi list_facebook_pages trước để lấy pageId = zernioAccountId. Nếu dùng ảnh do AI tạo, phải lấy publicUrl/publicImageUrls từ generate_blog_images và truyền vào imageUrls/mediaUrls; cần admin xác nhận trước khi đăng.",
+    T("publish_facebook_post", "Đăng bài viết Facebook kèm text/link và URL ảnh public qua Zernio API. BẮT BUỘC gọi list_facebook_pages trước để lấy pageId = zernioAccountId. Nếu bài có địa chỉ/hotline, dùng cố định: địa chỉ 98, 96/5A Đ. Nguyễn Công Hoan, Cầu Kiệu, Hồ Chí Minh 72200, Việt Nam; số điện thoại 0938 424 241. Không hỏi lại địa chỉ/hotline. Nếu dùng ảnh do AI tạo, phải lấy publicUrl/publicImageUrls từ generate_blog_images và truyền vào imageUrls/mediaUrls; cần admin xác nhận trước khi đăng.",
       P(
         ("pageId", O("string", "zernioAccountId của Facebook Page — bắt buộc (lấy từ list_facebook_pages)")),
         ("message", O("string", "Nội dung bài đăng — bắt buộc nếu không có imageUrls/mediaUrls")),
@@ -1356,6 +1359,103 @@ public sealed class AdminAgentService : IAdminAgentService
     }
 
     return suggestions;
+  }
+
+  public async Task<IReadOnlyList<string>> GetConversationMessageSuggestionsAsync(Guid threadId, Guid adminUserId, CancellationToken ct)
+  {
+    var currentThread = await _chatPersistence.GetThreadAsync(threadId, adminUserId, ct);
+    if (currentThread is null) return [];
+
+    var recentThreads = await _chatPersistence.ListThreadsAsync(adminUserId, ct);
+    var sampleThreads = recentThreads
+      .Where(t => t.Messages.Count > 0)
+      .Take(10)
+      .ToList();
+
+    if (sampleThreads.Count == 0) return DefaultConversationSuggestions();
+
+    var conversationDigest = string.Join("\n\n", sampleThreads.Select((thread, index) =>
+    {
+      var lines = thread.Messages
+        .OrderBy(m => m.CreatedAt)
+        .TakeLast(8)
+        .Select(m => $"- {m.Role}: {TruncateForPrompt(m.Content, 240)}");
+      return $"Conversation {index + 1} ({thread.UpdatedAt:yyyy-MM-dd HH:mm} UTC):\n{string.Join("\n", lines)}";
+    }));
+
+    var currentMessages = await _chatPersistence.GetMessagesAsync(threadId, adminUserId, ct);
+    var currentDigest = string.Join("\n", currentMessages
+      .TakeLast(10)
+      .Select(m => $"- {m.Role}: {TruncateForPrompt(m.Content, 260)}"));
+
+    var systemPrompt = "Bạn đề xuất tin nhắn tiếp theo cho admin trong chat AI quản trị. Trả về JSON đúng schema. Không bịa dữ liệu. Tin nhắn phải là câu người dùng có thể gửi ngay, tiếng Việt, ngắn gọn, phù hợp thói quen từ lịch sử.";
+    var userPrompt = $"""
+Dựa trên khoảng 10 cuộc trò chuyện cũ và cuộc trò chuyện hiện tại, hãy đề xuất đúng 4 tin nhắn tiếp theo cho người dùng.
+
+LỊCH SỬ GẦN ĐÂY:
+{conversationDigest}
+
+CUỘC TRÒ CHUYỆN HIỆN TẠI:
+{currentDigest}
+
+Yêu cầu:
+- Mỗi suggestion tối đa 140 ký tự.
+- Ưu tiên kiểu câu hỏi/hành động admin hay dùng.
+- Không dùng markdown.
+- Trả về JSON có field suggestions là mảng 4 chuỗi.
+""";
+
+    try
+    {
+      var response = await _llm.CompleteJsonAsync<AdminConversationSuggestionsResponse>(
+        systemPrompt,
+        userPrompt,
+        new
+        {
+          type = "object",
+          properties = new
+          {
+            suggestions = new
+            {
+              type = "array",
+              minItems = 4,
+              maxItems = 4,
+              items = new { type = "string" }
+            }
+          },
+          required = new[] { "suggestions" }
+        },
+        ct);
+
+      var cleaned = response.Suggestions
+        .Where(s => !string.IsNullOrWhiteSpace(s))
+        .Select(s => s.Trim())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .Take(4)
+        .ToList();
+
+      return cleaned.Count == 4 ? cleaned : DefaultConversationSuggestions();
+    }
+    catch (Exception ex)
+    {
+      _logger.LogWarning(ex, "[AdminAI] Conversation suggestion generation failed for thread {ThreadId}", threadId);
+      return DefaultConversationSuggestions();
+    }
+  }
+
+  private static IReadOnlyList<string> DefaultConversationSuggestions() =>
+  [
+    "Tóm tắt trạng thái cửa hàng hôm nay",
+    "Kiểm tra đơn hàng đang chờ xử lý",
+    "Sản phẩm nào cần bổ sung tồn kho?",
+    "Đề xuất việc nên ưu tiên tiếp theo"
+  ];
+
+  private static string TruncateForPrompt(string? value, int maxLength)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+    var normalized = value.Replace("\r", " ").Replace("\n", " ").Trim();
+    return normalized.Length <= maxLength ? normalized : normalized[..maxLength] + "…";
   }
 
   public async Task<AdminToolDiagnosticsResponse> RunDiagnosticsAsync(
@@ -4149,7 +4249,7 @@ TỔNG QUAN:
   private async Task<string> PublishFacebookPost(JsonElement args, CancellationToken ct)
   {
     var pageId = RequiredString(args, "pageId", 128);
-    var message = GetOptionalString(args, "message", 5000) ?? string.Empty;
+    var message = NormalizeFacebookPostContactInfo(GetOptionalString(args, "message", 5000) ?? string.Empty);
     var link = GetOptionalString(args, "link", 1000);
     var published = GetBoolArg(args, "published", true);
     var mediaUrls = GetFacebookPostMediaUrls(args);
@@ -4191,6 +4291,45 @@ TỔNG QUAN:
       code: result.Success ? "facebook_post_deleted" : "facebook_post_delete_failed",
       message: result.Success ? "Đã gỡ/xóa bài viết Facebook." : "Không thể gỡ/xóa bài viết Facebook.");
   }
+
+  private static string NormalizeFacebookPostContactInfo(string message)
+  {
+    if (string.IsNullOrWhiteSpace(message)) return string.Empty;
+
+    var normalized = message
+      .Replace("[Địa chỉ cửa hàng]", StoreAddress, StringComparison.OrdinalIgnoreCase)
+      .Replace("{Địa chỉ cửa hàng}", StoreAddress, StringComparison.OrdinalIgnoreCase)
+      .Replace("[Dia chi cua hang]", StoreAddress, StringComparison.OrdinalIgnoreCase)
+      .Replace("{Dia chi cua hang}", StoreAddress, StringComparison.OrdinalIgnoreCase)
+      .Replace("[Số điện thoại hotline]", StorePhone, StringComparison.OrdinalIgnoreCase)
+      .Replace("{Số điện thoại hotline}", StorePhone, StringComparison.OrdinalIgnoreCase)
+      .Replace("[So dien thoai hotline]", StorePhone, StringComparison.OrdinalIgnoreCase)
+      .Replace("{So dien thoai hotline}", StorePhone, StringComparison.OrdinalIgnoreCase)
+      .Replace("[Hotline]", StorePhone, StringComparison.OrdinalIgnoreCase)
+      .Replace("{Hotline}", StorePhone, StringComparison.OrdinalIgnoreCase);
+
+    if (ContainsContactIntent(normalized) && !normalized.Contains(StorePhone, StringComparison.OrdinalIgnoreCase))
+      normalized = normalized.TrimEnd() + $"\nHotline: {StorePhone}";
+
+    if (ContainsAddressIntent(normalized) && !normalized.Contains(StoreAddress, StringComparison.OrdinalIgnoreCase))
+      normalized = normalized.TrimEnd() + $"\nĐịa chỉ: {StoreAddress}";
+
+    return normalized;
+  }
+
+  private static bool ContainsContactIntent(string value) =>
+    value.Contains("hotline", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("liên hệ", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("lien he", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("điện thoại", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("dien thoai", StringComparison.OrdinalIgnoreCase);
+
+  private static bool ContainsAddressIntent(string value) =>
+    value.Contains("địa chỉ", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("dia chi", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("cửa hàng", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("cua hang", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("showroom", StringComparison.OrdinalIgnoreCase);
 
   private static IReadOnlyList<string> GetFacebookPostMediaUrls(JsonElement args)
   {

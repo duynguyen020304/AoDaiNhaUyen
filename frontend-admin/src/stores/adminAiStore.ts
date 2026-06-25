@@ -11,7 +11,6 @@ import type {
   AiToolCall,
   AiToolResultMeta,
   AiGeneratedImagePreview,
-  AdminChatMode,
   HermesStatus,
 } from '@/types/ai'
 import { AI_BLOG_DRAFT_STORAGE_KEY, type AiBlogDraft } from '@/types/blog'
@@ -23,6 +22,13 @@ const STORAGE_KEY = 'admin-ai-conversations'
 function logAiWarn(message: string, context?: unknown) {
   console.warn(`[AdminAI] ${message}`, context ?? '')
 }
+
+const DEFAULT_CONVERSATION_SUGGESTIONS = [
+  'Tóm tắt trạng thái cửa hàng hôm nay',
+  'Kiểm tra đơn hàng đang chờ xử lý',
+  'Sản phẩm nào cần bổ sung tồn kho?',
+  'Đề xuất việc nên ưu tiên tiếp theo',
+]
 
 function genId() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -236,8 +242,9 @@ interface AdminAiState {
   conversationId: string | null
   pendingActions: AiPendingAction[]
   suggestions: AiSuggestion[]
-  chatMode: AdminChatMode
   hermesStatus: HermesStatus | null
+  conversationSuggestions: string[]
+  isLoadingConversationSuggestions: boolean
 
   // Chat history
   conversations: SavedConversation[]
@@ -253,8 +260,8 @@ interface AdminAiState {
   /** Re-send the last user message after a failed turn. */
   retryLast: () => Promise<void>
   fetchSuggestions: () => Promise<void>
+  fetchConversationSuggestions: () => Promise<void>
   fetchHermesStatus: () => Promise<void>
-  setChatMode: (mode: AdminChatMode) => void
   clearConversation: () => void
 
   // Chat history actions
@@ -274,8 +281,9 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
   conversationId: null,
   pendingActions: [],
   suggestions: [],
-  chatMode: 'generic',
   hermesStatus: null,
+  conversationSuggestions: [],
+  isLoadingConversationSuggestions: false,
   conversations: loadConversations(),
   activeConversationId: null,
   suppressNextLoadConversationId: null,
@@ -313,8 +321,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
 
     let sawError = false
     try {
-      const endpoint = state.chatMode === 'hermes' ? '/api/admin/hermes/chat' : '/api/admin/ai/chat'
-      const response = await fetch(`${API}${endpoint}`, {
+      const response = await fetch(`${API}/api/admin/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -448,6 +455,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       }))
       get().saveCurrentConversation()
       await get().fetchConversations()
+      await get().fetchConversationSuggestions()
     } catch (err) {
       sawError = true
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
@@ -532,10 +540,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
 
     let sawError = false
     try {
-      // Respect the current chat mode (was previously hardcoded to the generic endpoint,
-      // which broke continuation after confirming a tool in Hermes mode).
-      const endpoint = state.chatMode === 'hermes' ? '/api/admin/hermes/chat' : '/api/admin/ai/chat'
-      const response = await fetch(`${API}${endpoint}`, {
+      const response = await fetch(`${API}/api/admin/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -658,6 +663,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       }))
       get().saveCurrentConversation()
       await get().fetchConversations()
+      await get().fetchConversationSuggestions()
     } catch (err) {
       sawError = true
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
@@ -684,6 +690,23 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
     }
   },
 
+  fetchConversationSuggestions: async () => {
+    const conversationId = get().conversationId ?? get().activeConversationId
+    if (!conversationId) {
+      set({ conversationSuggestions: [] })
+      return
+    }
+
+    set({ isLoadingConversationSuggestions: true })
+    try {
+      const data = await request<string[]>(`/api/admin/ai/conversations/${conversationId}/suggestions`)
+      set({ conversationSuggestions: data.slice(0, 4), isLoadingConversationSuggestions: false })
+    } catch (err) {
+      logAiWarn('Không tải được gợi ý tin nhắn hội thoại', err)
+      set({ conversationSuggestions: DEFAULT_CONVERSATION_SUGGESTIONS, isLoadingConversationSuggestions: false })
+    }
+  },
+
   fetchHermesStatus: async () => {
     try {
       const status = await request<HermesStatus>('/api/admin/hermes/status')
@@ -694,13 +717,8 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
     }
   },
 
-  setChatMode: (mode: AdminChatMode) => {
-    set({ chatMode: mode })
-    if (mode === 'hermes') void get().fetchHermesStatus()
-  },
-
   clearConversation: () => {
-    set({ messages: [], conversationId: null, pendingActions: [], activeConversationId: null })
+    set({ messages: [], conversationId: null, pendingActions: [], activeConversationId: null, conversationSuggestions: [] })
   },
 
   // --- Chat history actions ---
@@ -770,6 +788,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
         suppressNextLoadConversationId: null,
         lastError: null,
       })
+      void get().fetchConversationSuggestions()
     } catch (err) {
       logAiWarn('Không tải được cuộc trò chuyện AI từ máy chủ, dùng cache cục bộ', err)
       const convo = get().conversations.find((c) => c.id === id)
@@ -785,6 +804,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
         suppressNextLoadConversationId: null,
         lastError: 'Đang hiển thị bản cache cục bộ.',
       })
+      void get().fetchConversationSuggestions()
     }
   },
 
@@ -802,7 +822,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
     set({
       conversations: next,
       ...(activeConversationId === id
-        ? { activeConversationId: null, messages: [], conversationId: null, pendingActions: [] }
+        ? { activeConversationId: null, messages: [], conversationId: null, pendingActions: [], conversationSuggestions: [] }
         : {}),
     })
   },
@@ -817,6 +837,7 @@ export const useAdminAiStore = create<AdminAiState>((set, get) => ({
       suppressNextLoadConversationId: activeConversationId ?? conversationId,
       lastError: null,
       lastUserMessage: null,
+      conversationSuggestions: [],
     })
   },
 }))

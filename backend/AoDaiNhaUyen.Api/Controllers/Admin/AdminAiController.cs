@@ -126,6 +126,19 @@ public sealed class AdminAiController(
     return Ok(ApiResponseFactory.Success(dto, "Lấy cuộc trò chuyện thành công."));
   }
 
+  /// <summary>Get LLM-generated message suggestions for a conversation.</summary>
+  [HttpGet("conversations/{threadId:guid}/suggestions")]
+  public async Task<ActionResult<ApiResponse<IReadOnlyList<string>>>> GetConversationSuggestions(
+    Guid threadId, CancellationToken cancellationToken)
+  {
+    var adminUserId = GetAdminUserId();
+    if (adminUserId is null)
+      return Unauthorized(ApiResponseFactory.Failure("Không xác thực.", "unauthorized", "Vui lòng đăng nhập lại."));
+
+    var suggestions = await agentService.GetConversationMessageSuggestionsAsync(threadId, adminUserId.Value, cancellationToken);
+    return Ok(ApiResponseFactory.Success(suggestions, "Lấy gợi ý tin nhắn thành công."));
+  }
+
   /// <summary>Delete an admin AI conversation.</summary>
   [HttpDelete("conversations/{threadId:guid}")]
   public async Task<ActionResult<ApiResponse<object>>> DeleteConversation(

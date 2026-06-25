@@ -1,6 +1,4 @@
 /** SSE chunk types from POST /api/admin/ai/chat */
-export type AdminChatMode = 'generic' | 'hermes'
-
 export interface HermesStatus {
   status: 'running' | 'stale' | 'offline' | 'unknown' | string
   runnerName: string

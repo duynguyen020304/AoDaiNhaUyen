@@ -36,13 +36,29 @@ public sealed class AdminToolInstructionRegistry : IAdminToolInstructionRegistry
   public bool TryGetInstruction(string toolName, out ToolInstruction instruction) =>
     _instructions.TryGetValue(toolName, out instruction!);
 
-  private static ToolInstruction CreateInstruction(string toolName) => new(
-    toolName,
-    $"Thực hiện công cụ quản trị {toolName} sau khi backend xác minh mục tiêu và tham số.",
-    "Phải có yêu cầu rõ từ admin. Nếu admin dùng tên/mã hiển thị, backend phải resolve sang GUID nội bộ trước khi ghi.",
-    "Tool ghi phải có risk metadata, instruction, tham số đúng kiểu, GUID thật cho trường id/orderId/productId/variantId/userId/roleId/promoId.",
-    "Không chấp nhận display id như AD-... trong trường GUID. Không thêm cờ destructive không có schema. Enum phải thuộc tập cho phép.",
-    "Không tự xác nhận thay admin. Medium/High/Critical risk qua confirmation gate hiện có. Không đoán resource khi lookup mơ hồ.",
-    "Nếu thiếu hoặc mơ hồ target, hỏi admin chọn hoặc nhập thêm; nếu có lookup read-only an toàn, resolve trước.",
-    "Kết quả cho admin dùng mã/tên hiển thị, không lộ GUID nội bộ trừ khi admin hỏi trực tiếp.");
+  private static ToolInstruction CreateInstruction(string toolName)
+  {
+    if (toolName == "publish_facebook_post")
+    {
+      return new(
+        toolName,
+        "Đăng bài Facebook qua Zernio sau khi backend xác minh pageId, nội dung và media URL.",
+        "Phải có yêu cầu rõ từ admin. pageId phải đến từ list_facebook_pages. Nếu bài cần địa chỉ/hotline, dùng cố định: địa chỉ 98, 96/5A Đ. Nguyễn Công Hoan, Cầu Kiệu, Hồ Chí Minh 72200, Việt Nam; số điện thoại 0938 424 241.",
+        "Tool phải có risk metadata, instruction, tham số đúng schema; pageId thật từ list_facebook_pages; message/link/imageUrls/mediaUrls hợp lệ.",
+        "Không hỏi lại địa chỉ/hotline. Nếu message có placeholder địa chỉ/hotline thì chấp nhận execute; backend sẽ thay bằng thông tin cố định. Không tự tạo pageId/media URL.",
+        "Không tự xác nhận thay admin. publish_facebook_post là High risk và đi qua confirmation gate hiện có.",
+        "Chỉ hỏi admin nếu thiếu pageId hoặc thiếu cả message/link/mediaUrls; không hỏi vì thiếu địa chỉ/hotline.",
+        "Kết quả cho admin dùng mã/tên hiển thị, không lộ token hoặc thông tin nội bộ.");
+    }
+
+    return new(
+      toolName,
+      $"Thực hiện công cụ quản trị {toolName} sau khi backend xác minh mục tiêu và tham số.",
+      "Phải có yêu cầu rõ từ admin. Nếu admin dùng tên/mã hiển thị, backend phải resolve sang GUID nội bộ trước khi ghi.",
+      "Tool ghi phải có risk metadata, instruction, tham số đúng kiểu, GUID thật cho trường id/orderId/productId/variantId/userId/roleId/promoId.",
+      "Không chấp nhận display id như AD-... trong trường GUID. Không thêm cờ destructive không có schema. Enum phải thuộc tập cho phép.",
+      "Không tự xác nhận thay admin. Medium/High/Critical risk qua confirmation gate hiện có. Không đoán resource khi lookup mơ hồ.",
+      "Nếu thiếu hoặc mơ hồ target, hỏi admin chọn hoặc nhập thêm; nếu có lookup read-only an toàn, resolve trước.",
+      "Kết quả cho admin dùng mã/tên hiển thị, không lộ GUID nội bộ trừ khi admin hỏi trực tiếp.");
+  }
 }

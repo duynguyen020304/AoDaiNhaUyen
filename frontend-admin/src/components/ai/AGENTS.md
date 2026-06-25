@@ -35,7 +35,7 @@ Admin AI chat UI components. Together they form the floating sidebar chat panel 
 ### Internal
 - `@/stores/adminAiStore` — all chat state and actions
 - `@/components/ui/button` — Button primitive
-- `@/types/ai` — `AiMessage`, `AiToolCall`, `AiPendingAction`, `AdminChatMode`, `HermesStatus`
+- `@/types/ai` — `AiMessage`, `AiToolCall`, `AiPendingAction`, `HermesStatus`
 
 ### External
 - lucide-react (Bot, X, Send, Loader2 icons)

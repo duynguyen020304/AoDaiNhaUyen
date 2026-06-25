@@ -6,6 +6,8 @@ public sealed record AdminAiConfirmRequest(string ActionId, bool Approved);
 
 public sealed record AdminAiSuggestionResponse(string Id, string Title, string Description, string? Route);
 
+public sealed record AdminConversationSuggestionsResponse(IReadOnlyList<string> Suggestions);
+
 public sealed record AdminPendingAction(
   string ActionId,
   string ToolName,

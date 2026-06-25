@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react'
+import { useEffect, useState, useRef, useLayoutEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { MessageBubble } from './MessageBubble'
@@ -6,11 +6,26 @@ import { ChatInput } from './ChatInput'
 import { EmptyChat } from './EmptyChat'
 
 export function FullChatArea() {
-  const { messages, isLoading, sendMessage, chatMode } = useAdminAiStore()
+  const {
+    messages,
+    isLoading,
+    sendMessage,
+    conversationId,
+    activeConversationId,
+    conversationSuggestions,
+    isLoadingConversationSuggestions,
+    fetchConversationSuggestions,
+  } = useAdminAiStore()
   const [input, setInput] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const shouldStickToBottomRef = useRef(true)
+
+  useEffect(() => {
+    if (conversationId || activeConversationId) {
+      void fetchConversationSuggestions()
+    }
+  }, [activeConversationId, conversationId, fetchConversationSuggestions])
 
   useLayoutEffect(() => {
     const node = scrollRef.current
@@ -50,9 +65,7 @@ export function FullChatArea() {
       <div className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
         <div>
           <h2 className="text-sm font-semibold text-gray-900">Trợ lý AI Admin</h2>
-          <p className="text-xs text-gray-500">
-            {chatMode === 'hermes' ? 'Hermes Agent tự động quản trị, có heartbeat.' : 'Chat AI admin mặc định.'}
-          </p>
+          <p className="text-xs text-gray-500">Chat AI admin mặc định.</p>
         </div>
       </div>
 
@@ -77,6 +90,25 @@ export function FullChatArea() {
       {/* Input — always visible */}
       <div className="border-t border-gray-200 p-4 bg-white shrink-0">
         <div className="max-w-[95%] mx-auto">
+          {hasMessages && (conversationSuggestions.length > 0 || isLoadingConversationSuggestions) && (
+            <div className="mb-3 grid gap-2 sm:grid-cols-2">
+              {isLoadingConversationSuggestions && conversationSuggestions.length === 0 ? (
+                <span className="text-xs text-gray-400">Đang gợi ý tin nhắn...</span>
+              ) : (
+                conversationSuggestions.slice(0, 4).map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => setInput(suggestion)}
+                    disabled={isLoading}
+                    className="rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2 text-left text-xs text-gray-700 transition hover:border-wine/30 hover:bg-wine/5 disabled:opacity-50"
+                  >
+                    {suggestion}
+                  </button>
+                ))
+              )}
+            </div>
+          )}
           <ChatInput
             value={input}
             onChange={setInput}
