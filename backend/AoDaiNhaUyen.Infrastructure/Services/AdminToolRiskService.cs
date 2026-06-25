@@ -145,6 +145,7 @@ public sealed class AdminToolRiskService(
       new() { ToolName = "list_media", RiskLevel = "Read", RequiresConfirmation = false, Description = "Liệt kê media", Category = "Media" },
       new() { ToolName = "get_media", RiskLevel = "Read", RequiresConfirmation = false, Description = "Chi tiết media", Category = "Media" },
       new() { ToolName = "upload_media", RiskLevel = "Low", RequiresConfirmation = false, Description = "Upload media từ base64", Category = "Media" },
+      new() { ToolName = "read_uploaded_document", RiskLevel = "Read", RequiresConfirmation = false, Description = "Đọc nội dung PDF/Excel/CSV đã upload", Category = "Media" },
       new() { ToolName = "delete_media", RiskLevel = "High", RequiresConfirmation = true, Description = "Xóa mềm media", Category = "Media" },
 
       // Reviews & Comments
@@ -190,6 +191,7 @@ public sealed class AdminToolRiskService(
 
       // Purchase Note + Daily Report
       new() { ToolName = "create_purchase_note", RiskLevel = "Low", RequiresConfirmation = false, Description = "Tạo ghi chú nhập hàng", Category = "Inventory" },
+      new() { ToolName = "export_dashboard_report_pdf", RiskLevel = "Read", RequiresConfirmation = false, Description = "Xuất PDF dashboard theo khoảng ngày", Category = "Intelligence" },
       new() { ToolName = "generate_daily_report", RiskLevel = "Read", RequiresConfirmation = false, Description = "Báo cáo doanh thu hôm nay", Category = "Intelligence" },
 
       // Facebook Page (social)

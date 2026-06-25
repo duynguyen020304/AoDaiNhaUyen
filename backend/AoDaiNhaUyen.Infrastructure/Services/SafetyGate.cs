@@ -93,6 +93,7 @@ public sealed class SafetyGate : ISafetyGate
     ["list_media"] = (RiskLevel.Read, false),
     ["get_media"] = (RiskLevel.Read, false),
     ["upload_media"] = (RiskLevel.Low, false),
+    ["read_uploaded_document"] = (RiskLevel.Read, false),
     ["delete_media"] = (RiskLevel.High, true),
     ["list_recent_reviews"] = (RiskLevel.Read, false),
     ["list_recent_comments"] = (RiskLevel.Read, false),
@@ -128,6 +129,7 @@ public sealed class SafetyGate : ISafetyGate
     ["update_blog_post"] = (RiskLevel.Medium, true),
     ["delete_blog_post"] = (RiskLevel.High, true),
     ["create_purchase_note"] = (RiskLevel.Low, false),
+    ["export_dashboard_report_pdf"] = (RiskLevel.Read, false),
     ["generate_daily_report"] = (RiskLevel.Read, false),
     // Facebook Page (social)
     ["generate_facebook_post_plan"] = (RiskLevel.Read, false),

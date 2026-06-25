@@ -14,7 +14,7 @@ TypeScript type definitions for all admin domain DTOs, API envelope shapes, and 
 | `admin.ts` | Product, Category, User, Role, Order, Promo, Media, Inventory DTOs |
 | `blog.ts` | Blog post, block content types, `AiBlogDraft`, `AI_BLOG_DRAFT_STORAGE_KEY` |
 | `dashboard.ts` | Dashboard summary, revenue series, orders-by-status, top products, user growth DTOs; `DashboardPeriod` |
-| `ai.ts` | `AiMessage`, `AiToolCall`, `AiToolResultMeta`, `AiPendingAction`, `AiSuggestion`, `AiChatRequest`, `AdminChatMode`, `HermesStatus`, conversation types |
+| `ai.ts` | `AiMessage`, `AiToolCall`, `AiToolResultMeta`, `AiPendingAction`, `AiSuggestion`, `AiChatRequest`, `HermesStatus`, conversation types |
 | `hermes.ts` | `HermesReportListItem`, `HermesReportDetail`, `HermesReportFilters`, `HermesEventListItem`, `HermesEventFilters`, monitor link/snapshot types, feed types |
 
 ## For AI Agents

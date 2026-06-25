@@ -16,6 +16,14 @@ interface ToolRiskConfig {
 
 const RISK_LEVELS = ['Read', 'Low', 'Medium', 'High', 'Critical'] as const
 
+const RISK_HELP: Record<string, string> = {
+  Read: 'Chỉ đọc dữ liệu, không thay đổi hệ thống.',
+  Low: 'Thay đổi nhỏ, dễ hoàn tác hoặc tạo mới bản nháp.',
+  Medium: 'Có thể ảnh hưởng dữ liệu vận hành; nên xác nhận khi auto mode tắt.',
+  High: 'Thay đổi nghiệp vụ quan trọng như đơn hàng, quyền, xóa mềm.',
+  Critical: 'Tác động rất lớn hoặc khó hoàn tác; luôn cần xác nhận.',
+}
+
 const RISK_BADGE: Record<string, string> = {
   Read: 'bg-gray-100 text-gray-700',
   Low: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
@@ -136,7 +144,7 @@ export function ToolRiskPage() {
             Cấu hình rủi ro công cụ AI
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Quản lý mức độ rủi ro và quyền tự động cho từng công cụ AI
+            Quản lý mức độ tác động khi AI gọi tool. Đây không phải trạng thái tool còn được bảo trì hay không.
           </p>
         </div>
 
@@ -177,7 +185,7 @@ export function ToolRiskPage() {
                   <TableRow>
                     <TableHead>Công cụ</TableHead>
                     <TableHead>Mô tả</TableHead>
-                    <TableHead>Mức rủi ro</TableHead>
+                    <TableHead>Mức tác động</TableHead>
                     <TableHead className="text-center">Tự động</TableHead>
                     <TableHead className="text-right">Thao tác</TableHead>
                   </TableRow>
@@ -203,6 +211,7 @@ export function ToolRiskPage() {
                         <span className={`ml-2 inline-block px-2 py-0.5 rounded-full text-xs font-medium ${RISK_BADGE[tool.riskLevel] || ''}`}>
                           {tool.riskLevel}
                         </span>
+                        <p className="mt-1 text-xs text-muted-foreground">{RISK_HELP[tool.riskLevel] ?? 'Mức tác động tùy chỉnh.'}</p>
                       </TableCell>
                       <TableCell className="text-center">
                         <button
@@ -253,6 +262,13 @@ export function ToolRiskPage() {
           </div>
         </div>
 
+        <div className="rounded-xl border bg-white p-4 space-y-2">
+          <h3 className="text-sm font-medium text-ink">Cách hiểu mức tác động</h3>
+          <p className="text-xs text-muted-foreground">
+            Mức này đo tác động khi AI thực thi tool: đọc dữ liệu, tạo/sửa/xóa dữ liệu, đổi quyền hoặc trạng thái đơn hàng. Nó không đánh giá việc tool còn được bảo trì.
+          </p>
+        </div>
+
         {/* Auto Mode Toggle */}
         <div className="rounded-xl border bg-white p-4 space-y-3">
           <div className="flex items-center gap-2">
@@ -260,7 +276,7 @@ export function ToolRiskPage() {
             <h3 className="text-sm font-medium text-ink">Chế độ tự động</h3>
           </div>
           <p className="text-xs text-muted-foreground">
-            Hoạt động theo từng admin trong phiên backend hiện tại. Khi bật, Read/Low/Medium có thể tự chạy; High/Critical vẫn cần xác nhận.
+            Hoạt động theo từng admin trong phiên backend hiện tại. Khi bật, chỉ tool có mức tác động đủ thấp và không yêu cầu xác nhận mới tự chạy; High/Critical vẫn cần xác nhận.
           </p>
           <Button
             onClick={toggleAutoMode}

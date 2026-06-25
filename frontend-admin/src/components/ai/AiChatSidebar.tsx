@@ -11,7 +11,6 @@ export function AiChatSidebar() {
     isLoading,
     toggle,
     sendMessage,
-    chatMode,
   } = useAdminAiStore()
 
   const [input, setInput] = useState('')
@@ -60,7 +59,7 @@ export function AiChatSidebar() {
           <Bot className="size-5" />
           <div>
             <span className="font-semibold">Trợ lý AI Admin</span>
-            <p className="text-xs text-white/70">{chatMode === 'hermes' ? 'Hermes Agent' : 'Generic Chat'}</p>
+            <p className="text-xs text-white/70">Generic Chat</p>
           </div>
         </div>
         <button

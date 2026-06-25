@@ -1,6 +1,8 @@
 using System.Text.Encodings.Web;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using ClosedXML.Excel;
+using UglyToad.PdfPig;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.DTOs.BlogPost;
 using AoDaiNhaUyen.Application.DTOs.Facebook;
@@ -41,8 +43,12 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IHermesFeedService _hermesFeed;
   private readonly IHermesAgentService _hermesAgent;
   private readonly IHermesEventOutboxService _hermesEvents;
+  private readonly IHttpClientFactory _httpClientFactory;
   private readonly IAutoModeStore _autoMode;
   private readonly ILogger<AdminAgentService> _logger;
+
+  private const string StoreAddress = "98, 96/5A Đ. Nguyễn Công Hoan, Cầu Kiệu, Hồ Chí Minh 72200, Việt Nam";
+  private const string StorePhone = "0938 424 241";
 
   private static readonly JsonSerializerOptions ToolResultJsonOptions = new(JsonSerializerDefaults.Web)
   {
@@ -92,6 +98,7 @@ public sealed class AdminAgentService : IAdminAgentService
     IHermesAgentService hermesAgent,
     IHermesEventOutboxService hermesEvents,
     IAutoModeStore autoMode,
+    IHttpClientFactory httpClientFactory,
     ILogger<AdminAgentService> logger,
     IPendingActionStore pendingStore,
     IConversationStore conversationStore,
@@ -126,6 +133,7 @@ public sealed class AdminAgentService : IAdminAgentService
     _hermesAgent = hermesAgent;
     _hermesEvents = hermesEvents;
     _autoMode = autoMode;
+    _httpClientFactory = httpClientFactory;
     _logger = logger;
     _pendingStore = pendingStore;
     _conversationStore = conversationStore;
@@ -471,6 +479,12 @@ public sealed class AdminAgentService : IAdminAgentService
         ("base64", O("string", "Nội dung ảnh dạng base64, có thể kèm data URL prefix")),
         ("sourceType", O("string", "Nguồn: admin, chat, ai_tryon... Mặc định: admin")))),
 
+
+    T("read_uploaded_document", "Đọc và trích xuất nội dung từ file PDF, Excel hoặc CSV đã upload lên S3/public URL. Dùng khi admin nói: đọc file này, xem nội dung file, tóm tắt file đính kèm.",
+      P(
+        ("url", O("string", "Public URL của file PDF/Excel/CSV — bắt buộc")),
+        ("fileName", O("string", "Tên file gốc nếu có (tùy chọn)")),
+        ("contentType", O("string", "application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv... (tùy chọn nhưng nên truyền nếu biết)")))),
     T("delete_media", "Xóa mềm media và cố gắng xóa object trong storage.",
       P(("id", O("string", "ID media (GUID) — bắt buộc")))),
 
@@ -512,6 +526,12 @@ public sealed class AdminAgentService : IAdminAgentService
         ("note", O("string", "Ghi chú thêm (tùy chọn)")))),
 
     T("generate_daily_report", "Tạo báo cáo doanh thu và đơn hàng hôm nay.", P()),
+
+    T("export_dashboard_report_pdf", "Xuất báo cáo dashboard dưới dạng PDF. Dùng khi admin muốn tải file báo cáo PDF để gửi/lưu trữ. Có thể truyền fromDate/toDate ISO yyyy-MM-dd, hoặc periodDays để lấy khoảng gần đây.",
+      P(
+        ("fromDate", O("string", "Ngày bắt đầu ISO yyyy-MM-dd (tùy chọn)")),
+        ("toDate", O("string", "Ngày kết thúc ISO yyyy-MM-dd (tùy chọn)")),
+        ("periodDays", O("integer", "Nếu không truyền from/to thì dùng số ngày gần đây. Mặc định: 7")))),
 
     T("list_promo_codes", "Liệt kê tất cả mã khuyến mãi.", P()),
 
@@ -636,7 +656,7 @@ public sealed class AdminAgentService : IAdminAgentService
         ("ctaUrl", O("string", "Link CTA nếu có (tùy chọn)")),
         ("productName", O("string", "Tên sản phẩm liên quan (tùy chọn)")))),
 
-    T("publish_facebook_post", "Đăng bài viết Facebook kèm text/link và URL ảnh public qua Zernio API. BẮT BUỘC gọi list_facebook_pages trước để lấy pageId = zernioAccountId. Nếu dùng ảnh do AI tạo, phải lấy publicUrl/publicImageUrls từ generate_blog_images và truyền vào imageUrls/mediaUrls; cần admin xác nhận trước khi đăng.",
+    T("publish_facebook_post", "Đăng bài viết Facebook kèm text/link và URL ảnh public qua Zernio API. BẮT BUỘC gọi list_facebook_pages trước để lấy pageId = zernioAccountId. Nếu bài có địa chỉ/hotline, dùng cố định: địa chỉ 98, 96/5A Đ. Nguyễn Công Hoan, Cầu Kiệu, Hồ Chí Minh 72200, Việt Nam; số điện thoại 0938 424 241. Không hỏi lại địa chỉ/hotline. Nếu dùng ảnh do AI tạo, phải lấy publicUrl/publicImageUrls từ generate_blog_images và truyền vào imageUrls/mediaUrls; cần admin xác nhận trước khi đăng.",
       P(
         ("pageId", O("string", "zernioAccountId của Facebook Page — bắt buộc (lấy từ list_facebook_pages)")),
         ("message", O("string", "Nội dung bài đăng — bắt buộc nếu không có imageUrls/mediaUrls")),
@@ -1358,6 +1378,103 @@ public sealed class AdminAgentService : IAdminAgentService
     return suggestions;
   }
 
+  public async Task<IReadOnlyList<string>> GetConversationMessageSuggestionsAsync(Guid threadId, Guid adminUserId, CancellationToken ct)
+  {
+    var currentThread = await _chatPersistence.GetThreadAsync(threadId, adminUserId, ct);
+    if (currentThread is null) return [];
+
+    var recentThreads = await _chatPersistence.ListThreadsAsync(adminUserId, ct);
+    var sampleThreads = recentThreads
+      .Where(t => t.Messages.Count > 0)
+      .Take(10)
+      .ToList();
+
+    if (sampleThreads.Count == 0) return DefaultConversationSuggestions();
+
+    var conversationDigest = string.Join("\n\n", sampleThreads.Select((thread, index) =>
+    {
+      var lines = thread.Messages
+        .OrderBy(m => m.CreatedAt)
+        .TakeLast(8)
+        .Select(m => $"- {m.Role}: {TruncateForPrompt(m.Content, 240)}");
+      return $"Conversation {index + 1} ({thread.UpdatedAt:yyyy-MM-dd HH:mm} UTC):\n{string.Join("\n", lines)}";
+    }));
+
+    var currentMessages = await _chatPersistence.GetMessagesAsync(threadId, adminUserId, ct);
+    var currentDigest = string.Join("\n", currentMessages
+      .TakeLast(10)
+      .Select(m => $"- {m.Role}: {TruncateForPrompt(m.Content, 260)}"));
+
+    var systemPrompt = "Bạn đề xuất tin nhắn tiếp theo cho admin trong chat AI quản trị. Trả về JSON đúng schema. Không bịa dữ liệu. Tin nhắn phải là câu người dùng có thể gửi ngay, tiếng Việt, ngắn gọn, phù hợp thói quen từ lịch sử.";
+    var userPrompt = $"""
+Dựa trên khoảng 10 cuộc trò chuyện cũ và cuộc trò chuyện hiện tại, hãy đề xuất đúng 4 tin nhắn tiếp theo cho người dùng.
+
+LỊCH SỬ GẦN ĐÂY:
+{conversationDigest}
+
+CUỘC TRÒ CHUYỆN HIỆN TẠI:
+{currentDigest}
+
+Yêu cầu:
+- Mỗi suggestion tối đa 140 ký tự.
+- Ưu tiên kiểu câu hỏi/hành động admin hay dùng.
+- Không dùng markdown.
+- Trả về JSON có field suggestions là mảng 4 chuỗi.
+""";
+
+    try
+    {
+      var response = await _llm.CompleteJsonAsync<AdminConversationSuggestionsResponse>(
+        systemPrompt,
+        userPrompt,
+        new
+        {
+          type = "object",
+          properties = new
+          {
+            suggestions = new
+            {
+              type = "array",
+              minItems = 4,
+              maxItems = 4,
+              items = new { type = "string" }
+            }
+          },
+          required = new[] { "suggestions" }
+        },
+        ct);
+
+      var cleaned = response.Suggestions
+        .Where(s => !string.IsNullOrWhiteSpace(s))
+        .Select(s => s.Trim())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .Take(4)
+        .ToList();
+
+      return cleaned.Count == 4 ? cleaned : DefaultConversationSuggestions();
+    }
+    catch (Exception ex)
+    {
+      _logger.LogWarning(ex, "[AdminAI] Conversation suggestion generation failed for thread {ThreadId}", threadId);
+      return DefaultConversationSuggestions();
+    }
+  }
+
+  private static IReadOnlyList<string> DefaultConversationSuggestions() =>
+  [
+    "Tóm tắt trạng thái cửa hàng hôm nay",
+    "Kiểm tra đơn hàng đang chờ xử lý",
+    "Sản phẩm nào cần bổ sung tồn kho?",
+    "Đề xuất việc nên ưu tiên tiếp theo"
+  ];
+
+  private static string TruncateForPrompt(string? value, int maxLength)
+  {
+    if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+    var normalized = value.Replace("\r", " ").Replace("\n", " ").Trim();
+    return normalized.Length <= maxLength ? normalized : normalized[..maxLength] + "…";
+  }
+
   public async Task<AdminToolDiagnosticsResponse> RunDiagnosticsAsync(
     AdminToolDiagnosticsRequest request,
     Guid adminUserId,
@@ -1568,6 +1685,7 @@ public sealed class AdminAgentService : IAdminAgentService
         "list_media" => await ListMedia(args, ct),
         "get_media" => await GetMedia(RequiredGuid(args, "id"), ct),
         "upload_media" => await UploadMedia(args, ct),
+        "read_uploaded_document" => await ReadUploadedDocument(args, ct),
         "delete_media" => await DeleteMedia(RequiredGuid(args, "id"), ct),
 
         // Reviews & Comments
@@ -1592,6 +1710,7 @@ public sealed class AdminAgentService : IAdminAgentService
 
         // Purchase Note + Daily Report
         "create_purchase_note" => CreatePurchaseNote(args),
+        "export_dashboard_report_pdf" => ExportDashboardReportPdf(args),
         "generate_daily_report" => await GenerateDailyReport(ct),
 
         // Blog content
@@ -3241,6 +3360,148 @@ Chi tiết:
     return ok ? "✅ Đã xóa mềm media." : "❌ Không tìm thấy media hoặc đã bị xóa.";
   }
 
+  private async Task<string> ReadUploadedDocument(JsonElement args, CancellationToken ct)
+  {
+    var url = RequiredString(args, "url", 4000);
+    var fileName = GetOptionalString(args, "fileName", 255) ?? Path.GetFileName(new Uri(url).AbsolutePath);
+    var contentType = (GetOptionalString(args, "contentType", 160) ?? InferDocumentContentType(url)).Trim().ToLowerInvariant();
+
+    if (!IsReadableDocumentContentType(contentType))
+      return SerializeToolError("Chỉ hỗ trợ đọc PDF, XLSX hoặc CSV từ media đã upload.", "unsupported_document_type");
+
+    if (!IsTrustedUploadUrl(url))
+      return SerializeToolError("URL file không thuộc kho upload tin cậy của hệ thống.", "untrusted_document_url");
+
+    byte[] bytes;
+    try
+    {
+      using var client = _httpClientFactory.CreateClient();
+      bytes = await client.GetByteArrayAsync(url, ct);
+    }
+    catch (Exception ex) when (ex is not OperationCanceledException)
+    {
+      return SerializeToolError($"Không tải được file từ URL: {ex.Message}", "document_download_failed");
+    }
+
+    try
+    {
+      var preview = contentType switch
+      {
+        "application/pdf" => ExtractPdfPreview(bytes),
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => ExtractExcelPreview(bytes),
+        "text/csv" => ExtractCsvPreview(bytes),
+        _ => contentType == "application/vnd.ms-excel"
+          ? "File .xls cũ chưa được parser ổn định. Hãy chuyển sang .xlsx hoặc .csv để AI đọc chính xác."
+          : "Không hỗ trợ đọc loại file này."
+      };
+
+      return SerializeToolResult(
+        new
+        {
+          kind = "uploaded_document_preview",
+          fileName,
+          contentType,
+          sourceUrl = url,
+          preview,
+        },
+        message: $"Đã trích xuất nội dung sơ bộ từ file '{fileName}'.");
+    }
+    catch (Exception ex) when (ex is not OperationCanceledException)
+    {
+      return SerializeToolError($"Không đọc được nội dung file: {ex.Message}", "document_parse_failed");
+    }
+  }
+
+  private bool IsTrustedUploadUrl(string url)
+  {
+    if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+    if (uri.Scheme is not ("http" or "https")) return false;
+
+    var trustedHost = new Uri(_storageService.BuildCanonicalUrl("health-check.txt")).Host;
+    return string.Equals(uri.Host, trustedHost, StringComparison.OrdinalIgnoreCase);
+  }
+
+  private static bool IsReadableDocumentContentType(string contentType) =>
+    contentType is "application/pdf"
+      or "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      or "application/vnd.ms-excel"
+      or "text/csv";
+
+  private static string InferDocumentContentType(string url)
+  {
+    var ext = Path.GetExtension(new Uri(url).AbsolutePath).ToLowerInvariant();
+    return ext switch
+    {
+      ".pdf" => "application/pdf",
+      ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ".xls" => "application/vnd.ms-excel",
+      ".csv" => "text/csv",
+      _ => string.Empty,
+    };
+  }
+
+  private static string ExtractPdfPreview(byte[] bytes)
+  {
+    using var stream = new MemoryStream(bytes);
+    using var document = PdfDocument.Open(stream);
+    var pageTexts = document.GetPages()
+      .Take(8)
+      .Select((page, index) => $"[Trang {index + 1}]\n{page.Text}")
+      .ToList();
+
+    var text = string.Join("\n\n", pageTexts).Trim();
+    return string.IsNullOrWhiteSpace(text)
+      ? "PDF không có text trích xuất được. Nếu đây là file scan/image PDF, cần thêm OCR để đọc nội dung."
+      : TruncateForPrompt(text, 12000);
+  }
+
+  private static string ExtractExcelPreview(byte[] bytes)
+  {
+    using var stream = new MemoryStream(bytes);
+    using var workbook = new XLWorkbook(stream);
+    var parts = new List<string>();
+
+    foreach (var worksheet in workbook.Worksheets.Take(3))
+    {
+      var usedRange = worksheet.RangeUsed();
+      if (usedRange is null)
+      {
+        parts.Add($"[Sheet: {worksheet.Name}] Trống");
+        continue;
+      }
+
+      var rowCount = Math.Min(usedRange.RowCount(), 20);
+      var colCount = Math.Min(usedRange.ColumnCount(), 10);
+      parts.Add($"[Sheet: {worksheet.Name}] preview {rowCount} hàng x {colCount} cột");
+
+      for (var row = 1; row <= rowCount; row++)
+      {
+        var cells = new List<string>();
+        for (var col = 1; col <= colCount; col++)
+        {
+          var value = worksheet.Cell(usedRange.RangeAddress.FirstAddress.RowNumber + row - 1, usedRange.RangeAddress.FirstAddress.ColumnNumber + col - 1).GetFormattedString();
+          cells.Add(string.IsNullOrWhiteSpace(value) ? "" : value.Trim());
+        }
+        parts.Add(string.Join(" | ", cells));
+      }
+    }
+
+    return TruncateForPrompt(string.Join("\n", parts), 12000);
+  }
+
+  private static string ExtractCsvPreview(byte[] bytes)
+  {
+    using var stream = new MemoryStream(bytes);
+    using var reader = new StreamReader(stream, System.Text.Encoding.UTF8, true);
+    var lines = new List<string>();
+    while (!reader.EndOfStream && lines.Count < 40)
+    {
+      lines.Add(reader.ReadLine() ?? string.Empty);
+    }
+
+    return TruncateForPrompt(string.Join("\n", lines), 12000);
+  }
+
   // --- Review & Comment tools ---
 
   private async Task<string> ListRecentReviews(int limit, CancellationToken ct)
@@ -3393,6 +3654,38 @@ TỔNG QUAN:
     }
 
     return report;
+  }
+
+  private string ExportDashboardReportPdf(JsonElement args)
+  {
+    var end = DateTime.UtcNow.Date;
+    var periodDays = ClampInt(GetIntArg(args, "periodDays", 7), 1, 90);
+    var start = end.AddDays(-(periodDays - 1));
+
+    var fromDateText = GetOptionalString(args, "fromDate", 64) ?? GetOptionalString(args, "startDate", 64);
+    var toDateText = GetOptionalString(args, "toDate", 64) ?? GetOptionalString(args, "endDate", 64);
+
+    if (!string.IsNullOrWhiteSpace(fromDateText) && DateTime.TryParse(fromDateText, out var parsedFrom))
+      start = parsedFrom.Date;
+    if (!string.IsNullOrWhiteSpace(toDateText) && DateTime.TryParse(toDateText, out var parsedTo))
+      end = parsedTo.Date;
+    if (end < start) (start, end) = (end, start);
+
+    var fromDate = start.ToString("yyyy-MM-dd");
+    var toDate = end.ToString("yyyy-MM-dd");
+    var downloadUrl = $"/api/admin/dashboard/report.pdf?fromDate={Uri.EscapeDataString(fromDate)}&toDate={Uri.EscapeDataString(toDate)}";
+    var fileName = $"bao-cao-dashboard-{start:yyyyMMdd}-{end:yyyyMMdd}.pdf";
+
+    return SerializeToolResult(
+      new
+      {
+        kind = "dashboard_report_pdf",
+        fromDate,
+        toDate,
+        fileName,
+        downloadUrl,
+      },
+      message: $"Đã chuẩn bị file PDF báo cáo dashboard từ {start:dd/MM/yyyy} đến {end:dd/MM/yyyy}.");
   }
 
   // --- Promo tools ---
@@ -4149,7 +4442,7 @@ TỔNG QUAN:
   private async Task<string> PublishFacebookPost(JsonElement args, CancellationToken ct)
   {
     var pageId = RequiredString(args, "pageId", 128);
-    var message = GetOptionalString(args, "message", 5000) ?? string.Empty;
+    var message = NormalizeFacebookPostContactInfo(GetOptionalString(args, "message", 5000) ?? string.Empty);
     var link = GetOptionalString(args, "link", 1000);
     var published = GetBoolArg(args, "published", true);
     var mediaUrls = GetFacebookPostMediaUrls(args);
@@ -4191,6 +4484,45 @@ TỔNG QUAN:
       code: result.Success ? "facebook_post_deleted" : "facebook_post_delete_failed",
       message: result.Success ? "Đã gỡ/xóa bài viết Facebook." : "Không thể gỡ/xóa bài viết Facebook.");
   }
+
+  private static string NormalizeFacebookPostContactInfo(string message)
+  {
+    if (string.IsNullOrWhiteSpace(message)) return string.Empty;
+
+    var normalized = message
+      .Replace("[Địa chỉ cửa hàng]", StoreAddress, StringComparison.OrdinalIgnoreCase)
+      .Replace("{Địa chỉ cửa hàng}", StoreAddress, StringComparison.OrdinalIgnoreCase)
+      .Replace("[Dia chi cua hang]", StoreAddress, StringComparison.OrdinalIgnoreCase)
+      .Replace("{Dia chi cua hang}", StoreAddress, StringComparison.OrdinalIgnoreCase)
+      .Replace("[Số điện thoại hotline]", StorePhone, StringComparison.OrdinalIgnoreCase)
+      .Replace("{Số điện thoại hotline}", StorePhone, StringComparison.OrdinalIgnoreCase)
+      .Replace("[So dien thoai hotline]", StorePhone, StringComparison.OrdinalIgnoreCase)
+      .Replace("{So dien thoai hotline}", StorePhone, StringComparison.OrdinalIgnoreCase)
+      .Replace("[Hotline]", StorePhone, StringComparison.OrdinalIgnoreCase)
+      .Replace("{Hotline}", StorePhone, StringComparison.OrdinalIgnoreCase);
+
+    if (ContainsContactIntent(normalized) && !normalized.Contains(StorePhone, StringComparison.OrdinalIgnoreCase))
+      normalized = normalized.TrimEnd() + $"\nHotline: {StorePhone}";
+
+    if (ContainsAddressIntent(normalized) && !normalized.Contains(StoreAddress, StringComparison.OrdinalIgnoreCase))
+      normalized = normalized.TrimEnd() + $"\nĐịa chỉ: {StoreAddress}";
+
+    return normalized;
+  }
+
+  private static bool ContainsContactIntent(string value) =>
+    value.Contains("hotline", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("liên hệ", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("lien he", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("điện thoại", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("dien thoai", StringComparison.OrdinalIgnoreCase);
+
+  private static bool ContainsAddressIntent(string value) =>
+    value.Contains("địa chỉ", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("dia chi", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("cửa hàng", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("cua hang", StringComparison.OrdinalIgnoreCase)
+    || value.Contains("showroom", StringComparison.OrdinalIgnoreCase);
 
   private static IReadOnlyList<string> GetFacebookPostMediaUrls(JsonElement args)
   {

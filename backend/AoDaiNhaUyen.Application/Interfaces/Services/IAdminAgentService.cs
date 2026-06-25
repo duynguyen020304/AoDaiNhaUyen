@@ -20,6 +20,9 @@ public interface IAdminAgentService
   /// <summary>Get proactive suggestions for the dashboard.</summary>
   Task<IReadOnlyList<AdminAiSuggestionResponse>> GetSuggestionsAsync(CancellationToken ct);
 
+  /// <summary>Suggest likely next user messages from recent conversation habits.</summary>
+  Task<IReadOnlyList<string>> GetConversationMessageSuggestionsAsync(Guid threadId, Guid adminUserId, CancellationToken ct);
+
   /// <summary>Run safe diagnostics for read tools and confirmation gates.</summary>
   Task<AdminToolDiagnosticsResponse> RunDiagnosticsAsync(
     AdminToolDiagnosticsRequest request,

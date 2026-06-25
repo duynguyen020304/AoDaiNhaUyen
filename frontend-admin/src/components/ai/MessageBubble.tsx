@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronUp, Bot, User, Terminal, Check, X, AlertTriangle, AlertCircle, FileText, RotateCw } from 'lucide-react'
+import { ChevronDown, ChevronUp, Bot, User, Terminal, Check, X, AlertTriangle, AlertCircle, Download, FileText, RotateCw } from 'lucide-react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import type { AiMessage, AiToolCall } from '@/types/ai'
 import { AI_BLOG_DRAFT_STORAGE_KEY } from '@/types/blog'
 import { ConfirmCard } from './ConfirmCard'
 import { ChartBlock, ChartError, ChartSpecSchema } from './ChartBlock'
+import { API_BASE_URL } from '@/api/client'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 
 function toolLabel(name: string): string {
@@ -30,8 +31,11 @@ function toolLabel(name: string): string {
     get_user: '👤 Xem người dùng',
     update_user_status: '🔄 Đổi trạng thái người dùng',
     update_user_role: '🔑 Đổi vai trò người dùng',
+    export_dashboard_report_pdf: '📄 Xuất PDF báo cáo',
   }
-  return labels[name] || `🔧 ${name}`
+
+  const label = labels[name]
+  return label || `🔧 ${name}`
 }
 
 interface ToolCallCardProps {
@@ -61,6 +65,29 @@ function formatJsonPreview(raw?: string) {
   }
 }
 
+function parseDownloadAsset(toolCall: AiToolCall) {
+  const raw = toolCall.result
+  if (!raw) return null
+
+  try {
+    const parsed = JSON.parse(raw)
+    const data = parsed?.data ?? parsed?.result?.data ?? parsed?.result ?? parsed
+    const downloadUrl = typeof data?.downloadUrl === 'string' ? data.downloadUrl : null
+    if (!downloadUrl) return null
+
+    return {
+      downloadUrl: downloadUrl.startsWith('http') ? downloadUrl : `${API_BASE_URL}${downloadUrl}`,
+      fileName: typeof data?.fileName === 'string' ? data.fileName : 'bao-cao.pdf',
+      label: typeof data?.kind === 'string' && data.kind === 'dashboard_report_pdf' ? 'Tải PDF báo cáo' : 'Tải tệp',
+      dateRange: typeof data?.fromDate === 'string' && typeof data?.toDate === 'string'
+        ? `${data.fromDate} → ${data.toDate}`
+        : null,
+    }
+  } catch {
+    return null
+  }
+}
+
 function countBlogWords(toolCall: AiToolCall) {
   return toolCall.blogDraft?.content.reduce((total, block) => {
     if ('content' in block && typeof block.content === 'string') {
@@ -81,6 +108,7 @@ function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
   const navigate = useNavigate()
   const label = toolLabel(toolCall.toolName)
 
+  const downloadAsset = parseDownloadAsset(toolCall)
   const meta = parseToolMeta(toolCall)
   const hasMore = meta?.hasMore === true || meta?.completeness === 'partial_page'
 
@@ -159,6 +187,29 @@ function ToolCallCard({ toolCall, status }: ToolCallCardProps) {
                 </div>
               </a>
             ))}
+          </div>
+        </div>
+      )}
+      {downloadAsset && (
+        <div className="mt-2 rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900 shadow-sm">
+          <div className="flex items-start gap-2">
+            <Download className="mt-0.5 size-4 shrink-0 text-sky-700" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div>
+                <div className="font-semibold">{downloadAsset.label}</div>
+                {downloadAsset.dateRange && <p className="mt-1 text-xs text-sky-800">Khoảng ngày: {downloadAsset.dateRange}</p>}
+              </div>
+              <a
+                href={downloadAsset.downloadUrl}
+                download={downloadAsset.fileName}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-700"
+              >
+                <Download className="size-3.5" />
+                {downloadAsset.fileName}
+              </a>
+            </div>
           </div>
         </div>
       )}
