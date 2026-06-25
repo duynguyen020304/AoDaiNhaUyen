@@ -93,7 +93,7 @@ public sealed class BackgroundHermesOutboxWorker(
 
     if (_options.BatchProcessingEnabled && claimedIds.Count > 1)
     {
-      await ProcessClaimedAsBatchesAsync(dbContext, processor, claimedIds, cancellationToken);
+      await ProcessClaimedAsBatchesAsync(dbContext, claimedIds, cancellationToken);
     }
     else
     {
@@ -105,13 +105,13 @@ public sealed class BackgroundHermesOutboxWorker(
     }
   }
 
-  private async Task ProcessClaimedAsBatchesAsync(
+  internal async Task ProcessClaimedAsBatchesAsync(
     AppDbContext dbContext,
-    IHermesEventProcessor processor,
     IReadOnlyList<Guid> claimedIds,
     CancellationToken cancellationToken)
   {
     // Preserve claim order (scheduled_at, occurred_at) so batches group naturally.
+    // Read-only load on the worker's own context (no parallelism yet) to size chunks.
     var items = await dbContext.HermesEventOutbox
       .Where(x => claimedIds.Contains(x.Id))
       .ToListAsync(cancellationToken);
@@ -119,32 +119,60 @@ public sealed class BackgroundHermesOutboxWorker(
       .Select(id => items.First(x => x.Id == id))
       .ToList();
 
-    foreach (var chunk in ChunkItems(ordered))
+    // Chunks are independent units of work (own Hermes call + own atomic transaction).
+    // Carry only IDs across the parallel boundary — entities tracked by this context
+    // cannot be reused by another context. Each chunk reloads its own tracked entities.
+    var chunkIdLists = ChunkItems(ordered)
+      .Select(chunk => (IReadOnlyList<Guid>)chunk.Select(x => x.Id).ToList())
+      .ToList();
+
+    var dop = Math.Clamp(_options.MaxParallelBatches, 1, 16);
+    await Parallel.ForEachAsync(
+      chunkIdLists,
+      new ParallelOptions { MaxDegreeOfParallelism = dop, CancellationToken = cancellationToken },
+      async (chunkIds, token) => await ProcessChunkInOwnScopeAsync(chunkIds, token));
+  }
+
+  private async Task ProcessChunkInOwnScopeAsync(
+    IReadOnlyList<Guid> chunkIds,
+    CancellationToken cancellationToken)
+  {
+    // Own scope => own AppDbContext + own IHermesEventProcessor. EF Core DbContext is
+    // not thread-safe, so each concurrent chunk must be fully isolated.
+    using var scope = scopeFactory.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var processor = scope.ServiceProvider.GetRequiredService<IHermesEventProcessor>();
+
+    var items = await dbContext.HermesEventOutbox
+      .Where(x => chunkIds.Contains(x.Id))
+      .ToListAsync(cancellationToken);
+    var chunk = chunkIds
+      .Select(id => items.First(x => x.Id == id))
+      .ToList();
+
+    IReadOnlyList<Guid> processedIds;
+    try
     {
-      IReadOnlyList<Guid> processedIds;
-      try
-      {
-        processedIds = await processor.ProcessBatchAsync(chunk, cancellationToken);
-      }
-      catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-      {
-        throw;
-      }
-      catch (Exception ex)
-      {
-        logger.LogWarning(ex, "Hermes batch ({Count} events) lỗi, fallback xử lý từng event.", chunk.Count);
-        processedIds = Array.Empty<Guid>();
-      }
+      processedIds = await processor.ProcessBatchAsync(chunk, cancellationToken);
+    }
+    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+    {
+      throw;
+    }
+    catch (Exception ex)
+    {
+      logger.LogWarning(ex, "Hermes batch ({Count} events) lỗi, fallback xử lý từng event.", chunk.Count);
+      processedIds = Array.Empty<Guid>();
+    }
 
-      var processed = processedIds.ToHashSet();
+    var processed = processedIds.ToHashSet();
 
-      // The processor already committed status='completed' for events it returned
-      // (inside its own transaction). Every other event in the chunk made no durable
-      // change — retry it per-event so its own retry/backoff/dead-letter applies.
-      foreach (var item in chunk.Where(x => !processed.Contains(x.Id)))
-      {
-        await ProcessItemAsync(dbContext, processor, item, cancellationToken);
-      }
+    // The processor already committed status='completed' for events it returned
+    // (inside its own transaction). Every other event in the chunk made no durable
+    // change — retry it per-event so its own retry/backoff/dead-letter applies.
+    foreach (var item in chunk.Where(x => !processed.Contains(x.Id)))
+    {
+      await ProcessItemAsync(dbContext, processor, item, cancellationToken);
     }
   }
 

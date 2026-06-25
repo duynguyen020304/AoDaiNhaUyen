@@ -4,6 +4,7 @@ using System.Net;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260624135200_AddSocialAutoReplySafety")]
+    partial class AddSocialAutoReplySafety
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -4822,7 +4825,7 @@ namespace AoDaiNhaUyen.Infrastructure.Data.Migrations
                     b.HasIndex("Platform", "AccountId", "ConversationId")
                         .IsUnique()
                         .HasDatabaseName("idx_social_auto_reply_batches_active_unique")
-                        .HasFilter("status = 'pending' AND NOT is_deleted");
+                        .HasFilter("status IN ('pending','processing','queued') AND NOT is_deleted");
 
                     b.ToTable("social_auto_reply_batches", null, t =>
                         {

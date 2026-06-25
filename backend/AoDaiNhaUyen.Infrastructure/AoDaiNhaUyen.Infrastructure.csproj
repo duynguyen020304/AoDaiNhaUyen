@@ -1,6 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <InternalsVisibleTo Include="AoDaiNhaUyen.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\AoDaiNhaUyen.Application\AoDaiNhaUyen.Application.csproj" />
     <ProjectReference Include="..\AoDaiNhaUyen.Domain\AoDaiNhaUyen.Domain.csproj" />
   </ItemGroup>

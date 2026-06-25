@@ -34,6 +34,13 @@ public sealed class HermesOutboxOptions
   /// </summary>
   public int MaxBatchPayloadBytes { get; init; } = 500_000;
 
+  /// <summary>
+  /// Max chunks processed concurrently per poll. Each chunk = one Hermes call + one
+  /// atomic DB transaction in its own DI scope. <c>1</c> = serial (default, current
+  /// behavior). Keep low (2-4) — the Hermes API server rate-limits and 429s under bursts.
+  /// </summary>
+  public int MaxParallelBatches { get; init; } = 1;
+
   public decimal HighValueOrderThreshold { get; init; } = 5_000_000m;
   public int LowStockThreshold { get; init; } = 3;
   public string EventPath { get; init; } = "/v1/responses";

@@ -2,6 +2,7 @@ using AoDaiNhaUyen.Application.Interfaces;
 using AoDaiNhaUyen.Application.Interfaces.Services;
 using AoDaiNhaUyen.Application.Options;
 using AoDaiNhaUyen.Domain.Common;
+using AoDaiNhaUyen.Domain.Constants;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Domain.SeedData;
 using AoDaiNhaUyen.Infrastructure.Services;
@@ -115,6 +116,7 @@ public sealed class SeedDataService(
 
     await SeedRolesAsync();
     await SeedAdminAsync();
+    await SeedHermesAgentUserAsync();
     await SeedEmailTemplatesAsync();
     // Tool risk configs are operational metadata, not demo catalog data.
     // Seed them before the catalog-data early return so existing/prod DBs receive newly added tools.
@@ -716,6 +718,30 @@ public sealed class SeedDataService(
         IsVerified = true
       });
     }
+
+    await dbContext.SaveChangesAsync();
+  }
+
+  /// <summary>
+  /// Seeds the Hermes agent's user account idempotently on every startup (runs before the
+  /// catalog-data early return so existing/prod DBs receive it and it survives DB rebuilds).
+  /// The agent authenticates via X-Hermes-Admin-Key as <see cref="HermesAgentIdentity.UserId"/>;
+  /// review/comment replies it writes FK-reference this row, so it must exist or they 500.
+  /// </summary>
+  private async Task SeedHermesAgentUserAsync()
+  {
+    var exists = await dbContext.Users.AnyAsync(x => x.Id == HermesAgentIdentity.UserId);
+    if (exists)
+      return;
+
+    dbContext.Users.Add(new User
+    {
+      Id = HermesAgentIdentity.UserId,
+      FullName = HermesAgentIdentity.DisplayName,
+      Email = "hermes@aodainhauyen.io.vn",
+      Status = "active",
+      EmailVerifiedAt = DateTime.UtcNow
+    });
 
     await dbContext.SaveChangesAsync();
   }

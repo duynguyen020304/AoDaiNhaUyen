@@ -15,8 +15,6 @@ public sealed class HermesAdminApiKeyAuthenticationHandler(
   UrlEncoder encoder)
   : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
-  private const string HermesAgentUserId = "00000000-0000-0000-0000-000000000001";
-
   protected override Task<AuthenticateResult> HandleAuthenticateAsync()
   {
     if (!Request.Headers.TryGetValue(HermesAdminAuthOptions.HeaderName, out var headerValues))
@@ -38,7 +36,7 @@ public sealed class HermesAdminApiKeyAuthenticationHandler(
 
     var claims = new List<Claim>
     {
-      new(ClaimTypes.NameIdentifier, HermesAgentUserId),
+      new(ClaimTypes.NameIdentifier, HermesAgentIdentity.UserIdString),
       new(ClaimTypes.Name, "hermes_agent"),
       new(ClaimTypes.Role, RoleNames.Admin),
       new("agent", "hermes")

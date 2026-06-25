@@ -12,5 +12,6 @@ public sealed class SocialAccountConnection : BaseEntity
   public string? Username { get; set; }
   public string? AvatarUrl { get; set; }
   public DateTimeOffset? LastSyncedAt { get; set; }
+  public DateTimeOffset? AutoReplyIgnoreBefore { get; set; }
   public string? MetadataJson { get; set; }
 }

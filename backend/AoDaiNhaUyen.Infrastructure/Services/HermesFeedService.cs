@@ -215,6 +215,7 @@ public sealed partial class HermesFeedService(AppDbContext dbContext) : IHermesF
       "social_campaign_performance_changed" => $"📣 Hiệu suất chiến dịch social {Quote(productName)} vừa thay đổi",
       "social_comment_received" => "💬 Có bình luận social mới cần kiểm tra",
       "social_message_received" => "💬 Có tin nhắn social mới cần chăm sóc",
+      "social_message_batch_received" => "💬 Có nhóm tin nhắn social mới cần chăm sóc",
       "critical_email_dead" => "📧 Email quan trọng đã hết lượt retry cần xử lý ngay",
       "email_template_created" => "📧 Template email mới được tạo",
       "email_template_updated" => "📧 Template email vừa được cập nhật",
