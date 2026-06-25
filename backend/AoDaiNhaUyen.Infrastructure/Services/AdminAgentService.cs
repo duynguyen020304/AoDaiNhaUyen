@@ -1,6 +1,8 @@
 using System.Text.Encodings.Web;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using ClosedXML.Excel;
+using UglyToad.PdfPig;
 using AoDaiNhaUyen.Application.DTOs.Admin;
 using AoDaiNhaUyen.Application.DTOs.BlogPost;
 using AoDaiNhaUyen.Application.DTOs.Facebook;
@@ -41,6 +43,7 @@ public sealed class AdminAgentService : IAdminAgentService
   private readonly IHermesFeedService _hermesFeed;
   private readonly IHermesAgentService _hermesAgent;
   private readonly IHermesEventOutboxService _hermesEvents;
+  private readonly IHttpClientFactory _httpClientFactory;
   private readonly IAutoModeStore _autoMode;
   private readonly ILogger<AdminAgentService> _logger;
 
@@ -95,6 +98,7 @@ public sealed class AdminAgentService : IAdminAgentService
     IHermesAgentService hermesAgent,
     IHermesEventOutboxService hermesEvents,
     IAutoModeStore autoMode,
+    IHttpClientFactory httpClientFactory,
     ILogger<AdminAgentService> logger,
     IPendingActionStore pendingStore,
     IConversationStore conversationStore,
@@ -129,6 +133,7 @@ public sealed class AdminAgentService : IAdminAgentService
     _hermesAgent = hermesAgent;
     _hermesEvents = hermesEvents;
     _autoMode = autoMode;
+    _httpClientFactory = httpClientFactory;
     _logger = logger;
     _pendingStore = pendingStore;
     _conversationStore = conversationStore;
@@ -474,6 +479,12 @@ public sealed class AdminAgentService : IAdminAgentService
         ("base64", O("string", "Nội dung ảnh dạng base64, có thể kèm data URL prefix")),
         ("sourceType", O("string", "Nguồn: admin, chat, ai_tryon... Mặc định: admin")))),
 
+
+    T("read_uploaded_document", "Đọc và trích xuất nội dung từ file PDF, Excel hoặc CSV đã upload lên S3/public URL. Dùng khi admin nói: đọc file này, xem nội dung file, tóm tắt file đính kèm.",
+      P(
+        ("url", O("string", "Public URL của file PDF/Excel/CSV — bắt buộc")),
+        ("fileName", O("string", "Tên file gốc nếu có (tùy chọn)")),
+        ("contentType", O("string", "application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv... (tùy chọn nhưng nên truyền nếu biết)")))),
     T("delete_media", "Xóa mềm media và cố gắng xóa object trong storage.",
       P(("id", O("string", "ID media (GUID) — bắt buộc")))),
 
@@ -515,6 +526,12 @@ public sealed class AdminAgentService : IAdminAgentService
         ("note", O("string", "Ghi chú thêm (tùy chọn)")))),
 
     T("generate_daily_report", "Tạo báo cáo doanh thu và đơn hàng hôm nay.", P()),
+
+    T("export_dashboard_report_pdf", "Xuất báo cáo dashboard dưới dạng PDF. Dùng khi admin muốn tải file báo cáo PDF để gửi/lưu trữ. Có thể truyền fromDate/toDate ISO yyyy-MM-dd, hoặc periodDays để lấy khoảng gần đây.",
+      P(
+        ("fromDate", O("string", "Ngày bắt đầu ISO yyyy-MM-dd (tùy chọn)")),
+        ("toDate", O("string", "Ngày kết thúc ISO yyyy-MM-dd (tùy chọn)")),
+        ("periodDays", O("integer", "Nếu không truyền from/to thì dùng số ngày gần đây. Mặc định: 7")))),
 
     T("list_promo_codes", "Liệt kê tất cả mã khuyến mãi.", P()),
 
@@ -1668,6 +1685,7 @@ Yêu cầu:
         "list_media" => await ListMedia(args, ct),
         "get_media" => await GetMedia(RequiredGuid(args, "id"), ct),
         "upload_media" => await UploadMedia(args, ct),
+        "read_uploaded_document" => await ReadUploadedDocument(args, ct),
         "delete_media" => await DeleteMedia(RequiredGuid(args, "id"), ct),
 
         // Reviews & Comments
@@ -1692,6 +1710,7 @@ Yêu cầu:
 
         // Purchase Note + Daily Report
         "create_purchase_note" => CreatePurchaseNote(args),
+        "export_dashboard_report_pdf" => ExportDashboardReportPdf(args),
         "generate_daily_report" => await GenerateDailyReport(ct),
 
         // Blog content
@@ -3341,6 +3360,148 @@ Chi tiết:
     return ok ? "✅ Đã xóa mềm media." : "❌ Không tìm thấy media hoặc đã bị xóa.";
   }
 
+  private async Task<string> ReadUploadedDocument(JsonElement args, CancellationToken ct)
+  {
+    var url = RequiredString(args, "url", 4000);
+    var fileName = GetOptionalString(args, "fileName", 255) ?? Path.GetFileName(new Uri(url).AbsolutePath);
+    var contentType = (GetOptionalString(args, "contentType", 160) ?? InferDocumentContentType(url)).Trim().ToLowerInvariant();
+
+    if (!IsReadableDocumentContentType(contentType))
+      return SerializeToolError("Chỉ hỗ trợ đọc PDF, XLSX hoặc CSV từ media đã upload.", "unsupported_document_type");
+
+    if (!IsTrustedUploadUrl(url))
+      return SerializeToolError("URL file không thuộc kho upload tin cậy của hệ thống.", "untrusted_document_url");
+
+    byte[] bytes;
+    try
+    {
+      using var client = _httpClientFactory.CreateClient();
+      bytes = await client.GetByteArrayAsync(url, ct);
+    }
+    catch (Exception ex) when (ex is not OperationCanceledException)
+    {
+      return SerializeToolError($"Không tải được file từ URL: {ex.Message}", "document_download_failed");
+    }
+
+    try
+    {
+      var preview = contentType switch
+      {
+        "application/pdf" => ExtractPdfPreview(bytes),
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => ExtractExcelPreview(bytes),
+        "text/csv" => ExtractCsvPreview(bytes),
+        _ => contentType == "application/vnd.ms-excel"
+          ? "File .xls cũ chưa được parser ổn định. Hãy chuyển sang .xlsx hoặc .csv để AI đọc chính xác."
+          : "Không hỗ trợ đọc loại file này."
+      };
+
+      return SerializeToolResult(
+        new
+        {
+          kind = "uploaded_document_preview",
+          fileName,
+          contentType,
+          sourceUrl = url,
+          preview,
+        },
+        message: $"Đã trích xuất nội dung sơ bộ từ file '{fileName}'.");
+    }
+    catch (Exception ex) when (ex is not OperationCanceledException)
+    {
+      return SerializeToolError($"Không đọc được nội dung file: {ex.Message}", "document_parse_failed");
+    }
+  }
+
+  private bool IsTrustedUploadUrl(string url)
+  {
+    if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+    if (uri.Scheme is not ("http" or "https")) return false;
+
+    var trustedHost = new Uri(_storageService.BuildCanonicalUrl("health-check.txt")).Host;
+    return string.Equals(uri.Host, trustedHost, StringComparison.OrdinalIgnoreCase);
+  }
+
+  private static bool IsReadableDocumentContentType(string contentType) =>
+    contentType is "application/pdf"
+      or "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      or "application/vnd.ms-excel"
+      or "text/csv";
+
+  private static string InferDocumentContentType(string url)
+  {
+    var ext = Path.GetExtension(new Uri(url).AbsolutePath).ToLowerInvariant();
+    return ext switch
+    {
+      ".pdf" => "application/pdf",
+      ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ".xls" => "application/vnd.ms-excel",
+      ".csv" => "text/csv",
+      _ => string.Empty,
+    };
+  }
+
+  private static string ExtractPdfPreview(byte[] bytes)
+  {
+    using var stream = new MemoryStream(bytes);
+    using var document = PdfDocument.Open(stream);
+    var pageTexts = document.GetPages()
+      .Take(8)
+      .Select((page, index) => $"[Trang {index + 1}]\n{page.Text}")
+      .ToList();
+
+    var text = string.Join("\n\n", pageTexts).Trim();
+    return string.IsNullOrWhiteSpace(text)
+      ? "PDF không có text trích xuất được. Nếu đây là file scan/image PDF, cần thêm OCR để đọc nội dung."
+      : TruncateForPrompt(text, 12000);
+  }
+
+  private static string ExtractExcelPreview(byte[] bytes)
+  {
+    using var stream = new MemoryStream(bytes);
+    using var workbook = new XLWorkbook(stream);
+    var parts = new List<string>();
+
+    foreach (var worksheet in workbook.Worksheets.Take(3))
+    {
+      var usedRange = worksheet.RangeUsed();
+      if (usedRange is null)
+      {
+        parts.Add($"[Sheet: {worksheet.Name}] Trống");
+        continue;
+      }
+
+      var rowCount = Math.Min(usedRange.RowCount(), 20);
+      var colCount = Math.Min(usedRange.ColumnCount(), 10);
+      parts.Add($"[Sheet: {worksheet.Name}] preview {rowCount} hàng x {colCount} cột");
+
+      for (var row = 1; row <= rowCount; row++)
+      {
+        var cells = new List<string>();
+        for (var col = 1; col <= colCount; col++)
+        {
+          var value = worksheet.Cell(usedRange.RangeAddress.FirstAddress.RowNumber + row - 1, usedRange.RangeAddress.FirstAddress.ColumnNumber + col - 1).GetFormattedString();
+          cells.Add(string.IsNullOrWhiteSpace(value) ? "" : value.Trim());
+        }
+        parts.Add(string.Join(" | ", cells));
+      }
+    }
+
+    return TruncateForPrompt(string.Join("\n", parts), 12000);
+  }
+
+  private static string ExtractCsvPreview(byte[] bytes)
+  {
+    using var stream = new MemoryStream(bytes);
+    using var reader = new StreamReader(stream, System.Text.Encoding.UTF8, true);
+    var lines = new List<string>();
+    while (!reader.EndOfStream && lines.Count < 40)
+    {
+      lines.Add(reader.ReadLine() ?? string.Empty);
+    }
+
+    return TruncateForPrompt(string.Join("\n", lines), 12000);
+  }
+
   // --- Review & Comment tools ---
 
   private async Task<string> ListRecentReviews(int limit, CancellationToken ct)
@@ -3493,6 +3654,38 @@ TỔNG QUAN:
     }
 
     return report;
+  }
+
+  private string ExportDashboardReportPdf(JsonElement args)
+  {
+    var end = DateTime.UtcNow.Date;
+    var periodDays = ClampInt(GetIntArg(args, "periodDays", 7), 1, 90);
+    var start = end.AddDays(-(periodDays - 1));
+
+    var fromDateText = GetOptionalString(args, "fromDate", 64) ?? GetOptionalString(args, "startDate", 64);
+    var toDateText = GetOptionalString(args, "toDate", 64) ?? GetOptionalString(args, "endDate", 64);
+
+    if (!string.IsNullOrWhiteSpace(fromDateText) && DateTime.TryParse(fromDateText, out var parsedFrom))
+      start = parsedFrom.Date;
+    if (!string.IsNullOrWhiteSpace(toDateText) && DateTime.TryParse(toDateText, out var parsedTo))
+      end = parsedTo.Date;
+    if (end < start) (start, end) = (end, start);
+
+    var fromDate = start.ToString("yyyy-MM-dd");
+    var toDate = end.ToString("yyyy-MM-dd");
+    var downloadUrl = $"/api/admin/dashboard/report.pdf?fromDate={Uri.EscapeDataString(fromDate)}&toDate={Uri.EscapeDataString(toDate)}";
+    var fileName = $"bao-cao-dashboard-{start:yyyyMMdd}-{end:yyyyMMdd}.pdf";
+
+    return SerializeToolResult(
+      new
+      {
+        kind = "dashboard_report_pdf",
+        fromDate,
+        toDate,
+        fileName,
+        downloadUrl,
+      },
+      message: $"Đã chuẩn bị file PDF báo cáo dashboard từ {start:dd/MM/yyyy} đến {end:dd/MM/yyyy}.");
   }
 
   // --- Promo tools ---

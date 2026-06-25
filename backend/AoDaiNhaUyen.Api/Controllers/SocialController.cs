@@ -335,7 +335,7 @@ public sealed class SocialController(
     var contentType = file.ContentType.Trim().ToLowerInvariant();
     var maxBytes = contentType.StartsWith("video/", StringComparison.Ordinal)
       ? 200L * 1024 * 1024
-      : 10L * 1024 * 1024;
+      : 20L * 1024 * 1024;
     var allowedContentTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
       "image/jpeg",
@@ -344,17 +344,21 @@ public sealed class SocialController(
       "image/gif",
       "video/mp4",
       "video/quicktime",
-      "video/webm"
+      "video/webm",
+      "application/pdf",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/csv"
     };
 
     if (!allowedContentTypes.Contains(contentType))
     {
-      return new BadRequestObjectResult(ApiResponseFactory.Failure("Định dạng file không hỗ trợ", "unsupported_media_type", "Chỉ hỗ trợ JPG, PNG, WEBP, GIF, MP4, MOV hoặc WEBM."));
+      return new BadRequestObjectResult(ApiResponseFactory.Failure("Định dạng file không hỗ trợ", "unsupported_media_type", "Chỉ hỗ trợ JPG, PNG, WEBP, GIF, MP4, MOV, WEBM, PDF, Excel hoặc CSV."));
     }
 
     if (file.Length > maxBytes)
     {
-      return new BadRequestObjectResult(ApiResponseFactory.Failure("File quá lớn", "file_too_large", contentType.StartsWith("video/", StringComparison.Ordinal) ? "Video tối đa 200MB." : "Ảnh tối đa 10MB."));
+      return new BadRequestObjectResult(ApiResponseFactory.Failure("File quá lớn", "file_too_large", contentType.StartsWith("video/", StringComparison.Ordinal) ? "Video tối đa 200MB." : "File tối đa 20MB."));
     }
 
     return null;
