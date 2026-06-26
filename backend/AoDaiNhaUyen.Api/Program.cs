@@ -260,6 +260,7 @@ app.UseAuthentication();
 app.UseRateLimiter();
 app.UseMiddleware<HermesApiDescriptionMiddleware>();
 app.UseAuthorization();
+app.UseMiddleware<AdminAuditLogMiddleware>();
 app.UseMiddleware<HermesActionAuditMiddleware>();
 app.Use(async (context, next) =>
 {

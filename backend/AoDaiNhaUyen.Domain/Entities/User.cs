@@ -27,4 +27,5 @@ public sealed class User : BaseEntity
   public ICollection<Cart> Carts { get; set; } = new List<Cart>();
   public ICollection<Review> Reviews { get; set; } = new List<Review>();
   public ICollection<Comment> Comments { get; set; } = new List<Comment>();
+  public ICollection<AdminAuditLog> AdminAuditLogs { get; set; } = new List<AdminAuditLog>();
 }
