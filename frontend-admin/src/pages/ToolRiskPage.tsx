@@ -32,6 +32,12 @@ const RISK_BADGE: Record<string, string> = {
   Critical: 'bg-red-100 text-red-900 border border-red-300',
 }
 
+const HIGH_RISK_LEVELS = new Set(['High', 'Critical'])
+
+function mustRequireConfirmation(riskLevel: string) {
+  return HIGH_RISK_LEVELS.has(riskLevel)
+}
+
 export function ToolRiskPage() {
   const [configs, setConfigs] = useState<ToolRiskConfig[]>([])
   const [loading, setLoading] = useState(true)
@@ -90,17 +96,18 @@ export function ToolRiskPage() {
   }
 
   async function updateConfig(config: ToolRiskConfig, riskLevel: string, requiresConfirmation: boolean) {
+    const nextRequiresConfirmation = mustRequireConfirmation(riskLevel) ? true : requiresConfirmation
     setSaving(config.id)
     setError(null)
     try {
       await request(`/api/admin/tools-risk/${config.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ riskLevel, requiresConfirmation }),
+        body: JSON.stringify({ riskLevel, requiresConfirmation: nextRequiresConfirmation }),
       })
       setConfigs(prev =>
         prev.map(c =>
           c.id === config.id
-            ? { ...c, riskLevel, requiresConfirmation }
+            ? { ...c, riskLevel, requiresConfirmation: nextRequiresConfirmation }
             : c
         )
       )
@@ -191,7 +198,10 @@ export function ToolRiskPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tools.map((tool) => (
+                  {tools.map((tool) => {
+                    const isForcedConfirmation = mustRequireConfirmation(tool.riskLevel)
+
+                    return (
                     <TableRow key={tool.id} className="">
                       <TableCell className="font-mono text-xs">{tool.toolName}</TableCell>
                       <TableCell className="text-sm text-zinc-600 dark:text-muted-foreground">
@@ -212,12 +222,21 @@ export function ToolRiskPage() {
                           {tool.riskLevel}
                         </span>
                         <p className="mt-1 text-xs text-muted-foreground">{RISK_HELP[tool.riskLevel] ?? 'Mức tác động tùy chỉnh.'}</p>
+                        {isForcedConfirmation && (
+                          <p className="mt-1 text-xs font-medium text-red-700">High/Critical luôn bắt buộc xác nhận, không thể bật tự động.</p>
+                        )}
                       </TableCell>
                       <TableCell className="text-center">
                         <button
-                          onClick={() => updateConfig(tool, tool.riskLevel, tool.requiresConfirmation ? false : true)}
-                          disabled={saving === tool.id}
-                          title={tool.requiresConfirmation ? 'Đang yêu cầu xác nhận' : 'Đang tự động thực hiện'}
+                          onClick={() => {
+                            if (isForcedConfirmation) {
+                              setError('Tool ở mức High hoặc Critical luôn bắt buộc xác nhận, không thể bật tự động.')
+                              return
+                            }
+                            void updateConfig(tool, tool.riskLevel, tool.requiresConfirmation ? false : true)
+                          }}
+                          disabled={saving === tool.id || isForcedConfirmation}
+                          title={isForcedConfirmation ? 'High/Critical luôn cần xác nhận' : tool.requiresConfirmation ? 'Đang yêu cầu xác nhận' : 'Đang tự động thực hiện'}
                           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 ${
                             !tool.requiresConfirmation ? 'bg-primary' : 'bg-muted'
                           }`}
@@ -233,7 +252,7 @@ export function ToolRiskPage() {
                         )}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )})}
                 </TableBody>
               </Table>
             </div>
