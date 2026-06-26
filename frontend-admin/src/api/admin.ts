@@ -29,7 +29,46 @@ import type {
   AdminReviewItem,
   AdminAiTryOnFeedbackItem,
   UpdateAiTryOnFeedbackStatusRequest,
+  AdminAuditLogDetail,
+  AdminAuditLogItem,
+  AdminAuditLogStats,
 } from '@/types/admin'
+
+export async function getAdminAuditLogs(params?: {
+  q?: string
+  actionType?: string
+  entityType?: string
+  success?: string
+  page?: number
+  pageSize?: number
+}): Promise<PaginatedApiEnvelope<AdminAuditLogItem[]>> {
+  const qs = new URLSearchParams()
+  if (params?.q) qs.set('q', params.q)
+  if (params?.actionType) qs.set('actionType', params.actionType)
+  if (params?.entityType) qs.set('entityType', params.entityType)
+  if (params?.success) qs.set('success', params.success)
+  qs.set('page', String(params?.page ?? 1))
+  qs.set('pageSize', String(params?.pageSize ?? 20))
+  return requestPaginated<AdminAuditLogItem[]>(`/api/admin/audit-logs?${qs}`)
+}
+
+export async function getAdminAuditLogStats(params?: {
+  q?: string
+  actionType?: string
+  entityType?: string
+  success?: string
+}): Promise<AdminAuditLogStats> {
+  const qs = new URLSearchParams()
+  if (params?.q) qs.set('q', params.q)
+  if (params?.actionType) qs.set('actionType', params.actionType)
+  if (params?.entityType) qs.set('entityType', params.entityType)
+  if (params?.success) qs.set('success', params.success)
+  return request<AdminAuditLogStats>(`/api/admin/audit-logs/stats?${qs}`)
+}
+
+export async function getAdminAuditLog(id: string): Promise<AdminAuditLogDetail> {
+  return request<AdminAuditLogDetail>(`/api/admin/audit-logs/${id}`)
+}
 
 // ── Users ──
 

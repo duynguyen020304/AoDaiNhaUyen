@@ -319,6 +319,57 @@ export interface SetReviewVisibilityRequest {
   isVisible: boolean
 }
 
+export interface AdminAuditLogItem {
+  id: string
+  actorUserId: string | null
+  actorName: string | null
+  actorEmail: string | null
+  actorRoles: string | null
+  httpMethod: string
+  path: string
+  actionType: string
+  entityType: string
+  entityId: string | null
+  statusCode: number
+  success: boolean
+  createdAt: string
+  requestPreview: string | null
+  responsePreview: string | null
+  error: string | null
+}
+
+export interface AdminAuditLogDetail {
+  id: string
+  actorUserId: string | null
+  actorName: string | null
+  actorEmail: string | null
+  actorRoles: string | null
+  httpMethod: string
+  path: string
+  queryString: string | null
+  controllerName: string | null
+  actionName: string | null
+  actionType: string
+  entityType: string
+  entityId: string | null
+  statusCode: number
+  success: boolean
+  requestPreview: string | null
+  responsePreview: string | null
+  error: string | null
+  ipAddressHash: string | null
+  userAgentHash: string | null
+  createdAt: string
+}
+
+export interface AdminAuditLogStats {
+  total: number
+  success: number
+  failed: number
+  distinctActors: number
+  distinctEntities: number
+}
+
 export interface ReplyToReviewRequest {
   productId: string
   content: string

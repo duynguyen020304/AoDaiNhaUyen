@@ -29,6 +29,7 @@ import { EmailQueuePage } from '@/pages/EmailQueuePage'
 import { HermesMonitorPage } from '@/pages/HermesMonitorPage'
 import { FacebookPage } from '@/pages/FacebookPage'
 import { FacebookPostEditPage } from '@/pages/FacebookPostEditPage'
+import { AuditLogsPage } from '@/pages/AuditLogsPage'
 
 export function App() {
   const status = useAuthStore((s) => s.status)
@@ -88,6 +89,7 @@ export function App() {
             <Route path="hermes" element={<HermesPage />} />
             <Route path="hermes/:chatId" element={<HermesPage />} />
             <Route path="tools-risk" element={<ToolRiskPage />} />
+            <Route path="audit-logs" element={<AuditLogsPage />} />
           </Route>
         </Route>
 

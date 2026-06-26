@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, Newspaper, Megaphone, Send, PanelLeftClose, PanelLeftOpen, MessageSquareText, Sparkles, Share2, ChevronDown, ChevronRight } from 'lucide-react'
+import { Package, Users, Shield, FolderTree, LogOut, Menu, Image, LayoutDashboard, Bot, ClipboardList, Settings2, Tag, Newspaper, Megaphone, Send, PanelLeftClose, PanelLeftOpen, MessageSquareText, Sparkles, Share2, ChevronDown, ChevronRight, History } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { useAdminAiStore } from '@/stores/adminAiStore'
 import { Button } from '@/components/ui/button'
@@ -57,6 +57,7 @@ const NAV_GROUPS = [
     items: [
       { to: '/admin/roles', icon: Shield, label: 'Vai trò', end: false },
       { to: '/admin/email-queue', icon: Send, label: 'Hàng đợi email', end: false },
+      { to: '/admin/audit-logs', icon: History, label: 'Nhật ký thao tác', end: false },
     ],
   },
 ] as const

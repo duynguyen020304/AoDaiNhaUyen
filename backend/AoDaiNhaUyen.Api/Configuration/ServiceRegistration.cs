@@ -252,6 +252,7 @@ public static class ServiceRegistration
     services.AddScoped<IAdminToolRiskService, AdminToolRiskService>();
     services.AddScoped<IAdminReviewService, AdminReviewService>();
     services.AddScoped<IAdminPromoService, AdminPromoService>();
+    services.AddScoped<IAdminAuditLogService, AdminAuditLogService>();
     services.AddScoped<IPromptRedactionService, PromptRedactionService>();
     services.AddScoped<ILlmAuditService, LlmAuditService>();
     services.AddScoped<ISafetyGate, SafetyGate>();

@@ -46,6 +46,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
   public DbSet<UserGeneratedImage> UserGeneratedImages => Set<UserGeneratedImage>();
   public DbSet<AiTryOnFeedback> AiTryOnFeedbacks => Set<AiTryOnFeedback>();
   public DbSet<AdminAiAction> AdminAiActions => Set<AdminAiAction>();
+  public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
   public DbSet<ToolRiskConfig> ToolRiskConfigs => Set<ToolRiskConfig>();
   public DbSet<LlmAuditLog> LlmAuditLogs => Set<LlmAuditLog>();
   public DbSet<OrderAttribution> OrderAttributions => Set<OrderAttribution>();
@@ -723,6 +724,36 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
       builder.HasIndex(x => x.CreatedAt).HasDatabaseName("idx_admin_ai_actions_created_at");
       builder.HasOne(x => x.AdminUser).WithMany().HasForeignKey(x => x.AdminUserId).OnDelete(DeleteBehavior.Cascade);
     });
+    modelBuilder.Entity<AdminAuditLog>(builder =>
+    {
+      builder.ToTable("admin_audit_logs");
+      builder.HasKey(x => x.Id);
+      builder.Property(x => x.ActorName).HasMaxLength(120);
+      builder.Property(x => x.ActorEmail).HasMaxLength(160);
+      builder.Property(x => x.ActorRoles).HasMaxLength(200);
+      builder.Property(x => x.HttpMethod).HasMaxLength(10).IsRequired();
+      builder.Property(x => x.Path).HasMaxLength(400).IsRequired();
+      builder.Property(x => x.QueryString).HasMaxLength(500);
+      builder.Property(x => x.ControllerName).HasMaxLength(80);
+      builder.Property(x => x.ActionName).HasMaxLength(120);
+      builder.Property(x => x.ActionType).HasMaxLength(60).IsRequired();
+      builder.Property(x => x.EntityType).HasMaxLength(80).IsRequired();
+      builder.Property(x => x.EntityId).HasMaxLength(120);
+      builder.Property(x => x.RequestPreview).HasColumnType("text");
+      builder.Property(x => x.ResponsePreview).HasColumnType("text");
+      builder.Property(x => x.Error).HasColumnType("text");
+      builder.Property(x => x.IpAddressHash).HasMaxLength(128);
+      builder.Property(x => x.UserAgentHash).HasMaxLength(128);
+      builder.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+      builder.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+      builder.HasIndex(x => new { x.CreatedAt, x.Success }).HasDatabaseName("idx_admin_audit_logs_created_success");
+      builder.HasIndex(x => new { x.EntityType, x.EntityId, x.CreatedAt }).HasDatabaseName("idx_admin_audit_logs_entity_created_at");
+      builder.HasIndex(x => new { x.ActorUserId, x.CreatedAt }).HasDatabaseName("idx_admin_audit_logs_actor_created_at");
+      builder.HasIndex(x => new { x.ActionType, x.CreatedAt }).HasDatabaseName("idx_admin_audit_logs_action_created_at");
+      builder.HasIndex(x => new { x.StatusCode, x.CreatedAt }).HasDatabaseName("idx_admin_audit_logs_status_created_at");
+      builder.HasOne(x => x.ActorUser).WithMany(x => x.AdminAuditLogs).HasForeignKey(x => x.ActorUserId).OnDelete(DeleteBehavior.SetNull);
+    });
+
     modelBuilder.Entity<LlmAuditLog>(builder =>
     {
       builder.ToTable("llm_audit_logs");
