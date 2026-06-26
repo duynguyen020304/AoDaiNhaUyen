@@ -192,22 +192,25 @@ public sealed class SafetyGate : ISafetyGate
     return RiskLevel.Medium;
   }
 
+  private static bool ResolveRequiresConfirmation(RiskLevel level, bool configured) =>
+    level >= RiskLevel.High ? true : configured;
+
   public bool RequiresConfirmation(RiskLevel level) => level >= RiskLevel.Medium;
 
   public async Task<bool> RequiresConfirmationAsync(string toolName, CancellationToken ct = default)
   {
     if (TryGetFromCache(toolName, out var cached))
-      return cached.RequiresConfirmation;
+      return ResolveRequiresConfirmation(cached.Level, cached.RequiresConfirmation);
 
     if (_dbContext is not null)
     {
       await LoadCacheFromDbAsync(ct);
       if (TryGetFromCache(toolName, out cached))
-        return cached.RequiresConfirmation;
+        return ResolveRequiresConfirmation(cached.Level, cached.RequiresConfirmation);
     }
 
     if (DefaultMap.TryGetValue(toolName, out var def))
-      return def.RequiresConfirmation;
+      return ResolveRequiresConfirmation(def.Level, def.RequiresConfirmation);
 
     _logger.LogWarning("[SafetyGate] Unknown tool {ToolName}, requiring confirmation", toolName);
     return true;
@@ -262,7 +265,8 @@ public sealed class SafetyGate : ISafetyGate
       {
         if (Enum.TryParse<RiskLevel>(config.RiskLevel, true, out var level))
         {
-          newCache[config.ToolName] = (level, config.RequiresConfirmation);
+          var requiresConfirmation = ResolveRequiresConfirmation(level, config.RequiresConfirmation);
+          newCache[config.ToolName] = (level, requiresConfirmation);
         }
         else
         {

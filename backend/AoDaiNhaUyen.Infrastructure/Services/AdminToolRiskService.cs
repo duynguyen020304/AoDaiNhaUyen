@@ -1,4 +1,5 @@
 using AoDaiNhaUyen.Application.Interfaces.Services;
+using AoDaiNhaUyen.Domain.Common;
 using AoDaiNhaUyen.Domain.Entities;
 using AoDaiNhaUyen.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +30,14 @@ public sealed class AdminToolRiskService(
     if (config is null) return false;
 
     config.RiskLevel = request.RiskLevel;
-    config.RequiresConfirmation = request.RequiresConfirmation;
+
+    var parsedRiskLevel = Enum.TryParse<RiskLevel>(request.RiskLevel, true, out var riskLevel)
+      ? riskLevel
+      : RiskLevel.Medium;
+
+    config.RequiresConfirmation = parsedRiskLevel >= RiskLevel.High
+      ? true
+      : request.RequiresConfirmation;
     config.UpdatedAt = DateTimeOffset.UtcNow;
 
     // Invalidate SafetyGate cache so new config takes effect immediately
